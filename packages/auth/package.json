@@ -1,0 +1,24 @@
+{
+  "name": "@clankeroverflow/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@clankeroverflow/db": "workspace:*",
+    "@clankeroverflow/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@clankeroverflow/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

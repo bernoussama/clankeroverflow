@@ -1,0 +1,31 @@
+// Better-T-Stack
+//
+// Website: https://www.better-t-stack.dev/
+// Stack Builder: https://www.better-t-stack.dev/new
+// Analytics: https://www.better-t-stack.dev/analytics
+// Showcase: https://www.better-t-stack.dev/showcase
+// Sponsor: https://github.com/sponsors/AmanVarshney01
+//
+// Add new addons with: bun create better-t-stack add
+// This file is safe to delete
+
+{
+  "$schema": "https://r2.better-t-stack.dev/schema.json",
+  "version": "3.22.0",
+  "createdAt": "2026-03-02T22:26:08.736Z",
+  "reproducibleCommand": "bun create better-t-stack@latest clankeroverflow --frontend next --backend hono --runtime workers --database sqlite --orm drizzle --api trpc --auth better-auth --payments none --addons oxlint skills turborepo --examples none --db-setup d1 --web-deploy cloudflare --server-deploy cloudflare --git --package-manager bun --install",
+  "database": "sqlite",
+  "orm": "drizzle",
+  "backend": "hono",
+  "runtime": "workers",
+  "frontend": ["next"],
+  "addons": ["oxlint", "skills", "turborepo"],
+  "examples": [],
+  "auth": "better-auth",
+  "payments": "none",
+  "packageManager": "bun",
+  "dbSetup": "d1",
+  "api": "trpc",
+  "webDeploy": "cloudflare",
+  "serverDeploy": "cloudflare",
+}

@@ -1,0 +1,3 @@
+{
+  "extends": "@clankeroverflow/config/tsconfig.base.json"
+}
