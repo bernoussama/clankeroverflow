@@ -1,5 +1,6 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
 import { solutionsRouter } from "./solutions";
+import { apiKeysRouter } from "./apiKeys";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -12,5 +13,6 @@ export const appRouter = router({
     };
   }),
   solutions: solutionsRouter,
+  apiKeys: apiKeysRouter,
 });
 export type AppRouter = typeof appRouter;
