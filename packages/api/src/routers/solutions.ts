@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { eq, like, or } from "drizzle-orm";
+import { eq, like, or, and } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, router } from "../index";
 import { db, schema } from "@clankeroverflow/db";
@@ -54,15 +54,25 @@ export const solutionsRouter = router({
       })
     )
     .query(async ({ input }) => {
-      // In SQLite without FTS we can just use basic ILIKE search with `%query%`
-      const searchTerm = `%${input.query}%`;
+      // Split the search query into individual words for broader matching
+      const searchTerms = input.query
+        .trim()
+        .split(/\s+/)
+        .filter((term) => term.length > 0)
+        .map((term) => `%${term}%`);
+
+      if (searchTerms.length === 0) return [];
       
+      const conditions = searchTerms.map((term) =>
+        or(
+          like(schema.solution.problem, term),
+          like(schema.solution.solution, term),
+          like(schema.solution.tags, term)
+        )
+      );
+
       const results = await db.query.solution.findMany({
-        where: or(
-          like(schema.solution.problem, searchTerm),
-          like(schema.solution.solution, searchTerm),
-          like(schema.solution.tags, searchTerm)
-        ),
+        where: and(...conditions),
         limit: input.limit,
         orderBy: (fields, { desc }) => [desc(fields.createdAt)],
       });
