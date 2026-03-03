@@ -79,4 +79,21 @@ export const solutionsRouter = router({
 
       return results;
     }),
+
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const result = await db.query.solution.findFirst({
+        where: eq(schema.solution.id, input.id),
+      });
+
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Solution not found",
+        });
+      }
+
+      return result;
+    }),
 });
