@@ -1,0 +1,203 @@
+docs/plans/2026-03-02-clankeroverflow-cli-design.md
+  6427c6320ddd9d5d 1-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "8af5cdb6ec6addfe609bde5956b00b94562044ea",
+  "prompts": {
+    "6427c6320ddd9d5d": {
+      "agent_id": {
+        "tool": "gemini",
+        "id": "5e7e175c-58a9-49f1-a596-e8caaa8c3a7c",
+        "model": "gemini-3.1-pro-preview"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>",
+      "messages": [
+        {
+          "type": "tool_use",
+          "name": "activate_skill",
+          "input": {
+            "name": "brainstorming"
+          },
+          "timestamp": "2026-03-02T23:56:20.109Z"
+        },
+        {
+          "type": "tool_use",
+          "name": "run_shell_command",
+          "input": {
+            "command": "cat README.md && cat package.json"
+          },
+          "timestamp": "2026-03-02T23:56:28.323Z"
+        },
+        {
+          "type": "tool_use",
+          "name": "ask_user",
+          "input": {
+            "questions": [
+              {
+                "header": "CLI Input Method",
+                "options": [
+                  {
+                    "description": "e.g., clanker log --problem \"...\" --solution \"...\" or using --file flags",
+                    "label": "Command-line Flags"
+                  },
+                  {
+                    "description": "Agent passes structured JSON or markdown via stdin",
+                    "label": "Standard Input (stdin)"
+                  },
+                  {
+                    "description": "e.g., clanker log ./solution.md",
+                    "label": "File Path Argument"
+                  }
+                ],
+                "question": "Since the CLI is primarily designed for AI coding agents, what is the preferred way for an agent to pass the problem and solution data when logging it?",
+                "type": "choice"
+              }
+            ]
+          },
+          "timestamp": "2026-03-03T00:25:15.287Z"
+        },
+        {
+          "type": "tool_use",
+          "name": "ask_user",
+          "input": {
+            "questions": [
+              {
+                "header": "Search Output",
+                "options": [
+                  {
+                    "description": "Displays the top matching full problem & solution in plain text/markdown",
+                    "label": "Full Markdown Text"
+                  },
+                  {
+                    "description": "Returns a structured JSON array of top matches with titles, tags, and snippets",
+                    "label": "Structured JSON List"
+                  },
+                  {
+                    "description": "Returns a brief summary of the top match with a command or URL to view full details",
+                    "label": "Concise Summary"
+                  }
+                ],
+                "question": "When an agent searches for an existing solution using the CLI (e.g., `clanker search \"how to configure nextjs cache\"`), what should the output format be to best aid the agent?",
+                "type": "choice"
+              }
+            ]
+          },
+          "timestamp": "2026-03-03T00:26:39.639Z"
+        },
+        {
+          "type": "tool_use",
+          "name": "ask_user",
+          "input": {
+            "questions": [
+              {
+                "header": "Authentication for Logging",
+                "options": [
+                  {
+                    "description": "Agents must provide an API key (e.g., via CLANKER_API_KEY env var) tied to a user account",
+                    "label": "Required API Key"
+                  },
+                  {
+                    "description": "Anyone can post anonymously without any authentication",
+                    "label": "Anonymous / Open"
+                  },
+                  {
+                    "description": "Anonymous posting allowed, but API keys can optionally be used to track/manage own posts",
+                    "label": "Optional Auth"
+                  }
+                ],
+                "question": "Since the app involves logging public solutions, how should we handle authentication for agents using the CLI to post solutions?",
+                "type": "choice"
+              }
+            ]
+          },
+          "timestamp": "2026-03-03T00:31:23.739Z"
+        },
+        {
+          "type": "tool_use",
+          "name": "ask_user",
+          "input": {
+            "questions": [
+              {
+                "header": "CLI Architecture",
+                "options": [
+                  {
+                    "description": "A new package in this monorepo (e.g., packages/cli) built with TS. Shares types with the backend, published to npm. Easy to maintain.",
+                    "label": "TypeScript CLI Package (Recommended)"
+                  },
+                  {
+                    "description": "A compiled binary built in Go or Rust. Zero dependencies for agents, but harder to maintain types with the TS backend.",
+                    "label": "Standalone Binary (Go/Rust)"
+                  },
+                  {
+                    "description": "No dedicated CLI, just a documented REST API that agents can hit using standard `curl` commands.",
+                    "label": "Raw REST API (curl)"
+                  }
+                ],
+                "question": "Based on the stack, I recommend building the CLI as a TypeScript package within this monorepo so it can share types with the backend. Which approach would you prefer for the CLI architecture?",
+                "type": "choice"
+              }
+            ]
+          },
+          "timestamp": "2026-03-03T00:31:52.558Z"
+        },
+        {
+          "type": "tool_use",
+          "name": "ask_user",
+          "input": {
+            "questions": [
+              {
+                "header": "Design Review",
+                "question": "### Section 1: Overview & Architecture\nClankerOverflow is a platform designed specifically for AI coding agents to log, share, and retrieve solutions to complex software engineering problems.\n\n**Architecture Components:**\n1. **Web Frontend (`apps/web`)**: Built with Next.js, serving as a read-only or administrative view of the logged solutions. Agents or human supervisors can browse tags, search solutions, and view the global feed.\n2. **Backend API (`apps/server`)**: A Hono-based server using tRPC. It exposes endpoints for both the Web Frontend and the CLI. We will add specific public/authenticated endpoints for the CLI to log and search solutions.\n3. **CLI Package (`packages/cli`)**: A new TypeScript-based CLI tool (e.g., `npm install -g clanker`). It acts as the primary interface for AI agents. It will be built using a library like `commander` and will communicate with the Backend API using `@trpc/client` or `fetch` to ensure end-to-end type safety.\n4. **Database (`packages/db`)**: SQLite managed by Drizzle ORM. We will introduce new schemas for `solutions` (storing problem, solution, tags, author) and `api_keys` (for optional agent authentication).\n\nDoes this architecture look right so far?",
+                "type": "yesno"
+              }
+            ]
+          },
+          "timestamp": "2026-03-03T00:32:48.790Z"
+        },
+        {
+          "type": "tool_use",
+          "name": "ask_user",
+          "input": {
+            "questions": [
+              {
+                "header": "Design Review",
+                "question": "### Section 2: CLI Usage & Features\n\nThe Clanker CLI will focus on a smooth, scriptable interface for AI agents, returning easily parseable output like full Markdown or structured errors.\n\n**Core Commands:**\n\n1. **Logging Solutions (`clanker log`)**\n   - Syntax: `clanker log --problem \"<description>\" --solution \"<details>\" --tags \"react,nextjs\"`\n   - Flow: The agent can provide strings via command-line flags. If the content is too long, it can use `--file ./solution.md` instead. The CLI parses this and POSTs it to the Hono API.\n   - Output: A direct link to the newly created public solution in ClankerOverflow.\n\n2. **Searching Solutions (`clanker search`)**\n   - Syntax: `clanker search \"how to configure nextjs cache\" --limit 1`\n   - Flow: The CLI queries the backend using full-text search across the problem descriptions, solutions, and tags.\n   - Output: Returns the highest-scoring match as **Full Markdown Text** directly to `stdout`. This allows the agent to immediately read the solution without leaving the terminal and consume it directly in context.\n\n3. **Authentication (Optional)**\n   - Agents can supply an environment variable `CLANKER_API_KEY=xxx clanker log ...`.\n   - Anonymous submissions will be attributed to \"Anonymous Agent\" but won't be editable by the creator. Auth enables modifying or deleting own posts later.\n\nDoes this CLI usage plan sound right to you?",
+                "type": "yesno"
+              }
+            ]
+          },
+          "timestamp": "2026-03-03T00:33:41.141Z"
+        },
+        {
+          "type": "tool_use",
+          "name": "ask_user",
+          "input": {
+            "questions": [
+              {
+                "header": "Design Review",
+                "question": "### Section 3: Data Flow, Database & Error Handling\n\n**Database Changes (`packages/db`)**\n- `users`: We'll extend the system with an `api_keys` relation, allowing agents/users to generate persistent tokens.\n- `solutions`: A new table to store the `id` (cuid/uuid), `problem` (TEXT), `solution` (TEXT), `tags` (JSON/Text), `userId` (nullable for anonymous), `createdAt`, and `updatedAt`.\n- Search: We will use Drizzle ORM with SQLite's FTS5 extension (or basic ILIKE queries initially) to support text searches over the `problem` and `solution` fields.\n\n**Data Flow**\n1. CLI invokes `POST /api/trpc/solutions.create` (or a native Hono endpoint) with the payload.\n2. Hono API validates the payload via Zod and checks for `CLANKER_API_KEY` in the headers.\n3. API inserts the record via Drizzle and returns the success status.\n4. CLI displays the resulting URL and status to `stdout`.\n\n**Error Handling**\n- If the CLI encounters validation errors (e.g., missing problem text) or a server error, it will immediately `exit(1)` and print a concise error message to `stderr`. This ensures the AI agent detects the failure and doesn't continue assuming success.\n\n**Testing**\n- CLI integration tests executing the actual CLI binary.\n- API tests using tRPC context and mocked DB inserts.\n\nDoes this data flow and database structure look correct?",
+                "type": "yesno"
+              }
+            ]
+          },
+          "timestamp": "2026-03-03T00:36:02.934Z"
+        },
+        {
+          "type": "tool_use",
+          "name": "write_file",
+          "input": {
+            "content": "# ClankerOverflow CLI Design\n\n## Overview & Architecture\nClankerOverflow is a platform designed specifically for AI coding agents to log, share, and retrieve solutions to complex software engineering problems.\n\n**Architecture Components:**\n1. **Web Frontend (`apps/web`)**: Built with Next.js, serving as a read-only or administrative view of the logged solutions. Agents or human supervisors can browse tags, search solutions, and view the global feed.\n2. **Backend API (`apps/server`)**: A Hono-based server using tRPC. It exposes endpoints for both the Web Frontend and the CLI. We will add specific public/authenticated endpoints for the CLI to log and search solutions.\n3. **CLI Package (`packages/cli`)**: A new TypeScript-based CLI tool (e.g., `npm install -g clankeroverflow`). It acts as the primary interface for AI agents. It will be built using a library like `commander` and will communicate with the Backend API using `@trpc/client` or standard `fetch` to ensure end-to-end type safety.\n4. **Database (`packages/db`)**: SQLite managed by Drizzle ORM. We will introduce new schemas for `solutions` (storing problem, solution, tags, author) and `api_keys` (for optional agent authentication).\n\n## CLI Usage & Features\n\nThe Clanker CLI will focus on a smooth, scriptable interface for AI agents, returning easily parseable output like full Markdown or structured errors.\n\n**Core Commands:**\n\n1. **Logging Solutions (`clanker log`)**\n   - Syntax: `clanker log --problem \"<description>\" --solution \"<details>\" --tags \"react,nextjs\"`\n   - Flow: The agent can provide strings via command-line flags. If the content is too long, it can use `--file ./solution.md` instead. The CLI parses this and POSTs it to the Hono API.\n   - Output: A direct link to the newly created public solution in ClankerOverflow.\n\n2. **Searching Solutions (`clanker search`)**\n   - Syntax: `clanker search \"how to configure nextjs cache\" --limit 1`\n   - Flow: The CLI queries the backend using full-text search across the problem descriptions, solutions, and tags.\n   - Output: Returns the highest-scoring match as **Full Markdown Text** directly to `stdout`. This allows the agent to immediately read the solution without leaving the terminal and consume it directly in context.\n\n3. **Authentication (Optional)**\n   - Agents can supply an environment variable `CLANKER_API_KEY=xxx clanker log ...`.\n   - Anonymous submissions will be attributed to \"Anonymous Agent\" but won't be editable by the creator. Auth enables modifying or deleting own posts later.\n\n## Data Flow, Database & Error Handling\n\n**Database Changes (`packages/db`)**\n- `users`: We'll extend the system with an `api_keys` relation, allowing agents/users to generate persistent tokens.\n- `solutions`: A new table to store the `id` (cuid/uuid), `problem` (TEXT), `solution` (TEXT), `tags` (JSON/Text), `userId` (nullable for anonymous), `createdAt`, and `updatedAt`.\n- Search: We will use Drizzle ORM with SQLite's FTS5 extension (or basic ILIKE queries initially) to support text searches over the `problem` and `solution` fields.\n\n**Data Flow**\n1. CLI invokes `POST /api/trpc/solutions.create` (or a native Hono endpoint) with the payload.\n2. Hono API validates the payload via Zod and checks for `CLANKER_API_KEY` in the headers.\n3. API inserts the record via Drizzle and returns the success status.\n4. CLI displays the resulting URL and status to `stdout`.\n\n**Error Handling**\n- If the CLI encounters validation errors (e.g., missing problem text) or a server error, it will immediately `exit(1)` and print a concise error message to `stderr`. This ensures the AI agent detects the failure and doesn't continue assuming success.\n\n**Testing**\n- CLI integration tests executing the actual CLI binary.\n- API tests using tRPC context and mocked DB inserts.",
+            "file_path": "docs/plans/2026-03-02-clankeroverflow-cli-design.md"
+          },
+          "timestamp": "2026-03-03T00:36:21.618Z"
+        }
+      ],
+      "total_additions": 50,
+      "total_deletions": 0,
+      "accepted_lines": 50,
+      "overriden_lines": 0
+    }
+  }
+}
