@@ -1,0 +1,23 @@
+{
+  "name": "@clankeroverflow/cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "clanker": "./dist/index.mjs"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc -b"
+  },
+  "dependencies": {
+    "@clankeroverflow/api": "workspace:*",
+    "@trpc/client": "catalog:",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@clankeroverflow/config": "workspace:*",
+    "@types/node": "^22.13.14",
+    "tsdown": "^0.16.5",
+    "typescript": "catalog:"
+  }
+}

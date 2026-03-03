@@ -10,8 +10,12 @@ export async function createContext({ context }: CreateContextOptions) {
   const session = await auth.api.getSession({
     headers: context.req.raw.headers,
   });
+  
+  const apiKey = context.req.raw.headers.get("x-clanker-api-key");
+
   return {
     session,
+    apiKey,
   };
 }
 
