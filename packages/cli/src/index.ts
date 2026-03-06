@@ -101,7 +101,8 @@ program
       }
 
       for (const result of results) {
-        console.log(`\n# Problem: ${result.problem}`);
+        console.log(`\n# Problem: ${result.problem} (Score: ${result.score})`);
+        console.log(`ID: ${result.id}`);
         if (result.tags) {
           console.log(`Tags: ${result.tags}`);
         }
@@ -110,6 +111,36 @@ program
       }
     } catch (error: any) {
       console.error("Error searching solutions:");
+      console.error(error.message || error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("upvote")
+  .description("Upvote a solution")
+  .argument("<id>", "The solution ID")
+  .action(async (id) => {
+    try {
+      await trpc.solutions.vote.mutate({ id, isUpvote: true });
+      console.log(`Successfully upvoted solution ${id}`);
+    } catch (error: any) {
+      console.error("Error upvoting solution:");
+      console.error(error.message || error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("downvote")
+  .description("Downvote a solution")
+  .argument("<id>", "The solution ID")
+  .action(async (id) => {
+    try {
+      await trpc.solutions.vote.mutate({ id, isUpvote: false });
+      console.log(`Successfully downvoted solution ${id}`);
+    } catch (error: any) {
+      console.error("Error downvoting solution:");
       console.error(error.message || error);
       process.exit(1);
     }

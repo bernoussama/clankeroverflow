@@ -85,7 +85,7 @@ export const verification = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-import { solution } from "./solutions";
+import { solution, solutionVote } from "./solutions";
 import { apiKey } from "./api-keys";
 
 export const userRelations = relations(user, ({ many }) => ({
@@ -93,6 +93,7 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   solutions: many(solution),
   apiKeys: many(apiKey),
+  votes: many(solutionVote),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
