@@ -29,6 +29,7 @@
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
+    "test": "turbo test",
     "db:push": "turbo -F @clankeroverflow/db db:push",
     "db:generate": "turbo -F @clankeroverflow/db db:generate",
     "deploy": "turbo -F @clankeroverflow/infra deploy",

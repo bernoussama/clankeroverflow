@@ -5,7 +5,9 @@
   "scripts": {
     "build": "next build",
     "start": "next start",
-    "dev:bare": "next dev --port 3001"
+    "dev:bare": "next dev --port 3000",
+    "test:e2e": "playwright test",
+    "test": "bun test:e2e"
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
@@ -41,6 +43,7 @@
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",
     "@cloudflare/workers-types": "catalog:",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.1.10",
     "@tanstack/react-query-devtools": "^5.91.1",
     "@types/node": "^20",

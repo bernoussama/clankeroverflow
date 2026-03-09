@@ -13,6 +13,7 @@
     "access": "public"
   },
   "scripts": {
+    "test": "bun test",
     "build": "tsdown",
     "check-types": "tsc -b",
     "prepack": "bun run build"
