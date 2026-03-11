@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -12,7 +13,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 
-import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
 export default function UserMenu() {
@@ -20,29 +20,42 @@ export default function UserMenu() {
   const { data: session, isPending } = authClient.useSession();
 
   if (isPending) {
-    return <Skeleton className="h-9 w-24" />;
+    return <Skeleton className="h-9 w-24" style={{ borderRadius: "2px" }} />;
   }
 
   if (!session) {
     return (
       <Link href="/login">
-        <Button variant="outline">Sign In</Button>
+        <button type="button" className="btn-secondary h-9 py-0 px-4 text-xs font-mono uppercase tracking-wider">
+          Sign In
+          <ArrowRight className="w-3 h-3" aria-hidden="true" />
+        </button>
       </Link>
     );
   }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" />}>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            className="btn-secondary h-9 py-0 px-4 text-xs font-mono uppercase tracking-wider"
+          />
+        }
+      >
         {session.user.name}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-card">
+      <DropdownMenuContent className="bg-card" style={{ borderRadius: "3px", border: "1px solid var(--landing-border)" }}>
         <DropdownMenuGroup>
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
+          <DropdownMenuLabel className="font-mono text-xs uppercase tracking-wider" style={{ color: "var(--landing-muted)" }}>
+            My Account
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator style={{ background: "var(--landing-border)" }} />
+          <DropdownMenuItem className="font-mono text-xs">{session.user.email}</DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
+            className="font-mono text-xs"
             onClick={() => {
               authClient.signOut({
                 fetchOptions: {
