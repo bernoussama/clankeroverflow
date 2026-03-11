@@ -5,10 +5,16 @@ dotenv.config({
   path: "../../apps/server/.env",
 });
 
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is required for drizzle-kit");
+}
+
 export default defineConfig({
   schema: "./src/schema",
   out: "./src/migrations",
-  // DOCS: https://orm.drizzle.team/docs/guides/d1-http-with-drizzle-kit
-  dialect: "sqlite",
-  driver: "d1-http",
+  dialect: "postgresql",
+  dbCredentials: {
+    url: databaseUrl,
+  },
 });

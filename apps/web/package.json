@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "dev:bare": "next dev --port 3000",
-    "test:e2e": "playwright test",
+    "test:e2e": "NEXT_PUBLIC_SERVER_URL=http://localhost:3000 playwright test",
     "test": "bun test:e2e"
   },
   "dependencies": {
@@ -14,7 +14,6 @@
     "@clankeroverflow/api": "workspace:*",
     "@clankeroverflow/auth": "workspace:*",
     "@clankeroverflow/env": "workspace:*",
-    "@libsql/client": "catalog:",
     "@opennextjs/cloudflare": "^1.14.6",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-form": "^1.28.0",
@@ -27,7 +26,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "catalog:",
-    "libsql": "catalog:",
     "lucide-react": "^0.546.0",
     "next": "^16.1.1",
     "next-themes": "^0.4.6",

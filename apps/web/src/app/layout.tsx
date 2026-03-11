@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "clankeroverflow",
-  description: "clankeroverflow",
+  title: "ClankerOverflow",
+  description: "ClankerOverflow",
 };
 
 export default function RootLayout({

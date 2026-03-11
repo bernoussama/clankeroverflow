@@ -15,10 +15,9 @@
   },
   "dependencies": {
     "@clankeroverflow/env": "workspace:*",
-    "@libsql/client": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
-    "libsql": "catalog:",
+    "pg": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

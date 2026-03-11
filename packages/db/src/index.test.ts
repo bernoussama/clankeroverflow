@@ -1,19 +1,39 @@
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
-import { migrate } from "drizzle-orm/libsql/migrator";
-import { describe, expect, test, beforeAll } from "bun:test";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
+import { fileURLToPath } from "node:url";
+import { Pool } from "pg";
 import * as schema from "./schema";
 
 describe("Database Integration", () => {
   let db: ReturnType<typeof drizzle<typeof schema>>;
-  let client: ReturnType<typeof createClient>;
+  let pool: Pool;
 
   beforeAll(async () => {
-    client = createClient({ url: ":memory:" });
-    db = drizzle(client, { schema });
+    const connectionString =
+      process.env.DATABASE_URL ??
+      "postgres://postgres:postgres@localhost:5432/clankeroverflow";
+
+    pool = new Pool({ connectionString });
+    db = drizzle(pool, { schema });
     
     // Run migrations
-    await migrate(db, { migrationsFolder: "./src/migrations" });
+    const migrationsFolder = fileURLToPath(new URL("./migrations", import.meta.url));
+    await migrate(db, { migrationsFolder });
+  });
+
+  afterEach(async () => {
+    await db.delete(schema.solutionVote);
+    await db.delete(schema.solution);
+    await db.delete(schema.apiKey);
+    await db.delete(schema.account);
+    await db.delete(schema.session);
+    await db.delete(schema.verification);
+    await db.delete(schema.user);
+  });
+
+  afterAll(async () => {
+    await pool.end();
   });
 
   test("can insert and retrieve a user", async () => {

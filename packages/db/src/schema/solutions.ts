@@ -1,8 +1,16 @@
-import { sql, relations } from "drizzle-orm";
-import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core";
+import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  text,
+  integer,
+  boolean,
+  index,
+  primaryKey,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
-export const solution = sqliteTable(
+export const solution = pgTable(
   "solution",
   {
     id: text("id").primaryKey(),
@@ -11,11 +19,11 @@ export const solution = sqliteTable(
     tags: text("tags"), // Stored as comma-separated or JSON string
     userId: text("user_id").references(() => user.id, { onDelete: "set null" }), // Nullable for anonymous
     score: integer("score").default(0).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
       .notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
   },
@@ -24,7 +32,7 @@ export const solution = sqliteTable(
   ]
 );
 
-export const solutionVote = sqliteTable(
+export const solutionVote = pgTable(
   "solution_vote",
   {
     userId: text("user_id")
@@ -33,9 +41,9 @@ export const solutionVote = sqliteTable(
     solutionId: text("solution_id")
       .notNull()
       .references(() => solution.id, { onDelete: "cascade" }),
-    isUpvote: integer("is_upvote", { mode: "boolean" }).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    isUpvote: boolean("is_upvote").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
       .notNull(),
   },
   (table) => [
