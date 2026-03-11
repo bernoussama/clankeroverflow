@@ -4,16 +4,26 @@ import { Pool } from "pg";
 
 import * as schema from "./schema";
 
-const connectionString =
-  env.HYPERDRIVE?.connectionString ?? process.env.DATABASE_URL;
+let dbInstance: ReturnType<typeof drizzle> | null = null;
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL or Hyperdrive binding is required");
+export function getDb() {
+  if (dbInstance) return dbInstance;
+
+  const connectionString =
+    (env as any).DATABASE_URL ??
+    env.HYPERDRIVE?.connectionString ??
+    process.env.DATABASE_URL;
+
+  if (!connectionString) {
+    throw new Error("DATABASE_URL or Hyperdrive binding is required");
+  }
+
+  const pool = new Pool({
+    connectionString,
+  });
+
+  dbInstance = drizzle(pool, { schema });
+  return dbInstance;
 }
 
-const pool = new Pool({
-  connectionString,
-});
-
-export const db = drizzle(pool, { schema });
 export { schema };

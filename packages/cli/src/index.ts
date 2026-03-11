@@ -14,6 +14,12 @@ const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: `${SERVER_URL}/trpc`,
+      fetch(url, options) {
+        // Miniflare/Workers dev can intermittently fail when Node fetch is passed an AbortSignal.
+        // tRPC always supplies a signal, so strip it for CLI stability.
+        const { signal: _signal, ...rest } = options ?? {};
+        return fetch(url, rest);
+      },
       headers() {
         return {
           ...(API_KEY ? { "x-clanker-api-key": API_KEY } : {}),

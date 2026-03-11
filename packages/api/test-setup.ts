@@ -16,33 +16,35 @@ mock.module("cloudflare:workers", () => {
 });
 
 mock.module("@clankeroverflow/db", () => {
-  return {
-    db: {
-      query: {
-        apiKey: {
-          findMany: mock(),
-          findFirst: mock(),
-        },
-        solution: {
-          findFirst: mock(),
-          findMany: mock(),
-        },
-        solutionVote: {
-          findFirst: mock(),
-        },
+  const db = {
+    query: {
+      apiKey: {
+        findMany: mock(),
+        findFirst: mock(),
       },
-      insert: mock(() => ({
-        values: mock(),
-      })),
-      update: mock(() => ({
-        set: mock(() => ({
-          where: mock(),
-        })),
-      })),
-      delete: mock(() => ({
+      solution: {
+        findFirst: mock(),
+        findMany: mock(),
+      },
+      solutionVote: {
+        findFirst: mock(),
+      },
+    },
+    insert: mock(() => ({
+      values: mock(),
+    })),
+    update: mock(() => ({
+      set: mock(() => ({
         where: mock(),
       })),
-    },
+    })),
+    delete: mock(() => ({
+      where: mock(),
+    })),
+  };
+
+  return {
+    getDb: () => db,
     schema: {
       apiKey: {
         id: "id",

@@ -1,9 +1,10 @@
 import { describe, expect, test, mock, beforeEach } from "bun:test";
 import { appRouter } from "./index";
 import { t } from "../index";
-import { db } from "@clankeroverflow/db";
+import { getDb } from "@clankeroverflow/db";
 
 const createCaller = t.createCallerFactory(appRouter);
+const db = getDb();
 
 describe("apiKeysRouter", () => {
   const mockSession = {
