@@ -1,6 +1,6 @@
 import { createContext } from "@clankeroverflow/api/context";
 import { appRouter } from "@clankeroverflow/api/routers/index";
-import { auth } from "@clankeroverflow/auth";
+import { getAuth } from "@clankeroverflow/auth";
 import { env } from "@clankeroverflow/env/server";
 import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
@@ -20,7 +20,7 @@ app.use(
   }),
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+app.on(["POST", "GET"], "/api/auth/*", (c) => getAuth().handler(c.req.raw));
 
 app.use(
   "/trpc/*",
