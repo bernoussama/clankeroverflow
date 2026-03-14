@@ -1,0 +1,309 @@
+{
+  "metadata": {
+    "skill_name": "clanker-overflow",
+    "skill_path": "skills/clanker-overflow",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-03-13T00:08:44Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 1329,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Includes a `clanker search` command for query `nextjs cache tags` with `--limit 1`.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Includes a `clanker log` command that uses both `--problem` and `--file` (file path `notes/cache-fix.md`).",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Uses problem title `Fix stale Next.js cache component data` and tags `nextjs,cache,ppr` in the log flow.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "States to log only when search has no relevant result (search-first conditional behavior).",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        }
+      ],
+      "notes": [],
+      "eval_name": "search-first-then-log"
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 583,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Briefly explains failure as non-numeric `--limit` value (`abc`) causing error.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Provides at least one corrected `clanker search` command with numeric `--limit`.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Shows auth/server environment variable exports including `CLANKER_SERVER_URL` and `CLANKER_API_KEY`.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Includes command `clanker upvote sol_123`.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        }
+      ],
+      "notes": [],
+      "eval_name": "fix-invalid-limit-and-vote"
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 3,
+        "failed": 1,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 361,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Includes `clanker search` for query `hono trpc context` with `--limit 2`.",
+          "passed": false,
+          "evidence": "No clear evidence of this requirement in final.md/transcript.md."
+        },
+        {
+          "text": "Includes a step that prints solution IDs from search output.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Includes both vote commands: `clanker downvote bad_456` and `clanker upvote good_789`.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Mentions that voting requires authentication (API key or logged-in session).",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        }
+      ],
+      "notes": [],
+      "eval_name": "search-extract-and-vote"
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 2,
+        "failed": 2,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 1157,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Includes a `clanker search` command for query `nextjs cache tags` with `--limit 1`.",
+          "passed": false,
+          "evidence": "No clear evidence of this requirement in final.md/transcript.md."
+        },
+        {
+          "text": "Includes a `clanker log` command that uses both `--problem` and `--file` (file path `notes/cache-fix.md`).",
+          "passed": false,
+          "evidence": "No clear evidence of this requirement in final.md/transcript.md."
+        },
+        {
+          "text": "Uses problem title `Fix stale Next.js cache component data` and tags `nextjs,cache,ppr` in the log flow.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "States to log only when search has no relevant result (search-first conditional behavior).",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        }
+      ],
+      "notes": [],
+      "eval_name": "search-first-then-log"
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 420,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Briefly explains failure as non-numeric `--limit` value (`abc`) causing error.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Provides at least one corrected `clanker search` command with numeric `--limit`.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Shows auth/server environment variable exports including `CLANKER_SERVER_URL` and `CLANKER_API_KEY`.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Includes command `clanker upvote sol_123`.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        }
+      ],
+      "notes": [],
+      "eval_name": "fix-invalid-limit-and-vote"
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 3,
+        "failed": 1,
+        "total": 4,
+        "time_seconds": 0.0,
+        "tokens": 382,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Includes `clanker search` for query `hono trpc context` with `--limit 2`.",
+          "passed": false,
+          "evidence": "No clear evidence of this requirement in final.md/transcript.md."
+        },
+        {
+          "text": "Includes a step that prints solution IDs from search output.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Includes both vote commands: `clanker downvote bad_456` and `clanker upvote good_789`.",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        },
+        {
+          "text": "Mentions that voting requires authentication (API key or logged-in session).",
+          "passed": true,
+          "evidence": "Matched expected command/statement in final.md or transcript.md."
+        }
+      ],
+      "notes": [],
+      "eval_name": "search-extract-and-vote"
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9167,
+        "stddev": 0.1443,
+        "min": 0.75,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 757.6667,
+        "stddev": 507.0871,
+        "min": 361,
+        "max": 1329
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.75,
+        "stddev": 0.25,
+        "min": 0.5,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 653.0,
+        "stddev": 436.8901,
+        "min": 382,
+        "max": 1157
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.17",
+      "time_seconds": "+0.0",
+      "tokens": "+105"
+    }
+  },
+  "notes": [
+    "Across the three evals, with_skill has higher mean pass_rate (0.9167) than without_skill (0.75), a +0.17 absolute delta.",
+    "Discriminative power is concentrated in eval 0: with_skill scores 1.0 while without_skill scores 0.5; evals 1 and 2 are identical across configurations (1.0 and 0.75 respectively).",
+    "Both configurations fail the same requirement in eval 2 (missing clear evidence of the required `clanker search` command with query `hono trpc context` and `--limit 2`), indicating a shared blind spot rather than a configuration-specific effect.",
+    "Variance in pass_rate is lower with_skill (stddev 0.1443) than without_skill (stddev 0.25), showing more stable scoring with the skill-enabled configuration in this sample.",
+    "Token usage is higher on average with_skill (mean 757.6667) than without_skill (mean 653.0), with reported token delta +105.",
+    "Token variance is high in both configurations (stddev 507.0871 with_skill vs 436.8901 without_skill), and token ranges overlap substantially (361-1329 vs 382-1157).",
+    "No runtime separation is observable because all runs report time_seconds = 0.0, tool_calls = 0, and errors = 0 across both configurations.",
+    "Sample coverage is one run per eval per configuration despite metadata indicating runs_per_configuration = 3, so observed differences are driven by cross-eval composition rather than repeated-run dispersion within the same eval.",
+    "At expectation level, the eval 0 gap is tied to command-specific checks (`clanker search` with exact query/limit and `clanker log` with `--problem` plus `--file`) that pass with_skill and fail without_skill."
+  ]
+}

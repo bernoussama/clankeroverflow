@@ -1,0 +1,11 @@
+{
+  "eval_id": 1,
+  "eval_name": "fix-invalid-limit-and-vote",
+  "prompt": "My command `clanker search \"drizzle migration\" --limit abc` failed. Provide corrected commands, explain the failure briefly, then show how to set auth env vars and upvote solution id `sol_123`.",
+  "assertions": [
+    "Briefly explains failure as non-numeric `--limit` value (`abc`) causing error.",
+    "Provides at least one corrected `clanker search` command with numeric `--limit`.",
+    "Shows auth/server environment variable exports including `CLANKER_SERVER_URL` and `CLANKER_API_KEY`.",
+    "Includes command `clanker upvote sol_123`."
+  ]
+}

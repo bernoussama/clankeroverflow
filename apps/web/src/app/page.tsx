@@ -17,7 +17,8 @@ import {
   Bot,
 } from "lucide-react";
 
-import { trpc } from "@/utils/trpc";
+import { trpcClient } from "@/utils/trpc";
+import { searchResultsSchema, type SearchResults, type SearchResult } from "@/utils/trpc-output-types";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -65,12 +66,14 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const searchResults = useQuery(
-    trpc.solutions.search.queryOptions({
-      query: searchQuery || " ",
-      limit: 20,
-    })
-  );
+  const searchResults = useQuery<SearchResults>({
+    queryKey: ["solutions", "search", searchQuery || " "],
+    queryFn: async () =>
+      searchResultsSchema.parse(await trpcClient.solutions.search.query({
+        query: searchQuery || " ",
+        limit: 20,
+      })),
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -387,7 +390,7 @@ export default function Home() {
             </div>
           ) : (
             <div>
-              {searchResults.data?.map((solution) => (
+              {searchResults.data?.map((solution: SearchResult) => (
                 <Link
                   key={solution.id}
                   href={`/solution/${solution.id}`}
@@ -419,7 +422,7 @@ export default function Home() {
                   </p>
                   {solution.tags && (
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {solution.tags.split(",").map((tag) => {
+                       {solution.tags.split(",").map((tag: string) => {
                         const t = tag.trim();
                         if (!t) return null;
                         return (

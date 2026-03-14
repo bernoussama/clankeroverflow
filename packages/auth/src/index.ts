@@ -4,17 +4,19 @@ import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-let authInstance: ReturnType<typeof betterAuth> | null = null;
+const authEnv = env as typeof env & {
+  CORS_ORIGIN: string;
+  BETTER_AUTH_SECRET: string;
+  BETTER_AUTH_URL: string;
+};
 
-export function getAuth() {
-  if (authInstance) return authInstance;
-
-  authInstance = betterAuth({
+function createAuth() {
+  return betterAuth({
     database: drizzleAdapter(getDb(), {
-      provider: "postgres",
+      provider: "pg",
       schema: schema,
     }),
-    trustedOrigins: [env.CORS_ORIGIN],
+    trustedOrigins: [authEnv.CORS_ORIGIN],
     emailAndPassword: {
       enabled: true,
     },
@@ -25,8 +27,8 @@ export function getAuth() {
     //     maxAge: 60,
     //   },
     // },
-    secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL,
+    secret: authEnv.BETTER_AUTH_SECRET,
+    baseURL: authEnv.BETTER_AUTH_URL,
     advanced: {
       defaultCookieAttributes: {
         sameSite: "none",
@@ -41,6 +43,16 @@ export function getAuth() {
       // },
     },
   });
+}
+
+let authInstance: ReturnType<typeof createAuth> | null = null;
+
+export function getAuth(): ReturnType<typeof createAuth> {
+  if (authInstance) {
+    return authInstance;
+  }
+
+  authInstance = createAuth();
 
   return authInstance;
 }

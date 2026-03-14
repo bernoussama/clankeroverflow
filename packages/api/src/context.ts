@@ -9,9 +9,10 @@ export type CreateContextOptions = {
 export async function createContext({ context }: CreateContextOptions) {
   const cookieHeader = context.req.raw.headers.get("cookie");
   const hasAuthContext = Boolean(cookieHeader);
+  const auth = getAuth();
 
   const session = hasAuthContext
-    ? await getAuth().api.getSession({
+    ? await auth.api.getSession({
         headers: context.req.raw.headers,
       })
     : null;

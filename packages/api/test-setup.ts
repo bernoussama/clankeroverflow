@@ -33,6 +33,7 @@ mock.module("@clankeroverflow/db", () => {
     insert: mock(() => ({
       values: mock(),
     })),
+    execute: mock(),
     update: mock(() => ({
       set: mock(() => ({
         where: mock(),

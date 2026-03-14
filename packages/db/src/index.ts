@@ -1,17 +1,26 @@
 import { env } from "@clankeroverflow/env/server";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
 import * as schema from "./schema";
 
-let dbInstance: ReturnType<typeof drizzle> | null = null;
+type Database = NodePgDatabase<typeof schema>;
+type DatabaseEnv = typeof env & {
+  DATABASE_URL?: string;
+  HYPERDRIVE?: {
+    connectionString?: string;
+  };
+};
 
-export function getDb() {
+let dbInstance: Database | null = null;
+
+export function getDb(): Database {
   if (dbInstance) return dbInstance;
 
+  const databaseEnv = env as DatabaseEnv;
   const connectionString =
-    (env as any).DATABASE_URL ??
-    env.HYPERDRIVE?.connectionString ??
+    databaseEnv.DATABASE_URL ??
+    databaseEnv.HYPERDRIVE?.connectionString ??
     process.env.DATABASE_URL;
 
   if (!connectionString) {

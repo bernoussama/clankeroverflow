@@ -1,0 +1,11 @@
+[
+  "Across the three evals, with_skill has higher mean pass_rate (0.9167) than without_skill (0.75), a +0.17 absolute delta.",
+  "Discriminative power is concentrated in eval 0: with_skill scores 1.0 while without_skill scores 0.5; evals 1 and 2 are identical across configurations (1.0 and 0.75 respectively).",
+  "Both configurations fail the same requirement in eval 2 (missing clear evidence of the required `clanker search` command with query `hono trpc context` and `--limit 2`), indicating a shared blind spot rather than a configuration-specific effect.",
+  "Variance in pass_rate is lower with_skill (stddev 0.1443) than without_skill (stddev 0.25), showing more stable scoring with the skill-enabled configuration in this sample.",
+  "Token usage is higher on average with_skill (mean 757.6667) than without_skill (mean 653.0), with reported token delta +105.",
+  "Token variance is high in both configurations (stddev 507.0871 with_skill vs 436.8901 without_skill), and token ranges overlap substantially (361-1329 vs 382-1157).",
+  "No runtime separation is observable because all runs report time_seconds = 0.0, tool_calls = 0, and errors = 0 across both configurations.",
+  "Sample coverage is one run per eval per configuration despite metadata indicating runs_per_configuration = 3, so observed differences are driven by cross-eval composition rather than repeated-run dispersion within the same eval.",
+  "At expectation level, the eval 0 gap is tied to command-specific checks (`clanker search` with exact query/limit and `clanker log` with `--problem` plus `--file`) that pass with_skill and fail without_skill."
+]

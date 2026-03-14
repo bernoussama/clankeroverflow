@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
-import { eq, like, or, and, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, router } from "../index";
 import { getDb, schema } from "@clankeroverflow/db";
+import { searchSolutions } from "@clankeroverflow/db/search";
 import { withTimeout } from "../utils/withTimeout";
 
 export const solutionsRouter = router({
@@ -188,29 +189,8 @@ export const solutionsRouter = router({
     )
     .query(async ({ input }) => {
       const db = getDb();
-      // Split the search query into individual words for broader matching
-      const searchTerms = input.query
-        .trim()
-        .split(/\s+/)
-        .filter((term) => term.length > 0)
-        .map((term) => `%${term}%`);
-
-      if (searchTerms.length === 0) return [];
-      
-      const conditions = searchTerms.map((term) =>
-        or(
-          like(schema.solution.problem, term),
-          like(schema.solution.solution, term),
-          like(schema.solution.tags, term)
-        )
-      );
-
       const results = await withTimeout(
-        db.query.solution.findMany({
-          where: and(...conditions),
-          limit: input.limit,
-          orderBy: (fields, { desc }) => [desc(fields.createdAt)],
-        }),
+        searchSolutions(db, input),
         2500,
         "Solution search timed out",
       );

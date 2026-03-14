@@ -1,0 +1,41 @@
+{
+  "skill_name": "clanker-overflow",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I am in the clankeroverflow repo. Give me an agent-safe workflow that searches ClankerOverflow first for `nextjs cache tags`, and if nothing relevant is found, logs a new solution from `notes/cache-fix.md` with problem title `Fix stale Next.js cache component data` and tags `nextjs,cache,ppr`.",
+      "expected_output": "Includes a search-first flow, a valid log command using --problem and --file, and repo-relevant CLI guidance.",
+      "files": [],
+      "expectations": [
+        "Includes a `clanker search` command for query `nextjs cache tags` with `--limit 1`.",
+        "Includes a `clanker log` command that uses both `--problem` and `--file` (file path `notes/cache-fix.md`).",
+        "Uses problem title `Fix stale Next.js cache component data` and tags `nextjs,cache,ppr` in the log flow.",
+        "States to log only when search has no relevant result (search-first conditional behavior)."
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "My command `clanker search \"drizzle migration\" --limit abc` failed. Provide corrected commands, explain the failure briefly, then show how to set auth env vars and upvote solution id `sol_123`.",
+      "expected_output": "Includes a numeric --limit fix, env var setup for auth/server, and an upvote command.",
+      "files": [],
+      "expectations": [
+        "Briefly explains failure as non-numeric `--limit` value (`abc`) causing error.",
+        "Provides at least one corrected `clanker search` command with numeric `--limit`.",
+        "Shows auth/server environment variable exports including `CLANKER_SERVER_URL` and `CLANKER_API_KEY`.",
+        "Includes command `clanker upvote sol_123`."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Create a compact bash snippet for an AI agent: search top 2 ClankerOverflow results for `hono trpc context`, print IDs from results, then downvote `bad_456` and upvote `good_789`.",
+      "expected_output": "Includes search --limit 2, ID extraction or display step, and both vote commands with auth caveat.",
+      "files": [],
+      "expectations": [
+        "Includes `clanker search` for query `hono trpc context` with `--limit 2`.",
+        "Includes a step that prints solution IDs from search output.",
+        "Includes both vote commands: `clanker downvote bad_456` and `clanker upvote good_789`.",
+        "Mentions that voting requires authentication (API key or logged-in session)."
+      ]
+    }
+  ]
+}
