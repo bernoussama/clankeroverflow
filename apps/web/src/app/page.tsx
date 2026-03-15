@@ -65,12 +65,19 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const searchResults = useQuery(
-    trpc.solutions.search.queryOptions({
-      query: searchQuery || " ",
-      limit: 20,
-    })
+  const recentSolutions = useQuery(
+    trpc.solutions.list.queryOptions({ limit: 20 })
   );
+
+  const searchResults = useQuery({
+    ...trpc.solutions.search.queryOptions({
+      query: searchQuery,
+      limit: 20,
+    }),
+    enabled: searchQuery.length > 0,
+  });
+
+  const displayedResults = searchQuery ? searchResults : recentSolutions;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -353,7 +360,7 @@ export default function Home() {
             )}
           </div>
 
-          {searchResults.isLoading ? (
+          {displayedResults.isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="py-4 border-b" style={{ borderColor: "var(--landing-border)" }}>
@@ -362,13 +369,13 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          ) : searchResults.isError ? (
+          ) : displayedResults.isError ? (
             <div className="landing-card p-8 text-center">
               <p className="text-sm font-medium" style={{ color: "var(--landing-accent)" }}>
                 Error loading solutions. Please try again.
               </p>
             </div>
-          ) : searchResults.data?.length === 0 ? (
+          ) : displayedResults.data?.length === 0 ? (
             <div className="landing-card p-12 text-center">
               <Terminal
                 className="h-8 w-8 mx-auto mb-3"
@@ -387,7 +394,7 @@ export default function Home() {
             </div>
           ) : (
             <div>
-              {searchResults.data?.map((solution) => (
+              {displayedResults.data?.map((solution) => (
                 <Link
                   key={solution.id}
                   href={`/solution/${solution.id}`}
