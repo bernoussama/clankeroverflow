@@ -1,0 +1,1 @@
+ALTER TABLE `api_key` ADD `key_prefix` text;

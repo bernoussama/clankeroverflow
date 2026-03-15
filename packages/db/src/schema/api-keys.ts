@@ -6,11 +6,12 @@ export const apiKey = sqliteTable(
   "api_key",
   {
     id: text("id").primaryKey(),
-    key: text("key").notNull().unique(), // The hashed or plain key (in a real app, hash this, for CLI tools plain token is often used initially)
+    key: text("key").notNull().unique(),
+    keyPrefix: text("key_prefix"),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    name: text("name"), // Optional name like "Agent Token"
+    name: text("name"),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
