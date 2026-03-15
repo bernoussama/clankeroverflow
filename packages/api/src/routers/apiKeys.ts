@@ -4,13 +4,21 @@ import { TRPCError } from "@trpc/server";
 
 import { protectedProcedure, router } from "../index";
 import { db, schema } from "@clankeroverflow/db";
+import { hashApiKey } from "../hash";
 
 export const apiKeysRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-    return await db.query.apiKey.findMany({
+    const keys = await db.query.apiKey.findMany({
       where: eq(schema.apiKey.userId, ctx.session.user.id),
       orderBy: (fields, { desc }) => [desc(fields.createdAt)],
+      columns: {
+        id: true,
+        keyPrefix: true,
+        name: true,
+        createdAt: true,
+      },
     });
+    return keys;
   }),
 
   create: protectedProcedure
@@ -21,23 +29,24 @@ export const apiKeysRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const id = crypto.randomUUID();
-      // Generate a simple prefix + random token for the API key using web crypto
-      const key = `clk_${crypto.randomUUID().replace(/-/g, "")}${crypto.randomUUID().replace(/-/g, "").substring(0, 16)}`;
-      
+      const rawKey = `clk_${crypto.randomUUID().replace(/-/g, "")}${crypto.randomUUID().replace(/-/g, "").substring(0, 16)}`;
+      const keyHash = await hashApiKey(rawKey);
+      const keyPrefix = rawKey.substring(0, 12);
+
       await db.insert(schema.apiKey).values({
         id,
-        key,
+        key: keyHash,
+        keyPrefix,
         name: input.name,
         userId: ctx.session.user.id,
       });
 
-      return { id, key, name: input.name };
+      return { id, key: rawKey, name: input.name };
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Ensure the key belongs to the current user
       const keyRecord = await db.query.apiKey.findFirst({
         where: eq(schema.apiKey.id, input.id),
       });
@@ -50,7 +59,7 @@ export const apiKeysRouter = router({
       }
 
       await db.delete(schema.apiKey).where(eq(schema.apiKey.id, input.id));
-      
+
       return { success: true };
     }),
 });

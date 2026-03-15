@@ -3,6 +3,41 @@ import { eq, like, or, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, router } from "../index";
 import { db, schema } from "@clankeroverflow/db";
+import { hashApiKey } from "../hash";
+
+async function resolveUserId(ctx: { session: any; apiKey: string | null }): Promise<string | null> {
+  if (ctx.session?.user) {
+    return ctx.session.user.id;
+  }
+  if (ctx.apiKey) {
+    const keyHash = await hashApiKey(ctx.apiKey);
+    const keyRecord = await db.query.apiKey.findFirst({
+      where: eq(schema.apiKey.key, keyHash),
+    });
+    if (!keyRecord) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Invalid API Key provided",
+      });
+    }
+    return keyRecord.userId;
+  }
+  return null;
+}
+
+async function recomputeScore(solutionId: string) {
+  const [result] = await db
+    .select({
+      score: sql<number>`coalesce(sum(case when ${schema.solutionVote.isUpvote} = 1 then 1 else -1 end), 0)`,
+    })
+    .from(schema.solutionVote)
+    .where(eq(schema.solutionVote.solutionId, solutionId));
+
+  await db
+    .update(schema.solution)
+    .set({ score: result?.score ?? 0 })
+    .where(eq(schema.solution.id, solutionId));
+}
 
 export const solutionsRouter = router({
   vote: publicProcedure
@@ -13,23 +48,7 @@ export const solutionsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      let userId: string | null = null;
-
-      if (ctx.session?.user) {
-        userId = ctx.session.user.id;
-      } else if (ctx.apiKey) {
-        const keyRecord = await db.query.apiKey.findFirst({
-          where: eq(schema.apiKey.key, ctx.apiKey),
-        });
-
-        if (!keyRecord) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Invalid API Key provided",
-          });
-        }
-        userId = keyRecord.userId;
-      }
+      const userId = await resolveUserId(ctx);
 
       if (!userId) {
         throw new TRPCError({
@@ -56,20 +75,15 @@ export const solutionsRouter = router({
         ),
       });
 
-      let scoreDiff = 0;
-
       if (existingVote) {
         if (existingVote.isUpvote === input.isUpvote) {
-          // Toggle off
           await db.delete(schema.solutionVote).where(
             and(
               eq(schema.solutionVote.userId, userId),
               eq(schema.solutionVote.solutionId, input.id)
             )
           );
-          scoreDiff = input.isUpvote ? -1 : 1;
         } else {
-          // Flip vote
           await db.update(schema.solutionVote)
             .set({ isUpvote: input.isUpvote })
             .where(
@@ -78,23 +92,16 @@ export const solutionsRouter = router({
                 eq(schema.solutionVote.solutionId, input.id)
               )
             );
-          scoreDiff = input.isUpvote ? 2 : -2;
         }
       } else {
-        // New vote
         await db.insert(schema.solutionVote).values({
           userId,
           solutionId: input.id,
           isUpvote: input.isUpvote,
         });
-        scoreDiff = input.isUpvote ? 1 : -1;
       }
 
-      if (scoreDiff !== 0) {
-        await db.update(schema.solution)
-          .set({ score: sql`${schema.solution.score} + ${scoreDiff}` })
-          .where(eq(schema.solution.id, input.id));
-      }
+      await recomputeScore(input.id);
 
       return { success: true };
     }),
@@ -108,24 +115,13 @@ export const solutionsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      let userId: string | null = null;
+      const userId = await resolveUserId(ctx);
 
-      // If they provided a session, use it
-      if (ctx.session?.user) {
-        userId = ctx.session.user.id;
-      } else if (ctx.apiKey) {
-        // Validate API key
-        const keyRecord = await db.query.apiKey.findFirst({
-          where: eq(schema.apiKey.key, ctx.apiKey),
+      if (!userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in or provide a valid API key to log solutions",
         });
-
-        if (!keyRecord) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Invalid API Key provided",
-          });
-        }
-        userId = keyRecord.userId;
       }
 
       const id = crypto.randomUUID();
@@ -172,6 +168,19 @@ export const solutionsRouter = router({
       });
 
       return results;
+    }),
+
+  list: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(20).default(20),
+      })
+    )
+    .query(async ({ input }) => {
+      return db.query.solution.findMany({
+        limit: input.limit,
+        orderBy: (fields, { desc }) => [desc(fields.createdAt)],
+      });
     }),
 
   getById: publicProcedure
