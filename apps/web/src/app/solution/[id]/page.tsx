@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 import { ArrowLeft, Terminal, Hash, Calendar, User } from "lucide-react";
 
 import { trpc } from "@/utils/trpc";
@@ -103,7 +104,7 @@ export default function SolutionPage() {
           <Terminal className="mr-2 h-6 w-6" /> Solution
         </h2>
         <div className="bg-card border rounded-lg p-6 sm:p-8 shadow-sm">
-          <ReactMarkdown>{solution.solution}</ReactMarkdown>
+          <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{solution.solution}</ReactMarkdown>
         </div>
       </div>
     </div>
