@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useCallback } from "react";
 import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
 
-import { trpc } from "@/utils/trpc";
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,45 +14,56 @@ export default function Dashboard({ userName }: { userName: string }) {
   const [newKeyName, setNewKeyName] = useState("");
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
   const [copiedNewKey, setCopiedNewKey] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const queryClient = useQueryClient();
+  const fetchKeys = useCallback(async () => {
+    const { data, error } = await authClient.apiKey.list();
+    if (!error && data) {
+      setApiKeys(data.apiKeys);
+    }
+    setIsLoading(false);
+  }, []);
 
-  const { data: apiKeys, isLoading } = useQuery(trpc.apiKeys.list.queryOptions());
+  useEffect(() => { fetchKeys(); }, [fetchKeys]);
 
-  const createMutation = useMutation(trpc.apiKeys.create.mutationOptions({
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(trpc.apiKeys.list.pathFilter());
-      setNewKeyName("");
-      setNewlyCreatedKey(data.key);
-      setCopiedNewKey(false);
-      toast.success("API Key created — copy it now, you won't see it again.");
-    },
-    onError: (error) => {
-      toast.error(`Failed to create API key: ${error.message}`);
-    },
-  }));
-
-  const deleteMutation = useMutation(trpc.apiKeys.delete.mutationOptions({
-    onSuccess: () => {
-      queryClient.invalidateQueries(trpc.apiKeys.list.pathFilter());
-      toast.success("API Key deleted successfully");
-    },
-    onError: (error) => {
-      toast.error(`Failed to delete API key: ${error.message}`);
-    },
-  }));
-
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newKeyName.trim()) return;
+
+    setIsCreating(true);
     setNewlyCreatedKey(null);
-    createMutation.mutate({ name: newKeyName });
+    const { data, error } = await authClient.apiKey.create({ name: newKeyName });
+    setIsCreating(false);
+
+    if (error) {
+      toast.error(`Failed to create API key: ${error.message}`);
+      return;
+    }
+
+    setNewKeyName("");
+    setNewlyCreatedKey(data.key);
+    setCopiedNewKey(false);
+    toast.success("API Key created — copy it now, you won't see it again.");
+    fetchKeys();
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to revoke this API key? This cannot be undone.")) {
-      deleteMutation.mutate({ id });
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to revoke this API key? This cannot be undone.")) return;
+
+    setIsDeleting(id);
+    const { error } = await authClient.apiKey.delete({ keyId: id });
+    setIsDeleting(null);
+
+    if (error) {
+      toast.error(`Failed to delete API key: ${error.message}`);
+      return;
     }
+
+    toast.success("API Key deleted successfully");
+    fetchKeys();
   };
 
   const handleCopyNewKey = async () => {
@@ -92,10 +102,10 @@ export default function Dashboard({ userName }: { userName: string }) {
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               className="max-w-xs"
-              disabled={createMutation.isPending}
+              disabled={isCreating}
             />
-            <Button type="submit" disabled={createMutation.isPending || !newKeyName.trim()}>
-              {createMutation.isPending ? "Creating..." : <><Plus className="w-4 h-4 mr-2" /> Create Key</>}
+            <Button type="submit" disabled={isCreating || !newKeyName.trim()}>
+              {isCreating ? "Creating..." : <><Plus className="w-4 h-4 mr-2" /> Create Key</>}
             </Button>
           </form>
 
@@ -123,13 +133,13 @@ export default function Dashboard({ userName }: { userName: string }) {
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
-          ) : apiKeys?.length === 0 ? (
+          ) : apiKeys.length === 0 ? (
             <div className="text-center p-6 border border-dashed rounded-lg bg-muted/20 text-muted-foreground">
               You haven't created any API keys yet.
             </div>
           ) : (
             <div className="rounded-md border">
-              {apiKeys?.map((apiKey, i) => (
+              {apiKeys.map((apiKey, i) => (
                 <div
                   key={apiKey.id}
                   className={`flex items-center justify-between p-4 ${i !== apiKeys.length - 1 ? 'border-b' : ''}`}
@@ -138,7 +148,7 @@ export default function Dashboard({ userName }: { userName: string }) {
                     <p className="font-medium">{apiKey.name || "Unnamed Key"}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="text-xs bg-muted px-2 py-1 rounded text-muted-foreground">
-                        {apiKey.keyPrefix ?? "clk_****"}...
+                        {apiKey.start ?? "clk_****"}...
                       </code>
                       <p className="text-xs text-muted-foreground">
                         Created {new Date(apiKey.createdAt).toLocaleDateString()}
@@ -150,7 +160,7 @@ export default function Dashboard({ userName }: { userName: string }) {
                     size="icon"
                     className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                     onClick={() => handleDelete(apiKey.id)}
-                    disabled={deleteMutation.isPending}
+                    disabled={isDeleting === apiKey.id}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

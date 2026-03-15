@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
+    "@better-auth/api-key": "^1.5.5",
     "@clankeroverflow/api": "workspace:*",
     "@clankeroverflow/auth": "workspace:*",
     "@clankeroverflow/env": "workspace:*",

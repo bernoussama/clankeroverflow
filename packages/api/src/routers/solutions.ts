@@ -3,24 +3,23 @@ import { eq, like, or, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, router } from "../index";
 import { db, schema } from "@clankeroverflow/db";
-import { hashApiKey } from "../hash";
+import { auth } from "@clankeroverflow/auth";
 
 async function resolveUserId(ctx: { session: any; apiKey: string | null }): Promise<string | null> {
   if (ctx.session?.user) {
     return ctx.session.user.id;
   }
   if (ctx.apiKey) {
-    const keyHash = await hashApiKey(ctx.apiKey);
-    const keyRecord = await db.query.apiKey.findFirst({
-      where: eq(schema.apiKey.key, keyHash),
-    });
-    if (!keyRecord) {
+    const result = await auth.api.verifyApiKey({ body: { key: ctx.apiKey } });
+    if (!result.valid || result.error) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: "Invalid API Key provided",
+        message: typeof result.error === "object" && result.error
+          ? String(result.error.message ?? result.error.code ?? "Invalid API Key")
+          : "Invalid API Key provided",
       });
     }
-    return keyRecord.userId;
+    return result.key?.referenceId ?? null;
   }
   return null;
 }

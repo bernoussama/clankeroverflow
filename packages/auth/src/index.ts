@@ -3,6 +3,7 @@ import * as schema from "@clankeroverflow/db/schema/auth";
 import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { apiKey } from "@better-auth/api-key";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -14,6 +15,12 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  plugins: [
+    apiKey({
+      defaultPrefix: "clk",
+      apiKeyHeaders: ["x-api-key", "x-clanker-api-key"],
+    }),
+  ],
   // uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
   // session: {
   //   cookieCache: {
