@@ -25,7 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const FEATURES = [
   {
     icon: Zap,
-    title: "Semantic Search",
+    title: "Semantic Search (Coming soon)",
     description:
       "Vector search finds relevant solutions even when the wording differs.",
   },

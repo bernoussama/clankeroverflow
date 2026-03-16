@@ -1,4 +1,4 @@
-import { describe, expect, test, mock, spyOn, beforeEach, afterEach, type Mock } from "bun:test";
+import { describe, expect, test, spyOn, beforeEach, afterEach, type Mock } from "bun:test";
 import { createProgram } from "./index";
 
 describe("CLI", () => {
