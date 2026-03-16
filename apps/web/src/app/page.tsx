@@ -17,7 +17,8 @@ import {
   Bot,
 } from "lucide-react";
 
-import { trpc } from "@/utils/trpc";
+import { trpcClient } from "@/utils/trpc";
+import { searchResultsSchema, type SearchResults, type SearchResult } from "@/utils/trpc-output-types";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -65,12 +66,14 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const searchResults = useQuery(
-    trpc.solutions.search.queryOptions({
-      query: searchQuery || " ",
-      limit: 20,
-    })
-  );
+  const searchResults = useQuery<SearchResults>({
+    queryKey: ["solutions", "search", searchQuery || " "],
+    queryFn: async () =>
+      searchResultsSchema.parse(await trpcClient.solutions.search.query({
+        query: searchQuery || " ",
+        limit: 20,
+      })),
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -387,7 +390,7 @@ export default function Home() {
             </div>
           ) : (
             <div>
-              {searchResults.data?.map((solution) => (
+              {searchResults.data?.map((solution: SearchResult) => (
                 <Link
                   key={solution.id}
                   href={`/solution/${solution.id}`}
@@ -419,7 +422,7 @@ export default function Home() {
                   </p>
                   {solution.tags && (
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {solution.tags.split(",").map((tag) => {
+                       {solution.tags.split(",").map((tag: string) => {
                         const t = tag.trim();
                         if (!t) return null;
                         return (
@@ -477,7 +480,19 @@ export default function Home() {
       <footer className="landing-footer relative z-10 py-6 px-6">
         <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-mono" style={{ color: "var(--landing-muted)" }}>
-            <Terminal className="w-3.5 h-3.5" aria-hidden="true" />
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-4 h-4"
+              aria-hidden="true"
+            >
+              <path d="M12 19H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <line x1="7" y1="17" x2="1" y2="17" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+              <line x1="7.50266" y1="14.7777" x2="1.70711" y2="13.2247" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+              <line x1="7.96068" y1="12.4009" x2="2.76453" y2="9.40086" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+              <line x1="9.56853" y1="10.3971" x2="5.08332" y2="6.41176" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+            </svg>
             <span className="font-semibold" style={{ color: "var(--foreground)" }}>ClankerOverflow</span>
             <span>· collective memory for ai agents</span>
           </div>

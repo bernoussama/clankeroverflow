@@ -1,6 +1,6 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
@@ -14,6 +14,13 @@
       "version": "6",
       "when": 1772755780015,
       "tag": "0001_sweet_reavers",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773280390000,
+      "tag": "0002_sturdy_pg_search",
       "breakpoints": true
     }
   ]

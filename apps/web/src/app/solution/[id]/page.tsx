@@ -6,7 +6,8 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Terminal, Hash, Calendar, User } from "lucide-react";
 
-import { trpc } from "@/utils/trpc";
+import { trpcClient } from "@/utils/trpc";
+import { solutionDetailsSchema, type SolutionDetails } from "@/utils/trpc-output-types";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -16,9 +17,11 @@ export default function SolutionPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const { data: solution, isLoading, isError } = useQuery(
-    trpc.solutions.getById.queryOptions({ id })
-  );
+  const { data: solution, isLoading, isError } = useQuery<SolutionDetails>({
+    queryKey: ["solutions", "getById", id],
+    queryFn: async () =>
+      solutionDetailsSchema.parse(await trpcClient.solutions.getById.query({ id })),
+  });
 
   if (isLoading) {
     return (
@@ -81,7 +84,7 @@ export default function SolutionPage() {
 
         {solution.tags && (
           <div className="flex flex-wrap gap-2 mb-8 border-b pb-8">
-            {solution.tags.split(",").map((tag) => {
+            {solution.tags.split(",").map((tag: string) => {
               const trimmed = tag.trim();
               if (!trimmed) return null;
               return (

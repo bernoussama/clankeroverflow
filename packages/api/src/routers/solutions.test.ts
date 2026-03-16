@@ -1,9 +1,10 @@
 import { describe, expect, test, mock, beforeEach } from "bun:test";
 import { appRouter } from "./index";
 import { t } from "../index";
-import { db } from "@clankeroverflow/db";
+import { getDb } from "@clankeroverflow/db";
 
 const createCaller = t.createCallerFactory(appRouter);
+const db = getDb();
 
 describe("solutionsRouter", () => {
   const mockSession = {
@@ -28,7 +29,7 @@ describe("solutionsRouter", () => {
   };
 
   beforeEach(() => {
-    (db.query.solution.findMany as any).mockClear();
+    (db.execute as any).mockClear();
     (db.query.solution.findFirst as any).mockClear();
   });
 
@@ -40,12 +41,15 @@ describe("solutionsRouter", () => {
     
     const result = await caller.solutions.search({ query: "   " });
     expect(result).toEqual([]);
+    expect((db.execute as any)).not.toHaveBeenCalled();
   });
 
-  test("search should call findMany and return results", async () => {
-    (db.query.solution.findMany as any).mockResolvedValueOnce([
-      { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }
-    ]);
+  test("search should execute ranked search and return results", async () => {
+    (db.execute as any).mockResolvedValueOnce({
+      rows: [
+        { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }
+      ],
+    });
     
     const caller = createCaller({
       session: null,

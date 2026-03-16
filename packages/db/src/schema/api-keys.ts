@@ -1,8 +1,8 @@
-import { sql, relations } from "drizzle-orm";
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { relations } from "drizzle-orm";
+import { pgTable, text, index, timestamp } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
-export const apiKey = sqliteTable(
+export const apiKey = pgTable(
   "api_key",
   {
     id: text("id").primaryKey(),
@@ -11,8 +11,8 @@ export const apiKey = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name"), // Optional name like "Agent Token"
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
       .notNull(),
   },
   (table) => [

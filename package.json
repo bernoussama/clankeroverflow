@@ -16,9 +16,8 @@
       "better-auth": "^1.4.18",
       "alchemy": "^0.82.1",
       "wrangler": "^4.54.0",
-      "@libsql/client": "0.15.15",
-      "libsql": "0.5.22",
-      "@trpc/client": "^11.7.2"
+      "@trpc/client": "^11.7.2",
+      "pg": "^8.16.3"
     }
   },
   "type": "module",

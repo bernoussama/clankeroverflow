@@ -1,0 +1,12 @@
+[
+  "Overall, with_skill has higher mean pass rate (0.9167 vs 0.75, delta +0.17), but this comes from very few observations (3 evals x 1 run per config).",
+  "Pass-rate variance is lower with_skill (stddev 0.1443) than without_skill (0.25), indicating more consistent aggregate scoring in this sample.",
+  "Metadata anomaly: benchmark metadata says runs_per_configuration=3, but only one run per eval/configuration is present (6 total runs observed vs 18 expected).",
+  "Eval 0 is the strongest discriminator in favor of with_skill: with_skill=1.0 vs without_skill=0.5, driven by command-specific assertions around exact `clanker search` and `clanker log` usage.",
+  "In Eval 0, two assertions are perfectly discriminative (pass with_skill, fail without_skill), while the title/tags assertion and search-first conditional assertion are non-discriminative (both pass).",
+  "Eval 1 shows no discriminative power: all four assertions pass in both configurations, so this eval does not separate with_skill from without_skill.",
+  "Eval 2 has mixed discrimination with cancellation at aggregate level: both configurations score 0.75, but they fail different assertions.",
+  "In Eval 2, the `hono trpc context --limit 2` search assertion favors with_skill (pass vs fail), while the authentication-requirement assertion favors without_skill (fail vs pass), indicating pattern-specific tradeoff rather than uniform behavior change.",
+  "Token usage has very high variance in both configurations (stddev about 480), and mean token delta is small (+39 with_skill), so efficiency differences are weak relative to spread.",
+  "time_seconds is 0.0 for every run, making runtime metrics non-informative and likely dominated by measurement granularity or missing instrumentation."
+]

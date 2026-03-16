@@ -4,7 +4,11 @@ mock.module("cloudflare:workers", () => {
   return {
     env: {
       CORS_ORIGIN: "http://localhost:3001",
-      DB: {},
+      HYPERDRIVE: {
+        connectionString:
+          process.env.DATABASE_URL ??
+          "postgres://postgres:postgres@localhost:5432/clankeroverflow",
+      },
       BETTER_AUTH_SECRET: "test_secret",
       BETTER_AUTH_URL: "http://localhost:3000",
     },
@@ -12,33 +16,36 @@ mock.module("cloudflare:workers", () => {
 });
 
 mock.module("@clankeroverflow/db", () => {
-  return {
-    db: {
-      query: {
-        apiKey: {
-          findMany: mock(),
-          findFirst: mock(),
-        },
-        solution: {
-          findFirst: mock(),
-          findMany: mock(),
-        },
-        solutionVote: {
-          findFirst: mock(),
-        },
+  const db = {
+    query: {
+      apiKey: {
+        findMany: mock(),
+        findFirst: mock(),
       },
-      insert: mock(() => ({
-        values: mock(),
-      })),
-      update: mock(() => ({
-        set: mock(() => ({
-          where: mock(),
-        })),
-      })),
-      delete: mock(() => ({
+      solution: {
+        findFirst: mock(),
+        findMany: mock(),
+      },
+      solutionVote: {
+        findFirst: mock(),
+      },
+    },
+    insert: mock(() => ({
+      values: mock(),
+    })),
+    execute: mock(),
+    update: mock(() => ({
+      set: mock(() => ({
         where: mock(),
       })),
-    },
+    })),
+    delete: mock(() => ({
+      where: mock(),
+    })),
+  };
+
+  return {
+    getDb: () => db,
     schema: {
       apiKey: {
         id: "id",
@@ -62,4 +69,3 @@ mock.module("@clankeroverflow/db", () => {
     },
   };
 });
-

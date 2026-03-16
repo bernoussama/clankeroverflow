@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
 
-import { trpc } from "@/utils/trpc";
+import { trpc, trpcClient } from "@/utils/trpc";
+import { apiKeysSchema, type ApiKeys, type ApiKey } from "@/utils/trpc-output-types";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,10 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
   
   const queryClient = useQueryClient();
 
-  const { data: apiKeys, isLoading } = useQuery(trpc.apiKeys.list.queryOptions());
+  const { data: apiKeys = [], isLoading } = useQuery<ApiKeys>({
+    queryKey: ["apiKeys", "list"],
+    queryFn: async () => apiKeysSchema.parse(await trpcClient.apiKeys.list.query()),
+  });
 
   const createMutation = useMutation(trpc.apiKeys.create.mutationOptions({
     onSuccess: (data) => {
@@ -108,7 +112,7 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
             </div>
           ) : (
             <div className="rounded-md border">
-              {apiKeys?.map((apiKey, i) => (
+              {apiKeys.map((apiKey: ApiKey, i: number) => (
                 <div 
                   key={apiKey.id} 
                   className={`flex items-center justify-between p-4 ${i !== apiKeys.length - 1 ? 'border-b' : ''}`}

@@ -12,7 +12,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **tRPC** - End-to-end type-safe APIs
 - **workers** - Runtime environment
 - **Drizzle** - TypeScript-first ORM
-- **SQLite/Turso** - Database engine
+- **PostgreSQL** - Database engine (Cloudflare Hyperdrive in production)
 - **Authentication** - Better-Auth
 - **Oxlint** - Oxlint + Oxfmt (linting & formatting)
 - **Turborepo** - Optimized monorepo build system
@@ -27,12 +27,19 @@ bun install
 
 ## Database Setup
 
-This project uses SQLite with Drizzle ORM.
+This project uses PostgreSQL with Drizzle ORM.
 
-1. Start the local SQLite database (optional):
-   D1 local development and migrations are handled automatically by Alchemy during dev and deploy.
+1. Start the local PostgreSQL database:
 
-2. Update your `.env` file in the `apps/server` directory with the appropriate connection details if needed.
+```bash
+docker compose up -d
+```
+
+2. Update your `.env` file in the `apps/server` directory with the appropriate connection details:
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/clankeroverflow
+```
 
 3. Apply the schema to your database:
 

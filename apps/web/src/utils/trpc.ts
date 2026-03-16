@@ -19,13 +19,14 @@ export const queryClient = new QueryClient({
   }),
 });
 
-const trpcClient = createTRPCClient<AppRouter>({
+export const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: `${env.NEXT_PUBLIC_SERVER_URL}/trpc`,
       fetch(url, options) {
+        const { signal: _signal, ...rest } = options ?? {};
         return fetch(url, {
-          ...options,
+          ...rest,
           credentials: "include",
         });
       },
