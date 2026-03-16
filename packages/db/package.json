@@ -10,6 +10,7 @@
     }
   },
   "scripts": {
+    "test": "bun test",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate"
   },

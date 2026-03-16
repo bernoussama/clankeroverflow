@@ -5,8 +5,20 @@ mock.module("cloudflare:workers", () => {
     env: {
       CORS_ORIGIN: "http://localhost:3001",
       DB: {},
-      BETTER_AUTH_SECRET: "test_secret",
+      BETTER_AUTH_SECRET: "test_secret_that_is_long_enough_for_auth",
       BETTER_AUTH_URL: "http://localhost:3000",
+    },
+  };
+});
+
+const mockVerifyApiKey = mock();
+
+mock.module("@clankeroverflow/auth", () => {
+  return {
+    auth: {
+      api: {
+        verifyApiKey: mockVerifyApiKey,
+      },
     },
   };
 });
@@ -15,10 +27,6 @@ mock.module("@clankeroverflow/db", () => {
   return {
     db: {
       query: {
-        apiKey: {
-          findMany: mock(),
-          findFirst: mock(),
-        },
         solution: {
           findFirst: mock(),
           findMany: mock(),
@@ -38,14 +46,13 @@ mock.module("@clankeroverflow/db", () => {
       delete: mock(() => ({
         where: mock(),
       })),
+      select: mock(() => ({
+        from: mock(() => ({
+          where: mock(() => [{ score: 0 }]),
+        })),
+      })),
     },
     schema: {
-      apiKey: {
-        id: "id",
-        key: "key",
-        name: "name",
-        userId: "userId",
-      },
       solution: {
         id: "id",
         score: "score",
@@ -62,4 +69,3 @@ mock.module("@clankeroverflow/db", () => {
     },
   };
 });
-

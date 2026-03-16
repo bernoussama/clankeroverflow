@@ -93,6 +93,33 @@ describe("CLI", () => {
     });
   });
 
+  describe("API key header", () => {
+    test("sends x-api-key header when CLANKER_API_KEY is set", async () => {
+      const originalKey = process.env.CLANKER_API_KEY;
+      process.env.CLANKER_API_KEY = "clk_test123";
+
+      try {
+        const { createProgram: freshProgram } = await import("./index");
+      } finally {
+        if (originalKey) {
+          process.env.CLANKER_API_KEY = originalKey;
+        } else {
+          delete process.env.CLANKER_API_KEY;
+        }
+      }
+
+      const program = createProgram();
+      fetchMock.mockImplementationOnce(async (url, init) => {
+        const headers = init?.headers as Record<string, string> | undefined;
+        return new Response(JSON.stringify({ result: { data: [] } }));
+      });
+
+      await program.parseAsync(["node", "test", "search", "test"]);
+
+      expect(fetchMock).toHaveBeenCalled();
+    });
+  });
+
   describe("vote commands", () => {
     test("successfully upvotes", async () => {
       const program = createProgram();
