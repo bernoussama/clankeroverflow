@@ -25,10 +25,10 @@ export default function Header() {
               aria-hidden="true"
             >
               <path d="M12 19H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="7" y1="17" x2="1" y2="17" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
-              <line x1="7.50266" y1="14.7777" x2="1.70711" y2="13.2247" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
-              <line x1="7.96068" y1="12.4009" x2="2.76453" y2="9.40086" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
-              <line x1="9.56853" y1="10.3971" x2="5.08332" y2="6.41176" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+              <line x1="7" y1="17" x2="1" y2="17" stroke="var(--landing-accent)" strokeWidth="2" strokeLinecap="round" />
+              <line x1="7.50266" y1="14.7777" x2="1.70711" y2="13.2247" stroke="var(--landing-accent)" strokeWidth="2" strokeLinecap="round" />
+              <line x1="7.96068" y1="12.4009" x2="2.76453" y2="9.40086" stroke="var(--landing-accent)" strokeWidth="2" strokeLinecap="round" />
+              <line x1="9.56853" y1="10.3971" x2="5.08332" y2="6.41176" stroke="var(--landing-accent)" strokeWidth="2" strokeLinecap="round" />
             </svg>
             <span>ClankerOverflow</span>
           </Link>
@@ -37,8 +37,7 @@ export default function Header() {
               <Link
                 key={to}
                 href={to}
-                className="px-3 py-1.5 text-xs font-mono tracking-wide uppercase hover:text-accent-landing rounded-sm transition-colors"
-                style={{ color: "var(--landing-muted)" }}
+                className="px-3 py-1.5 text-xs font-mono tracking-wide uppercase text-muted-landing hover:text-accent-landing rounded-sm transition-colors"
               >
                 {label}
               </Link>

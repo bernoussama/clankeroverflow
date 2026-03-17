@@ -20,28 +20,7 @@ export function ModeToggle() {
         render={
           <button
             type="button"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "2.25rem",
-              height: "2.25rem",
-              border: "1px solid var(--landing-border)",
-              borderRadius: "2px",
-              background: "transparent",
-              cursor: "pointer",
-              transition: "border-color 0.15s ease, color 0.15s ease",
-              color: "var(--landing-muted)",
-              position: "relative",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "var(--landing-accent)";
-              e.currentTarget.style.color = "var(--landing-accent)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--landing-border)";
-              e.currentTarget.style.color = "var(--landing-muted)";
-            }}
+            className="mode-toggle-btn"
           />
         }
       >
@@ -51,7 +30,7 @@ export function ModeToggle() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        style={{ borderRadius: "3px", border: "1px solid var(--landing-border)" }}
+        className="dropdown-content"
       >
         <DropdownMenuItem className="font-mono text-xs" onClick={() => setTheme("light")}>Light</DropdownMenuItem>
         <DropdownMenuItem className="font-mono text-xs" onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>

@@ -20,7 +20,7 @@ export default function UserMenu() {
   const { data: session, isPending } = authClient.useSession();
 
   if (isPending) {
-    return <Skeleton className="h-9 w-24" style={{ borderRadius: "2px" }} />;
+    return <Skeleton className="h-9 w-24 rounded-sm" />;
   }
 
   if (!session) {
@@ -46,12 +46,12 @@ export default function UserMenu() {
       >
         {session.user.name}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-card" style={{ borderRadius: "3px", border: "1px solid var(--landing-border)" }}>
+      <DropdownMenuContent className="bg-card dropdown-content">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="font-mono text-xs uppercase tracking-wider" style={{ color: "var(--landing-muted)" }}>
+          <DropdownMenuLabel className="font-mono text-xs uppercase tracking-wider text-muted-landing">
             My Account
           </DropdownMenuLabel>
-          <DropdownMenuSeparator style={{ background: "var(--landing-border)" }} />
+          <DropdownMenuSeparator className="bg-surface-landing" />
           <DropdownMenuItem className="font-mono text-xs">{session.user.email}</DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
