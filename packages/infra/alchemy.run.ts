@@ -2,6 +2,12 @@ import alchemy from "alchemy";
 import { Hyperdrive, Nextjs, Worker } from "alchemy/cloudflare";
 import { config } from "dotenv";
 
+// Load .env.production first — values set here won't be overridden by .env
+// If the files don't exist (local dev), dotenv silently skips them.
+config({ path: "./.env.production" });
+config({ path: "../../apps/web/.env.production" });
+config({ path: "../../apps/server/.env.production" });
+
 config({ path: "./.env" });
 config({ path: "../../apps/web/.env" });
 config({ path: "../../apps/server/.env" });
@@ -36,9 +42,7 @@ export const server = await Worker("server", {
   entrypoint: "src/index.ts",
   compatibilityFlags: ["nodejs_compat"],
   bindings: {
-    ...(isLocal
-      ? { DATABASE_URL: alchemy.secret.env.DATABASE_URL! }
-      : { HYPERDRIVE: hyperdrive! }),
+    ...(isLocal ? { DATABASE_URL: alchemy.secret.env.DATABASE_URL! } : { HYPERDRIVE: hyperdrive! }),
     CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,

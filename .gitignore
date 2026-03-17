@@ -10,6 +10,7 @@ build
 
 # Environment variables
 .env
+.env.production
 .env*.local
 
 # IDEs and editors
