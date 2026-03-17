@@ -3,11 +3,11 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 import { protectedProcedure, router } from "../index";
-import { getDb, schema } from "@clankeroverflow/db";
+import { schema } from "@clankeroverflow/db";
 
 export const apiKeysRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-    const db = getDb();
+    const db = ctx.db;
     return await db.query.apiKey.findMany({
       where: eq(schema.apiKey.userId, ctx.session.user.id),
       orderBy: (fields, { desc }) => [desc(fields.createdAt)],
@@ -21,7 +21,7 @@ export const apiKeysRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = ctx.db;
       const id = crypto.randomUUID();
       // Generate a simple prefix + random token for the API key using web crypto
       const key = `clk_${crypto.randomUUID().replace(/-/g, "")}${crypto.randomUUID().replace(/-/g, "").substring(0, 16)}`;
@@ -39,7 +39,7 @@ export const apiKeysRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = ctx.db;
       // Ensure the key belongs to the current user
       const keyRecord = await db.query.apiKey.findFirst({
         where: eq(schema.apiKey.id, input.id),

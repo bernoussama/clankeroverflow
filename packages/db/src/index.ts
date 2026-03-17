@@ -1,38 +1,78 @@
 import { env } from "@clankeroverflow/env/server";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { Client, Pool } from "pg";
 
 import * as schema from "./schema";
+import { getDatabaseRuntime, resolveConnectionString, type DatabaseEnv } from "./runtime";
 
-type Database = NodePgDatabase<typeof schema>;
-type DatabaseEnv = typeof env & {
-  DATABASE_URL?: string;
-  HYPERDRIVE?: {
-    connectionString?: string;
-  };
+export type Database = NodePgDatabase<typeof schema>;
+
+type RequestDatabase = {
+  close: () => Promise<void>;
+  db: Database;
 };
 
 let dbInstance: Database | null = null;
+let poolInstance: Pool | null = null;
+
+function getDatabaseEnv(): DatabaseEnv {
+  return {
+    ...(env as DatabaseEnv),
+    DATABASE_URL: (env as DatabaseEnv).DATABASE_URL ?? process.env.DATABASE_URL,
+  };
+}
 
 export function getDb(): Database {
   if (dbInstance) return dbInstance;
 
-  const databaseEnv = env as DatabaseEnv;
-  const connectionString =
-    databaseEnv.DATABASE_URL ??
-    databaseEnv.HYPERDRIVE?.connectionString ??
-    process.env.DATABASE_URL;
+  const databaseEnv = getDatabaseEnv();
+  const connectionString = resolveConnectionString(databaseEnv);
 
   if (!connectionString) {
     throw new Error("DATABASE_URL or Hyperdrive binding is required");
   }
 
-  const pool = new Pool({
+  if (getDatabaseRuntime(databaseEnv) === "request") {
+    throw new Error("getDb cannot be used with Hyperdrive. Use createDb instead.");
+  }
+
+  if (!poolInstance) {
+    poolInstance = new Pool({
+      connectionString,
+    });
+  }
+
+  dbInstance = drizzle(poolInstance, { schema });
+  return dbInstance;
+}
+
+export async function createDb(): Promise<RequestDatabase> {
+  const databaseEnv = getDatabaseEnv();
+  const connectionString = resolveConnectionString(databaseEnv);
+
+  if (!connectionString) {
+    throw new Error("DATABASE_URL or Hyperdrive binding is required");
+  }
+
+  if (getDatabaseRuntime(databaseEnv) === "pooled") {
+    return {
+      close: async () => {},
+      db: getDb(),
+    };
+  }
+
+  const client = new Client({
     connectionString,
   });
 
-  dbInstance = drizzle(pool, { schema });
-  return dbInstance;
+  await client.connect();
+
+  return {
+    close: async () => {
+      await client.end();
+    },
+    db: drizzle(client, { schema }),
+  };
 }
 
 export { schema };

@@ -1,8 +1,9 @@
-import { getDb } from "@clankeroverflow/db";
-import * as schema from "@clankeroverflow/db/schema/auth";
+import { getDb, schema, type Database } from "@clankeroverflow/db";
 import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+
+import { hashPassword, verifyPassword } from "./password";
 
 const authEnv = env as typeof env & {
   CORS_ORIGIN: string;
@@ -10,15 +11,32 @@ const authEnv = env as typeof env & {
   BETTER_AUTH_URL: string;
 };
 
-function createAuth() {
+function getCrossSubDomainCookieOptions(baseURL: string) {
+  const hostname = new URL(baseURL).hostname;
+
+  if (hostname.endsWith(".clankeroverflow.com")) {
+    return {
+      enabled: true,
+      domain: "clankeroverflow.com",
+    } as const;
+  }
+
+  return undefined;
+}
+
+export function createAuth(db: Database = getDb()) {
   return betterAuth({
-    database: drizzleAdapter(getDb(), {
+    database: drizzleAdapter(db, {
       provider: "pg",
       schema: schema,
     }),
     trustedOrigins: [authEnv.CORS_ORIGIN],
     emailAndPassword: {
       enabled: true,
+      password: {
+        hash: hashPassword,
+        verify: verifyPassword,
+      },
     },
     // uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
     // session: {
@@ -35,15 +53,12 @@ function createAuth() {
         secure: true,
         httpOnly: true,
       },
-      // uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
-      // https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
-      // crossSubDomainCookies: {
-      //   enabled: true,
-      //   domain: "<your-workers-subdomain>",
-      // },
+      crossSubDomainCookies: getCrossSubDomainCookieOptions(authEnv.BETTER_AUTH_URL),
     },
   });
 }
+
+export type Auth = ReturnType<typeof createAuth>;
 
 let authInstance: ReturnType<typeof createAuth> | null = null;
 

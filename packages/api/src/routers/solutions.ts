@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, router } from "../index";
-import { getDb, schema } from "@clankeroverflow/db";
+import { schema } from "@clankeroverflow/db";
 import { searchSolutions } from "@clankeroverflow/db/search";
 import { withTimeout } from "../utils/withTimeout";
 
@@ -15,7 +15,7 @@ export const solutionsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = ctx.db;
       let userId: string | null = null;
 
       if (ctx.session?.user) {
@@ -139,7 +139,7 @@ export const solutionsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = ctx.db;
       let userId: string | null = null;
 
       // If they provided a session, use it
@@ -187,10 +187,9 @@ export const solutionsRouter = router({
         limit: z.number().min(1).max(20).default(1),
       })
     )
-    .query(async ({ input }) => {
-      const db = getDb();
+    .query(async ({ ctx, input }) => {
       const results = await withTimeout(
-        searchSolutions(db, input),
+        searchSolutions(ctx.db, input),
         2500,
         "Solution search timed out",
       );
@@ -200,8 +199,8 @@ export const solutionsRouter = router({
 
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      const db = getDb();
+    .query(async ({ ctx, input }) => {
+      const db = ctx.db;
       const result = await withTimeout(
         db.query.solution.findFirst({
           where: eq(schema.solution.id, input.id),
