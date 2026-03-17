@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "dev:bare": "next dev --port 3000",
     "test:e2e": "NEXT_PUBLIC_SERVER_URL=http://localhost:3000 playwright test",

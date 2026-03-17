@@ -146,6 +146,7 @@
       "name": "@clankeroverflow/db",
       "dependencies": {
         "@clankeroverflow/env": "workspace:*",
+        "@types/pg": "^8.18.0",
         "dotenv": "catalog:",
         "drizzle-orm": "^0.45.1",
         "pg": "catalog:",
@@ -153,7 +154,6 @@
       },
       "devDependencies": {
         "@clankeroverflow/config": "workspace:*",
-        "@types/pg": "^8.18.0",
         "drizzle-kit": "^0.31.8",
         "typescript": "catalog:",
       },
