@@ -8,9 +8,7 @@ import { ArrowLeft, Terminal, Hash, Calendar, User } from "lucide-react";
 
 import { trpcClient } from "@/utils/trpc";
 import { solutionDetailsSchema, type SolutionDetails } from "@/utils/trpc-output-types";
-import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 export default function SolutionPage() {
   const params = useParams();
@@ -25,17 +23,19 @@ export default function SolutionPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-8">
-          <Skeleton className="h-10 w-24 mb-6" />
-          <Skeleton className="h-12 w-full mb-4" />
-          <Skeleton className="h-6 w-1/3" />
-        </div>
-        <div className="space-y-4">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-40 w-full mt-6" />
+      <div className="page-shell">
+        <div className="page-container max-w-4xl">
+          <div className="mb-8">
+            <Skeleton className="h-8 w-24 mb-6 rounded-sm" />
+            <Skeleton className="h-10 w-full mb-4 rounded-sm" />
+            <Skeleton className="h-5 w-1/3 rounded-sm" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-full rounded-sm" />
+            <Skeleton className="h-4 w-full rounded-sm" />
+            <Skeleton className="h-4 w-5/6 rounded-sm" />
+            <Skeleton className="h-40 w-full mt-6 rounded-sm" />
+          </div>
         </div>
       </div>
     );
@@ -43,70 +43,82 @@ export default function SolutionPage() {
 
   if (isError || !solution) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-16 text-center">
-        <Terminal className="h-16 w-16 text-destructive mx-auto mb-4" />
-        <h1 className="text-3xl font-bold mb-4">Solution Not Found</h1>
-        <p className="text-muted-foreground mb-8">
-          The solution you are looking for does not exist or an error occurred.
-        </p>
-        <Button onClick={() => router.back()} variant="outline">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
-        </Button>
+      <div className="page-shell">
+        <div className="page-container max-w-4xl text-center py-12">
+          <Terminal className="h-12 w-12 mx-auto mb-4 text-accent-landing" aria-hidden="true" />
+          <h1 className="page-title text-2xl mb-3">Solution Not Found</h1>
+          <p className="text-sm text-muted-landing mb-6">
+            The solution you are looking for does not exist or an error occurred.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="btn-secondary"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Go Back
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-6">
-        <Link href="/" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-6 -ml-3 text-muted-foreground")}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Search
+    <div className="page-shell">
+      <div className="page-container max-w-4xl">
+        {/* Back Link */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-muted-landing hover:text-accent-landing transition-colors mb-8"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Search
         </Link>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
+        {/* Problem Title */}
+        <h1 className="page-title text-3xl sm:text-4xl mb-4">
           {solution.problem}
         </h1>
 
-        <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm text-muted-foreground mb-6">
-          <div className="flex items-center">
-            <Calendar className="mr-2 h-4 w-4" />
+        {/* Meta */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-mono text-muted-landing mb-6">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5" />
             {new Date(solution.createdAt).toLocaleDateString(undefined, {
               year: "numeric",
               month: "long",
               day: "numeric",
             })}
           </div>
-          <div className="flex items-center">
-            <User className="mr-2 h-4 w-4" />
+          <div className="flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5" />
             {solution.userId ? "Authenticated User" : "Anonymous Agent"}
           </div>
         </div>
 
+        {/* Tags */}
         {solution.tags && (
-          <div className="flex flex-wrap gap-2 mb-8 border-b pb-8">
+          <div className="flex flex-wrap gap-2 mb-8 pb-8 border-b border-landing">
             {solution.tags.split(",").map((tag: string) => {
               const trimmed = tag.trim();
               if (!trimmed) return null;
               return (
-                <span
-                  key={trimmed}
-                  className="inline-flex items-center px-2.5 py-1 rounded-md text-sm bg-secondary text-secondary-foreground font-medium"
-                >
-                  <Hash className="w-3.5 h-3.5 mr-1 opacity-50" />
+                <span key={trimmed} className="tag-flat">
+                  <Hash className="w-3 h-3 opacity-40" aria-hidden="true" />
                   {trimmed}
                 </span>
               );
             })}
           </div>
         )}
-      </div>
 
-      <div className="prose prose-slate dark:prose-invert max-w-none prose-pre:bg-muted prose-pre:text-foreground prose-pre:border">
-        <h2 className="text-2xl font-bold mb-4 flex items-center">
-          <Terminal className="mr-2 h-6 w-6" /> Solution
-        </h2>
-        <div className="bg-card border rounded-lg p-6 sm:p-8 shadow-sm">
-          <ReactMarkdown>{solution.solution}</ReactMarkdown>
+        {/* Solution Content */}
+        <div>
+          <h2 className="font-display text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+            <Terminal className="w-5 h-5 text-accent-landing" aria-hidden="true" />
+            Solution
+          </h2>
+          <div className="landing-card p-6 sm:p-8 prose prose-sm dark:prose-invert max-w-none prose-pre:bg-[var(--landing-code-bg)] prose-pre:text-[var(--landing-code-fg)] prose-pre:border prose-pre:border-landing prose-pre:rounded-sm">
+            <ReactMarkdown>{solution.solution}</ReactMarkdown>
+          </div>
         </div>
       </div>
     </div>

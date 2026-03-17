@@ -156,7 +156,7 @@
 
 
 /* ═══════════════════════════════════════════════════
-   LANDING PAGE — Editorial / Brutalist
+   APP-WIDE DESIGN LANGUAGE — Editorial / Brutalist
    No glass. No glow. No gradients on text.
    Sharp corners. Visible structure. Confident type.
    ═══════════════════════════════════════════════════ */
@@ -198,6 +198,126 @@
 
 .bg-accent-landing {
   background-color: var(--landing-accent);
+}
+
+.text-muted-landing {
+  color: var(--landing-muted);
+}
+
+.bg-surface-landing {
+  background: var(--landing-surface);
+}
+
+.border-landing {
+  border-color: var(--landing-border);
+}
+
+/* ─── Page Shell ─── */
+
+.page-shell {
+  position: relative;
+  z-index: 10;
+  padding: 2rem 1.5rem 3rem;
+}
+
+@media (min-width: 640px) {
+  .page-shell {
+    padding: 3rem 1.5rem 4rem;
+  }
+}
+
+.page-container {
+  max-width: 64rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ─── Page Title ─── */
+
+.page-title {
+  font-family: var(--font-display, "Bricolage Grotesque", serif);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+/* ─── Auth Form Card ─── */
+
+.auth-card {
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: 3px;
+  padding: 2rem;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+/* ─── Mode Toggle Button ─── */
+
+.mode-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--landing-border);
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  color: var(--landing-muted);
+  position: relative;
+}
+
+.mode-toggle-btn:hover {
+  border-color: var(--landing-accent);
+  color: var(--landing-accent);
+}
+
+/* ─── Dropdown (unified) ─── */
+
+.dropdown-content {
+  border-radius: 3px;
+  border: 1px solid var(--landing-border);
+}
+
+/* ─── Dashboard Card ─── */
+
+.dashboard-card {
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: 3px;
+}
+
+.dashboard-card__header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--landing-border);
+}
+
+.dashboard-card__body {
+  padding: 1.5rem;
+}
+
+/* ─── Form Input (unified) ─── */
+
+.input-landing {
+  border: 1px solid var(--landing-border);
+  border-radius: 2px;
+  background: transparent;
+  transition: border-color 0.15s ease;
+}
+
+.input-landing:focus {
+  border-color: var(--landing-accent);
+  outline: none;
+  box-shadow: none;
+}
+
+/* ─── Error Text ─── */
+
+.text-error {
+  color: var(--destructive);
+  font-size: 0.8125rem;
 }
 
 /* ─── Header (Landing) ─── */
