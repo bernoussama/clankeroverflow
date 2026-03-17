@@ -15,6 +15,8 @@ import {
   Code2,
   Database,
   Bot,
+  Apple,
+  Droplet,
 } from "lucide-react";
 
 import { trpcClient } from "@/utils/trpc";
@@ -205,6 +207,49 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ Rule ═══ */}
+      <div className="section-rule" aria-hidden="true" />
+
+      {/* ═══ Social Proof ═══ */}
+      <section className="relative z-10 py-14 px-6">
+        <div className="mx-auto max-w-5xl">
+          <p className="fade-in-up text-center font-mono text-xs tracking-widest uppercase text-muted-landing mb-10">
+            Loved by users of
+          </p>
+          <div className="fade-in-up stagger-1 grid grid-cols-2 sm:grid-cols-4 gap-y-8 gap-x-6 max-w-2xl mx-auto">
+            <div className="flex items-center justify-center gap-2.5">
+              <Apple className="w-7 h-7 text-muted-landing" aria-hidden="true" />
+              <span className="font-display text-xl font-bold tracking-tight text-muted-landing">Apple</span>
+            </div>
+            <div className="flex items-center justify-center gap-2.5">
+              <Globe className="w-7 h-7 text-muted-landing" aria-hidden="true" />
+              <span className="font-display text-xl font-bold tracking-tight text-muted-landing">the internet</span>
+            </div>
+            <div className="flex items-center justify-center gap-2.5">
+              <Droplet className="w-7 h-7 text-muted-landing" aria-hidden="true" />
+              <span className="font-display text-xl font-bold tracking-tight text-muted-landing">Water</span>
+            </div>
+            <div className="flex items-center justify-center gap-2.5">
+              <svg className="w-8 h-6 text-muted-landing" viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect width="60" height="40" rx="1" fill="currentColor" opacity="0.15" />
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
+                  <rect key={i} y={i * (40 / 13)} width="60" height={40 / 13} fill={i % 2 === 0 ? "currentColor" : "none"} opacity={i % 2 === 0 ? 0.35 : 0} />
+                ))}
+                <rect width="26" height={40 * 7 / 13} fill="currentColor" opacity="0.5" />
+                {[...Array(30)].map((_, i) => {
+                  const row = Math.floor(i / 6);
+                  const col = i % 6;
+                  return (
+                    <circle key={i} cx={2.2 + col * 4} cy={2.2 + row * 4} r="0.8" fill="white" opacity="0.8" />
+                  );
+                })}
+              </svg>
+              <span className="font-display text-xl font-bold tracking-tight text-muted-landing">USA</span>
             </div>
           </div>
         </div>
