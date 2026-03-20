@@ -3,8 +3,6 @@ import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-import { hashPassword, verifyPassword } from "./password";
-
 const authEnv = env as typeof env & {
   CORS_ORIGIN: string;
   BETTER_AUTH_SECRET: string;
@@ -33,18 +31,7 @@ export function createAuth(db: Database = getDb()) {
     trustedOrigins: [authEnv.CORS_ORIGIN],
     emailAndPassword: {
       enabled: true,
-      password: {
-        hash: hashPassword,
-        verify: verifyPassword,
-      },
     },
-    // uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
-    // session: {
-    //   cookieCache: {
-    //     enabled: true,
-    //     maxAge: 60,
-    //   },
-    // },
     secret: authEnv.BETTER_AUTH_SECRET,
     baseURL: authEnv.BETTER_AUTH_URL,
     advanced: {
