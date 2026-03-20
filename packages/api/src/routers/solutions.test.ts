@@ -29,15 +29,18 @@ describe("solutionsRouter", () => {
   };
 
   beforeEach(() => {
-    (db.execute as any).mockClear();
-    (db.query.solution.findFirst as any).mockClear();
+    (db.execute as any).mockClear?.();
+    (db.query.solution.findFirst as any).mockClear?.();
+    (db.query.solutionVote.findFirst as any).mockClear?.();
+    (db.select as any).mockClear?.();
   });
 
   test("search should return empty array if query is empty after trim", async () => {
     const caller = createCaller({
+      db,
       session: null,
       apiKey: null,
-    });
+    } as any);
     
     const result = await caller.solutions.search({ query: "   " });
     expect(result).toEqual([]);
@@ -52,36 +55,72 @@ describe("solutionsRouter", () => {
     });
     
     const caller = createCaller({
+      db,
       session: null,
       apiKey: null,
-    });
+    } as any);
     
     const result = await caller.solutions.search({ query: "Test" });
     expect(result).toHaveLength(1);
     expect(result[0].problem).toBe("Test problem");
   });
 
-  test("getById should return solution if found", async () => {
+  test("getById should return solution with vote counts", async () => {
     (db.query.solution.findFirst as any).mockResolvedValueOnce(
       { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }
     );
+    (db.select as any).mockReturnValueOnce({
+      from: mock(() => ({
+        where: mock(() => [{ upvotes: 3, downvotes: 1 }]),
+      })),
+    });
     
     const caller = createCaller({
+      db,
       session: null,
       apiKey: null,
-    });
+    } as any);
     
     const result = await caller.solutions.getById({ id: "sol_1" });
     expect(result.problem).toBe("Test problem");
+    expect(result.upvotes).toBe(3);
+    expect(result.downvotes).toBe(1);
+    expect(result.userVote).toBeNull();
+  });
+
+  test("getById should return userVote when session is present", async () => {
+    (db.query.solution.findFirst as any).mockResolvedValueOnce(
+      { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }
+    );
+    (db.select as any).mockReturnValueOnce({
+      from: mock(() => ({
+        where: mock(() => [{ upvotes: 5, downvotes: 2 }]),
+      })),
+    });
+    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce(
+      { userId: "user_1", solutionId: "sol_1", isUpvote: true }
+    );
+    
+    const caller = createCaller({
+      db,
+      session: mockSession,
+      apiKey: null,
+    } as any);
+    
+    const result = await caller.solutions.getById({ id: "sol_1" });
+    expect(result.upvotes).toBe(5);
+    expect(result.downvotes).toBe(2);
+    expect(result.userVote).toBe(true);
   });
 
   test("getById should throw NOT_FOUND if not found", async () => {
     (db.query.solution.findFirst as any).mockResolvedValueOnce(undefined);
     
     const caller = createCaller({
+      db,
       session: null,
       apiKey: null,
-    });
+    } as any);
     
     expect(caller.solutions.getById({ id: "sol_1" })).rejects.toThrow("Solution not found");
   });

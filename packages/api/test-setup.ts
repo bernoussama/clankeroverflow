@@ -30,6 +30,11 @@ mock.module("@clankeroverflow/db", () => {
         findFirst: mock(),
       },
     },
+    select: mock(() => ({
+      from: mock(() => ({
+        where: mock(() => [{ upvotes: 0, downvotes: 0 }]),
+      })),
+    })),
     insert: mock(() => ({
       values: mock(),
     })),

@@ -14,7 +14,12 @@ export const searchResultSchema = z.object({
 });
 
 export const searchResultsSchema = z.array(searchResultSchema);
-export const solutionDetailsSchema = searchResultSchema;
+
+export const solutionDetailsSchema = searchResultSchema.extend({
+  upvotes: z.number(),
+  downvotes: z.number(),
+  userVote: z.boolean().nullable(),
+});
 
 export const apiKeySchema = z.object({
   id: z.string(),

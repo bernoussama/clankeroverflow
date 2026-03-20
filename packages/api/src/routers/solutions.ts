@@ -2,9 +2,36 @@ import { TRPCError } from "@trpc/server";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, router } from "../index";
-import { schema } from "@clankeroverflow/db";
+import { schema, type Database } from "@clankeroverflow/db";
 import { searchSolutions } from "@clankeroverflow/db/search";
 import { withTimeout } from "../utils/withTimeout";
+
+async function getVoteCounts(db: Database, solutionId: string, userId: string | null) {
+  const [counts] = await db
+    .select({
+      upvotes: sql<number>`count(*) filter (where ${schema.solutionVote.isUpvote} = true)`.mapWith(Number),
+      downvotes: sql<number>`count(*) filter (where ${schema.solutionVote.isUpvote} = false)`.mapWith(Number),
+    })
+    .from(schema.solutionVote)
+    .where(eq(schema.solutionVote.solutionId, solutionId));
+
+  let userVote: boolean | null = null;
+  if (userId) {
+    const existing = await db.query.solutionVote.findFirst({
+      where: and(
+        eq(schema.solutionVote.userId, userId),
+        eq(schema.solutionVote.solutionId, solutionId),
+      ),
+    });
+    userVote = existing?.isUpvote ?? null;
+  }
+
+  return {
+    upvotes: counts?.upvotes ?? 0,
+    downvotes: counts?.downvotes ?? 0,
+    userVote,
+  };
+}
 
 export const solutionsRouter = router({
   vote: publicProcedure
@@ -127,7 +154,13 @@ export const solutionsRouter = router({
         );
       }
 
-      return { success: true };
+      const voteCounts = await withTimeout(
+        getVoteCounts(db, input.id, userId),
+        2500,
+        "Vote counts lookup timed out",
+      );
+
+      return { success: true, ...voteCounts };
     }),
 
   log: publicProcedure
@@ -216,6 +249,17 @@ export const solutionsRouter = router({
         });
       }
 
-      return result;
+      let userId: string | null = null;
+      if (ctx.session?.user) {
+        userId = ctx.session.user.id;
+      }
+
+      const voteCounts = await withTimeout(
+        getVoteCounts(db, input.id, userId),
+        2500,
+        "Vote counts lookup timed out",
+      );
+
+      return { ...result, ...voteCounts };
     }),
 });
