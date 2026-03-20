@@ -14,23 +14,31 @@ import { toast } from "sonner";
 export default function Dashboard({ session }: { session: typeof authClient.$Infer.Session }) {
   const [newKeyName, setNewKeyName] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  
+  const [createdKey, setCreatedKey] = useState<{ id: string; key: string; name: string } | null>(null);
+
   const queryClient = useQueryClient();
+  const apiKeysQueryKey = ["apiKeys", "list"] as const;
 
   const { data: apiKeys = [], isLoading } = useQuery<ApiKeys>({
-    queryKey: ["apiKeys", "list"],
+    queryKey: apiKeysQueryKey,
     queryFn: async () => apiKeysSchema.parse(await trpcClient.apiKeys.list.query()),
   });
 
   const createMutation = useMutation(trpc.apiKeys.create.mutationOptions({
     onSuccess: (data) => {
-      queryClient.invalidateQueries(trpc.apiKeys.list.pathFilter());
+      queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
       setNewKeyName("");
+      setCreatedKey(data);
       toast.success("API Key created successfully");
-      
+
       if (data.key) {
-        navigator.clipboard.writeText(data.key);
-        toast.info("API Key copied to clipboard! Save it now, you won't be able to see it again.");
+        void navigator.clipboard.writeText(data.key)
+          .then(() => {
+            toast.info("API Key copied to clipboard! Save it now, you won't be able to see it again.");
+          })
+          .catch(() => {
+            toast.info("API key created. Clipboard access was blocked, so copy it from the panel below.");
+          });
       }
     },
     onError: (error) => {
@@ -40,7 +48,7 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
 
   const deleteMutation = useMutation(trpc.apiKeys.delete.mutationOptions({
     onSuccess: () => {
-      queryClient.invalidateQueries(trpc.apiKeys.list.pathFilter());
+      queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
       toast.success("API Key deleted successfully");
     },
     onError: (error) => {
@@ -61,9 +69,14 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
   };
 
   const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(id);
-    setTimeout(() => setCopiedKey(null), 2000);
+    void navigator.clipboard.writeText(text)
+      .then(() => {
+        setCopiedKey(id);
+        setTimeout(() => setCopiedKey(null), 2000);
+      })
+      .catch(() => {
+        toast.error("Clipboard access was blocked. Copy the key manually from the panel.");
+      });
   };
 
   return (
@@ -102,6 +115,46 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
               )}
             </button>
           </form>
+
+          {createdKey ? (
+            <div className="mb-6 border border-landing rounded-sm bg-surface-landing p-4 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold">New API key created</p>
+                  <p className="text-xs text-muted-landing font-mono">
+                    Copy it now. You will only see the full value here once.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="mode-toggle-btn h-8 px-3 text-xs font-mono uppercase tracking-wider"
+                  onClick={() => setCreatedKey(null)}
+                >
+                  Dismiss
+                </button>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <code className="block break-all text-xs font-mono px-3 py-2 rounded-sm bg-background border border-landing text-foreground">
+                  {createdKey.key}
+                </code>
+                <button
+                  type="button"
+                  className="btn-secondary justify-center text-xs uppercase tracking-wider"
+                  onClick={() => handleCopy(createdKey.key, createdKey.id)}
+                >
+                  {copiedKey === createdKey.id ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-accent-landing" /> Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" /> Copy Key
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {isLoading ? (
             <div className="space-y-3">

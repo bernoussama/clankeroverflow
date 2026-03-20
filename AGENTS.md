@@ -1,7 +1,13 @@
 # Guidelines
 
+Always update this file with things you discover about the codebase and would be useful for future agents.
+
 ## Unified Layout and Design
 For anything design-related, you MUST use the centralized design system in `apps/web/src/index.css`. This includes using the predefined CSS variables (e.g., `--landing-accent`, `--landing-surface`) and global utility classes (e.g., `.btn-primary`, `.landing-card`) to keep the design language unified in the whole app. Do not create one-off custom CSS or isolated styled-components.
+
+## Codebase Notes
+- `packages/auth/src/index.ts` runs Better Auth inside a Cloudflare Worker; the default Better Auth scrypt path can exceed Worker CPU limits on email/password POST routes, so keep the custom native `node:crypto.scrypt` helpers in `packages/auth/src/password.ts` wired into `emailAndPassword.password`.
+- `apps/web/src/app/dashboard/dashboard.tsx` manages API keys with a hand-written React Query key; keep load and invalidation in sync, and do not rely on clipboard access alone because some incognito/locked-down browsers reject `navigator.clipboard.writeText`.
 
 ## Code style
 - Write idiomatic, simple, maintainable code. Always ask yourself if this is the most simple intuitive solution to the problem. Always KISS (Keep It Simple Stupid). DRY. YAGNI. TDD. Frequent commits.
