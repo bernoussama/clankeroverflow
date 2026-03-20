@@ -3,6 +3,7 @@ import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
+import { parseAllowedOrigins } from "./origins";
 import { hashPassword, verifyPassword } from "./password";
 
 const authEnv = env as typeof env & {
@@ -30,7 +31,7 @@ export function createAuth(db: Database = getDb()) {
       provider: "pg",
       schema: schema,
     }),
-    trustedOrigins: [authEnv.CORS_ORIGIN],
+    trustedOrigins: parseAllowedOrigins(authEnv.CORS_ORIGIN),
     emailAndPassword: {
       enabled: true,
       password: {

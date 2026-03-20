@@ -16,7 +16,7 @@ describe("production env", () => {
       "BETTER_AUTH_URL=https://api.clankeroverflow.com",
     );
     expect(envProduction).toContain(
-      "CORS_ORIGIN=https://www.clankeroverflow.com",
+      "CORS_ORIGIN=https://www.clankeroverflow.com,https://clankeroverflow.com",
     );
   });
 });

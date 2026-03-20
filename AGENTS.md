@@ -14,6 +14,7 @@ For anything design-related, you MUST use the centralized design system in `apps
 - For local full-stack browser verification, running `bun run dev` from the repo root may fail to pass `DATABASE_URL` through Turbo into `@clankeroverflow/infra`; starting `packages/infra` directly with inline `DATABASE_URL=... bun run dev` works reliably.
 - `apps/web/.env` points `NEXT_PUBLIC_SERVER_URL` at `http://localhost:3000`; if you open the Next app on `http://localhost:3001` without the full proxy setup, dashboard auth/session and tRPC calls can fail with CORS or server-component errors, so verify `/dashboard` through the unified full-stack dev setup when possible.
 - Production app-to-API traffic uses `https://api.clankeroverflow.com` (`packages/infra/.env.production`); keep CLI defaults, MCP defaults, and dashboard setup examples aligned with that domain unless the user explicitly wants a custom/self-hosted server.
+- `CORS_ORIGIN` is shared by the server CORS middleware and Better Auth trusted origins; keep it as a comma-separated list when multiple web hostnames (for example apex + `www`) need the same session/auth access to `api.clankeroverflow.com`.
 - OpenCode MCP setup uses `opencode.json` with `mcp.{name}.type = "local"`, a `command` array, and `environment`; do not reuse Claude Desktop's `mcpServers` / `args` / `env` shape in OpenCode-facing docs.
 
 ## Code style

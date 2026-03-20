@@ -9,28 +9,28 @@ describe("Server", () => {
   });
 
   describe("CORS", () => {
-    test("OPTIONS / should return CORS headers", async () => {
+    test("OPTIONS / should return CORS headers for the www domain", async () => {
       const res = await app.request("/", {
         method: "OPTIONS",
         headers: {
-          "Origin": "http://localhost:3001",
+          "Origin": "https://www.clankeroverflow.com",
           "Access-Control-Request-Method": "GET"
         }
       });
       expect(res.status).toBe(204);
-      expect(res.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:3001");
+      expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://www.clankeroverflow.com");
       expect(res.headers.get("Access-Control-Allow-Methods")).toBe("GET,POST,OPTIONS");
       expect(res.headers.get("Access-Control-Allow-Credentials")).toBe("true");
     });
 
-    test("GET / should return CORS headers for valid origin", async () => {
+    test("GET / should return CORS headers for the apex domain", async () => {
       const res = await app.request("/", {
         headers: {
-          "Origin": "http://localhost:3001"
+          "Origin": "https://clankeroverflow.com"
         }
       });
       expect(res.status).toBe(200);
-      expect(res.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:3001");
+      expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://clankeroverflow.com");
     });
   });
 

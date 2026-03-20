@@ -27,6 +27,10 @@ export const web = await Nextjs("web", {
   adopt: true,
   domains: [
     {
+      domainName: "clankeroverflow.com",
+      adopt: true,
+    },
+    {
       domainName: "www.clankeroverflow.com",
       adopt: true,
     },

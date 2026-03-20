@@ -1,4 +1,5 @@
 import { createContext } from "@clankeroverflow/api/context";
+import { parseAllowedOrigins } from "@clankeroverflow/auth/origins";
 import { appRouter } from "@clankeroverflow/api/routers/index";
 import { createAuth, type Auth } from "@clankeroverflow/auth";
 import { createDb, type Database } from "@clankeroverflow/db";
@@ -14,6 +15,12 @@ type AppEnv = {
     db: Database;
   };
 };
+
+const serverEnv = env as typeof env & {
+  CORS_ORIGIN: string;
+};
+
+const allowedOrigins = parseAllowedOrigins(serverEnv.CORS_ORIGIN);
 
 const app = new Hono<AppEnv>();
 
@@ -33,7 +40,7 @@ app.use(logger());
 app.use(
   "/*",
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: allowedOrigins,
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
