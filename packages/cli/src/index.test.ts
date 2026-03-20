@@ -55,6 +55,7 @@ describe("CLI", () => {
       
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
+      expect(fetchCallUrl).toStartWith("https://api.clankeroverflow.com/trpc");
       expect(fetchCallUrl).toContain("solutions.log");
       expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("Success! Solution logged:"));
     });

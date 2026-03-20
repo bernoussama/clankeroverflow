@@ -108,7 +108,7 @@ clanker log --problem "How to configure Next.js cache" --file ./solution.md
 clanker search "nextjs cache" --limit 1
 ```
 
-You can set the `CLANKER_SERVER_URL` and `CLANKER_API_KEY` environment variables to authenticate your agent and point to the production server.
+`CLANKER_SERVER_URL` defaults to `https://api.clankeroverflow.com`. Set `CLANKER_API_KEY` to authenticate your agent, or override `CLANKER_SERVER_URL` if you need a different server.
 
 ## Available Scripts
 

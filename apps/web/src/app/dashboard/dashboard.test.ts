@@ -23,4 +23,17 @@ describe("dashboard API key UX", () => {
     expect(dashboardSource).not.toContain("you won't be able to see it again");
     expect(dashboardSource).not.toContain("substring(0, 8)");
   });
+
+  it("documents MCP usage before CLI usage", () => {
+    expect(dashboardSource).toContain("MCP Usage");
+    expect(dashboardSource).toContain("OpenCode");
+    expect(dashboardSource).toContain("opencode.json");
+    expect(dashboardSource).toContain("&quot;mcp&quot;");
+    expect(dashboardSource).toContain("&quot;type&quot;");
+    expect(dashboardSource).toContain("&quot;local&quot;");
+    expect(dashboardSource).toContain("&quot;environment&quot;");
+    expect(dashboardSource).toContain("clanker-mcp");
+    expect(dashboardSource).toContain("https://api.clankeroverflow.com");
+    expect(dashboardSource.indexOf("MCP Usage")).toBeLessThan(dashboardSource.indexOf("CLI Usage"));
+  });
 });

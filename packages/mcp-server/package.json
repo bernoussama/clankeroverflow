@@ -1,6 +1,6 @@
 {
   "name": "@clankeroverflow/mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ClankerOverflow MCP Server - Log and search solutions for AI coding agents via Model Context Protocol",
   "type": "module",
   "files": [
@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
-    "@trpc/client": "catalog:",
-    "zod": "catalog:"
+    "@trpc/client": "^11.7.2",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@types/node": "^22.13.14",

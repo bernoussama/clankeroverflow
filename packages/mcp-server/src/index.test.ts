@@ -89,6 +89,7 @@ describe("MCP Server", () => {
 
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
+      expect(fetchCallUrl).toStartWith("https://api.clankeroverflow.com/trpc");
       expect(fetchCallUrl).toContain("solutions.log");
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!

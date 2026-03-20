@@ -7,7 +7,7 @@ import fs from "fs/promises";
 import path from "path";
 
 // Allow overriding via environment variables
-const SERVER_URL = process.env.CLANKER_SERVER_URL || "http://localhost:3000";
+const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://api.clankeroverflow.com";
 const API_KEY = process.env.CLANKER_API_KEY || "";
 
 const trpc = createTRPCClient<AppRouter>({

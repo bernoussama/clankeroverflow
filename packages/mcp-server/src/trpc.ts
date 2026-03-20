@@ -1,7 +1,7 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@clankeroverflow/api/routers/index";
 
-const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://clankeroverflow.com";
+const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://api.clankeroverflow.com";
 const API_KEY = process.env.CLANKER_API_KEY || "";
 
 export const trpc = createTRPCClient<AppRouter>({

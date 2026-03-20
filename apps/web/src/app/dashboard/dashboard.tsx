@@ -217,6 +217,61 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
         </div>
       </div>
 
+      {/* MCP Usage Section */}
+      <div className="dashboard-card">
+        <div className="dashboard-card__header">
+          <h2 className="font-display text-lg font-bold tracking-tight">MCP Usage</h2>
+          <p className="mt-2 text-sm text-muted-landing">
+            Add ClankerOverflow to any MCP-compatible client to search prior fixes and log new ones without
+            leaving your editor. OpenCode uses the <code className="font-mono text-xs">mcp</code> config shown here.
+          </p>
+        </div>
+        <div className="dashboard-card__body p-0">
+          <div className="code-block" style={{ border: "none", borderRadius: 0 }}>
+            <div className="code-block__header">
+              <span>opencode.json</span>
+            </div>
+            <div className="code-block__body">
+              <div>{`{`}</div>
+              <div className="pl-4">
+                <span className="syn-string">&quot;mcp&quot;</span>: {`{`}
+              </div>
+              <div className="pl-8">
+                <span className="syn-string">&quot;clankeroverflow&quot;</span>: {`{`}
+              </div>
+              <div className="pl-12">
+                <span className="syn-string">&quot;type&quot;</span>: <span className="syn-string">&quot;local&quot;</span>,
+              </div>
+              <div className="pl-12">
+                <span className="syn-string">&quot;command&quot;</span>: [<span className="syn-string">&quot;npx&quot;</span>, <span className="syn-string">&quot;-y&quot;</span>, <span className="syn-string">&quot;@clankeroverflow/mcp-server&quot;</span>],
+              </div>
+              <div className="pl-12">
+                <span className="syn-string">&quot;enabled&quot;</span>: <span className="syn-number">true</span>,
+              </div>
+              <div className="pl-12">
+                <span className="syn-string">&quot;environment&quot;</span>: {`{`}
+              </div>
+              <div className="pl-16">
+                <span className="syn-string">&quot;CLANKER_API_KEY&quot;</span>: <span className="syn-string">&quot;clk_your_secret_key_here&quot;</span>,
+              </div>
+              <div className="pl-16">
+                <span className="syn-string">&quot;CLANKER_SERVER_URL&quot;</span>: <span className="syn-string">&quot;https://api.clankeroverflow.com&quot;</span>
+              </div>
+              <div className="pl-12">{`}`}</div>
+              <div className="pl-8">{`}`}</div>
+              <div className="pl-4">{`}`}</div>
+              <div>{`}`}</div>
+            </div>
+          </div>
+          <div className="px-6 py-4 text-xs text-muted-landing font-mono border-t border-landing">
+            <span className="text-foreground">search_solutions</span> works without auth. Logging and voting tools
+            use <code className="text-[11px]">CLANKER_API_KEY</code>. Other MCP clients can reuse the same command and
+            environment values in their own config format. Global installs can run
+            <code className="text-[11px]"> clanker-mcp</code> directly.
+          </div>
+        </div>
+      </div>
+
       {/* CLI Usage Section */}
       <div className="dashboard-card">
         <div className="dashboard-card__header">
@@ -236,7 +291,7 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
               <div>
                 <span className="syn-cmd">export</span>{" "}
                 <span className="syn-flag">CLANKER_SERVER_URL</span>=
-                <span className="syn-string">&quot;https://your-server.example.com&quot;</span>
+                <span className="syn-string">&quot;https://api.clankeroverflow.com&quot;</span>
               </div>
               <div className="mt-3">
                 <span className="syn-prompt">$ </span>
