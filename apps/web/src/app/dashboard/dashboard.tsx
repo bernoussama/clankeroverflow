@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export default function Dashboard({ session }: { session: typeof authClient.$Infer.Session }) {
   const [newKeyName, setNewKeyName] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [createdKey, setCreatedKey] = useState<{ id: string; key: string; name: string } | null>(null);
+  const [createdKey, setCreatedKey] = useState<ApiKey | null>(null);
 
   const queryClient = useQueryClient();
   const apiKeysQueryKey = ["apiKeys", "list"] as const;
@@ -26,6 +26,10 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
 
   const createMutation = useMutation(trpc.apiKeys.create.mutationOptions({
     onSuccess: (data) => {
+      queryClient.setQueryData<ApiKeys>(apiKeysQueryKey, (current = []) => [
+        data,
+        ...current.filter((apiKey) => apiKey.id !== data.id),
+      ]);
       queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
       setNewKeyName("");
       setCreatedKey(data);
@@ -34,10 +38,10 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
       if (data.key) {
         void navigator.clipboard.writeText(data.key)
           .then(() => {
-            toast.info("API Key copied to clipboard! Save it now, you won't be able to see it again.");
+            toast.info("API Key copied to clipboard.");
           })
           .catch(() => {
-            toast.info("API key created. Clipboard access was blocked, so copy it from the panel below.");
+            toast.info("API key created. Clipboard access was blocked, so copy it from your saved keys below.");
           });
       }
     },
@@ -122,7 +126,7 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
                 <div>
                   <p className="text-sm font-semibold">New API key created</p>
                   <p className="text-xs text-muted-landing font-mono">
-                    Copy it now. You will only see the full value here once.
+                    This key is stored in your account and remains available in the list below.
                   </p>
                 </div>
                 <button
@@ -170,20 +174,20 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
               {apiKeys.map((apiKey: ApiKey, i: number) => (
                 <div
                   key={apiKey.id}
-                  className={`flex items-center justify-between p-4 ${i !== apiKeys.length - 1 ? "border-b border-landing" : ""}`}
+                  className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between ${i !== apiKeys.length - 1 ? "border-b border-landing" : ""}`}
                 >
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{apiKey.name || "Unnamed Key"}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <code className="text-xs font-mono px-2 py-0.5 rounded-sm bg-surface-landing border border-landing text-muted-landing">
-                        {apiKey.key.substring(0, 8)}…{apiKey.key.substring(apiKey.key.length - 4)}
+                    <div className="mt-2 space-y-2">
+                      <code className="block break-all text-xs font-mono px-3 py-2 rounded-sm bg-surface-landing border border-landing text-foreground">
+                        {apiKey.key}
                       </code>
                       <span className="text-xs text-muted-landing font-mono">
                         Created {new Date(apiKey.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 self-end sm:self-start">
                     <button
                       type="button"
                       className="mode-toggle-btn w-8 h-8"

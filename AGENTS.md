@@ -7,7 +7,9 @@ For anything design-related, you MUST use the centralized design system in `apps
 
 ## Codebase Notes
 - `packages/auth/src/index.ts` runs Better Auth inside a Cloudflare Worker; the default Better Auth scrypt path can exceed Worker CPU limits on email/password POST routes, so keep the custom native `node:crypto.scrypt` helpers in `packages/auth/src/password.ts` wired into `emailAndPassword.password`.
-- `apps/web/src/app/dashboard/dashboard.tsx` manages API keys with a hand-written React Query key; keep load and invalidation in sync, and do not rely on clipboard access alone because some incognito/locked-down browsers reject `navigator.clipboard.writeText`.
+- `apps/web/src/app/dashboard/dashboard.tsx` manages API keys with a hand-written React Query key; keep load, `setQueryData`, and invalidation in sync, and do not rely on clipboard access alone because some incognito/locked-down browsers reject `navigator.clipboard.writeText`.
+- `packages/api/src/routers/apiKeys.ts` should return the inserted API key row, including `createdAt`, so the dashboard can hydrate the list cache immediately after creation instead of waiting on a refetch.
+- For local full-stack browser verification, running `bun run dev` from the repo root may fail to pass `DATABASE_URL` through Turbo into `@clankeroverflow/infra`; starting `packages/infra` directly with inline `DATABASE_URL=... bun run dev` works reliably.
 
 ## Code style
 - Write idiomatic, simple, maintainable code. Always ask yourself if this is the most simple intuitive solution to the problem. Always KISS (Keep It Simple Stupid). DRY. YAGNI. TDD. Frequent commits.
