@@ -27,6 +27,7 @@ For anything design-related, you MUST use the centralized design system in `apps
 - `apps/web/next.config.ts` derives CSP `connect-src` from `NEXT_PUBLIC_SERVER_URL`; keep extra `localhost` / websocket sources limited to development so production does not silently broaden outbound connections.
 - OpenCode MCP setup uses `opencode.json` with `mcp.{name}.type = "local"`, a `command` array, and `environment`; do not reuse Claude Desktop's `mcpServers` / `args` / `env` shape in OpenCode-facing docs.
 - `/solutions` infinite scrolling uses a composite cursor from `packages/db/src/list.ts`; keep `{ score, createdAt, id }` aligned with `packages/api/src/routers/solutions.ts` input validation and `apps/web/src/utils/trpc-output-types.ts` parsing so both recent and top sorting stay deterministic.
+- Cloudflare Hyperdrive does not support the SQL `DEFAULT` keyword in `INSERT ... VALUES` clauses; always pass explicit values (e.g. `createdAt: new Date()`) in Drizzle `.values()` calls instead of relying on `.defaultNow()` column defaults, or inserts will 500 in production.
 
 ## Code style
 
