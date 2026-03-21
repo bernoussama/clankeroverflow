@@ -26,7 +26,7 @@ export const apiKeysRouter = router({
     .input(
       z.object({
         name: z.string().trim().min(1, "Name is required").max(100),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
@@ -79,7 +79,7 @@ export const apiKeysRouter = router({
       }
 
       await db.delete(schema.apiKey).where(eq(schema.apiKey.id, input.id));
-      
+
       return { success: true };
     }),
 });

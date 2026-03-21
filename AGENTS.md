@@ -3,9 +3,11 @@
 Always update this file with things you discover about the codebase and would be useful for future agents.
 
 ## Unified Layout and Design
+
 For anything design-related, you MUST use the centralized design system in `apps/web/src/index.css`. This includes using the predefined CSS variables (e.g., `--landing-accent`, `--landing-surface`) and global utility classes (e.g., `.btn-primary`, `.landing-card`) to keep the design language unified in the whole app. Do not create one-off custom CSS or isolated styled-components.
 
 ## Codebase Notes
+
 - `packages/auth/src/index.ts` runs Better Auth inside a Cloudflare Worker; the default Better Auth scrypt path can exceed Worker CPU limits on email/password POST routes, so keep the custom native `node:crypto.scrypt` helpers in `packages/auth/src/password.ts` wired into `emailAndPassword.password`.
 - `apps/web/src/app/dashboard/dashboard.tsx` manages API keys with a hand-written React Query key; keep load, `setQueryData`, and invalidation in sync, and do not rely on clipboard access alone because some incognito/locked-down browsers reject `navigator.clipboard.writeText`.
 - API keys are hashed at rest: `packages/api/src/routers/apiKeys.ts` stores the SHA-256 hash in `schema.apiKey.key`, persists a masked `keyPreview`, and only returns the raw secret once from the create mutation for the dashboard's ephemeral reveal panel.
@@ -22,8 +24,10 @@ For anything design-related, you MUST use the centralized design system in `apps
 - `apps/server/src/index.ts` marks `/api/auth/*` and `/trpc/*` responses as `Cache-Control: no-store` / `Pragma: no-cache`, so do not expect browser or intermediary caching for auth or RPC traffic.
 - `apps/web/next.config.ts` derives CSP `connect-src` from `NEXT_PUBLIC_SERVER_URL`; keep extra `localhost` / websocket sources limited to development so production does not silently broaden outbound connections.
 - OpenCode MCP setup uses `opencode.json` with `mcp.{name}.type = "local"`, a `command` array, and `environment`; do not reuse Claude Desktop's `mcpServers` / `args` / `env` shape in OpenCode-facing docs.
+- `/solutions` infinite scrolling uses a composite cursor from `packages/db/src/list.ts`; keep `{ score, createdAt, id }` aligned with `packages/api/src/routers/solutions.ts` input validation and `apps/web/src/utils/trpc-output-types.ts` parsing so both recent and top sorting stay deterministic.
 
 ## Code style
+
 - Write idiomatic, simple, maintainable code. Always ask yourself if this is the most simple intuitive solution to the problem. Always KISS (Keep It Simple Stupid). DRY. YAGNI. TDD. Frequent commits.
 - Instead of applying a bandaid, fix things from first principles, find the source and fix it versus applying a cheap bandaid on top.
 - Before adding any dependency: Research well-maintained options and confirm fit with the user before adding.
@@ -45,7 +49,6 @@ Fight entropy. Leave the codebase better than you found it.
 - Run the minimum number of tests needed to ensure code quality and speed.
 - Failing tests are acceptable when they expose genuine bugs and test correct behavior
 
-
 ## Specialized Subagents
 
 - Oracle
@@ -61,34 +64,44 @@ You have context-mode MCP tools available. These rules are NOT optional — they
 ## BLOCKED commands — do NOT attempt these
 
 ### curl / wget — BLOCKED
+
 Any shell command containing `curl` or `wget` will be intercepted and blocked by the context-mode plugin. Do NOT retry.
 Instead use:
+
 - `context-mode_ctx_fetch_and_index(url, source)` to fetch and index web pages
 - `context-mode_ctx_execute(language: "javascript", code: "const r = await fetch(...)")` to run HTTP calls in sandbox
 
 ### Inline HTTP — BLOCKED
+
 Any shell command containing `fetch('http`, `requests.get(`, `requests.post(`, `http.get(`, or `http.request(` will be intercepted and blocked. Do NOT retry with shell.
 Instead use:
+
 - `context-mode_ctx_execute(language, code)` to run HTTP calls in sandbox — only stdout enters context
 
 ### Direct web fetching — BLOCKED
+
 Do NOT use any direct URL fetching tool. Use the sandbox equivalent.
 Instead use:
+
 - `context-mode_ctx_fetch_and_index(url, source)` then `context-mode_ctx_search(queries)` to query the indexed content
 
 ## REDIRECTED tools — use sandbox equivalents
 
 ### Shell (>20 lines output)
+
 Shell is ONLY for: `git`, `mkdir`, `rm`, `mv`, `cd`, `ls`, `npm install`, `pip install`, and other short-output commands.
 For everything else, use:
+
 - `context-mode_ctx_batch_execute(commands, queries)` — run multiple commands + search in ONE call
 - `context-mode_ctx_execute(language: "shell", code: "...")` — run in sandbox, only stdout enters context
 
 ### File reading (for analysis)
+
 If you are reading a file to **edit** it → reading is correct (edit needs content in context).
 If you are reading to **analyze, explore, or summarize** → use `context-mode_ctx_execute_file(path, language, code)` instead. Only your printed summary enters context.
 
 ### grep / search (large results)
+
 Search results can flood context. Use `context-mode_ctx_execute(language: "shell", code: "grep ...")` to run searches in sandbox. Only your printed summary enters context.
 
 ## Tool selection hierarchy
@@ -107,8 +120,8 @@ Search results can flood context. Use `context-mode_ctx_execute(language: "shell
 
 ## ctx commands
 
-| Command | Action |
-|---------|--------|
-| `ctx stats` | Call the `stats` MCP tool and display the full output verbatim |
-| `ctx doctor` | Call the `doctor` MCP tool, run the returned shell command, display as checklist |
+| Command       | Action                                                                            |
+| ------------- | --------------------------------------------------------------------------------- |
+| `ctx stats`   | Call the `stats` MCP tool and display the full output verbatim                    |
+| `ctx doctor`  | Call the `doctor` MCP tool, run the returned shell command, display as checklist  |
 | `ctx upgrade` | Call the `upgrade` MCP tool, run the returned shell command, display as checklist |

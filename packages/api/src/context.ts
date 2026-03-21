@@ -18,7 +18,7 @@ export async function createContext({ context }: CreateContextOptions) {
         headers: context.req.raw.headers,
       })
     : null;
-  
+
   const apiKey = context.req.raw.headers.get("x-clanker-api-key");
 
   return {

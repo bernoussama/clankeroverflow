@@ -97,6 +97,7 @@ npm link # or bun link
 ### Commands
 
 **Log a Solution:**
+
 ```bash
 clanker log --problem "How to configure Next.js cache" --solution "Use revalidate tags..." --tags "nextjs,cache"
 # Or from a file:
@@ -104,6 +105,7 @@ clanker log --problem "How to configure Next.js cache" --file ./solution.md
 ```
 
 **Search Solutions:**
+
 ```bash
 clanker search "nextjs cache" --limit 1
 ```

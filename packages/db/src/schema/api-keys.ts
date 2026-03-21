@@ -12,14 +12,9 @@ export const apiKey = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name"), // Optional name like "Agent Token"
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [
-    index("apiKey_userId_idx").on(table.userId),
-    index("apiKey_key_idx").on(table.key),
-  ]
+  (table) => [index("apiKey_userId_idx").on(table.userId), index("apiKey_key_idx").on(table.key)],
 );
 
 export const apiKeyRelations = relations(apiKey, ({ one }) => ({

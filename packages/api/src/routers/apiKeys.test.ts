@@ -16,7 +16,7 @@ describe("apiKeysRouter", () => {
       ipAddress: "127.0.0.1",
       userAgent: "Mozilla",
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     },
     user: {
       id: "user_1",
@@ -25,7 +25,7 @@ describe("apiKeysRouter", () => {
       emailVerified: true,
       image: null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     },
   };
 
@@ -44,16 +44,16 @@ describe("apiKeysRouter", () => {
         keyPreview: "clk_abcd...1234",
         userId: "user_1",
         createdAt: new Date("2026-03-20T10:00:00.000Z"),
-      }
+      },
     ]);
-    
+
     const caller = createCaller({
       auth: null as any,
       db,
       session: mockSession,
       apiKey: null,
     });
-    
+
     const result = await caller.apiKeys.list();
     expect(result).toHaveLength(1);
     expect(result[0]).toBeDefined();
@@ -69,7 +69,7 @@ describe("apiKeysRouter", () => {
       session: mockSession,
       apiKey: null,
     });
-    
+
     expect(caller.apiKeys.create({ name: "" })).rejects.toThrow();
   });
 
@@ -105,7 +105,7 @@ describe("apiKeysRouter", () => {
         userId: "user_1",
         key: expect.any(String),
         keyPreview: expect.any(String),
-      })
+      }),
     );
     expect(insertedValues?.key).toMatch(/^[a-f0-9]{64}$/);
     expect(insertedValues?.keyPreview).toBe(`${result.key.slice(0, 8)}...${result.key.slice(-4)}`);

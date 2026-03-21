@@ -1,9 +1,6 @@
 import alchemy from "alchemy";
 import { Hyperdrive, Nextjs, Worker } from "alchemy/cloudflare";
-import {
-  getDatabaseUrlErrorMessage,
-  loadInfraEnv,
-} from "./src/env";
+import { getDatabaseUrlErrorMessage, loadInfraEnv } from "./src/env";
 
 const app = await alchemy("clankeroverflow");
 
@@ -20,6 +17,7 @@ const hyperdrive = isLocal
   ? null
   : await Hyperdrive("hyperdrive", {
       origin: databaseUrl,
+      adopt: true,
     });
 
 export const web = await Nextjs("web", {

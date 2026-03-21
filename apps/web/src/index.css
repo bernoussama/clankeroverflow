@@ -154,7 +154,6 @@
   }
 }
 
-
 /* ═══════════════════════════════════════════════════
    APP-WIDE DESIGN LANGUAGE — Editorial / Brutalist
    No glass. No glow. No gradients on text.
@@ -264,7 +263,9 @@
   border-radius: 2px;
   background: transparent;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
   color: var(--landing-muted);
   position: relative;
 }
@@ -439,7 +440,9 @@
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.1s ease;
   letter-spacing: 0.01em;
 }
 
@@ -465,7 +468,9 @@
   font-weight: 500;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
   letter-spacing: 0.01em;
 }
 
@@ -577,7 +582,6 @@
 }
 
 @keyframes cursor-blink {
-
   0%,
   50% {
     opacity: 1;
@@ -614,7 +618,10 @@
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
   color: var(--landing-muted);
   line-height: 1;
 }
@@ -682,7 +689,6 @@
 /* ─── Reduced Motion ─── */
 
 @media (prefers-reduced-motion: reduce) {
-
   .fade-in-up,
   .typing-cursor::after {
     animation: none !important;

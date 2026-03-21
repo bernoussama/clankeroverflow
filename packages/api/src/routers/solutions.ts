@@ -1,17 +1,27 @@
 import { TRPCError } from "@trpc/server";
-import { eq, and, sql, desc, lt } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { hashApiKey } from "@clankeroverflow/auth/api-keys";
-import { publicProcedure, router } from "../index";
 import { schema, type Database } from "@clankeroverflow/db";
+import {
+  listSolutions,
+  type SolutionListCursor,
+  type SolutionListSort,
+} from "@clankeroverflow/db/list";
 import { searchSolutions } from "@clankeroverflow/db/search";
+import { publicProcedure, router } from "../index";
 import { withTimeout } from "../utils/withTimeout";
 
 async function getVoteCounts(db: Database, solutionId: string, userId: string | null) {
   const [counts] = await db
     .select({
-      upvotes: sql<number>`count(*) filter (where ${schema.solutionVote.isUpvote} = true)`.mapWith(Number),
-      downvotes: sql<number>`count(*) filter (where ${schema.solutionVote.isUpvote} = false)`.mapWith(Number),
+      upvotes: sql<number>`count(*) filter (where ${schema.solutionVote.isUpvote} = true)`.mapWith(
+        Number,
+      ),
+      downvotes:
+        sql<number>`count(*) filter (where ${schema.solutionVote.isUpvote} = false)`.mapWith(
+          Number,
+        ),
     })
     .from(schema.solutionVote)
     .where(eq(schema.solutionVote.solutionId, solutionId));
@@ -40,7 +50,7 @@ export const solutionsRouter = router({
       z.object({
         id: z.string().min(1, "Solution ID is required"),
         isUpvote: z.boolean(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
@@ -64,6 +74,7 @@ export const solutionsRouter = router({
             message: "Invalid API Key provided",
           });
         }
+
         userId = keyRecord.userId;
       }
 
@@ -93,7 +104,7 @@ export const solutionsRouter = router({
         db.query.solutionVote.findFirst({
           where: and(
             eq(schema.solutionVote.userId, userId),
-            eq(schema.solutionVote.solutionId, input.id)
+            eq(schema.solutionVote.solutionId, input.id),
           ),
         }),
         2500,
@@ -104,28 +115,29 @@ export const solutionsRouter = router({
 
       if (existingVote) {
         if (existingVote.isUpvote === input.isUpvote) {
-          // Toggle off
           await withTimeout(
-            db.delete(schema.solutionVote).where(
-              and(
-                eq(schema.solutionVote.userId, userId),
-                eq(schema.solutionVote.solutionId, input.id)
-              )
-            ),
+            db
+              .delete(schema.solutionVote)
+              .where(
+                and(
+                  eq(schema.solutionVote.userId, userId),
+                  eq(schema.solutionVote.solutionId, input.id),
+                ),
+              ),
             2500,
             "Vote delete timed out",
           );
           scoreDiff = input.isUpvote ? -1 : 1;
         } else {
-          // Flip vote
           await withTimeout(
-            db.update(schema.solutionVote)
+            db
+              .update(schema.solutionVote)
               .set({ isUpvote: input.isUpvote })
               .where(
                 and(
                   eq(schema.solutionVote.userId, userId),
-                  eq(schema.solutionVote.solutionId, input.id)
-                )
+                  eq(schema.solutionVote.solutionId, input.id),
+                ),
               ),
             2500,
             "Vote update timed out",
@@ -133,7 +145,6 @@ export const solutionsRouter = router({
           scoreDiff = input.isUpvote ? 2 : -2;
         }
       } else {
-        // New vote
         await withTimeout(
           db.insert(schema.solutionVote).values({
             userId,
@@ -148,7 +159,8 @@ export const solutionsRouter = router({
 
       if (scoreDiff !== 0) {
         await withTimeout(
-          db.update(schema.solution)
+          db
+            .update(schema.solution)
             .set({ score: sql`${schema.solution.score} + ${scoreDiff}` })
             .where(eq(schema.solution.id, input.id)),
           2500,
@@ -171,13 +183,12 @@ export const solutionsRouter = router({
         problem: z.string().trim().min(1, "Problem description is required").max(300),
         solution: z.string().trim().min(1, "Solution details are required").max(30_000),
         tags: z.string().trim().max(250).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
       let userId: string | null = null;
 
-      // If they provided a session, use it
       if (ctx.session?.user) {
         userId = ctx.session.user.id;
       } else if (ctx.apiKey) {
@@ -196,6 +207,7 @@ export const solutionsRouter = router({
             message: "Invalid API Key provided",
           });
         }
+
         userId = keyRecord.userId;
       }
 
@@ -220,7 +232,7 @@ export const solutionsRouter = router({
       z.object({
         query: z.string().min(1, "Search query is required"),
         limit: z.number().min(1).max(20).default(1),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const results = await withTimeout(
@@ -232,77 +244,59 @@ export const solutionsRouter = router({
       return results;
     }),
 
+  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const db = ctx.db;
+    const result = await withTimeout(
+      db.query.solution.findFirst({
+        where: eq(schema.solution.id, input.id),
+      }),
+      2500,
+      "Solution lookup timed out",
+    );
+
+    if (!result) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Solution not found",
+      });
+    }
+
+    let userId: string | null = null;
+    if (ctx.session?.user) {
+      userId = ctx.session.user.id;
+    }
+
+    const voteCounts = await withTimeout(
+      getVoteCounts(db, input.id, userId),
+      2500,
+      "Vote counts lookup timed out",
+    );
+
+    return { ...result, ...voteCounts };
+  }),
+
   list: publicProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(50).default(20),
-        cursor: z.string().optional(),
+        cursor: z
+          .object({
+            createdAt: z.string(),
+            id: z.string(),
+            score: z.number(),
+          })
+          .nullish(),
         sort: z.enum(["recent", "top"]).default("recent"),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
-      const db = ctx.db;
-      const { limit, cursor, sort } = input;
+      const cursor: SolutionListCursor | null = input.cursor ?? null;
+      const sort: SolutionListSort = input.sort;
 
-      const orderBy = sort === "top"
-        ? [desc(schema.solution.score), desc(schema.solution.createdAt)]
-        : [desc(schema.solution.createdAt)];
-
-      let whereClause;
-      if (cursor) {
-        whereClause = lt(schema.solution.createdAt, new Date(cursor));
-      }
-
-      const items = await withTimeout(
-        db
-          .select()
-          .from(schema.solution)
-          .where(whereClause)
-          .orderBy(...orderBy)
-          .limit(limit + 1),
+      return withTimeout(
+        listSolutions(ctx.db, { limit: input.limit, cursor, sort }),
         2500,
-        "Solutions list timed out",
+        "Solution list timed out",
       );
-
-      let nextCursor: string | undefined;
-      if (items.length > limit) {
-        const next = items.pop()!;
-        nextCursor = next.createdAt.toISOString();
-      }
-
-      return { items, nextCursor };
-    }),
-
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const db = ctx.db;
-      const result = await withTimeout(
-        db.query.solution.findFirst({
-          where: eq(schema.solution.id, input.id),
-        }),
-        2500,
-        "Solution lookup timed out",
-      );
-
-      if (!result) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Solution not found",
-        });
-      }
-
-      let userId: string | null = null;
-      if (ctx.session?.user) {
-        userId = ctx.session.user.id;
-      }
-
-      const voteCounts = await withTimeout(
-        getVoteCounts(db, input.id, userId),
-        2500,
-        "Vote counts lookup timed out",
-      );
-
-      return { ...result, ...voteCounts };
     }),
 });

@@ -1,25 +1,21 @@
 import { describe, expect, it } from "bun:test";
 
-import {
-  getDatabaseUrlErrorMessage,
-  getInfraEnvFiles,
-  loadInfraEnv,
-} from "./env";
+import { getDatabaseUrlErrorMessage, getInfraEnvFiles, loadInfraEnv } from "./env";
 
 describe("getInfraEnvFiles", () => {
   it("uses the local infra env file for local runs", () => {
     expect(getInfraEnvFiles(true)).toEqual([
-      "./.env",
       "../../apps/web/.env",
       "../../apps/server/.env",
+      "./.env",
     ]);
   });
 
   it("uses the production infra env file for deploys", () => {
     expect(getInfraEnvFiles(false)).toEqual([
-      "./.env.production",
       "../../apps/web/.env",
       "../../apps/server/.env",
+      "./.env.production",
     ]);
   });
 });
@@ -34,9 +30,9 @@ describe("loadInfraEnv", () => {
     });
 
     expect(loadedPaths).toEqual([
-      "./.env.production",
       "../../apps/web/.env",
       "../../apps/server/.env",
+      "./.env.production",
     ]);
   });
 });

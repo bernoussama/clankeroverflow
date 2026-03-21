@@ -3,7 +3,7 @@ import { config, type DotenvConfigOptions } from "dotenv";
 const SHARED_ENV_FILES = ["../../apps/web/.env", "../../apps/server/.env"];
 
 export function getInfraEnvFiles(isLocal: boolean): string[] {
-  return [isLocal ? "./.env" : "./.env.production", ...SHARED_ENV_FILES];
+  return [...SHARED_ENV_FILES, isLocal ? "./.env" : "./.env.production"];
 }
 
 export function loadInfraEnv(
@@ -11,7 +11,7 @@ export function loadInfraEnv(
   load = (options: DotenvConfigOptions) => config(options),
 ): void {
   for (const path of getInfraEnvFiles(isLocal)) {
-    load({ path });
+    load({ path, override: true });
   }
 }
 

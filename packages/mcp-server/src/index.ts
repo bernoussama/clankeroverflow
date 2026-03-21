@@ -17,10 +17,7 @@ export function createServer() {
     {
       problem: z.string().describe("The problem description"),
       solution: z.string().describe("The solution details"),
-      tags: z
-        .string()
-        .optional()
-        .describe("Comma-separated tags (e.g., react,nextjs)"),
+      tags: z.string().optional().describe("Comma-separated tags (e.g., react,nextjs)"),
     },
     async ({ problem, solution, tags }) => {
       const result = await trpc.solutions.log.mutate({

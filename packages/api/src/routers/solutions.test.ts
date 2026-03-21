@@ -1,10 +1,19 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { appRouter } from "./index";
-import { t } from "../index";
 import { getDb } from "@clankeroverflow/db";
+import { t } from "../index";
+import { appRouter } from "./index";
 
 const createCaller = t.createCallerFactory(appRouter);
 const db = getDb();
+
+function createSelectChain(result: unknown[]) {
+  const chain: any = {};
+  chain.from = mock(() => chain);
+  chain.where = mock(() => chain);
+  chain.orderBy = mock(() => chain);
+  chain.limit = mock(() => result);
+  return chain;
+}
 
 describe("solutionsRouter", () => {
   const mockSession = {
@@ -16,7 +25,7 @@ describe("solutionsRouter", () => {
       ipAddress: "127.0.0.1",
       userAgent: "Mozilla",
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     },
     user: {
       id: "user_1",
@@ -25,7 +34,7 @@ describe("solutionsRouter", () => {
       emailVerified: true,
       image: null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     },
   };
 
@@ -46,16 +55,14 @@ describe("solutionsRouter", () => {
 
     const result = await caller.solutions.search({ query: "   " });
     expect(result).toEqual([]);
-    expect((db.execute as any)).not.toHaveBeenCalled();
+    expect(db.execute as any).not.toHaveBeenCalled();
   });
 
   test("search should execute ranked search and return results", async () => {
     (db.execute as any).mockResolvedValueOnce({
-      rows: [
-        { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }
-      ],
+      rows: [{ id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }],
     });
-    
+
     const caller = createCaller({
       auth: null as any,
       db,
@@ -69,15 +76,18 @@ describe("solutionsRouter", () => {
   });
 
   test("getById should return solution with vote counts", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce(
-      { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }
-    );
+    (db.query.solution.findFirst as any).mockResolvedValueOnce({
+      id: "sol_1",
+      problem: "Test problem",
+      solution: "Test solution",
+      score: 0,
+    });
     (db.select as any).mockReturnValueOnce({
       from: mock(() => ({
         where: mock(() => [{ upvotes: 3, downvotes: 1 }]),
       })),
     });
-    
+
     const caller = createCaller({
       auth: null as any,
       db,
@@ -93,24 +103,29 @@ describe("solutionsRouter", () => {
   });
 
   test("getById should return userVote when session is present", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce(
-      { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }
-    );
+    (db.query.solution.findFirst as any).mockResolvedValueOnce({
+      id: "sol_1",
+      problem: "Test problem",
+      solution: "Test solution",
+      score: 0,
+    });
     (db.select as any).mockReturnValueOnce({
       from: mock(() => ({
         where: mock(() => [{ upvotes: 5, downvotes: 2 }]),
       })),
     });
-    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce(
-      { userId: "user_1", solutionId: "sol_1", isUpvote: true }
-    );
-    
+    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce({
+      userId: "user_1",
+      solutionId: "sol_1",
+      isUpvote: true,
+    });
+
     const caller = createCaller({
       db,
       session: mockSession,
       apiKey: null,
     } as any);
-    
+
     const result = await caller.solutions.getById({ id: "sol_1" });
     expect(result.upvotes).toBe(5);
     expect(result.downvotes).toBe(2);
@@ -119,7 +134,7 @@ describe("solutionsRouter", () => {
 
   test("getById should throw NOT_FOUND if not found", async () => {
     (db.query.solution.findFirst as any).mockResolvedValueOnce(undefined);
-    
+
     const caller = createCaller({
       auth: null as any,
       db,
@@ -158,13 +173,7 @@ describe("solutionsRouter", () => {
       { id: "sol_1", problem: "P1", solution: "S1", score: 5, createdAt: new Date() },
       { id: "sol_2", problem: "P2", solution: "S2", score: 3, createdAt: new Date() },
     ];
-    const selectChain: any = {
-      from: mock(() => selectChain),
-      where: mock(() => selectChain),
-      orderBy: mock(() => selectChain),
-      limit: mock(() => items),
-    };
-    (db.select as any).mockReturnValueOnce(selectChain);
+    (db.select as any).mockReturnValueOnce(createSelectChain(items));
 
     const caller = createCaller({
       auth: null as any,
@@ -175,24 +184,18 @@ describe("solutionsRouter", () => {
 
     const result = await caller.solutions.list({ limit: 20, sort: "recent" });
     expect(result.items).toHaveLength(2);
-    expect(result.nextCursor).toBeUndefined();
+    expect(result.nextCursor).toBeNull();
   });
 
-  test("list should return nextCursor when more items exist", async () => {
+  test("list should return nextCursor when more items exist for top sorting", async () => {
     const items = Array.from({ length: 6 }, (_, i) => ({
       id: `sol_${i}`,
       problem: `P${i}`,
       solution: `S${i}`,
       score: i,
-      createdAt: new Date(Date.now() - i * 60000),
+      createdAt: new Date(Date.now() - i * 60_000),
     }));
-    const selectChain: any = {
-      from: mock(() => selectChain),
-      where: mock(() => selectChain),
-      orderBy: mock(() => selectChain),
-      limit: mock(() => [...items]),
-    };
-    (db.select as any).mockReturnValueOnce(selectChain);
+    (db.select as any).mockReturnValueOnce(createSelectChain(items));
 
     const caller = createCaller({
       auth: null as any,
@@ -201,8 +204,12 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    const result = await caller.solutions.list({ limit: 5, sort: "recent" });
+    const result = await caller.solutions.list({ limit: 5, sort: "top" });
     expect(result.items).toHaveLength(5);
-    expect(result.nextCursor).toBeDefined();
+    expect(result.nextCursor).toEqual({
+      createdAt: items[5]?.createdAt.toISOString(),
+      id: items[5]?.id,
+      score: items[5]?.score,
+    });
   });
 });

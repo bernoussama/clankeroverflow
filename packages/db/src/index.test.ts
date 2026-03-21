@@ -11,12 +11,11 @@ describe("Database Integration", () => {
 
   beforeAll(async () => {
     const connectionString =
-      process.env.DATABASE_URL ??
-      "postgres://postgres:postgres@localhost:5432/clankeroverflow";
+      process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/clankeroverflow";
 
     pool = new Pool({ connectionString });
     db = drizzle(pool, { schema });
-    
+
     // Run migrations
     const migrationsFolder = fileURLToPath(new URL("./migrations", import.meta.url));
     await migrate(db, { migrationsFolder });

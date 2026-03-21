@@ -5,7 +5,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
 
 import { trpc, trpcClient } from "@/utils/trpc";
-import { apiKeysSchema, type ApiKeys, type ApiKey, type CreatedApiKey } from "@/utils/trpc-output-types";
+import {
+  apiKeysSchema,
+  type ApiKeys,
+  type ApiKey,
+  type CreatedApiKey,
+} from "@/utils/trpc-output-types";
 import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,46 +29,53 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
     queryFn: async () => apiKeysSchema.parse(await trpcClient.apiKeys.list.query()),
   });
 
-  const createMutation = useMutation(trpc.apiKeys.create.mutationOptions({
-    onSuccess: (data) => {
-      queryClient.setQueryData<ApiKeys>(apiKeysQueryKey, (current = []) => [
-        {
-          createdAt: data.createdAt,
-          id: data.id,
-          keyPreview: data.keyPreview,
-          name: data.name,
-        },
-        ...current.filter((apiKey) => apiKey.id !== data.id),
-      ]);
-      queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
-      setNewKeyName("");
-      setCreatedKey(data);
-      toast.success("API Key created successfully");
+  const createMutation = useMutation(
+    trpc.apiKeys.create.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.setQueryData<ApiKeys>(apiKeysQueryKey, (current = []) => [
+          {
+            createdAt: data.createdAt,
+            id: data.id,
+            keyPreview: data.keyPreview,
+            name: data.name,
+          },
+          ...current.filter((apiKey) => apiKey.id !== data.id),
+        ]);
+        queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
+        setNewKeyName("");
+        setCreatedKey(data);
+        toast.success("API Key created successfully");
 
-      if (data.key) {
-        void navigator.clipboard.writeText(data.key)
-          .then(() => {
-            toast.info("API Key copied to clipboard.");
-          })
-          .catch(() => {
-            toast.info("API key created. Clipboard access was blocked, so copy it from the panel above before dismissing it.");
-          });
-      }
-    },
-    onError: (error) => {
-      toast.error(`Failed to create API key: ${error.message}`);
-    },
-  }));
+        if (data.key) {
+          void navigator.clipboard
+            .writeText(data.key)
+            .then(() => {
+              toast.info("API Key copied to clipboard.");
+            })
+            .catch(() => {
+              toast.info(
+                "API key created. Clipboard access was blocked, so copy it from the panel above before dismissing it.",
+              );
+            });
+        }
+      },
+      onError: (error) => {
+        toast.error(`Failed to create API key: ${error.message}`);
+      },
+    }),
+  );
 
-  const deleteMutation = useMutation(trpc.apiKeys.delete.mutationOptions({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
-      toast.success("API Key deleted successfully");
-    },
-    onError: (error) => {
-      toast.error(`Failed to delete API key: ${error.message}`);
-    },
-  }));
+  const deleteMutation = useMutation(
+    trpc.apiKeys.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
+        toast.success("API Key deleted successfully");
+      },
+      onError: (error) => {
+        toast.error(`Failed to delete API key: ${error.message}`);
+      },
+    }),
+  );
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +90,8 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
   };
 
   const handleCopy = (text: string, id: string) => {
-    void navigator.clipboard.writeText(text)
+    void navigator.clipboard
+      .writeText(text)
       .then(() => {
         setCopiedKey(id);
         setTimeout(() => setCopiedKey(null), 2000);
@@ -98,7 +111,8 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
             <h2 className="font-display text-lg font-bold tracking-tight">API Keys</h2>
           </div>
           <p className="text-sm text-muted-landing">
-            Generate keys to use with the <code className="font-mono text-xs">CLANKER_API_KEY</code> environment variable.
+            Generate keys to use with the <code className="font-mono text-xs">CLANKER_API_KEY</code>{" "}
+            environment variable.
           </p>
         </div>
         <div className="dashboard-card__body">
@@ -215,8 +229,9 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
         <div className="dashboard-card__header">
           <h2 className="font-display text-lg font-bold tracking-tight">MCP Usage</h2>
           <p className="mt-2 text-sm text-muted-landing">
-            Add ClankerOverflow to any MCP-compatible client to search prior fixes and log new ones without
-            leaving your editor. OpenCode uses the <code className="font-mono text-xs">mcp</code> config shown here.
+            Add ClankerOverflow to any MCP-compatible client to search prior fixes and log new ones
+            without leaving your editor. OpenCode uses the{" "}
+            <code className="font-mono text-xs">mcp</code> config shown here.
           </p>
         </div>
         <div className="dashboard-card__body p-0">
@@ -233,22 +248,29 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
                 <span className="syn-string">&quot;clankeroverflow&quot;</span>: {`{`}
               </div>
               <div className="pl-12">
-                <span className="syn-string">&quot;type&quot;</span>: <span className="syn-string">&quot;local&quot;</span>,
+                <span className="syn-string">&quot;type&quot;</span>:{" "}
+                <span className="syn-string">&quot;local&quot;</span>,
               </div>
               <div className="pl-12">
-                <span className="syn-string">&quot;command&quot;</span>: [<span className="syn-string">&quot;npx&quot;</span>, <span className="syn-string">&quot;-y&quot;</span>, <span className="syn-string">&quot;@clankeroverflow/mcp-server&quot;</span>],
+                <span className="syn-string">&quot;command&quot;</span>: [
+                <span className="syn-string">&quot;npx&quot;</span>,{" "}
+                <span className="syn-string">&quot;-y&quot;</span>,{" "}
+                <span className="syn-string">&quot;@clankeroverflow/mcp-server&quot;</span>],
               </div>
               <div className="pl-12">
-                <span className="syn-string">&quot;enabled&quot;</span>: <span className="syn-number">true</span>,
+                <span className="syn-string">&quot;enabled&quot;</span>:{" "}
+                <span className="syn-number">true</span>,
               </div>
               <div className="pl-12">
                 <span className="syn-string">&quot;environment&quot;</span>: {`{`}
               </div>
               <div className="pl-16">
-                <span className="syn-string">&quot;CLANKER_API_KEY&quot;</span>: <span className="syn-string">&quot;clk_your_secret_key_here&quot;</span>,
+                <span className="syn-string">&quot;CLANKER_API_KEY&quot;</span>:{" "}
+                <span className="syn-string">&quot;clk_your_secret_key_here&quot;</span>,
               </div>
               <div className="pl-16">
-                <span className="syn-string">&quot;CLANKER_SERVER_URL&quot;</span>: <span className="syn-string">&quot;https://api.clankeroverflow.com&quot;</span>
+                <span className="syn-string">&quot;CLANKER_SERVER_URL&quot;</span>:{" "}
+                <span className="syn-string">&quot;https://api.clankeroverflow.com&quot;</span>
               </div>
               <div className="pl-12">{`}`}</div>
               <div className="pl-8">{`}`}</div>
@@ -257,9 +279,10 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
             </div>
           </div>
           <div className="px-6 py-4 text-xs text-muted-landing font-mono border-t border-landing">
-            <span className="text-foreground">search_solutions</span> works without auth. Logging and voting tools
-            use <code className="text-[11px]">CLANKER_API_KEY</code>. Other MCP clients can reuse the same command and
-            environment values in their own config format. Global installs can run
+            <span className="text-foreground">search_solutions</span> works without auth. Logging
+            and voting tools use <code className="text-[11px]">CLANKER_API_KEY</code>. Other MCP
+            clients can reuse the same command and environment values in their own config format.
+            Global installs can run
             <code className="text-[11px]"> clanker-mcp</code> directly.
           </div>
         </div>

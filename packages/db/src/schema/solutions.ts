@@ -1,13 +1,5 @@
 import { relations } from "drizzle-orm";
-import {
-  pgTable,
-  text,
-  integer,
-  boolean,
-  index,
-  primaryKey,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, index, primaryKey, timestamp } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
 export const solution = pgTable(
@@ -19,17 +11,13 @@ export const solution = pgTable(
     tags: text("tags"), // Stored as comma-separated or JSON string
     userId: text("user_id").references(() => user.id, { onDelete: "set null" }), // Nullable for anonymous
     score: integer("score").default(0).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    index("solution_userId_idx").on(table.userId),
-  ]
+  (table) => [index("solution_userId_idx").on(table.userId)],
 );
 
 export const solutionVote = pgTable(
@@ -42,14 +30,12 @@ export const solutionVote = pgTable(
       .notNull()
       .references(() => solution.id, { onDelete: "cascade" }),
     isUpvote: boolean("is_upvote").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.solutionId] }),
     index("solutionVote_solutionId_idx").on(table.solutionId),
-  ]
+  ],
 );
 
 export const solutionRelations = relations(solution, ({ one, many }) => ({

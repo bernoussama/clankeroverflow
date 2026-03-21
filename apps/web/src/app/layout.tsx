@@ -36,7 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} antialiased`}
+      >
         <Providers>
           <div className="landing-page grid grid-rows-[auto_1fr] min-h-svh">
             <Header />

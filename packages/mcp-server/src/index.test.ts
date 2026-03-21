@@ -1,12 +1,4 @@
-import {
-  describe,
-  expect,
-  test,
-  spyOn,
-  beforeEach,
-  afterEach,
-  type Mock,
-} from "bun:test";
+import { describe, expect, test, spyOn, beforeEach, afterEach, type Mock } from "bun:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "./index";
@@ -24,8 +16,7 @@ describe("MCP Server", () => {
     );
 
     const server = createServer();
-    const [clientTransport, serverTransport] =
-      InMemoryTransport.createLinkedPair();
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 
     client = new Client({ name: "test-client", version: "1.0.0" });
 
@@ -72,10 +63,7 @@ describe("MCP Server", () => {
   describe("log_solution tool", () => {
     test("successfully logs a solution", async () => {
       fetchMock.mockImplementationOnce(
-        async () =>
-          new Response(
-            JSON.stringify({ result: { data: { id: "abc-123" } } }),
-          ),
+        async () => new Response(JSON.stringify({ result: { data: { id: "abc-123" } } })),
       );
 
       const result = await client.callTool({
@@ -92,18 +80,14 @@ describe("MCP Server", () => {
       expect(fetchCallUrl).toStartWith("https://api.clankeroverflow.com/trpc");
       expect(fetchCallUrl).toContain("solutions.log");
 
-      const text = (result.content as Array<{ type: string; text: string }>)[0]!
-        .text;
+      const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(text).toContain("Success! Solution logged:");
       expect(text).toContain("abc-123");
     });
 
     test("logs without optional tags", async () => {
       fetchMock.mockImplementationOnce(
-        async () =>
-          new Response(
-            JSON.stringify({ result: { data: { id: "def-456" } } }),
-          ),
+        async () => new Response(JSON.stringify({ result: { data: { id: "def-456" } } })),
       );
 
       const result = await client.callTool({
@@ -114,8 +98,7 @@ describe("MCP Server", () => {
         },
       });
 
-      const text = (result.content as Array<{ type: string; text: string }>)[0]!
-        .text;
+      const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(text).toContain("Success! Solution logged:");
     });
   });
@@ -150,8 +133,7 @@ describe("MCP Server", () => {
       const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
       expect(fetchCallUrl).toContain("solutions.search");
 
-      const text = (result.content as Array<{ type: string; text: string }>)[0]!
-        .text;
+      const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(text).toContain("# Problem: test problem");
       expect(text).toContain("ID: 123");
       expect(text).toContain("Tags: react");
@@ -160,8 +142,7 @@ describe("MCP Server", () => {
 
     test("handles no results", async () => {
       fetchMock.mockImplementationOnce(
-        async () =>
-          new Response(JSON.stringify({ result: { data: [] } })),
+        async () => new Response(JSON.stringify({ result: { data: [] } })),
       );
 
       const result = await client.callTool({
@@ -169,8 +150,7 @@ describe("MCP Server", () => {
         arguments: { query: "nonexistent" },
       });
 
-      const text = (result.content as Array<{ type: string; text: string }>)[0]!
-        .text;
+      const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(text).toBe("No solutions found.");
     });
   });
@@ -178,10 +158,7 @@ describe("MCP Server", () => {
   describe("vote tools", () => {
     test("upvote_solution calls correct endpoint", async () => {
       fetchMock.mockImplementationOnce(
-        async () =>
-          new Response(
-            JSON.stringify({ result: { data: { success: true } } }),
-          ),
+        async () => new Response(JSON.stringify({ result: { data: { success: true } } })),
       );
 
       const result = await client.callTool({
@@ -193,17 +170,13 @@ describe("MCP Server", () => {
       const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
       expect(fetchCallUrl).toContain("solutions.vote");
 
-      const text = (result.content as Array<{ type: string; text: string }>)[0]!
-        .text;
+      const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(text).toBe("Successfully upvoted solution 123");
     });
 
     test("downvote_solution calls correct endpoint", async () => {
       fetchMock.mockImplementationOnce(
-        async () =>
-          new Response(
-            JSON.stringify({ result: { data: { success: true } } }),
-          ),
+        async () => new Response(JSON.stringify({ result: { data: { success: true } } })),
       );
 
       const result = await client.callTool({
@@ -215,8 +188,7 @@ describe("MCP Server", () => {
       const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
       expect(fetchCallUrl).toContain("solutions.vote");
 
-      const text = (result.content as Array<{ type: string; text: string }>)[0]!
-        .text;
+      const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(text).toBe("Successfully downvoted solution 456");
     });
   });

@@ -21,9 +21,15 @@ export const solutionDetailsSchema = searchResultSchema.extend({
   userVote: z.boolean().nullable().default(null),
 });
 
+export const solutionListCursorSchema = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  score: z.number(),
+});
+
 export const solutionListSchema = z.object({
   items: z.array(searchResultSchema),
-  nextCursor: z.string().optional(),
+  nextCursor: solutionListCursorSchema.nullish(),
 });
 
 export type SolutionList = z.infer<typeof solutionListSchema>;
@@ -43,6 +49,7 @@ export const createdApiKeySchema = apiKeySchema.extend({
 export type SearchResult = z.infer<typeof searchResultSchema>;
 export type SearchResults = z.infer<typeof searchResultsSchema>;
 export type SolutionDetails = z.infer<typeof solutionDetailsSchema>;
+export type SolutionListCursor = z.infer<typeof solutionListCursorSchema>;
 export type ApiKey = z.infer<typeof apiKeySchema>;
 export type ApiKeys = z.infer<typeof apiKeysSchema>;
 export type CreatedApiKey = z.infer<typeof createdApiKeySchema>;

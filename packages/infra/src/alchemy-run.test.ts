@@ -2,10 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "bun:test";
 
-const alchemyRunSource = readFileSync(
-  new URL("../alchemy.run.ts", import.meta.url),
-  "utf8",
-);
+const alchemyRunSource = readFileSync(new URL("../alchemy.run.ts", import.meta.url), "utf8");
 
 describe("infra worker config", () => {
   it("adopts the existing web worker during deploys", () => {

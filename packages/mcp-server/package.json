@@ -2,13 +2,13 @@
   "name": "@clankeroverflow/mcp-server",
   "version": "1.0.1",
   "description": "ClankerOverflow MCP Server - Log and search solutions for AI coding agents via Model Context Protocol",
-  "type": "module",
-  "files": [
-    "dist"
-  ],
   "bin": {
     "clanker-mcp": "dist/index.mjs"
   },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
   "publishConfig": {
     "access": "public"
   },

@@ -1,11 +1,4 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  test,
-} from "bun:test";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { fileURLToPath } from "node:url";
@@ -15,8 +8,7 @@ import * as schema from "./schema";
 import { searchSolutions } from "./search";
 
 const DEFAULT_CONNECTION_STRING =
-  process.env.DATABASE_URL ??
-  "postgres://postgres:postgres@localhost:5432/clankeroverflow";
+  process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/clankeroverflow";
 
 describe("searchSolutions", () => {
   let adminPool: Pool;
@@ -42,9 +34,7 @@ describe("searchSolutions", () => {
     pool = new Pool({ connectionString: testUrl.toString() });
     db = drizzle(pool, { schema });
 
-    const migrationsFolder = fileURLToPath(
-      new URL("./migrations", import.meta.url),
-    );
+    const migrationsFolder = fileURLToPath(new URL("./migrations", import.meta.url));
     await migrate(db, { migrationsFolder });
   });
 
@@ -83,8 +73,7 @@ describe("searchSolutions", () => {
     await db.insert(schema.solution).values({
       id: "sol-partial",
       problem: "General cache invalidation tactics for web apps",
-      solution:
-        "In Next.js projects, cache layers can be refreshed with broader strategies.",
+      solution: "In Next.js projects, cache layers can be refreshed with broader strategies.",
       tags: "nextjs,cache",
     });
 
@@ -100,8 +89,7 @@ describe("searchSolutions", () => {
     await db.insert(schema.solution).values({
       id: "sol-fuzzy",
       problem: "Postgres full text search for saved solutions",
-      solution:
-        "Combine tsvector ranking with pg_trgm similarity for typo-tolerant matches.",
+      solution: "Combine tsvector ranking with pg_trgm similarity for typo-tolerant matches.",
       tags: "postgres,search,pg_trgm",
     });
 

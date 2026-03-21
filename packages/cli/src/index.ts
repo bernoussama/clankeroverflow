@@ -43,7 +43,10 @@ export function createProgram() {
     .option("-p, --problem <text>", "The problem description")
     .option("-s, --solution <text>", "The solution details")
     .option("-t, --tags <text>", "Comma-separated tags (e.g., react,nextjs)")
-    .option("-f, --file <path>", "Path to a markdown file containing the solution. If used, --problem is still required but --solution is ignored.")
+    .option(
+      "-f, --file <path>",
+      "Path to a markdown file containing the solution. If used, --problem is still required but --solution is ignored.",
+    )
     .action(async (options) => {
       try {
         if (!options.problem) {

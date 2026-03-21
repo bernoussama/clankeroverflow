@@ -65,7 +65,10 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
             <form.Field name="email">
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor={field.name} className="text-xs font-mono uppercase tracking-wider text-muted-landing">
+                  <Label
+                    htmlFor={field.name}
+                    className="text-xs font-mono uppercase tracking-wider text-muted-landing"
+                  >
                     Email
                   </Label>
                   <Input
@@ -91,7 +94,10 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
             <form.Field name="password">
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor={field.name} className="text-xs font-mono uppercase tracking-wider text-muted-landing">
+                  <Label
+                    htmlFor={field.name}
+                    className="text-xs font-mono uppercase tracking-wider text-muted-landing"
+                  >
                     Password
                   </Label>
                   <Input

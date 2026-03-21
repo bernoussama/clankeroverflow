@@ -31,7 +31,7 @@ export function parseAllowedOrigins(value: string): string[] {
         .split(",")
         .map((origin) => origin.trim())
         .filter(Boolean)
-        .map(normalizeOrigin)
+        .map(normalizeOrigin),
     ),
   );
 }

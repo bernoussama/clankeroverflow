@@ -24,9 +24,7 @@ export default async function DashboardPage() {
           <p className="font-mono text-sm tracking-widest uppercase text-accent-landing mb-3">
             Dashboard
           </p>
-          <h1 className="page-title text-3xl sm:text-4xl">
-            Welcome, {session.user.name}
-          </h1>
+          <h1 className="page-title text-3xl sm:text-4xl">Welcome, {session.user.name}</h1>
         </div>
         <Dashboard session={session} />
       </div>

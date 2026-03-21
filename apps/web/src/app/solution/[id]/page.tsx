@@ -19,25 +19,40 @@ export default function SolutionPage() {
   const { data: session } = authClient.useSession();
   const [isVoting, setIsVoting] = useState(false);
 
-  const { data: solution, isLoading, isError } = useQuery<SolutionDetails>({
+  const {
+    data: solution,
+    isLoading,
+    isError,
+  } = useQuery<SolutionDetails>({
     queryKey: ["solutions", "getById", id],
     queryFn: async () =>
       solutionDetailsSchema.parse(await trpcClient.solutions.getById.query({ id })),
   });
 
-  const handleVote = useCallback(async (isUpvote: boolean) => {
-    if (isVoting || !session) return;
-    setIsVoting(true);
-    try {
-      const result = await trpcClient.solutions.vote.mutate({ id, isUpvote });
-      queryClient.setQueryData(["solutions", "getById", id], (old: SolutionDetails | undefined) => {
-        if (!old) return old;
-        return { ...old, upvotes: result.upvotes, downvotes: result.downvotes, userVote: result.userVote };
-      });
-    } finally {
-      setIsVoting(false);
-    }
-  }, [id, isVoting, session]);
+  const handleVote = useCallback(
+    async (isUpvote: boolean) => {
+      if (isVoting || !session) return;
+      setIsVoting(true);
+      try {
+        const result = await trpcClient.solutions.vote.mutate({ id, isUpvote });
+        queryClient.setQueryData(
+          ["solutions", "getById", id],
+          (old: SolutionDetails | undefined) => {
+            if (!old) return old;
+            return {
+              ...old,
+              upvotes: result.upvotes,
+              downvotes: result.downvotes,
+              userVote: result.userVote,
+            };
+          },
+        );
+      } finally {
+        setIsVoting(false);
+      }
+    },
+    [id, isVoting, session],
+  );
 
   if (isLoading) {
     return (
@@ -68,11 +83,7 @@ export default function SolutionPage() {
           <p className="text-sm text-muted-landing mb-6">
             The solution you are looking for does not exist or an error occurred.
           </p>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="btn-secondary"
-          >
+          <button type="button" onClick={() => router.back()} className="btn-secondary">
             <ArrowLeft className="w-3.5 h-3.5" /> Go Back
           </button>
         </div>
@@ -92,9 +103,7 @@ export default function SolutionPage() {
         </Link>
 
         {/* Problem Title */}
-        <h1 className="page-title text-3xl sm:text-4xl mb-4">
-          {solution.problem}
-        </h1>
+        <h1 className="page-title text-3xl sm:text-4xl mb-4">{solution.problem}</h1>
 
         {/* Meta */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-mono text-muted-landing mb-6">

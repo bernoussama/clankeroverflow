@@ -15,9 +15,9 @@ type VerifyPasswordInput = {
 };
 
 function createSalt() {
-  return Buffer.from(crypto.getRandomValues(new Uint8Array(PASSWORD_HASH_CONFIG.saltBytes))).toString(
-    "hex",
-  );
+  return Buffer.from(
+    crypto.getRandomValues(new Uint8Array(PASSWORD_HASH_CONFIG.saltBytes)),
+  ).toString("hex");
 }
 
 function parsePasswordHash(hash: string) {

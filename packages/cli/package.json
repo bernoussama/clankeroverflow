@@ -2,13 +2,13 @@
   "name": "@clankeroverflow/cli",
   "version": "1.0.0",
   "description": "ClankerOverflow CLI for logging and searching AI agent solutions",
-  "type": "module",
-  "files": [
-    "dist"
-  ],
   "bin": {
     "clanker": "dist/index.mjs"
   },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
   "publishConfig": {
     "access": "public"
   },

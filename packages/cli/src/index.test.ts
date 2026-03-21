@@ -45,50 +45,75 @@ describe("CLI", () => {
       } catch (e: any) {
         expect(e.message).toBe("Process.exit(1)");
       }
-      expect(consoleErrorMock).toHaveBeenCalledWith("Error: Either --solution or --file is required.");
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        "Error: Either --solution or --file is required.",
+      );
     });
 
     test("successfully logs a solution", async () => {
       const program = createProgram();
-      fetchMock.mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: { id: "123" } } })));
-      await program.parseAsync(["node", "test", "log", "--problem", "test problem", "--solution", "test solution", "--tags", "react"]);
-      
+      fetchMock.mockImplementationOnce(
+        async () => new Response(JSON.stringify({ result: { data: { id: "123" } } })),
+      );
+      await program.parseAsync([
+        "node",
+        "test",
+        "log",
+        "--problem",
+        "test problem",
+        "--solution",
+        "test solution",
+        "--tags",
+        "react",
+      ]);
+
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
       expect(fetchCallUrl).toStartWith("https://api.clankeroverflow.com/trpc");
       expect(fetchCallUrl).toContain("solutions.log");
-      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("Success! Solution logged:"));
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("Success! Solution logged:"),
+      );
     });
   });
 
   describe("search command", () => {
     test("successfully searches for solutions", async () => {
       const program = createProgram();
-      fetchMock.mockImplementationOnce(async () => new Response(JSON.stringify({
-        result: {
-          data: [
-            {
-              id: "123",
-              problem: "test problem",
-              solution: "test solution",
-              score: 5,
-              tags: "react",
-            },
-          ],
-        },
-      })));
+      fetchMock.mockImplementationOnce(
+        async () =>
+          new Response(
+            JSON.stringify({
+              result: {
+                data: [
+                  {
+                    id: "123",
+                    problem: "test problem",
+                    solution: "test solution",
+                    score: 5,
+                    tags: "react",
+                  },
+                ],
+              },
+            }),
+          ),
+      );
       await program.parseAsync(["node", "test", "search", "test", "--limit", "1"]);
-      
+
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
       expect(fetchCallUrl).toContain("solutions.search");
-      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("# Problem: test problem"));
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("# Problem: test problem"),
+      );
       expect(consoleLogMock).toHaveBeenCalledWith("ID: 123");
     });
 
     test("handles no solutions found", async () => {
       const program = createProgram();
-      fetchMock.mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })));
+      fetchMock.mockImplementationOnce(
+        async () => new Response(JSON.stringify({ result: { data: [] } })),
+      );
       await program.parseAsync(["node", "test", "search", "none"]);
       expect(consoleLogMock).toHaveBeenCalledWith("No solutions found.");
     });
@@ -97,7 +122,9 @@ describe("CLI", () => {
   describe("vote commands", () => {
     test("successfully upvotes", async () => {
       const program = createProgram();
-      fetchMock.mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: undefined } })));
+      fetchMock.mockImplementationOnce(
+        async () => new Response(JSON.stringify({ result: { data: undefined } })),
+      );
       await program.parseAsync(["node", "test", "upvote", "123"]);
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
@@ -107,7 +134,9 @@ describe("CLI", () => {
 
     test("successfully downvotes", async () => {
       const program = createProgram();
-      fetchMock.mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: undefined } })));
+      fetchMock.mockImplementationOnce(
+        async () => new Response(JSON.stringify({ result: { data: undefined } })),
+      );
       await program.parseAsync(["node", "test", "downvote", "123"]);
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
