@@ -1,17 +1,68 @@
-import { config, type DotenvConfigOptions } from "dotenv";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
+import { config, parse, type DotenvConfigOptions } from "dotenv";
+
+const LOCAL_INFRA_ENV_FILE = "./.env";
+const PRODUCTION_INFRA_ENV_FILE = "./.env.production";
 const SHARED_ENV_FILES = ["../../apps/web/.env", "../../apps/server/.env"];
 
+type DotenvLoader = (options: DotenvConfigOptions) => ReturnType<typeof config>;
+type EnvFileReader = (path: string) => string | null;
+
 export function getInfraEnvFiles(isLocal: boolean): string[] {
-  return [...SHARED_ENV_FILES, isLocal ? "./.env" : "./.env.production"];
+  return [isLocal ? LOCAL_INFRA_ENV_FILE : PRODUCTION_INFRA_ENV_FILE, ...SHARED_ENV_FILES];
+}
+
+function readEnvFile(path: string, read: EnvFileReader): Record<string, string> {
+  const contents = read(path);
+  return contents ? parse(contents) : {};
+}
+
+function readInfraEnvFile(path: string): string | null {
+  try {
+    return readFileSync(resolve(process.cwd(), path), "utf8");
+  } catch {
+    return null;
+  }
+}
+
+function clearShadowedLocalEnvValues(
+  selectedEnvPath: string,
+  env: NodeJS.ProcessEnv,
+  read: EnvFileReader,
+): void {
+  const localEnv = readEnvFile(LOCAL_INFRA_ENV_FILE, read);
+  const selectedEnv = readEnvFile(selectedEnvPath, read);
+
+  for (const [key, selectedValue] of Object.entries(selectedEnv)) {
+    const localValue = localEnv[key];
+    if (localValue && env[key] === localValue && localValue !== selectedValue) {
+      delete env[key];
+    }
+  }
 }
 
 export function loadInfraEnv(
   isLocal: boolean,
-  load = (options: DotenvConfigOptions) => config(options),
+  load: DotenvLoader = (options) => config(options),
+  env: NodeJS.ProcessEnv = process.env,
+  read: EnvFileReader = readInfraEnvFile,
 ): void {
-  for (const path of getInfraEnvFiles(isLocal)) {
-    load({ path, override: true });
+  const [selectedEnvPath, ...sharedEnvPaths] = getInfraEnvFiles(isLocal);
+
+  if (!selectedEnvPath) {
+    return;
+  }
+
+  if (!isLocal) {
+    clearShadowedLocalEnvValues(selectedEnvPath, env, read);
+  }
+
+  load({ path: selectedEnvPath });
+
+  for (const path of sharedEnvPaths) {
+    load({ path });
   }
 }
 

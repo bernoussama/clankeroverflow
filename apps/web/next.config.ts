@@ -5,13 +5,20 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const isDev = process.env.NODE_ENV !== "production";
 const serverOrigin = new URL(env.NEXT_PUBLIC_SERVER_URL).origin;
+const analyticsConnectSource = "https://cloudflareinsights.com";
+const analyticsScriptSource = "https://static.cloudflareinsights.com";
 const connectSources = isDev
   ? ["'self'", serverOrigin, "http://localhost:*", "ws://localhost:*", "ws:", "wss:"]
-  : ["'self'", serverOrigin];
+  : ["'self'", serverOrigin, analyticsConnectSource];
+const scriptSources = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(isDev ? ["'unsafe-eval'"] : [analyticsScriptSource]),
+];
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src ${scriptSources.join(" ")}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data: https:",
   "font-src 'self' data: https:",
@@ -41,7 +48,7 @@ const securityHeaders = [
   },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+    value: "camera=(), microphone=(), geolocation=()",
   },
   {
     key: "Referrer-Policy",
