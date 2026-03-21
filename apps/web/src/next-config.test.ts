@@ -18,5 +18,8 @@ describe("next config security headers", () => {
     expect(nextConfigSource).toContain("Strict-Transport-Security");
     expect(nextConfigSource).toContain("frame-ancestors 'none'");
     expect(nextConfigSource).toContain("object-src 'none'");
+    expect(nextConfigSource).not.toContain("browsing-topics=()");
+    expect(nextConfigSource).toContain("https://static.cloudflareinsights.com");
+    expect(nextConfigSource).toContain("https://cloudflareinsights.com");
   });
 });

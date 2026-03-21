@@ -19,6 +19,7 @@ describe("Server", () => {
     expect(res.headers.get("X-Frame-Options")).toBe("DENY");
     expect(res.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
     expect(res.headers.get("Permissions-Policy")).toContain("camera=()");
+    expect(res.headers.get("Permissions-Policy")).not.toContain("browsing-topics");
     expect(res.headers.get("Strict-Transport-Security")).toContain("max-age=");
   });
 

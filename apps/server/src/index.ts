@@ -26,7 +26,7 @@ const securityHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-site",
   "Origin-Agent-Cluster": "?1",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
   "X-Content-Type-Options": "nosniff",
