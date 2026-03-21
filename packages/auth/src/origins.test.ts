@@ -19,4 +19,20 @@ describe("parseAllowedOrigins", () => {
       "http://localhost:3001",
     ]);
   });
+
+  it("normalizes trailing slashes and removes duplicates", () => {
+    expect(
+      parseAllowedOrigins(
+        "https://clankeroverflow.com/, https://clankeroverflow.com",
+      ),
+    ).toEqual(["https://clankeroverflow.com"]);
+  });
+
+  it("fails fast when an entry is not a bare origin", () => {
+    expect(() =>
+      parseAllowedOrigins(
+        "https://clankeroverflow.com/app, https://www.clankeroverflow.com",
+      ),
+    ).toThrow("Invalid origin");
+  });
 });

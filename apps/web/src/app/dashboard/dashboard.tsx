@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
 
 import { trpc, trpcClient } from "@/utils/trpc";
-import { apiKeysSchema, type ApiKeys, type ApiKey } from "@/utils/trpc-output-types";
+import { apiKeysSchema, type ApiKeys, type ApiKey, type CreatedApiKey } from "@/utils/trpc-output-types";
 import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export default function Dashboard({ session }: { session: typeof authClient.$Infer.Session }) {
   const [newKeyName, setNewKeyName] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [createdKey, setCreatedKey] = useState<ApiKey | null>(null);
+  const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
 
   const queryClient = useQueryClient();
   const apiKeysQueryKey = ["apiKeys", "list"] as const;
@@ -27,7 +27,12 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
   const createMutation = useMutation(trpc.apiKeys.create.mutationOptions({
     onSuccess: (data) => {
       queryClient.setQueryData<ApiKeys>(apiKeysQueryKey, (current = []) => [
-        data,
+        {
+          createdAt: data.createdAt,
+          id: data.id,
+          keyPreview: data.keyPreview,
+          name: data.name,
+        },
         ...current.filter((apiKey) => apiKey.id !== data.id),
       ]);
       queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
@@ -41,7 +46,7 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
             toast.info("API Key copied to clipboard.");
           })
           .catch(() => {
-            toast.info("API key created. Clipboard access was blocked, so copy it from your saved keys below.");
+            toast.info("API key created. Clipboard access was blocked, so copy it from the panel above before dismissing it.");
           });
       }
     },
@@ -126,7 +131,7 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
                 <div>
                   <p className="text-sm font-semibold">New API key created</p>
                   <p className="text-xs text-muted-landing font-mono">
-                    This key is stored in your account and remains available in the list below.
+                    You will only be able to copy it again from this panel until you dismiss it.
                   </p>
                 </div>
                 <button
@@ -180,7 +185,7 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
                     <p className="text-sm font-semibold">{apiKey.name || "Unnamed Key"}</p>
                     <div className="mt-2 space-y-2">
                       <code className="block break-all text-xs font-mono px-3 py-2 rounded-sm bg-surface-landing border border-landing text-foreground">
-                        {apiKey.key}
+                        {apiKey.keyPreview}
                       </code>
                       <span className="text-xs text-muted-landing font-mono">
                         Created {new Date(apiKey.createdAt).toLocaleDateString()}
@@ -188,18 +193,6 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
                     </div>
                   </div>
                   <div className="flex items-center gap-1 self-end sm:self-start">
-                    <button
-                      type="button"
-                      className="mode-toggle-btn w-8 h-8"
-                      onClick={() => handleCopy(apiKey.key, apiKey.id)}
-                      title="Copy Key"
-                    >
-                      {copiedKey === apiKey.id ? (
-                        <Check className="w-3.5 h-3.5 text-accent-landing" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
                     <button
                       type="button"
                       className="mode-toggle-btn w-8 h-8 hover:!border-[var(--destructive)] hover:!color-[var(--destructive)]"

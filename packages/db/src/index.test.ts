@@ -90,10 +90,11 @@ describe("Database Integration", () => {
     });
 
     const keyId = "key-1";
-    const keyValue = "sk_test_12345";
+    const keyValue = "a".repeat(64);
     await db.insert(schema.apiKey).values({
       id: keyId,
       key: keyValue,
+      keyPreview: "clk_test...2345",
       userId,
       name: "Test Key",
     });

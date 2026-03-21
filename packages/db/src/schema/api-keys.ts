@@ -6,7 +6,8 @@ export const apiKey = pgTable(
   "api_key",
   {
     id: text("id").primaryKey(),
-    key: text("key").notNull().unique(), // The hashed or plain key (in a real app, hash this, for CLI tools plain token is often used initially)
+    key: text("key").notNull().unique(),
+    keyPreview: text("key_preview").notNull(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { createApiKeyValue } from "@clankeroverflow/auth/api-keys";
 
 import { protectedProcedure, router } from "../index";
 import { schema } from "@clankeroverflow/db";
@@ -8,35 +9,41 @@ import { schema } from "@clankeroverflow/db";
 export const apiKeysRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const db = ctx.db;
-    return await db.query.apiKey.findMany({
+    const apiKeys = await db.query.apiKey.findMany({
       where: eq(schema.apiKey.userId, ctx.session.user.id),
       orderBy: (fields, { desc }) => [desc(fields.createdAt)],
     });
+
+    return apiKeys.map(({ createdAt, id, keyPreview, name }) => ({
+      createdAt,
+      id,
+      keyPreview,
+      name,
+    }));
   }),
 
   create: protectedProcedure
     .input(
       z.object({
-        name: z.string().min(1, "Name is required").max(100),
+        name: z.string().trim().min(1, "Name is required").max(100),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
       const id = crypto.randomUUID();
-      // Generate a simple prefix + random token for the API key using web crypto
-      const key = `clk_${crypto.randomUUID().replace(/-/g, "")}${crypto.randomUUID().replace(/-/g, "").substring(0, 16)}`;
+      const { key, keyHash, keyPreview } = await createApiKeyValue();
 
       const [createdApiKey] = await db
         .insert(schema.apiKey)
         .values({
           id,
-          key,
+          key: keyHash,
+          keyPreview,
           name: input.name,
           userId: ctx.session.user.id,
         })
         .returning({
           id: schema.apiKey.id,
-          key: schema.apiKey.key,
           name: schema.apiKey.name,
           createdAt: schema.apiKey.createdAt,
         });
@@ -48,7 +55,11 @@ export const apiKeysRouter = router({
         });
       }
 
-      return createdApiKey;
+      return {
+        ...createdApiKey,
+        key,
+        keyPreview,
+      };
     }),
 
   delete: protectedProcedure
