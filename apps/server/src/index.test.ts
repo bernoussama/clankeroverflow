@@ -8,6 +8,48 @@ describe("Server", () => {
     expect(await res.text()).toBe("OK");
   });
 
+  test("GET / should include hardened security headers", async () => {
+    const res = await app.request("/");
+
+    expect(res.headers.get("Cross-Origin-Opener-Policy")).toBe("same-origin");
+    expect(res.headers.get("Cross-Origin-Resource-Policy")).toBe("same-site");
+    expect(res.headers.get("Origin-Agent-Cluster")).toBe("?1");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res.headers.get("X-DNS-Prefetch-Control")).toBe("off");
+    expect(res.headers.get("X-Frame-Options")).toBe("DENY");
+    expect(res.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
+    expect(res.headers.get("Permissions-Policy")).toContain("camera=()");
+    expect(res.headers.get("Strict-Transport-Security")).toContain("max-age=");
+  });
+
+  test("GET /trpc/healthCheck should disable caching", async () => {
+    const res = await app.request("/trpc/healthCheck");
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("Pragma")).toBe("no-cache");
+  });
+
+  test("POST /trpc/solutions.log should reject cookie-authenticated mutations from untrusted origins", async () => {
+    const res = await app.request("/trpc/solutions.log", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        cookie: "better-auth.session_token=csrf-test",
+        origin: "https://evil.example.com",
+      },
+      body: JSON.stringify({
+        json: {
+          problem: "Cross-site request",
+          solution: "Should be blocked before it reaches the procedure",
+        },
+      }),
+    });
+
+    expect(res.status).toBe(403);
+    expect(await res.text()).toContain("Forbidden");
+  });
+
   describe("CORS", () => {
     test("OPTIONS / should return CORS headers for the www domain", async () => {
       const res = await app.request("/", {
@@ -38,7 +80,7 @@ describe("Server", () => {
     test("GET /trpc/healthCheck should return OK", async () => {
       const res = await app.request("/trpc/healthCheck");
       expect(res.status).toBe(200);
-      const data = await res.json();
+      const data = await res.json() as { result: { data: string } };
       expect(data).toHaveProperty("result");
       expect(data.result.data).toBe("OK");
     });

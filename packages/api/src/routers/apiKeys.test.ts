@@ -37,7 +37,14 @@ describe("apiKeysRouter", () => {
 
   test("list should return api keys for user", async () => {
     (db.query.apiKey.findMany as any).mockResolvedValueOnce([
-      { id: "1", name: "Key 1", key: "clk_abc", userId: "user_1" }
+      {
+        id: "1",
+        name: "Key 1",
+        key: "7dacf9c63bcfb108c2e298e9a53c0e75681866d5041a73cba714cf250ce6a212",
+        keyPreview: "clk_abcd...1234",
+        userId: "user_1",
+        createdAt: new Date("2026-03-20T10:00:00.000Z"),
+      }
     ]);
     
     const caller = createCaller({
@@ -51,6 +58,8 @@ describe("apiKeysRouter", () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toBeDefined();
     expect(result[0]?.name).toBe("Key 1");
+    expect(result[0]?.keyPreview).toBe("clk_abcd...1234");
+    expect(result[0]).not.toHaveProperty("key");
   });
 
   test("create should require a name", async () => {
@@ -64,13 +73,13 @@ describe("apiKeysRouter", () => {
     expect(caller.apiKeys.create({ name: "" })).rejects.toThrow();
   });
 
-  test("create should return the persisted api key for the current user", async () => {
+  test("create should hash the persisted api key and only return the raw secret once", async () => {
     const createdAt = new Date("2026-03-20T10:00:00.000Z");
     const values = mock(() => ({
       returning: mock().mockResolvedValueOnce([
         {
           id: "key_1",
-          key: "clk_1234567890",
+          keyPreview: "clk_8f9b...4c2a",
           name: "Local Agent",
           createdAt,
         },
@@ -88,15 +97,23 @@ describe("apiKeysRouter", () => {
 
     const result = await caller.apiKeys.create({ name: "Local Agent" });
 
+    const insertedValues = values.mock.calls[0]?.[0];
+
     expect(values).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Local Agent",
         userId: "user_1",
+        key: expect.any(String),
+        keyPreview: expect.any(String),
       })
     );
+    expect(insertedValues?.key).toMatch(/^[a-f0-9]{64}$/);
+    expect(insertedValues?.keyPreview).toBe(`${result.key.slice(0, 8)}...${result.key.slice(-4)}`);
+    expect(insertedValues?.key).not.toBe(result.key);
     expect(result).toEqual({
       id: "key_1",
-      key: "clk_1234567890",
+      key: expect.stringMatching(/^clk_[a-f0-9]+$/),
+      keyPreview: `${result.key.slice(0, 8)}...${result.key.slice(-4)}`,
       name: "Local Agent",
       createdAt,
     });

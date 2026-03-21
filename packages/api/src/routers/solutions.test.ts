@@ -1,4 +1,4 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 import { appRouter } from "./index";
 import { t } from "../index";
 import { getDb } from "@clankeroverflow/db";
@@ -11,6 +11,7 @@ describe("solutionsRouter", () => {
     session: {
       id: "sess_1",
       userId: "user_1",
+      token: "token_1",
       expiresAt: new Date(),
       ipAddress: "127.0.0.1",
       userAgent: "Mozilla",
@@ -35,6 +36,8 @@ describe("solutionsRouter", () => {
 
   test("search should return empty array if query is empty after trim", async () => {
     const caller = createCaller({
+      auth: null as any,
+      db,
       session: null,
       apiKey: null,
     });
@@ -52,13 +55,15 @@ describe("solutionsRouter", () => {
     });
     
     const caller = createCaller({
+      auth: null as any,
+      db,
       session: null,
       apiKey: null,
     });
     
     const result = await caller.solutions.search({ query: "Test" });
     expect(result).toHaveLength(1);
-    expect(result[0].problem).toBe("Test problem");
+    expect(result[0]?.problem).toBe("Test problem");
   });
 
   test("getById should return solution if found", async () => {
@@ -67,6 +72,8 @@ describe("solutionsRouter", () => {
     );
     
     const caller = createCaller({
+      auth: null as any,
+      db,
       session: null,
       apiKey: null,
     });
@@ -79,10 +86,35 @@ describe("solutionsRouter", () => {
     (db.query.solution.findFirst as any).mockResolvedValueOnce(undefined);
     
     const caller = createCaller({
+      auth: null as any,
+      db,
       session: null,
       apiKey: null,
     });
     
     expect(caller.solutions.getById({ id: "sol_1" })).rejects.toThrow("Solution not found");
+  });
+
+  test("log should reject oversized payloads", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: mockSession,
+      apiKey: null,
+    });
+
+    expect(
+      caller.solutions.log({
+        problem: "p".repeat(301),
+        solution: "s",
+      }),
+    ).rejects.toThrow();
+
+    expect(
+      caller.solutions.log({
+        problem: "p",
+        solution: "s".repeat(30_001),
+      }),
+    ).rejects.toThrow();
   });
 });

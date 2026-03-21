@@ -18,15 +18,19 @@ export const solutionDetailsSchema = searchResultSchema;
 
 export const apiKeySchema = z.object({
   id: z.string(),
-  key: z.string(),
+  keyPreview: z.string(),
   name: z.string().nullable(),
   createdAt: dateLikeSchema,
 });
 
 export const apiKeysSchema = z.array(apiKeySchema);
+export const createdApiKeySchema = apiKeySchema.extend({
+  key: z.string(),
+});
 
 export type SearchResult = z.infer<typeof searchResultSchema>;
 export type SearchResults = z.infer<typeof searchResultsSchema>;
 export type SolutionDetails = z.infer<typeof solutionDetailsSchema>;
 export type ApiKey = z.infer<typeof apiKeySchema>;
 export type ApiKeys = z.infer<typeof apiKeysSchema>;
+export type CreatedApiKey = z.infer<typeof createdApiKeySchema>;

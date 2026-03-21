@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
+import { hashApiKey } from "@clankeroverflow/auth/api-keys";
 import { publicProcedure, router } from "../index";
 import { schema } from "@clankeroverflow/db";
 import { searchSolutions } from "@clankeroverflow/db/search";
@@ -21,9 +22,10 @@ export const solutionsRouter = router({
       if (ctx.session?.user) {
         userId = ctx.session.user.id;
       } else if (ctx.apiKey) {
+        const apiKeyHash = await hashApiKey(ctx.apiKey);
         const keyRecord = await withTimeout(
           db.query.apiKey.findFirst({
-            where: eq(schema.apiKey.key, ctx.apiKey),
+            where: eq(schema.apiKey.key, apiKeyHash),
           }),
           2500,
           "API key lookup timed out",
@@ -133,9 +135,9 @@ export const solutionsRouter = router({
   log: publicProcedure
     .input(
       z.object({
-        problem: z.string().min(1, "Problem description is required"),
-        solution: z.string().min(1, "Solution details are required"),
-        tags: z.string().optional(),
+        problem: z.string().trim().min(1, "Problem description is required").max(300),
+        solution: z.string().trim().min(1, "Solution details are required").max(30_000),
+        tags: z.string().trim().max(250).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -146,10 +148,10 @@ export const solutionsRouter = router({
       if (ctx.session?.user) {
         userId = ctx.session.user.id;
       } else if (ctx.apiKey) {
-        // Validate API key
+        const apiKeyHash = await hashApiKey(ctx.apiKey);
         const keyRecord = await withTimeout(
           db.query.apiKey.findFirst({
-            where: eq(schema.apiKey.key, ctx.apiKey),
+            where: eq(schema.apiKey.key, apiKeyHash),
           }),
           2500,
           "API key lookup timed out",

@@ -17,11 +17,11 @@ describe("dashboard API key UX", () => {
     expect(dashboardSource).toContain("Clipboard access was blocked");
   });
 
-  it("shows persisted API keys from the list cache instead of treating them as one-time secrets", () => {
+  it("keeps persisted API keys masked while still hydrating the list cache immediately", () => {
     expect(dashboardSource).toContain("setQueryData<ApiKeys>");
-    expect(dashboardSource).toContain("{apiKey.key}");
-    expect(dashboardSource).not.toContain("you won't be able to see it again");
-    expect(dashboardSource).not.toContain("substring(0, 8)");
+    expect(dashboardSource).toContain("keyPreview: data.keyPreview");
+    expect(dashboardSource).toContain("{apiKey.keyPreview}");
+    expect(dashboardSource).toContain("You will only be able to copy it again from this panel until you dismiss it.");
   });
 
   it("documents MCP usage before CLI usage", () => {
