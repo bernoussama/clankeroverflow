@@ -259,28 +259,28 @@ class SafeRequests:
 ### Node.js
 
 ```javascript
-const axios = require('axios');
-const url = require('url');
-const dns = require('dns').promises;
+const axios = require("axios");
+const url = require("url");
+const dns = require("dns").promises;
 
 async function safeFetch(targetUrl) {
-    const parsed = new URL(targetUrl);
+  const parsed = new URL(targetUrl);
 
-    // Validate scheme
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-        throw new Error('Invalid scheme');
-    }
+  // Validate scheme
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error("Invalid scheme");
+  }
 
-    // Resolve and check IP
-    const addresses = await dns.lookup(parsed.hostname);
-    if (isInternalIP(addresses.address)) {
-        throw new Error('Internal IP not allowed');
-    }
+  // Resolve and check IP
+  const addresses = await dns.lookup(parsed.hostname);
+  if (isInternalIP(addresses.address)) {
+    throw new Error("Internal IP not allowed");
+  }
 
-    return axios.get(targetUrl, {
-        maxRedirects: 0,
-        timeout: 30000
-    });
+  return axios.get(targetUrl, {
+    maxRedirects: 0,
+    timeout: 30000,
+  });
 }
 ```
 

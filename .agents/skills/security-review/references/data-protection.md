@@ -7,6 +7,7 @@ Data protection encompasses safeguarding sensitive information throughout its li
 ## Sensitive Data Categories
 
 ### Personal Identifiable Information (PII)
+
 - Full names, addresses, phone numbers
 - Email addresses
 - Social Security Numbers, national IDs
@@ -14,18 +15,21 @@ Data protection encompasses safeguarding sensitive information throughout its li
 - Biometric data
 
 ### Financial Information
+
 - Credit card numbers (PAN)
 - Bank account numbers
 - Financial transactions
 - Payment credentials
 
 ### Authentication Credentials
+
 - Passwords (plaintext or weakly hashed)
 - API keys and tokens
 - Session identifiers
 - Private keys
 
 ### Health Information (PHI/HIPAA)
+
 - Medical records
 - Health conditions
 - Treatment information
@@ -39,12 +43,12 @@ Data protection encompasses safeguarding sensitive information throughout its li
 
 Classify all data by sensitivity level:
 
-| Level | Examples | Handling |
-|-------|----------|----------|
-| **Public** | Marketing content | No restrictions |
-| **Internal** | Employee directory | Access controls |
-| **Confidential** | Customer data | Encryption + access controls |
-| **Restricted** | Passwords, keys, PCI data | Strong encryption + audit logs |
+| Level            | Examples                  | Handling                       |
+| ---------------- | ------------------------- | ------------------------------ |
+| **Public**       | Marketing content         | No restrictions                |
+| **Internal**     | Employee directory        | Access controls                |
+| **Confidential** | Customer data             | Encryption + access controls   |
+| **Restricted**   | Passwords, keys, PCI data | Strong encryption + audit logs |
 
 ### 2. Minimize Data Collection
 
@@ -208,13 +212,13 @@ logger.debug(f"Session token: {hash_for_logging(session_id)}")
 
 ### Sensitive Data Patterns to Avoid in Logs
 
-| Data Type | Pattern |
-|-----------|---------|
-| Passwords | `password`, `passwd`, `pwd`, `secret` |
-| API Keys | `api_key`, `apikey`, `token`, `bearer` |
-| Credit Cards | 16-digit numbers, `card_number` |
-| SSN | `\d{3}-\d{2}-\d{4}`, `ssn`, `social` |
-| Session IDs | `session`, `sess_id`, `jsessionid` |
+| Data Type    | Pattern                                |
+| ------------ | -------------------------------------- |
+| Passwords    | `password`, `passwd`, `pwd`, `secret`  |
+| API Keys     | `api_key`, `apikey`, `token`, `bearer` |
+| Credit Cards | 16-digit numbers, `card_number`        |
+| SSN          | `\d{3}-\d{2}-\d{4}`, `ssn`, `social`   |
+| Session IDs  | `session`, `sess_id`, `jsessionid`     |
 
 ### Log Injection Prevention
 

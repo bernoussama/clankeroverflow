@@ -2,13 +2,13 @@
 
 ## Framework Detection
 
-| Indicator | Framework |
-|-----------|-----------|
-| `from django`, `settings.py`, `urls.py`, `views.py` | Django |
-| `from flask`, `@app.route` | Flask |
-| `from fastapi`, `@app.get`, `@app.post` | FastAPI |
-| `import tornado` | Tornado |
-| `from pyramid` | Pyramid |
+| Indicator                                           | Framework |
+| --------------------------------------------------- | --------- |
+| `from django`, `settings.py`, `urls.py`, `views.py` | Django    |
+| `from flask`, `@app.route`                          | Flask     |
+| `from fastapi`, `@app.get`, `@app.post`             | FastAPI   |
+| `import tornado`                                    | Tornado   |
+| `from pyramid`                                      | Pyramid   |
 
 ---
 
@@ -38,6 +38,7 @@ SECRET_KEY = settings.SECRET_KEY  # (check it's not hardcoded in repo though)
 ```
 
 **Only flag settings-based code if:**
+
 - The setting value itself is hardcoded in committed code (secrets exposure)
 - The setting value is somehow derived from user input (rare, investigate)
 

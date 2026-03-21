@@ -270,14 +270,14 @@ def get_data():
 ```javascript
 // VULNERABLE: Unhandled promise rejection
 async function processUser(userId) {
-    const user = await fetchUser(userId);  // No catch
-    return user;
+  const user = await fetchUser(userId); // No catch
+  return user;
 }
 
 // VULNERABLE: Missing error handler
-app.get('/api/data', async (req, res) => {
-    const data = await fetchData();  // Unhandled rejection crashes server
-    res.json(data);
+app.get("/api/data", async (req, res) => {
+  const data = await fetchData(); // Unhandled rejection crashes server
+  res.json(data);
 });
 ```
 
@@ -286,29 +286,32 @@ app.get('/api/data', async (req, res) => {
 ```javascript
 // SAFE: Always handle async errors
 async function processUser(userId) {
-    try {
-        const user = await fetchUser(userId);
-        return user;
-    } catch (error) {
-        logger.error('Failed to fetch user', { userId, error });
-        throw new UserFetchError('Unable to fetch user');
-    }
+  try {
+    const user = await fetchUser(userId);
+    return user;
+  } catch (error) {
+    logger.error("Failed to fetch user", { userId, error });
+    throw new UserFetchError("Unable to fetch user");
+  }
 }
 
 // SAFE: Express async wrapper
 const asyncHandler = (fn) => (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+  Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-app.get('/api/data', asyncHandler(async (req, res) => {
+app.get(
+  "/api/data",
+  asyncHandler(async (req, res) => {
     const data = await fetchData();
     res.json(data);
-}));
+  }),
+);
 
 // Global handler for unhandled rejections
-process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection', { reason });
-    // Don't exit - handle gracefully
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("Unhandled Rejection", { reason });
+  // Don't exit - handle gracefully
 });
 ```
 

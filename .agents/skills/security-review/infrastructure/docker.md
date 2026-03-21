@@ -286,7 +286,7 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '1'
+          cpus: "1"
 ```
 
 ### Network Isolation
@@ -301,7 +301,7 @@ services:
 
   backend:
     networks:
-      - internal  # Not accessible from outside
+      - internal # Not accessible from outside
 
   database:
     networks:
@@ -310,7 +310,7 @@ services:
 networks:
   public:
   internal:
-    internal: true  # No external access
+    internal: true # No external access
 ```
 
 ---

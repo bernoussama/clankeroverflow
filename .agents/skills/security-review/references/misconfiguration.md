@@ -31,14 +31,14 @@ def add_security_headers(response):
 
 ### Header Checklist
 
-| Header | Purpose | Secure Value |
-|--------|---------|--------------|
-| `X-Content-Type-Options` | Prevent MIME sniffing | `nosniff` |
-| `X-Frame-Options` | Prevent clickjacking | `DENY` or `SAMEORIGIN` |
-| `Strict-Transport-Security` | Force HTTPS | `max-age=31536000; includeSubDomains` |
-| `Content-Security-Policy` | Prevent XSS, injection | Restrictive policy |
-| `Referrer-Policy` | Control referrer leakage | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | Disable browser features | Disable unused features |
+| Header                      | Purpose                  | Secure Value                          |
+| --------------------------- | ------------------------ | ------------------------------------- |
+| `X-Content-Type-Options`    | Prevent MIME sniffing    | `nosniff`                             |
+| `X-Frame-Options`           | Prevent clickjacking     | `DENY` or `SAMEORIGIN`                |
+| `Strict-Transport-Security` | Force HTTPS              | `max-age=31536000; includeSubDomains` |
+| `Content-Security-Policy`   | Prevent XSS, injection   | Restrictive policy                    |
+| `Referrer-Policy`           | Control referrer leakage | `strict-origin-when-cross-origin`     |
+| `Permissions-Policy`        | Disable browser features | Disable unused features               |
 
 ### Content Security Policy
 
@@ -168,14 +168,14 @@ SECRET_KEY = 'development-secret-key'
 services:
   db:
     environment:
-      MYSQL_ROOT_PASSWORD: root  # VULNERABLE
-      POSTGRES_PASSWORD: postgres  # VULNERABLE
+      MYSQL_ROOT_PASSWORD: root # VULNERABLE
+      POSTGRES_PASSWORD: postgres # VULNERABLE
 
 # Kubernetes Secrets (base64 encoded defaults)
 apiVersion: v1
 kind: Secret
 data:
-  password: YWRtaW4=  # 'admin' base64 encoded - VULNERABLE
+  password: YWRtaW4= # 'admin' base64 encoded - VULNERABLE
 ```
 
 ---

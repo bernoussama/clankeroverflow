@@ -91,20 +91,20 @@ def update_user_role(admin, user, new_role):
 
 ### Security Events Checklist
 
-| Event Type | Must Log |
-|------------|----------|
-| Login success/failure | User, IP, timestamp, method |
-| Logout | User, session duration |
-| Password change | User, IP, timestamp |
-| Password reset request | Email/user, IP |
-| Account lockout | User, reason, duration |
-| MFA enrollment/removal | User, method |
-| Permission changes | Admin, target, old/new |
-| Access denied | User, resource, action |
-| Data export | User, data type, volume |
-| Admin actions | Admin, action, target |
-| API key creation/revocation | User, key ID (not key) |
-| Security setting changes | User, setting, old/new |
+| Event Type                  | Must Log                    |
+| --------------------------- | --------------------------- |
+| Login success/failure       | User, IP, timestamp, method |
+| Logout                      | User, session duration      |
+| Password change             | User, IP, timestamp         |
+| Password reset request      | Email/user, IP              |
+| Account lockout             | User, reason, duration      |
+| MFA enrollment/removal      | User, method                |
+| Permission changes          | Admin, target, old/new      |
+| Access denied               | User, resource, action      |
+| Data export                 | User, data type, volume     |
+| Admin actions               | Admin, action, target       |
+| API key creation/revocation | User, key ID (not key)      |
+| Security setting changes    | User, setting, old/new      |
 
 ---
 
@@ -173,6 +173,7 @@ logger.info(
 ### Attack Vector
 
 Attackers inject malicious content into logs to:
+
 - Forge log entries
 - Exploit log viewers (XSS in log dashboards)
 - Manipulate log analysis tools

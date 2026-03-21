@@ -15,14 +15,14 @@ Prototype pollution allows attackers to modify JavaScript object prototypes, aff
 ```javascript
 // VULNERABLE: Merge without protection
 function merge(target, source) {
-    for (let key in source) {
-        if (typeof source[key] === 'object') {
-            target[key] = merge(target[key] || {}, source[key]);
-        } else {
-            target[key] = source[key];
-        }
+  for (let key in source) {
+    if (typeof source[key] === "object") {
+      target[key] = merge(target[key] || {}, source[key]);
+    } else {
+      target[key] = source[key];
     }
-    return target;
+  }
+  return target;
 }
 
 // Attack payload: {"__proto__": {"isAdmin": true}}
@@ -30,7 +30,7 @@ merge({}, JSON.parse(userInput));
 
 // Now ALL objects have isAdmin = true
 const user = {};
-console.log(user.isAdmin);  // true!
+console.log(user.isAdmin); // true!
 ```
 
 ### Prevention Techniques
@@ -42,22 +42,22 @@ const safeObject = Object.create(null);
 
 // Method 2: Check for __proto__ and constructor
 function safeMerge(target, source) {
-    for (let key in source) {
-        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
-            continue;  // Skip dangerous keys
-        }
-        if (typeof source[key] === 'object' && source[key] !== null) {
-            target[key] = safeMerge(target[key] || {}, source[key]);
-        } else {
-            target[key] = source[key];
-        }
+  for (let key in source) {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
+      continue; // Skip dangerous keys
     }
-    return target;
+    if (typeof source[key] === "object" && source[key] !== null) {
+      target[key] = safeMerge(target[key] || {}, source[key]);
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
 }
 
 // Method 3: Use Map instead of Object
 const safeStore = new Map();
-safeStore.set('__proto__', 'value');  // Just a key, no pollution
+safeStore.set("__proto__", "value"); // Just a key, no pollution
 
 // Method 4: Object.freeze prototypes (defense in depth)
 Object.freeze(Object.prototype);
@@ -73,10 +73,10 @@ Object.freeze(Array.prototype);
 ```javascript
 // Test for prototype pollution vulnerability
 function testPrototypePollution(fn) {
-    const payload = JSON.parse('{"__proto__": {"polluted": true}}');
-    fn(payload);
-    const obj = {};
-    return obj.polluted === true;  // Vulnerable if true
+  const payload = JSON.parse('{"__proto__": {"polluted": true}}');
+  fn(payload);
+  const obj = {};
+  return obj.polluted === true; // Vulnerable if true
 }
 ```
 
@@ -91,15 +91,15 @@ DOM clobbering exploits named HTML elements that automatically become properties
 ```html
 <!-- Attacker-controlled HTML -->
 <form id="location">
-    <input name="href" value="https://evil.com">
+  <input name="href" value="https://evil.com" />
 </form>
 
 <script>
-// Intended: document.location.href
-// Actual: returns "https://evil.com" (the form element's input)
-if (document.location.href.includes('trusted.com')) {
+  // Intended: document.location.href
+  // Actual: returns "https://evil.com" (the form element's input)
+  if (document.location.href.includes("trusted.com")) {
     // Always false - href is now the input element
-}
+  }
 </script>
 ```
 
@@ -107,30 +107,30 @@ if (document.location.href.includes('trusted.com')) {
 
 ```javascript
 // Method 1: Use window.location explicitly
-const url = window.location.href;  // Can't be clobbered
+const url = window.location.href; // Can't be clobbered
 
 // Method 2: Check property type
 function safeGetElement(name) {
-    const element = document[name];
-    if (element && element.nodeType === undefined) {
-        return element;
-    }
-    return null;  // It's a DOM element, not expected object
+  const element = document[name];
+  if (element && element.nodeType === undefined) {
+    return element;
+  }
+  return null; // It's a DOM element, not expected object
 }
 
 // Method 3: Use specific APIs
-const location = new URL(window.location);  // Creates new object
+const location = new URL(window.location); // Creates new object
 
 // Method 4: Sanitize HTML that could clobber
 // Remove id and name attributes from untrusted HTML
 function sanitizeHTML(html) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const elements = doc.querySelectorAll('[id], [name]');
-    elements.forEach(el => {
-        el.removeAttribute('id');
-        el.removeAttribute('name');
-    });
-    return doc.body.innerHTML;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const elements = doc.querySelectorAll("[id], [name]");
+  elements.forEach((el) => {
+    el.removeAttribute("id");
+    el.removeAttribute("name");
+  });
+  return doc.body.innerHTML;
 }
 ```
 
@@ -142,8 +142,8 @@ function sanitizeHTML(html) {
 
 ```javascript
 // VULNERABLE: No authentication
-const ws = new WebSocket('wss://api.example.com/ws');
-ws.onopen = () => ws.send(JSON.stringify({ action: 'getData' }));
+const ws = new WebSocket("wss://api.example.com/ws");
+ws.onopen = () => ws.send(JSON.stringify({ action: "getData" }));
 
 // SAFE: Token-based authentication
 const token = getAuthToken();
@@ -151,7 +151,7 @@ const ws = new WebSocket(`wss://api.example.com/ws?token=${token}`);
 
 // Or via first message
 ws.onopen = () => {
-    ws.send(JSON.stringify({ type: 'auth', token: token }));
+  ws.send(JSON.stringify({ type: "auth", token: token }));
 };
 ```
 
@@ -440,17 +440,20 @@ grep -rn "complete(\|chat(\|generate(" --include="*.py"
 ## Testing Checklist
 
 ### Prototype Pollution
+
 - [ ] Object merge operations sanitize `__proto__`
 - [ ] Object merge operations sanitize `constructor`
 - [ ] User input not directly merged into objects
 - [ ] Consider using Map instead of Object for dynamic keys
 
 ### DOM Clobbering
+
 - [ ] Critical properties accessed via `window.` explicitly
 - [ ] User-controlled HTML sanitized of `id` and `name`
 - [ ] Type checking before using document properties
 
 ### WebSocket Security
+
 - [ ] Origin header validated
 - [ ] Authentication required
 - [ ] Messages validated against schema
@@ -458,6 +461,7 @@ grep -rn "complete(\|chat(\|generate(" --include="*.py"
 - [ ] CSRF protection for WebSocket connections
 
 ### LLM Prompt Injection
+
 - [ ] User input separated from system prompts
 - [ ] Injection patterns filtered from input
 - [ ] Output validated before use

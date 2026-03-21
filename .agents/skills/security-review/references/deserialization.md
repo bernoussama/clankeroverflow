@@ -7,6 +7,7 @@ Serialization converts objects into transferable data formats, while deserializa
 ## The Risk
 
 When an application deserializes untrusted data:
+
 1. Attacker crafts malicious serialized data
 2. Application deserializes it, instantiating objects
 3. Object constructors/destructors execute attacker-controlled code
@@ -251,15 +252,15 @@ data = YAML.safe_load(untrusted_data, permitted_classes: [Date, Time])
 
 ```javascript
 // VULNERABLE: node-serialize
-var serialize = require('node-serialize');
+var serialize = require("node-serialize");
 var obj = serialize.unserialize(untrustedData);
 
 // VULNERABLE: js-yaml (unsafe by default in older versions)
-var yaml = require('js-yaml');
-var obj = yaml.load(untrustedData);  // Can execute code
+var yaml = require("js-yaml");
+var obj = yaml.load(untrustedData); // Can execute code
 
 // VULNERABLE: eval-based parsing
-var obj = eval('(' + untrustedData + ')');
+var obj = eval("(" + untrustedData + ")");
 ```
 
 #### Safe Alternatives
@@ -269,11 +270,11 @@ var obj = eval('(' + untrustedData + ')');
 const obj = JSON.parse(untrustedData);
 
 // SAFE: js-yaml with safeLoad or safe schema
-const yaml = require('js-yaml');
+const yaml = require("js-yaml");
 const obj = yaml.load(untrustedData, { schema: yaml.SAFE_SCHEMA });
 
 // SAFE: Explicit validation with Joi/Zod
-const Joi = require('joi');
+const Joi = require("joi");
 const schema = Joi.object({ name: Joi.string().required() });
 const { value, error } = schema.validate(JSON.parse(input));
 ```

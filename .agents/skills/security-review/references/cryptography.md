@@ -12,11 +12,13 @@
 ### Symmetric Encryption
 
 **Recommended:**
+
 - **AES-256-GCM** (preferred) - Provides encryption + authentication
 - **AES-128-GCM** - Acceptable minimum
 - **ChaCha20-Poly1305** - Good alternative, especially on systems without AES hardware
 
 **Avoid:**
+
 - DES, 3DES - Deprecated, insufficient key length
 - RC4 - Broken
 - AES-ECB - Reveals patterns in data
@@ -24,13 +26,13 @@
 
 ### Cipher Modes
 
-| Mode | Use Case | Notes |
-|------|----------|-------|
-| **GCM** | General purpose | Authenticated encryption (preferred) |
-| **CCM** | Constrained environments | Authenticated encryption |
-| **CTR + HMAC** | When GCM unavailable | Encrypt-then-MAC pattern |
-| **CBC** | Legacy only | Requires separate MAC |
-| **ECB** | Never for data | Reveals patterns |
+| Mode           | Use Case                 | Notes                                |
+| -------------- | ------------------------ | ------------------------------------ |
+| **GCM**        | General purpose          | Authenticated encryption (preferred) |
+| **CCM**        | Constrained environments | Authenticated encryption             |
+| **CTR + HMAC** | When GCM unavailable     | Encrypt-then-MAC pattern             |
+| **CBC**        | Legacy only              | Requires separate MAC                |
+| **ECB**        | Never for data           | Reveals patterns                     |
 
 ```python
 # VULNERABLE: ECB mode
@@ -45,11 +47,13 @@ ciphertext, tag = cipher.encrypt_and_digest(plaintext)
 ### Asymmetric Encryption
 
 **Recommended:**
+
 - **ECC with Curve25519** (preferred for key exchange)
 - **RSA-2048** minimum (RSA-4096 for long-term)
 - **ECDSA with P-256** or Ed25519 for signatures
 
 **Avoid:**
+
 - RSA < 2048 bits
 - DSA
 - ECDSA with weak curves
@@ -60,15 +64,15 @@ ciphertext, tag = cipher.encrypt_and_digest(plaintext)
 
 ### Cryptographically Secure PRNGs (CSPRNG)
 
-| Language | Safe | Unsafe |
-|----------|------|--------|
-| **Python** | `secrets`, `os.urandom()` | `random` module |
-| **JavaScript** | `crypto.randomBytes()`, `crypto.randomUUID()` | `Math.random()` |
-| **Java** | `SecureRandom`, `UUID.randomUUID()` | `Math.random()`, `java.util.Random` |
-| **PHP** | `random_bytes()`, `random_int()` | `rand()`, `mt_rand()`, `uniqid()` |
-| **.NET** | `RandomNumberGenerator` | `Random()` |
-| **Go** | `crypto/rand` | `math/rand` |
-| **Ruby** | `SecureRandom` | `rand()` |
+| Language       | Safe                                          | Unsafe                              |
+| -------------- | --------------------------------------------- | ----------------------------------- |
+| **Python**     | `secrets`, `os.urandom()`                     | `random` module                     |
+| **JavaScript** | `crypto.randomBytes()`, `crypto.randomUUID()` | `Math.random()`                     |
+| **Java**       | `SecureRandom`, `UUID.randomUUID()`           | `Math.random()`, `java.util.Random` |
+| **PHP**        | `random_bytes()`, `random_int()`              | `rand()`, `mt_rand()`, `uniqid()`   |
+| **.NET**       | `RandomNumberGenerator`                       | `Random()`                          |
+| **Go**         | `crypto/rand`                                 | `math/rand`                         |
+| **Ruby**       | `SecureRandom`                                | `rand()`                            |
 
 ```python
 # VULNERABLE: Predictable random
@@ -117,12 +121,14 @@ key = kdf.derive(password.encode())
 ### Key Storage
 
 **Do:**
+
 - Use Hardware Security Modules (HSM)
 - Use cloud key management (AWS KMS, Azure Key Vault, GCP KMS)
 - Use dedicated secrets managers (HashiCorp Vault)
 - Store keys separately from encrypted data
 
 **Don't:**
+
 - Hardcode keys in source code
 - Commit keys to version control
 - Store keys in environment variables (can leak)
@@ -142,6 +148,7 @@ KEY = secrets_manager.get_secret('encryption_key')
 ### Key Rotation
 
 **When to rotate:**
+
 - Key compromise (immediate)
 - Cryptoperiod expiration (time-based)
 - After encrypting 2^35 bytes (for 64-bit block ciphers)
@@ -192,14 +199,15 @@ See `authentication.md` for password-specific hashing.
 
 ### General Purpose Hashing
 
-| Use Case | Algorithm |
-|----------|-----------|
+| Use Case               | Algorithm        |
+| ---------------------- | ---------------- |
 | Integrity verification | SHA-256 or SHA-3 |
-| HMAC | HMAC-SHA-256 |
-| Key derivation | HKDF, PBKDF2 |
-| Content addressing | SHA-256 |
+| HMAC                   | HMAC-SHA-256     |
+| Key derivation         | HKDF, PBKDF2     |
+| Content addressing     | SHA-256          |
 
 **Avoid for new systems:**
+
 - MD5 (broken)
 - SHA-1 (deprecated)
 

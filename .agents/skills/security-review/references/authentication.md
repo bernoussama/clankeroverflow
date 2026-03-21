@@ -4,12 +4,13 @@
 
 ### Strength Requirements
 
-| Context | Minimum Length | Maximum Length |
-|---------|---------------|----------------|
-| With MFA | 8 characters | At least 64 characters |
-| Without MFA | 15 characters | At least 64 characters |
+| Context     | Minimum Length | Maximum Length         |
+| ----------- | -------------- | ---------------------- |
+| With MFA    | 8 characters   | At least 64 characters |
+| Without MFA | 15 characters  | At least 64 characters |
 
 **Composition Rules:**
+
 - Allow all printable characters including spaces and Unicode
 - No mandatory complexity rules (uppercase, numbers, symbols)
 - No periodic forced password changes
@@ -21,6 +22,7 @@
 **Recommended Algorithms (in order of preference):**
 
 1. **Argon2id** (preferred)
+
    ```
    Memory: minimum 19 MiB (19456 KB)
    Iterations: minimum 2
@@ -28,6 +30,7 @@
    ```
 
 2. **scrypt**
+
    ```
    CPU/memory cost (N): 2^17
    Block size (r): 8
@@ -35,6 +38,7 @@
    ```
 
 3. **bcrypt** (legacy systems)
+
    ```
    Work factor: minimum 10 (ideally 12+)
    Maximum password length: 72 bytes
@@ -46,6 +50,7 @@
    ```
 
 **Never Use:**
+
 - MD5, SHA1, SHA256 without key stretching
 - Plain hashing without salt
 - Reversible encryption for passwords
@@ -79,6 +84,7 @@ password_hash = ph.hash(password)
 Return identical error messages regardless of the specific failure reason.
 
 **Login Responses:**
+
 ```
 # WRONG: Reveals valid usernames
 "User not found"
@@ -90,6 +96,7 @@ Return identical error messages regardless of the specific failure reason.
 ```
 
 **Password Recovery:**
+
 ```
 # WRONG: Reveals valid emails
 "Email not found"
@@ -100,6 +107,7 @@ Return identical error messages regardless of the specific failure reason.
 ```
 
 **Account Creation:**
+
 ```
 # WRONG: Reveals existing accounts
 "Email already registered"
@@ -176,17 +184,18 @@ Microsoft research indicates MFA blocks 99.9% of account compromises.
 ```javascript
 // Registration
 const publicKeyCredential = await navigator.credentials.create({
-    publicKey: {
-        challenge: serverChallenge,
-        rp: { name: "Example Corp", id: "example.com" },
-        user: { id: userId, name: username, displayName: displayName },
-        pubKeyCredParams: [{ type: "public-key", alg: -7 }],  // ES256
-        authenticatorSelection: { userVerification: "preferred" }
-    }
+  publicKey: {
+    challenge: serverChallenge,
+    rp: { name: "Example Corp", id: "example.com" },
+    user: { id: userId, name: username, displayName: displayName },
+    pubKeyCredParams: [{ type: "public-key", alg: -7 }], // ES256
+    authenticatorSelection: { userVerification: "preferred" },
+  },
 });
 ```
 
 **Benefits:**
+
 - Phishing-resistant (bound to origin)
 - No shared secrets to steal
 - Hardware-backed security
@@ -249,10 +258,10 @@ def logout():
 
 ### Session Timeouts
 
-| Type | Purpose | Typical Value |
-|------|---------|---------------|
-| **Idle Timeout** | Inactive session | 15-30 minutes |
-| **Absolute Timeout** | Maximum lifetime | 4-8 hours |
+| Type                 | Purpose          | Typical Value |
+| -------------------- | ---------------- | ------------- |
+| **Idle Timeout**     | Inactive session | 15-30 minutes |
+| **Absolute Timeout** | Maximum lifetime | 4-8 hours     |
 
 ### Concurrent Session Control
 
@@ -277,6 +286,7 @@ def login(user):
 ## Re-authentication Requirements
 
 Require fresh credentials before:
+
 - Password changes
 - Email address changes
 - MFA configuration changes

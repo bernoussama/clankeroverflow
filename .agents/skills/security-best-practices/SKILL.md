@@ -6,9 +6,7 @@ metadata:
   platforms: Claude, ChatGPT, Gemini
 ---
 
-
 # Security Best Practices
-
 
 ## When to use this skill
 
@@ -22,38 +20,41 @@ metadata:
 ### Step 1: Enforce HTTPS and security headers
 
 **Express.js security middleware**:
+
 ```typescript
-import express from 'express';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import express from "express";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 const app = express();
 
 // Helmet: automatically set security headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://trusted-cdn.com"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.example.com"],
-      fontSrc: ["'self'", "https:", "data:"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://trusted-cdn.com"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https://api.example.com"],
+        fontSrc: ["'self'", "https:", "data:"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
     },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  }),
+);
 
 // Enforce HTTPS
 app.use((req, res, next) => {
-  if (process.env.NODE_ENV === 'production' && !req.secure) {
+  if (process.env.NODE_ENV === "production" && !req.secure) {
     return res.redirect(301, `https://${req.headers.host}${req.url}`);
   }
   next();
@@ -63,36 +64,40 @@ app.use((req, res, next) => {
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // max 100 requests per IP
-  message: 'Too many requests from this IP, please try again later.',
+  message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-app.use('/api/', limiter);
+app.use("/api/", limiter);
 
 // Stricter for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5, // only 5 times per 15 minutes
-  skipSuccessfulRequests: true // do not count successful requests
+  skipSuccessfulRequests: true, // do not count successful requests
 });
 
-app.use('/api/auth/login', authLimiter);
+app.use("/api/auth/login", authLimiter);
 ```
 
 ### Step 2: Input validation (SQL Injection, XSS prevention)
 
 **Joi validation**:
+
 ```typescript
-import Joi from 'joi';
+import Joi from "joi";
 
 const userSchema = Joi.object({
   email: Joi.string().email().required(),
-  password: Joi.string().min(8).pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/).required(),
-  name: Joi.string().min(2).max(50).required()
+  password: Joi.string()
+    .min(8)
+    .pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+    .required(),
+  name: Joi.string().min(2).max(50).required(),
 });
 
-app.post('/api/users', async (req, res) => {
+app.post("/api/users", async (req, res) => {
   // 1. Validate input
   const { error, value } = userSchema.validate(req.body);
 
@@ -105,11 +110,11 @@ app.post('/api/users', async (req, res) => {
   // db.query(`SELECT * FROM users WHERE email = '${email}'`);
 
   // ✅ Good example
-  const user = await db.query('SELECT * FROM users WHERE email = ?', [value.email]);
+  const user = await db.query("SELECT * FROM users WHERE email = ?", [value.email]);
 
   // 3. Prevent XSS: Output Encoding
   // React/Vue escape automatically; otherwise use a library
-  import DOMPurify from 'isomorphic-dompurify';
+  import DOMPurify from "isomorphic-dompurify";
   const sanitized = DOMPurify.sanitize(userInput);
 
   res.json({ user: sanitized });
@@ -119,9 +124,10 @@ app.post('/api/users', async (req, res) => {
 ### Step 3: Prevent CSRF
 
 **CSRF Token**:
+
 ```typescript
-import csrf from 'csurf';
-import cookieParser from 'cookie-parser';
+import csrf from "csurf";
+import cookieParser from "cookie-parser";
 
 app.use(cookieParser());
 
@@ -129,12 +135,12 @@ app.use(cookieParser());
 const csrfProtection = csrf({ cookie: true });
 
 // Provide CSRF token
-app.get('/api/csrf-token', csrfProtection, (req, res) => {
+app.get("/api/csrf-token", csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
 // Validate CSRF on all POST/PUT/DELETE requests
-app.post('/api/*', csrfProtection, (req, res, next) => {
+app.post("/api/*", csrfProtection, (req, res, next) => {
   next();
 });
 
@@ -151,6 +157,7 @@ app.post('/api/*', csrfProtection, (req, res, next) => {
 ### Step 4: Manage secrets
 
 **.env (never commit)**:
+
 ```bash
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/mydb
@@ -165,6 +172,7 @@ SENDGRID_API_KEY=SG.xxx
 ```
 
 **Kubernetes Secrets**:
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -180,27 +188,28 @@ stringData:
 // Read from environment variables
 const dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
-  throw new Error('DATABASE_URL environment variable is required');
+  throw new Error("DATABASE_URL environment variable is required");
 }
 ```
 
 ### Step 5: Secure API authentication
 
 **JWT + Refresh Token Rotation**:
+
 ```typescript
 // Short-lived access token (15 minutes)
-const accessToken = jwt.sign({ userId }, ACCESS_SECRET, { expiresIn: '15m' });
+const accessToken = jwt.sign({ userId }, ACCESS_SECRET, { expiresIn: "15m" });
 
 // Long-lived refresh token (7 days), store in DB
-const refreshToken = jwt.sign({ userId }, REFRESH_SECRET, { expiresIn: '7d' });
+const refreshToken = jwt.sign({ userId }, REFRESH_SECRET, { expiresIn: "7d" });
 await db.refreshToken.create({
   userId,
   token: refreshToken,
-  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
 });
 
 // Refresh token rotation: re-issue on each use
-app.post('/api/auth/refresh', async (req, res) => {
+app.post("/api/auth/refresh", async (req, res) => {
   const { refreshToken } = req.body;
 
   const payload = jwt.verify(refreshToken, REFRESH_SECRET);
@@ -209,13 +218,13 @@ app.post('/api/auth/refresh', async (req, res) => {
   await db.refreshToken.delete({ where: { token: refreshToken } });
 
   // Issue new tokens
-  const newAccessToken = jwt.sign({ userId: payload.userId }, ACCESS_SECRET, { expiresIn: '15m' });
-  const newRefreshToken = jwt.sign({ userId: payload.userId }, REFRESH_SECRET, { expiresIn: '7d' });
+  const newAccessToken = jwt.sign({ userId: payload.userId }, ACCESS_SECRET, { expiresIn: "15m" });
+  const newRefreshToken = jwt.sign({ userId: payload.userId }, REFRESH_SECRET, { expiresIn: "7d" });
 
   await db.refreshToken.create({
     userId: payload.userId,
     token: newRefreshToken,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
   res.json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
@@ -268,21 +277,26 @@ app.post('/api/auth/refresh', async (req, res) => {
 ## Metadata
 
 ### Version
+
 - **Current version**: 1.0.0
 - **Last updated**: 2025-01-01
 - **Compatible platforms**: Claude, ChatGPT, Gemini
 
 ### Related skills
+
 - [authentication-setup](../authentication-setup/SKILL.md)
 - [deployment](../deployment-automation/SKILL.md)
 
 ### Tags
+
 `#security` `#OWASP` `#HTTPS` `#CORS` `#XSS` `#SQL-injection` `#CSRF` `#infrastructure`
 
 ## Examples
 
 ### Example 1: Basic usage
+
 <!-- Add example content here -->
 
 ### Example 2: Advanced usage
+
 <!-- Add advanced example content here -->
