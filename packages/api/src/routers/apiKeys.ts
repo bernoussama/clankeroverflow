@@ -41,6 +41,7 @@ export const apiKeysRouter = router({
           keyPreview,
           name: input.name,
           userId: ctx.session.user.id,
+          createdAt: new Date(),
         })
         .returning({
           id: schema.apiKey.id,

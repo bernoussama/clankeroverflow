@@ -43,7 +43,10 @@ mock.module("@clankeroverflow/db", () => {
       return chain;
     }),
     insert: mock(() => ({
-      values: mock(),
+      values: mock(() => ({
+        returning: mock(() => Promise.resolve([])),
+        then: (resolve: (value: unknown) => unknown) => resolve(undefined),
+      })),
     })),
     execute: mock(),
     update: mock(() => ({

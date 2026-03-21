@@ -43,6 +43,9 @@ describe("solutionsRouter", () => {
     (db.query.solution.findFirst as any).mockClear?.();
     (db.query.solutionVote.findFirst as any).mockClear?.();
     (db.select as any).mockClear?.();
+    (db.insert as any).mockClear?.();
+    (db.update as any).mockClear?.();
+    (db.delete as any).mockClear?.();
   });
 
   test("search should return empty array if query is empty after trim", async () => {
@@ -143,6 +146,148 @@ describe("solutionsRouter", () => {
     } as any);
 
     expect(caller.solutions.getById({ id: "sol_1" })).rejects.toThrow("Solution not found");
+  });
+
+  test("vote should reject unauthenticated users", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+    } as any);
+
+    expect(
+      caller.solutions.vote({ id: "sol_1", isUpvote: true }),
+    ).rejects.toThrow("You must be logged in or provide a valid API key to vote");
+  });
+
+  test("vote should reject if solution not found", async () => {
+    (db.query.solution.findFirst as any).mockResolvedValueOnce(undefined);
+
+    const caller = createCaller({
+      db,
+      session: mockSession,
+      apiKey: null,
+    } as any);
+
+    expect(
+      caller.solutions.vote({ id: "sol_nonexistent", isUpvote: true }),
+    ).rejects.toThrow("Solution not found");
+  });
+
+  test("vote should insert new upvote for authenticated user", async () => {
+    (db.query.solution.findFirst as any).mockResolvedValueOnce({
+      id: "sol_1",
+      problem: "Test",
+      solution: "Test",
+      score: 0,
+    });
+    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce(undefined);
+
+    (db.select as any).mockReturnValueOnce({
+      from: mock(() => ({
+        where: mock(() => [{ upvotes: 1, downvotes: 0 }]),
+      })),
+    });
+
+    const caller = createCaller({
+      db,
+      session: mockSession,
+      apiKey: null,
+    } as any);
+
+    const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
+    expect(result.success).toBe(true);
+    expect(result.upvotes).toBe(1);
+    expect(result.downvotes).toBe(0);
+
+    expect(db.insert as any).toHaveBeenCalled();
+  });
+
+  test("vote should toggle off existing same-direction vote", async () => {
+    (db.query.solution.findFirst as any).mockResolvedValueOnce({
+      id: "sol_1",
+      problem: "Test",
+      solution: "Test",
+      score: 1,
+    });
+    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce({
+      userId: "user_1",
+      solutionId: "sol_1",
+      isUpvote: true,
+    });
+
+    (db.select as any).mockReturnValueOnce({
+      from: mock(() => ({
+        where: mock(() => [{ upvotes: 0, downvotes: 0 }]),
+      })),
+    });
+
+    const caller = createCaller({
+      db,
+      session: mockSession,
+      apiKey: null,
+    } as any);
+
+    const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
+    expect(result.success).toBe(true);
+    expect(db.delete as any).toHaveBeenCalled();
+  });
+
+  test("vote should flip existing opposite-direction vote", async () => {
+    (db.query.solution.findFirst as any).mockResolvedValueOnce({
+      id: "sol_1",
+      problem: "Test",
+      solution: "Test",
+      score: -1,
+    });
+    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce({
+      userId: "user_1",
+      solutionId: "sol_1",
+      isUpvote: false,
+    });
+
+    (db.select as any).mockReturnValueOnce({
+      from: mock(() => ({
+        where: mock(() => [{ upvotes: 1, downvotes: 0 }]),
+      })),
+    });
+
+    const caller = createCaller({
+      db,
+      session: mockSession,
+      apiKey: null,
+    } as any);
+
+    const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
+    expect(result.success).toBe(true);
+    expect(db.update as any).toHaveBeenCalled();
+  });
+
+  test("vote should wrap DB errors as INTERNAL_SERVER_ERROR", async () => {
+    (db.query.solution.findFirst as any).mockResolvedValueOnce({
+      id: "sol_1",
+      problem: "Test",
+      solution: "Test",
+      score: 0,
+    });
+    (db.query.solutionVote.findFirst as any).mockRejectedValueOnce(
+      new Error("connection refused"),
+    );
+
+    const caller = createCaller({
+      db,
+      session: mockSession,
+      apiKey: null,
+    } as any);
+
+    try {
+      await caller.solutions.vote({ id: "sol_1", isUpvote: true });
+      expect(false).toBe(true);
+    } catch (e: any) {
+      expect(e.code).toBe("INTERNAL_SERVER_ERROR");
+      expect(e.message).toBe("Failed to record vote");
+    }
   });
 
   test("log should reject oversized payloads", async () => {

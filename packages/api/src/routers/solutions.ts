@@ -100,81 +100,90 @@ export const solutionsRouter = router({
         });
       }
 
-      const existingVote = await withTimeout(
-        db.query.solutionVote.findFirst({
-          where: and(
-            eq(schema.solutionVote.userId, userId),
-            eq(schema.solutionVote.solutionId, input.id),
-          ),
-        }),
-        2500,
-        "Existing vote lookup timed out",
-      );
-
-      let scoreDiff = 0;
-
-      if (existingVote) {
-        if (existingVote.isUpvote === input.isUpvote) {
-          await withTimeout(
-            db
-              .delete(schema.solutionVote)
-              .where(
-                and(
-                  eq(schema.solutionVote.userId, userId),
-                  eq(schema.solutionVote.solutionId, input.id),
-                ),
-              ),
-            2500,
-            "Vote delete timed out",
-          );
-          scoreDiff = input.isUpvote ? -1 : 1;
-        } else {
-          await withTimeout(
-            db
-              .update(schema.solutionVote)
-              .set({ isUpvote: input.isUpvote })
-              .where(
-                and(
-                  eq(schema.solutionVote.userId, userId),
-                  eq(schema.solutionVote.solutionId, input.id),
-                ),
-              ),
-            2500,
-            "Vote update timed out",
-          );
-          scoreDiff = input.isUpvote ? 2 : -2;
-        }
-      } else {
-        await withTimeout(
-          db.insert(schema.solutionVote).values({
-            userId,
-            solutionId: input.id,
-            isUpvote: input.isUpvote,
+      try {
+        const existingVote = await withTimeout(
+          db.query.solutionVote.findFirst({
+            where: and(
+              eq(schema.solutionVote.userId, userId),
+              eq(schema.solutionVote.solutionId, input.id),
+            ),
           }),
           2500,
-          "Vote insert timed out",
+          "Existing vote lookup timed out",
         );
-        scoreDiff = input.isUpvote ? 1 : -1;
-      }
 
-      if (scoreDiff !== 0) {
-        await withTimeout(
-          db
-            .update(schema.solution)
-            .set({ score: sql`${schema.solution.score} + ${scoreDiff}` })
-            .where(eq(schema.solution.id, input.id)),
+        let scoreDiff = 0;
+
+        if (existingVote) {
+          if (existingVote.isUpvote === input.isUpvote) {
+            await withTimeout(
+              db
+                .delete(schema.solutionVote)
+                .where(
+                  and(
+                    eq(schema.solutionVote.userId, userId),
+                    eq(schema.solutionVote.solutionId, input.id),
+                  ),
+                ),
+              2500,
+              "Vote delete timed out",
+            );
+            scoreDiff = input.isUpvote ? -1 : 1;
+          } else {
+            await withTimeout(
+              db
+                .update(schema.solutionVote)
+                .set({ isUpvote: input.isUpvote })
+                .where(
+                  and(
+                    eq(schema.solutionVote.userId, userId),
+                    eq(schema.solutionVote.solutionId, input.id),
+                  ),
+                ),
+              2500,
+              "Vote update timed out",
+            );
+            scoreDiff = input.isUpvote ? 2 : -2;
+          }
+        } else {
+          await withTimeout(
+            db.insert(schema.solutionVote).values({
+              userId,
+              solutionId: input.id,
+              isUpvote: input.isUpvote,
+              createdAt: new Date(),
+            }),
+            2500,
+            "Vote insert timed out",
+          );
+          scoreDiff = input.isUpvote ? 1 : -1;
+        }
+
+        if (scoreDiff !== 0) {
+          await withTimeout(
+            db
+              .update(schema.solution)
+              .set({ score: sql`${schema.solution.score} + ${scoreDiff}` })
+              .where(eq(schema.solution.id, input.id)),
+            2500,
+            "Score update timed out",
+          );
+        }
+
+        const voteCounts = await withTimeout(
+          getVoteCounts(db, input.id, userId),
           2500,
-          "Score update timed out",
+          "Vote counts lookup timed out",
         );
+
+        return { success: true, ...voteCounts };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to record vote",
+        });
       }
-
-      const voteCounts = await withTimeout(
-        getVoteCounts(db, input.id, userId),
-        2500,
-        "Vote counts lookup timed out",
-      );
-
-      return { success: true, ...voteCounts };
     }),
 
   log: publicProcedure
@@ -212,6 +221,7 @@ export const solutionsRouter = router({
       }
 
       const id = crypto.randomUUID();
+      const now = new Date();
       await withTimeout(
         db.insert(schema.solution).values({
           id,
@@ -219,6 +229,8 @@ export const solutionsRouter = router({
           solution: input.solution,
           tags: input.tags ?? null,
           userId,
+          createdAt: now,
+          updatedAt: now,
         }),
         2500,
         "Solution insert timed out",
