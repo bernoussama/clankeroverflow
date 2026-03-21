@@ -30,11 +30,17 @@ mock.module("@clankeroverflow/db", () => {
         findFirst: mock(),
       },
     },
-    select: mock(() => ({
-      from: mock(() => ({
-        where: mock(() => [{ upvotes: 0, downvotes: 0 }]),
-      })),
-    })),
+    select: mock((...args: any[]) => {
+      const chain: any = {};
+      const mockResult = [{ upvotes: 0, downvotes: 0 }];
+      chain.from = mock(() => chain);
+      chain.where = mock(() => chain);
+      chain.orderBy = mock(() => chain);
+      chain.limit = mock(() => (chain as any).__result ?? mockResult);
+      chain.then = (resolve: any) => resolve((chain as any).__result ?? mockResult);
+      chain.__result = mockResult;
+      return chain;
+    }),
     insert: mock(() => ({
       values: mock(),
     })),

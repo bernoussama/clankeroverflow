@@ -391,7 +391,7 @@ export default function Home() {
             </h2>
             {!searchQuery && (
               <Link
-                href="/dashboard"
+                href="/solutions"
                 className="text-sm font-mono hover:underline underline-offset-4 transition-colors flex items-center gap-1"
                 style={{ color: "var(--landing-muted)" }}
               >

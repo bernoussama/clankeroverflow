@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { appRouter } from "./index";
 import { t } from "../index";
 import { getDb } from "@clankeroverflow/db";
@@ -151,5 +151,58 @@ describe("solutionsRouter", () => {
         solution: "s".repeat(30_001),
       }),
     ).rejects.toThrow();
+  });
+
+  test("list should return items and no nextCursor when fewer than limit", async () => {
+    const items = [
+      { id: "sol_1", problem: "P1", solution: "S1", score: 5, createdAt: new Date() },
+      { id: "sol_2", problem: "P2", solution: "S2", score: 3, createdAt: new Date() },
+    ];
+    const selectChain: any = {
+      from: mock(() => selectChain),
+      where: mock(() => selectChain),
+      orderBy: mock(() => selectChain),
+      limit: mock(() => items),
+    };
+    (db.select as any).mockReturnValueOnce(selectChain);
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+    } as any);
+
+    const result = await caller.solutions.list({ limit: 20, sort: "recent" });
+    expect(result.items).toHaveLength(2);
+    expect(result.nextCursor).toBeUndefined();
+  });
+
+  test("list should return nextCursor when more items exist", async () => {
+    const items = Array.from({ length: 6 }, (_, i) => ({
+      id: `sol_${i}`,
+      problem: `P${i}`,
+      solution: `S${i}`,
+      score: i,
+      createdAt: new Date(Date.now() - i * 60000),
+    }));
+    const selectChain: any = {
+      from: mock(() => selectChain),
+      where: mock(() => selectChain),
+      orderBy: mock(() => selectChain),
+      limit: mock(() => [...items]),
+    };
+    (db.select as any).mockReturnValueOnce(selectChain);
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+    } as any);
+
+    const result = await caller.solutions.list({ limit: 5, sort: "recent" });
+    expect(result.items).toHaveLength(5);
+    expect(result.nextCursor).toBeDefined();
   });
 });

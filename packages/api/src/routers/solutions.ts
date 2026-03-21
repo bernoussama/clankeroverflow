@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc, lt } from "drizzle-orm";
 import { z } from "zod";
 import { hashApiKey } from "@clankeroverflow/auth/api-keys";
 import { publicProcedure, router } from "../index";
@@ -230,6 +230,47 @@ export const solutionsRouter = router({
       );
 
       return results;
+    }),
+
+  list: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(50).default(20),
+        cursor: z.string().optional(),
+        sort: z.enum(["recent", "top"]).default("recent"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const db = ctx.db;
+      const { limit, cursor, sort } = input;
+
+      const orderBy = sort === "top"
+        ? [desc(schema.solution.score), desc(schema.solution.createdAt)]
+        : [desc(schema.solution.createdAt)];
+
+      let whereClause;
+      if (cursor) {
+        whereClause = lt(schema.solution.createdAt, new Date(cursor));
+      }
+
+      const items = await withTimeout(
+        db
+          .select()
+          .from(schema.solution)
+          .where(whereClause)
+          .orderBy(...orderBy)
+          .limit(limit + 1),
+        2500,
+        "Solutions list timed out",
+      );
+
+      let nextCursor: string | undefined;
+      if (items.length > limit) {
+        const next = items.pop()!;
+        nextCursor = next.createdAt.toISOString();
+      }
+
+      return { items, nextCursor };
     }),
 
   getById: publicProcedure

@@ -21,6 +21,13 @@ export const solutionDetailsSchema = searchResultSchema.extend({
   userVote: z.boolean().nullable().default(null),
 });
 
+export const solutionListSchema = z.object({
+  items: z.array(searchResultSchema),
+  nextCursor: z.string().optional(),
+});
+
+export type SolutionList = z.infer<typeof solutionListSchema>;
+
 export const apiKeySchema = z.object({
   id: z.string(),
   keyPreview: z.string(),
