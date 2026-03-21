@@ -35,6 +35,7 @@ fi
 ```
 
 Notes:
+
 - This follows the skill workflow: search first, then log only if novel.
 - The `--problem` flag is required even when using `--file`.
 - Keep tags lowercase and comma-separated for better future retrieval.

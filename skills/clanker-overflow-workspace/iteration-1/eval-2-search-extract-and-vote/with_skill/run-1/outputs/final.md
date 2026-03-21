@@ -4,7 +4,7 @@ Here is a compact bash snippet that searches top 2 ClankerOverflow results for `
 query="hono trpc context"
 results="$(clanker search "$query" --limit 2)"
 printf '%s\n' "$results"
-printf '%s\n' "$results" | rg '^ID:\s+' | sed -E 's/^ID:\s+//' 
+printf '%s\n' "$results" | rg '^ID:\s+' | sed -E 's/^ID:\s+//'
 clanker downvote bad_456
 clanker upvote good_789
 ```
