@@ -29,18 +29,14 @@ function loadTestEnvFile(
 describe("getInfraEnvFiles", () => {
   it("uses the local infra env file for local runs", () => {
     expect(getInfraEnvFiles(true)).toEqual([
+      "./.env",
       "../../apps/web/.env",
       "../../apps/server/.env",
-      "./.env",
     ]);
   });
 
   it("uses the production infra env file for deploys", () => {
-    expect(getInfraEnvFiles(false)).toEqual([
-      "../../apps/web/.env",
-      "../../apps/server/.env",
-      "./.env.production",
-    ]);
+    expect(getInfraEnvFiles(false)).toEqual(["./.env.production"]);
   });
 });
 
@@ -54,10 +50,31 @@ describe("loadInfraEnv", () => {
     });
 
     expect(loadedPaths).toEqual([
-      "../../apps/web/.env",
-      "../../apps/server/.env",
       "./.env.production",
     ]);
+  });
+
+  it("does not inherit local app env files during deploys", () => {
+    const env = createEnv({});
+    const files: Record<string, string> = {
+      "./.env.production": "NEXT_PUBLIC_SERVER_URL=https://api.clankeroverflow.com",
+      "../../apps/web/.env": "NEXT_PUBLIC_SERVER_URL=http://localhost:3000",
+      "../../apps/server/.env": "GITHUB_CLIENT_ID=local-client-id",
+    };
+
+    loadInfraEnv(
+      false,
+      ({ path }) => {
+        loadTestEnvFile(env, files, path);
+
+        return {};
+      },
+      env,
+      (path) => files[path] ?? null,
+    );
+
+    expect(env.NEXT_PUBLIC_SERVER_URL).toBe("https://api.clankeroverflow.com");
+    expect(env.GITHUB_CLIENT_ID).toBeUndefined();
   });
 
   it("replaces a preloaded local database url during deploys", () => {

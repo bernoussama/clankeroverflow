@@ -16,4 +16,9 @@ describe("infra worker config", () => {
     expect(alchemyRunSource).toContain('domainName: "api.clankeroverflow.com"');
     expect(alchemyRunSource).toContain("domains:");
   });
+
+  it("passes GitHub OAuth credentials to the auth worker", () => {
+    expect(alchemyRunSource).toContain("GITHUB_CLIENT_ID");
+    expect(alchemyRunSource).toContain("GITHUB_CLIENT_SECRET");
+  });
 });

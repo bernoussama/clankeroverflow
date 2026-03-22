@@ -12,6 +12,8 @@ mock.module("cloudflare:workers", () => {
       },
       BETTER_AUTH_SECRET: "test_secret",
       BETTER_AUTH_URL: "http://localhost:3000",
+      GITHUB_CLIENT_ID: "test-github-client-id",
+      GITHUB_CLIENT_SECRET: "test-github-client-secret",
     },
   };
 });

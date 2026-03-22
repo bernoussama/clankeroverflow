@@ -5,7 +5,7 @@ import { createAuth, type Auth } from "@clankeroverflow/auth";
 import { createDb, type Database } from "@clankeroverflow/db";
 import { env } from "@clankeroverflow/env/server";
 import { trpcServer } from "@hono/trpc-server";
-import { Hono, type MiddlewareHandler } from "hono";
+import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
@@ -41,10 +41,18 @@ const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 const app = new Hono<AppEnv>();
 
+function getWaitUntilHandler(c: Context<AppEnv>) {
+  try {
+    return c.executionCtx.waitUntil.bind(c.executionCtx);
+  } catch {
+    return undefined;
+  }
+}
+
 const withRequestServices: MiddlewareHandler<AppEnv> = async (c, next) => {
   const { close, db } = await createDb();
   c.set("db", db);
-  c.set("auth", createAuth(db));
+  c.set("auth", createAuth(db, getWaitUntilHandler(c)));
 
   try {
     await next();
@@ -116,9 +124,9 @@ app.use(
   }),
 );
 
-app.use("/api/auth/*", withNoStore);
-app.use("/api/auth/*", withRequestServices);
-app.on(["POST", "GET"], "/api/auth/*", (c) => c.get("auth").handler(c.req.raw));
+app.use("/auth/*", withNoStore);
+app.use("/auth/*", withRequestServices);
+app.on(["POST", "GET"], "/auth/*", (c) => c.get("auth").handler(c.req.raw));
 
 app.use("/trpc/*", withNoStore);
 app.use("/trpc/*", withTrustedMutationOrigins);

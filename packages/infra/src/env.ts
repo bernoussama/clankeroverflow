@@ -11,7 +11,7 @@ type DotenvLoader = (options: DotenvConfigOptions) => ReturnType<typeof config>;
 type EnvFileReader = (path: string) => string | null;
 
 export function getInfraEnvFiles(isLocal: boolean): string[] {
-  return [isLocal ? LOCAL_INFRA_ENV_FILE : PRODUCTION_INFRA_ENV_FILE, ...SHARED_ENV_FILES];
+  return isLocal ? [LOCAL_INFRA_ENV_FILE, ...SHARED_ENV_FILES] : [PRODUCTION_INFRA_ENV_FILE];
 }
 
 function readEnvFile(path: string, read: EnvFileReader): Record<string, string> {
@@ -49,7 +49,8 @@ export function loadInfraEnv(
   env: NodeJS.ProcessEnv = process.env,
   read: EnvFileReader = readInfraEnvFile,
 ): void {
-  const [selectedEnvPath, ...sharedEnvPaths] = getInfraEnvFiles(isLocal);
+  const envPaths = getInfraEnvFiles(isLocal);
+  const [selectedEnvPath, ...sharedEnvPaths] = envPaths;
 
   if (!selectedEnvPath) {
     return;

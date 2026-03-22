@@ -4,12 +4,13 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { parseAllowedOrigins } from "./origins";
-import { hashPassword, verifyPassword } from "./password";
 
 const authEnv = env as typeof env & {
   CORS_ORIGIN: string;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
 };
 
 function getCrossSubDomainCookieOptions(baseURL: string) {
@@ -25,23 +26,36 @@ function getCrossSubDomainCookieOptions(baseURL: string) {
   return undefined;
 }
 
-export function createAuth(db: Database = getDb()) {
+export function createAuth(
+  db: Database = getDb(),
+  waitUntil?: (promise: Promise<unknown>) => void,
+) {
   return betterAuth({
+    basePath: "/auth",
     database: drizzleAdapter(db, {
       provider: "pg",
       schema: schema,
     }),
     trustedOrigins: parseAllowedOrigins(authEnv.CORS_ORIGIN),
-    emailAndPassword: {
-      enabled: true,
-      password: {
-        hash: hashPassword,
-        verify: verifyPassword,
+    socialProviders: {
+      github: {
+        clientId: authEnv.GITHUB_CLIENT_ID,
+        clientSecret: authEnv.GITHUB_CLIENT_SECRET,
       },
+    },
+    account: {
+      storeStateStrategy: "cookie",
     },
     secret: authEnv.BETTER_AUTH_SECRET,
     baseURL: authEnv.BETTER_AUTH_URL,
     advanced: {
+      ...(waitUntil
+        ? {
+            backgroundTasks: {
+              handler: waitUntil,
+            },
+          }
+        : {}),
       defaultCookieAttributes: {
         sameSite: "none",
         secure: true,

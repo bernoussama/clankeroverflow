@@ -1,16 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Github } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-import SignInForm from "@/components/sign-in-form";
-import SignUpForm from "@/components/sign-up-form";
+import Loader from "@/components/loader";
+import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
-  const [showSignIn, setShowSignIn] = useState(false);
+  const router = useRouter();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
 
-  return showSignIn ? (
-    <SignInForm onSwitchToSignUp={() => setShowSignIn(false)} />
-  ) : (
-    <SignUpForm onSwitchToSignIn={() => setShowSignIn(true)} />
+  useEffect(() => {
+    if (session) {
+      router.replace("/dashboard");
+    }
+  }, [router, session]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("error") ?? params.get("error_description");
+
+    if (!oauthError) {
+      return;
+    }
+
+    toast.error(oauthError.replaceAll("_", " "));
+  }, []);
+
+  if (isPending || session) {
+    return <Loader />;
+  }
+
+  async function handleGitHubSignIn() {
+    setIsSigningIn(true);
+    const appOrigin = window.location.origin;
+
+    const { error } = await authClient.signIn.social({
+      provider: "github",
+      callbackURL: `${appOrigin}/dashboard`,
+      errorCallbackURL: `${appOrigin}/login`,
+    });
+
+    if (!error) {
+      return;
+    }
+
+    setIsSigningIn(false);
+    toast.error(error.message || "Unable to start GitHub sign in");
+  }
+
+  return (
+    <div className="page-shell">
+      <div className="auth-card fade-in-up text-center">
+        <h1 className="page-title text-2xl mb-1">Sign In</h1>
+        <p className="text-sm text-muted-landing mb-6">
+          Use your GitHub account to access the dashboard.
+        </p>
+
+        <button
+          type="button"
+          onClick={handleGitHubSignIn}
+          className="btn-primary w-full justify-center"
+          disabled={isSigningIn}
+        >
+          <Github className="h-4 w-4" aria-hidden="true" />
+          {isSigningIn ? "Redirecting to GitHub..." : "Continue with GitHub"}
+        </button>
+      </div>
+    </div>
   );
 }

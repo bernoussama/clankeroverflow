@@ -15,7 +15,9 @@ export async function createContext({ context }: CreateContextOptions) {
 
   const session = hasAuthContext
     ? await auth.api.getSession({
-        headers: context.req.raw.headers,
+        headers: {
+          cookie: cookieHeader ?? "",
+        },
       })
     : null;
 

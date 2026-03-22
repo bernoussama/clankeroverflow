@@ -13,16 +13,28 @@ describe("packages/auth adapter wiring", () => {
     expect(authSource).toContain("schema: schema,");
   });
 
-  it("uses worker-friendly password hashing for email auth", () => {
-    expect(authSource).toContain('import { hashPassword, verifyPassword } from "./password";');
-    expect(authSource).toContain("password: {");
-    expect(authSource).toContain("hash: hashPassword,");
-    expect(authSource).toContain("verify: verifyPassword,");
+  it("does not enable email and password auth", () => {
+    expect(authSource).not.toContain('import { hashPassword, verifyPassword } from "./password";');
+    expect(authSource).not.toContain("emailAndPassword:");
+  });
+
+  it("configures GitHub as the social auth provider", () => {
+    expect(authSource).toContain('basePath: "/auth"');
+    expect(authSource).toContain("socialProviders");
+    expect(authSource).toContain("github:");
+    expect(authSource).toContain('storeStateStrategy: "cookie"');
+    expect(authSource).toContain("GITHUB_CLIENT_ID");
+    expect(authSource).toContain("GITHUB_CLIENT_SECRET");
   });
 
   it("shares auth cookies across the production web and api subdomains", () => {
     expect(authSource).toContain("crossSubDomainCookies");
     expect(authSource).toContain("enabled: true");
     expect(authSource).toContain('domain: "clankeroverflow.com"');
+  });
+
+  it("wires Cloudflare waitUntil into Better Auth background tasks", () => {
+    expect(authSource).toContain("backgroundTasks");
+    expect(authSource).toContain("handler: waitUntil");
   });
 });

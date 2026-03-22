@@ -31,6 +31,14 @@ describe("Server", () => {
     expect(res.headers.get("Pragma")).toBe("no-cache");
   });
 
+  test("GET /auth/ok should serve Better Auth from the custom auth path", async () => {
+    const res = await app.request("/auth/ok");
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("Pragma")).toBe("no-cache");
+  });
+
   test("POST /trpc/solutions.log should reject cookie-authenticated mutations from untrusted origins", async () => {
     const res = await app.request("/trpc/solutions.log", {
       method: "POST",
