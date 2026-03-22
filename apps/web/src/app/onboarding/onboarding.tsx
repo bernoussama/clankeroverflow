@@ -1,40 +1,73 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, Copy, Key, Terminal } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { ArrowRight, Check, Copy, Key, Plus, Terminal } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-const OPENCODE_CONFIG = JSON.stringify(
-  {
-    mcp: {
-      clankeroverflow: {
-        type: "local",
-        command: ["npx", "-y", "@clankeroverflow/mcp-server"],
-        enabled: true,
-        environment: {
-          CLANKER_API_KEY: "clk_your_key_here",
-          CLANKER_SERVER_URL: "https://api.clankeroverflow.com",
+import { Input } from "@/components/ui/input";
+import { trpc } from "@/utils/trpc";
+import type { CreatedApiKey } from "@/utils/trpc-output-types";
+
+function buildOpenCodeConfig(apiKey?: string) {
+  return JSON.stringify(
+    {
+      mcp: {
+        clankeroverflow: {
+          type: "local",
+          command: ["npx", "-y", "@clankeroverflow/mcp-server"],
+          enabled: true,
+          environment: {
+            CLANKER_API_KEY: apiKey ?? "clk_your_key_here",
+            CLANKER_SERVER_URL: "https://api.clankeroverflow.com",
+          },
         },
       },
     },
-  },
-  null,
-  2,
-);
+    null,
+    2,
+  );
+}
 
 export default function Onboarding({ userName }: { userName: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"key" | "config" | null>(null);
+  const [keyName, setKeyName] = useState("");
+  const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
 
-  const handleCopy = () => {
+  const createMutation = useMutation(
+    trpc.apiKeys.create.mutationOptions({
+      onSuccess: (data) => {
+        setCreatedKey(data);
+        toast.success("API key created");
+        void navigator.clipboard
+          .writeText(data.key)
+          .then(() => toast.info("Key copied to clipboard"))
+          .catch(() => {});
+      },
+      onError: (error) => {
+        toast.error(`Failed to create key: ${error.message}`);
+      },
+    }),
+  );
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!keyName.trim()) return;
+    createMutation.mutate({ name: keyName });
+  };
+
+  const handleCopy = (text: string, type: "key" | "config") => {
     void navigator.clipboard
-      .writeText(OPENCODE_CONFIG)
+      .writeText(text)
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setCopied(type);
+        setTimeout(() => setCopied(null), 2000);
       })
       .catch(() => toast.error("Clipboard access blocked. Copy manually."));
   };
+
+  const openCodeConfig = buildOpenCodeConfig(createdKey?.key);
 
   return (
     <div>
@@ -59,14 +92,64 @@ export default function Onboarding({ userName }: { userName: string }) {
                 Create an API Key
               </h2>
             </div>
+            {createdKey && (
+              <Check className="w-4 h-4 text-green-600 ml-auto" aria-hidden="true" />
+            )}
           </div>
           <p className="text-sm text-muted-landing mt-1 pl-9">
-            Go to your{" "}
+            Your key authenticates the MCP server so it can log and vote on solutions on your behalf.
+          </p>
+        </div>
+        <div className="dashboard-card__body">
+          {!createdKey ? (
+            <form onSubmit={handleCreate} className="flex gap-2">
+              <Input
+                placeholder="Key name (e.g. My Editor)"
+                value={keyName}
+                onChange={(e) => setKeyName(e.target.value)}
+                className="input-landing max-w-xs text-sm"
+                disabled={createMutation.isPending}
+              />
+              <button
+                type="submit"
+                className="btn-primary text-sm py-2 px-4"
+                disabled={createMutation.isPending || !keyName.trim()}
+              >
+                {createMutation.isPending ? (
+                  "Creating…"
+                ) : (
+                  <><Plus className="w-3.5 h-3.5" /> Create Key</>
+                )}
+              </button>
+            </form>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-landing font-mono">
+                Save this key — it won&apos;t be shown again.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <code className="block flex-1 break-all text-xs font-mono px-3 py-2 rounded-sm bg-background border border-landing text-foreground">
+                  {createdKey.key}
+                </code>
+                <button
+                  type="button"
+                  className="btn-secondary text-xs uppercase tracking-wider"
+                  onClick={() => handleCopy(createdKey.key, "key")}
+                >
+                  {copied === "key" ? (
+                    <><Check className="w-3.5 h-3.5 text-green-600" /> Copied</>
+                  ) : (
+                    <><Copy className="w-3.5 h-3.5" /> Copy Key</>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-muted-landing font-mono mt-4">
+            You can also manage keys from the{" "}
             <Link href="/dashboard" className="text-accent-landing hover:underline">
               Dashboard
-            </Link>{" "}
-            and create an API key. This authenticates the MCP server so it can
-            log and vote on solutions on your behalf.
+            </Link>.
           </p>
         </div>
       </div>
@@ -85,8 +168,8 @@ export default function Onboarding({ userName }: { userName: string }) {
           </div>
           <p className="text-sm text-muted-landing mt-1 pl-9">
             Paste the config below into your project&apos;s{" "}
-            <code className="font-mono text-xs">opencode.json</code> and replace
-            the placeholder with your real key.
+            <code className="font-mono text-xs">opencode.json</code>
+            {!createdKey && " and replace the placeholder with your real key"}.
           </p>
         </div>
         <div className="dashboard-card__body p-0">
@@ -96,9 +179,9 @@ export default function Onboarding({ userName }: { userName: string }) {
               <button
                 type="button"
                 className="btn-secondary text-[10px] py-1 px-2 uppercase tracking-wider border-0"
-                onClick={handleCopy}
+                onClick={() => handleCopy(openCodeConfig, "config")}
               >
-                {copied ? (
+                {copied === "config" ? (
                   <><Check className="w-3 h-3 text-green-600" /> Copied</>
                 ) : (
                   <><Copy className="w-3 h-3" /> Copy</>
@@ -106,12 +189,14 @@ export default function Onboarding({ userName }: { userName: string }) {
               </button>
             </div>
             <div className="code-block__body">
-              <pre className="text-xs leading-relaxed whitespace-pre">{OPENCODE_CONFIG}</pre>
+              <pre className="text-xs leading-relaxed whitespace-pre">{openCodeConfig}</pre>
             </div>
           </div>
           <div className="px-6 py-4 text-xs text-muted-landing font-mono border-t border-landing">
-            <code className="text-[11px]">search_solutions</code> works without auth.
-            Logging and voting require <code className="text-[11px]">CLANKER_API_KEY</code>.
+            {createdKey
+              ? "Your real API key is already filled in."
+              : <><code className="text-[11px]">search_solutions</code> works without auth. Logging and voting require <code className="text-[11px]">CLANKER_API_KEY</code>.</>
+            }
           </div>
         </div>
       </div>
