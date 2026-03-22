@@ -179,9 +179,11 @@ export const solutionsRouter = router({
         return { success: true, ...voteCounts };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
+        console.error("solutions.vote error:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to record vote",
+          cause: error,
         });
       }
     }),
@@ -229,6 +231,7 @@ export const solutionsRouter = router({
           solution: input.solution,
           tags: input.tags ?? null,
           userId,
+          score: 0,
           createdAt: now,
           updatedAt: now,
         }),
