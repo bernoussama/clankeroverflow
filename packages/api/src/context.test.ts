@@ -1,12 +1,74 @@
-import { readFileSync } from "node:fs";
+import { describe, expect, it, mock } from "bun:test";
 
-import { describe, expect, it } from "bun:test";
-
-const contextSource = readFileSync(new URL("./context.ts", import.meta.url), "utf8");
+import { createContext } from "./context";
 
 describe("api context auth forwarding", () => {
-  it("forwards only the cookie header into auth.getSession", () => {
-    expect(contextSource).toContain('cookie: cookieHeader ?? ""');
-    expect(contextSource).not.toContain("headers: context.req.raw.headers");
+  it("forwards only the cookie header into auth.getSession", async () => {
+    const getSession = mock().mockResolvedValueOnce({ user: { id: "user_1" } });
+    const context = {
+      req: {
+        raw: new Request("http://localhost/trpc/healthCheck", {
+          headers: {
+            cookie: "better-auth.session_token=test-token",
+            origin: "http://localhost:3001",
+          },
+        }),
+      },
+      get(key: string) {
+        if (key === "auth") {
+          return {
+            api: {
+              getSession,
+            },
+          };
+        }
+
+        if (key === "db") {
+          return {};
+        }
+
+        return undefined;
+      },
+    } as any;
+
+    await createContext({ context });
+
+    expect(getSession).toHaveBeenCalledWith({
+      headers: {
+        cookie: "better-auth.session_token=test-token",
+      },
+    });
+  });
+
+  it("treats auth session lookup failures as unauthenticated requests", async () => {
+    const getSession = mock().mockRejectedValueOnce(new Error("session lookup failed"));
+    const context = {
+      req: {
+        raw: new Request("http://localhost/trpc/apiKeys.list", {
+          headers: {
+            cookie: "better-auth.session_token=test-token",
+          },
+        }),
+      },
+      get(key: string) {
+        if (key === "auth") {
+          return {
+            api: {
+              getSession,
+            },
+          };
+        }
+
+        if (key === "db") {
+          return {};
+        }
+
+        return undefined;
+      },
+    } as any;
+
+    const result = await createContext({ context });
+
+    expect(result.session).toBeNull();
   });
 });

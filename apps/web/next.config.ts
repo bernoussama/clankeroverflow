@@ -73,14 +73,14 @@ const securityHeaders = [
 ] as const;
 
 const nextConfig: NextConfig = {
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [...securityHeaders],
-      },
-    ];
-  },
+  // async headers() {
+  //   return [
+  //     {
+  //       source: "/(.*)",
+  //       headers: [...securityHeaders],
+  //     },
+  //   ];
+  // },
   typedRoutes: true,
   reactCompiler: true,
 };

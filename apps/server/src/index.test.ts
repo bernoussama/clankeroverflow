@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import app from "./index";
 
 describe("Server", () => {
+  const { createDbMock } = (globalThis as any).__serverTestMocks;
+
   test("GET / should return OK", async () => {
     const res = await app.request("/");
     expect(res.status).toBe(200);
@@ -84,6 +86,26 @@ describe("Server", () => {
       });
       expect(res.status).toBe(200);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://clankeroverflow.com");
+    });
+
+    test("uncaught /trpc errors should still return CORS and no-store headers", async () => {
+      createDbMock.mockImplementationOnce(async () => {
+        throw new Error("db unavailable");
+      });
+
+      const res = await app.request("/trpc/healthCheck", {
+        headers: {
+          Origin: "https://www.clankeroverflow.com",
+        },
+      });
+
+      expect(res.status).toBe(500);
+      expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+        "https://www.clankeroverflow.com",
+      );
+      expect(res.headers.get("Access-Control-Allow-Credentials")).toBe("true");
+      expect(res.headers.get("Cache-Control")).toBe("no-store");
+      expect(res.headers.get("Pragma")).toBe("no-cache");
     });
   });
 

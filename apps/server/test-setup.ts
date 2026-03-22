@@ -1,5 +1,64 @@
 import { mock } from "bun:test";
 
+const fakeDb = {
+  query: {
+    apiKey: {
+      findMany: mock(),
+      findFirst: mock(),
+    },
+    solution: {
+      findFirst: mock(),
+      findMany: mock(),
+    },
+    solutionVote: {
+      findFirst: mock(),
+    },
+  },
+  select: mock(() => {
+    const chain: any = {};
+    const mockResult = [{ upvotes: 0, downvotes: 0 }];
+    chain.from = mock(() => chain);
+    chain.where = mock(() => chain);
+    chain.orderBy = mock(() => chain);
+    chain.limit = mock(() => chain.__result ?? mockResult);
+    chain.then = (resolve: (value: unknown) => unknown) => resolve(chain.__result ?? mockResult);
+    chain.__result = mockResult;
+    return chain;
+  }),
+  insert: mock(() => ({
+    values: mock(() => ({
+      returning: mock(() => Promise.resolve([])),
+      then: (resolve: (value: unknown) => unknown) => resolve(undefined),
+    })),
+  })),
+  execute: mock(),
+  update: mock(() => ({
+    set: mock(() => ({
+      where: mock(),
+    })),
+  })),
+  delete: mock(() => ({
+    where: mock(),
+  })),
+};
+
+const createDbMock = mock(async () => ({
+  close: async () => {},
+  db: fakeDb,
+}));
+
+const createAuthMock = mock(() => ({
+  handler: () => new Response("OK"),
+  api: {
+    getSession: mock().mockResolvedValue(null),
+  },
+}));
+
+(globalThis as any).__serverTestMocks = {
+  createAuthMock,
+  createDbMock,
+};
+
 mock.module("cloudflare:workers", () => {
   return {
     env: {
@@ -13,5 +72,42 @@ mock.module("cloudflare:workers", () => {
       GITHUB_CLIENT_ID: "test-github-client-id",
       GITHUB_CLIENT_SECRET: "test-github-client-secret",
     },
+  };
+});
+
+mock.module("@clankeroverflow/db", () => {
+  return {
+    createDb: createDbMock,
+    getDb: () => fakeDb,
+    schema: {
+      apiKey: {
+        id: "id",
+        key: "key",
+        name: "name",
+        userId: "userId",
+        createdAt: "createdAt",
+      },
+      solution: {
+        id: "id",
+        score: "score",
+        problem: "problem",
+        solution: "solution",
+        tags: "tags",
+        userId: "userId",
+        createdAt: "createdAt",
+        updatedAt: "updatedAt",
+      },
+      solutionVote: {
+        userId: "userId",
+        solutionId: "solutionId",
+        isUpvote: "isUpvote",
+      },
+    },
+  };
+});
+
+mock.module("@clankeroverflow/auth", () => {
+  return {
+    createAuth: createAuthMock,
   };
 });

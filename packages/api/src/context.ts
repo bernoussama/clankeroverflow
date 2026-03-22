@@ -13,13 +13,19 @@ export async function createContext({ context }: CreateContextOptions) {
   const auth = context.get("auth") as Auth;
   const db = context.get("db") as Database;
 
-  const session = hasAuthContext
-    ? await auth.api.getSession({
+  let session = null;
+
+  if (hasAuthContext) {
+    try {
+      session = await auth.api.getSession({
         headers: {
           cookie: cookieHeader ?? "",
         },
-      })
-    : null;
+      });
+    } catch {
+      session = null;
+    }
+  }
 
   const apiKey = context.req.raw.headers.get("x-clanker-api-key");
 
