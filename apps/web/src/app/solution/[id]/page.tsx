@@ -29,10 +29,13 @@ export default function SolutionPage() {
       solutionDetailsSchema.parse(await trpcClient.solutions.getById.query({ id })),
   });
 
+  const [voteError, setVoteError] = useState<string | null>(null);
+
   const handleVote = useCallback(
     async (isUpvote: boolean) => {
       if (isVoting || !session) return;
       setIsVoting(true);
+      setVoteError(null);
       try {
         const result = await trpcClient.solutions.vote.mutate({ id, isUpvote });
         queryClient.setQueryData(
@@ -47,6 +50,8 @@ export default function SolutionPage() {
             };
           },
         );
+      } catch {
+        setVoteError("Failed to record vote. Please try again.");
       } finally {
         setIsVoting(false);
       }
@@ -167,6 +172,7 @@ export default function SolutionPage() {
               Sign in to vote
             </Link>
           )}
+          {voteError && <span className="text-error text-xs font-mono">{voteError}</span>}
         </div>
 
         {/* Solution Content */}
