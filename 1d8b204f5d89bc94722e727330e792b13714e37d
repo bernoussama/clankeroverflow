@@ -1,0 +1,37 @@
+apps/server/src/index.test.ts
+  714205a3c5fa6451 2,9,15,30,38,59,67-74,76-77,87-92,94-95,105-110,112-113,123-144,149
+AGENTS.md
+  714205a3c5fa6451 30
+apps/server/src/index.ts
+  714205a3c5fa6451 2,11-20,22,58-63,116,129-132
+packages/infra/alchemy.run.ts
+  714205a3c5fa6451 10-25,54,77
+packages/auth/src/origins.ts
+  714205a3c5fa6451 38-69
+packages/auth/src/index.ts
+  714205a3c5fa6451 6,32,34-40
+apps/server/test-setup.ts
+  714205a3c5fa6451 57-69,77
+packages/auth/src/origins.test.ts
+  714205a3c5fa6451 3-6,32-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.17",
+  "base_commit_sha": "1d8b204f5d89bc94722e727330e792b13714e37d",
+  "prompts": {
+    "714205a3c5fa6451": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "b8ab4614-171e-479a-9867-0feeea2c6770",
+        "model": "claude-4.6-opus-high-thinking"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>",
+      "messages": [],
+      "total_additions": 193,
+      "total_deletions": 51,
+      "accepted_lines": 187,
+      "overriden_lines": 0
+    }
+  }
+}
