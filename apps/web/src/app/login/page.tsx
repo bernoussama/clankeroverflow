@@ -40,7 +40,7 @@ export default function LoginPage() {
 
     const { error } = await authClient.signIn.social({
       provider: "github",
-      callbackURL: `${appOrigin}/dashboard`,
+      callbackURL: `${appOrigin}/onboarding`,
       errorCallbackURL: `${appOrigin}/login`,
     });
 
