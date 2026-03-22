@@ -3,7 +3,7 @@ import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-import { parseAllowedOrigins } from "./origins";
+import { parseAllowedOriginsWithDevFallback } from "./origins";
 
 const authEnv = env as typeof env & {
   CORS_ORIGIN: string;
@@ -29,14 +29,22 @@ function getCrossSubDomainCookieOptions(baseURL: string) {
 export function createAuth(
   db: Database = getDb(),
   waitUntil?: (promise: Promise<unknown>) => void,
+  options?: { trustedOrigins?: string[] },
 ) {
+  const trustedOrigins =
+    options?.trustedOrigins ??
+    parseAllowedOriginsWithDevFallback({
+      CORS_ORIGIN: authEnv.CORS_ORIGIN,
+      BETTER_AUTH_URL: authEnv.BETTER_AUTH_URL,
+    });
+
   return betterAuth({
     basePath: "/auth",
     database: drizzleAdapter(db, {
       provider: "pg",
       schema: schema,
     }),
-    trustedOrigins: parseAllowedOrigins(authEnv.CORS_ORIGIN),
+    trustedOrigins,
     socialProviders: {
       github: {
         clientId: authEnv.GITHUB_CLIENT_ID,

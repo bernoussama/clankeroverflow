@@ -1,17 +1,18 @@
 import { describe, expect, test } from "bun:test";
+import { mockWorkerEnv } from "../test-setup";
 import app from "./index";
 
 describe("Server", () => {
   const { createDbMock } = (globalThis as any).__serverTestMocks;
 
   test("GET / should return OK", async () => {
-    const res = await app.request("/");
+    const res = await app.request("/", undefined, mockWorkerEnv);
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("OK");
   });
 
   test("GET / should include hardened security headers", async () => {
-    const res = await app.request("/");
+    const res = await app.request("/", undefined, mockWorkerEnv);
 
     expect(res.headers.get("Cross-Origin-Opener-Policy")).toBe("same-origin");
     expect(res.headers.get("Cross-Origin-Resource-Policy")).toBe("same-site");
@@ -26,7 +27,7 @@ describe("Server", () => {
   });
 
   test("GET /trpc/healthCheck should disable caching", async () => {
-    const res = await app.request("/trpc/healthCheck");
+    const res = await app.request("/trpc/healthCheck", undefined, mockWorkerEnv);
 
     expect(res.status).toBe(200);
     expect(res.headers.get("Cache-Control")).toBe("no-store");
@@ -34,7 +35,7 @@ describe("Server", () => {
   });
 
   test("GET /auth/ok should serve Better Auth from the custom auth path", async () => {
-    const res = await app.request("/auth/ok");
+    const res = await app.request("/auth/ok", undefined, mockWorkerEnv);
 
     expect(res.status).toBe(200);
     expect(res.headers.get("Cache-Control")).toBe("no-store");
@@ -55,7 +56,7 @@ describe("Server", () => {
           solution: "Should be blocked before it reaches the procedure",
         },
       }),
-    });
+    }, mockWorkerEnv);
 
     expect(res.status).toBe(403);
     expect(await res.text()).toContain("Forbidden");
@@ -63,13 +64,17 @@ describe("Server", () => {
 
   describe("CORS", () => {
     test("OPTIONS / should return CORS headers for the www domain", async () => {
-      const res = await app.request("/", {
-        method: "OPTIONS",
-        headers: {
-          Origin: "https://www.clankeroverflow.com",
-          "Access-Control-Request-Method": "GET",
+      const res = await app.request(
+        "/",
+        {
+          method: "OPTIONS",
+          headers: {
+            Origin: "https://www.clankeroverflow.com",
+            "Access-Control-Request-Method": "GET",
+          },
         },
-      });
+        mockWorkerEnv,
+      );
       expect(res.status).toBe(204);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
         "https://www.clankeroverflow.com",
@@ -79,11 +84,15 @@ describe("Server", () => {
     });
 
     test("GET / should return CORS headers for the apex domain", async () => {
-      const res = await app.request("/", {
-        headers: {
-          Origin: "https://clankeroverflow.com",
+      const res = await app.request(
+        "/",
+        {
+          headers: {
+            Origin: "https://clankeroverflow.com",
+          },
         },
-      });
+        mockWorkerEnv,
+      );
       expect(res.status).toBe(200);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://clankeroverflow.com");
     });
@@ -93,11 +102,15 @@ describe("Server", () => {
         throw new Error("db unavailable");
       });
 
-      const res = await app.request("/trpc/healthCheck", {
-        headers: {
-          Origin: "https://www.clankeroverflow.com",
+      const res = await app.request(
+        "/trpc/healthCheck",
+        {
+          headers: {
+            Origin: "https://www.clankeroverflow.com",
+          },
         },
-      });
+        mockWorkerEnv,
+      );
 
       expect(res.status).toBe(500);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
@@ -107,11 +120,33 @@ describe("Server", () => {
       expect(res.headers.get("Cache-Control")).toBe("no-store");
       expect(res.headers.get("Pragma")).toBe("no-cache");
     });
+
+    test("local dev: empty CORS_ORIGIN binding still reflects localhost:3001 when BETTER_AUTH_URL is local", async () => {
+      const envWithoutCors = {
+        BETTER_AUTH_URL: "http://localhost:3000",
+        BETTER_AUTH_SECRET: "test_secret",
+        GITHUB_CLIENT_ID: "test-github-client-id",
+        GITHUB_CLIENT_SECRET: "test-github-client-secret",
+      };
+
+      const res = await app.request(
+        "/",
+        {
+          headers: {
+            Origin: "http://localhost:3001",
+          },
+        },
+        envWithoutCors,
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:3001");
+    });
   });
 
   describe("tRPC", () => {
     test("GET /trpc/healthCheck should return OK", async () => {
-      const res = await app.request("/trpc/healthCheck");
+      const res = await app.request("/trpc/healthCheck", undefined, mockWorkerEnv);
       expect(res.status).toBe(200);
       const data = (await res.json()) as { result: { data: string } };
       expect(data).toHaveProperty("result");

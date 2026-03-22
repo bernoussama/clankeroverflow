@@ -1,27 +1,30 @@
 import { createContext } from "@clankeroverflow/api/context";
-import { parseAllowedOrigins } from "@clankeroverflow/auth/origins";
+import { parseAllowedOriginsWithDevFallback } from "@clankeroverflow/auth/origins";
 import { appRouter } from "@clankeroverflow/api/routers/index";
 import { createAuth, type Auth } from "@clankeroverflow/auth";
 import { createDb, type Database } from "@clankeroverflow/db";
-import { env } from "@clankeroverflow/env/server";
 import { trpcServer } from "@hono/trpc-server";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
+type ServerBindings = {
+  CORS_ORIGIN?: string;
+  BETTER_AUTH_URL?: string;
+  DATABASE_URL?: string;
+  HYPERDRIVE?: { connectionString?: string };
+  BETTER_AUTH_SECRET?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+};
+
 type AppEnv = {
+  Bindings: ServerBindings;
   Variables: {
     auth: Auth;
     db: Database;
   };
 };
-
-const serverEnv = env as typeof env & {
-  CORS_ORIGIN: string;
-};
-
-const allowedOrigins = parseAllowedOrigins(serverEnv.CORS_ORIGIN);
-const allowedOriginSet = new Set(allowedOrigins);
 const securityHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-site",
@@ -52,7 +55,12 @@ function getWaitUntilHandler(c: Context<AppEnv>) {
 const withRequestServices: MiddlewareHandler<AppEnv> = async (c, next) => {
   const { close, db } = await createDb();
   c.set("db", db);
-  c.set("auth", createAuth(db, getWaitUntilHandler(c)));
+  c.set(
+    "auth",
+    createAuth(db, getWaitUntilHandler(c), {
+      trustedOrigins: parseAllowedOriginsWithDevFallback(c.env),
+    }),
+  );
 
   try {
     await next();
@@ -105,6 +113,7 @@ const withTrustedMutationOrigins: MiddlewareHandler<AppEnv> = async (c, next) =>
   }
 
   const requestOrigin = getRequestOrigin(c.req.raw);
+  const allowedOriginSet = new Set(parseAllowedOriginsWithDevFallback(c.env));
   if (requestOrigin && allowedOriginSet.has(requestOrigin)) {
     return next();
   }
@@ -117,7 +126,10 @@ app.use("/*", withSecurityHeaders);
 app.use(
   "/*",
   cors({
-    origin: allowedOrigins,
+    origin: (origin, c) => {
+      const allowed = parseAllowedOriginsWithDevFallback(c.env);
+      return allowed.includes(origin) ? origin : null;
+    },
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,

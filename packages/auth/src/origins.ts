@@ -35,3 +35,35 @@ export function parseAllowedOrigins(value: string): string[] {
     ),
   );
 }
+
+/** Default web origins for local split-origin dev (Next :3001 → API :3000). */
+export const LOCAL_SPLIT_ORIGIN_DEV_FALLBACK =
+  "http://localhost:3001,http://127.0.0.1:3001,http://[::1]:3001";
+
+export type WorkerOriginBindings = {
+  CORS_ORIGIN?: string;
+  BETTER_AUTH_URL?: string;
+};
+
+/**
+ * Resolves CORS/trusted origins from Worker bindings. Uses a localhost web-origin
+ * fallback when `CORS_ORIGIN` is missing but `BETTER_AUTH_URL` looks like local dev,
+ * so Miniflare still echoes `Access-Control-Allow-Origin` for split-origin `bun dev`.
+ */
+export function parseAllowedOriginsWithDevFallback(
+  bindings: WorkerOriginBindings | undefined,
+): string[] {
+  const raw = bindings?.CORS_ORIGIN?.trim();
+  if (raw) return parseAllowedOrigins(raw);
+
+  const authUrl = bindings?.BETTER_AUTH_URL ?? "";
+  const looksLocal =
+    authUrl.includes("localhost") ||
+    authUrl.includes("127.0.0.1") ||
+    authUrl.includes("[::1]");
+  if (looksLocal) {
+    return parseAllowedOrigins(LOCAL_SPLIT_ORIGIN_DEV_FALLBACK);
+  }
+
+  return [];
+}
