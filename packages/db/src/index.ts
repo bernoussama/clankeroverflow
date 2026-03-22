@@ -39,6 +39,9 @@ export function getDb(): Database {
   if (!poolInstance) {
     poolInstance = new Pool({
       connectionString,
+      connectionTimeoutMillis: 10000,
+      max: 1,
+      idleTimeoutMillis: 0,
     });
   }
 
@@ -63,6 +66,7 @@ export async function createDb(): Promise<RequestDatabase> {
 
   const client = new Client({
     connectionString,
+    connectionTimeoutMillis: 5000,
   });
 
   await client.connect();

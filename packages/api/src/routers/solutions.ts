@@ -10,7 +10,7 @@ import {
 } from "@clankeroverflow/db/list";
 import { searchSolutions } from "@clankeroverflow/db/search";
 import { publicProcedure, router } from "../index";
-import { withTimeout } from "../utils/withTimeout";
+import { DB_TIMEOUT_MS, withTimeout } from "../utils/withTimeout";
 
 async function getVoteCounts(db: Database, solutionId: string, userId: string | null) {
   const [counts] = await db
@@ -28,12 +28,16 @@ async function getVoteCounts(db: Database, solutionId: string, userId: string | 
 
   let userVote: boolean | null = null;
   if (userId) {
-    const existing = await db.query.solutionVote.findFirst({
-      where: and(
-        eq(schema.solutionVote.userId, userId),
-        eq(schema.solutionVote.solutionId, solutionId),
-      ),
-    });
+    const [existing] = await db
+      .select({ isUpvote: schema.solutionVote.isUpvote })
+      .from(schema.solutionVote)
+      .where(
+        and(
+          eq(schema.solutionVote.userId, userId),
+          eq(schema.solutionVote.solutionId, solutionId),
+        ),
+      )
+      .limit(1);
     userVote = existing?.isUpvote ?? null;
   }
 
@@ -60,11 +64,13 @@ export const solutionsRouter = router({
         userId = ctx.session.user.id;
       } else if (ctx.apiKey) {
         const apiKeyHash = await hashApiKey(ctx.apiKey);
-        const keyRecord = await withTimeout(
-          db.query.apiKey.findFirst({
-            where: eq(schema.apiKey.key, apiKeyHash),
-          }),
-          2500,
+        const [keyRecord] = await withTimeout(
+          db
+            .select({ userId: schema.apiKey.userId })
+            .from(schema.apiKey)
+            .where(eq(schema.apiKey.key, apiKeyHash))
+            .limit(1),
+          DB_TIMEOUT_MS,
           "API key lookup timed out",
         );
 
@@ -85,11 +91,13 @@ export const solutionsRouter = router({
         });
       }
 
-      const solutionRecord = await withTimeout(
-        db.query.solution.findFirst({
-          where: eq(schema.solution.id, input.id),
-        }),
-        2500,
+      const [solutionRecord] = await withTimeout(
+        db
+          .select()
+          .from(schema.solution)
+          .where(eq(schema.solution.id, input.id))
+          .limit(1),
+        DB_TIMEOUT_MS,
         "Solution lookup timed out",
       );
 
@@ -101,14 +109,18 @@ export const solutionsRouter = router({
       }
 
       try {
-        const existingVote = await withTimeout(
-          db.query.solutionVote.findFirst({
-            where: and(
-              eq(schema.solutionVote.userId, userId),
-              eq(schema.solutionVote.solutionId, input.id),
-            ),
-          }),
-          2500,
+        const [existingVote] = await withTimeout(
+          db
+            .select()
+            .from(schema.solutionVote)
+            .where(
+              and(
+                eq(schema.solutionVote.userId, userId),
+                eq(schema.solutionVote.solutionId, input.id),
+              ),
+            )
+            .limit(1),
+          DB_TIMEOUT_MS,
           "Existing vote lookup timed out",
         );
 
@@ -125,7 +137,7 @@ export const solutionsRouter = router({
                     eq(schema.solutionVote.solutionId, input.id),
                   ),
                 ),
-              2500,
+              DB_TIMEOUT_MS,
               "Vote delete timed out",
             );
             scoreDiff = input.isUpvote ? -1 : 1;
@@ -140,7 +152,7 @@ export const solutionsRouter = router({
                     eq(schema.solutionVote.solutionId, input.id),
                   ),
                 ),
-              2500,
+              DB_TIMEOUT_MS,
               "Vote update timed out",
             );
             scoreDiff = input.isUpvote ? 2 : -2;
@@ -153,7 +165,7 @@ export const solutionsRouter = router({
               isUpvote: input.isUpvote,
               createdAt: new Date(),
             }),
-            2500,
+            DB_TIMEOUT_MS,
             "Vote insert timed out",
           );
           scoreDiff = input.isUpvote ? 1 : -1;
@@ -165,14 +177,14 @@ export const solutionsRouter = router({
               .update(schema.solution)
               .set({ score: sql`${schema.solution.score} + ${scoreDiff}` })
               .where(eq(schema.solution.id, input.id)),
-            2500,
+            DB_TIMEOUT_MS,
             "Score update timed out",
           );
         }
 
         const voteCounts = await withTimeout(
           getVoteCounts(db, input.id, userId),
-          2500,
+          DB_TIMEOUT_MS,
           "Vote counts lookup timed out",
         );
 
@@ -204,11 +216,13 @@ export const solutionsRouter = router({
         userId = ctx.session.user.id;
       } else if (ctx.apiKey) {
         const apiKeyHash = await hashApiKey(ctx.apiKey);
-        const keyRecord = await withTimeout(
-          db.query.apiKey.findFirst({
-            where: eq(schema.apiKey.key, apiKeyHash),
-          }),
-          2500,
+        const [keyRecord] = await withTimeout(
+          db
+            .select({ userId: schema.apiKey.userId })
+            .from(schema.apiKey)
+            .where(eq(schema.apiKey.key, apiKeyHash))
+            .limit(1),
+          DB_TIMEOUT_MS,
           "API key lookup timed out",
         );
 
@@ -235,7 +249,7 @@ export const solutionsRouter = router({
           createdAt: now,
           updatedAt: now,
         }),
-        2500,
+        DB_TIMEOUT_MS,
         "Solution insert timed out",
       );
 
@@ -252,7 +266,7 @@ export const solutionsRouter = router({
     .query(async ({ ctx, input }) => {
       const results = await withTimeout(
         searchSolutions(ctx.db, input),
-        2500,
+        DB_TIMEOUT_MS,
         "Solution search timed out",
       );
 
@@ -261,11 +275,13 @@ export const solutionsRouter = router({
 
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const db = ctx.db;
-    const result = await withTimeout(
-      db.query.solution.findFirst({
-        where: eq(schema.solution.id, input.id),
-      }),
-      2500,
+    const [result] = await withTimeout(
+      db
+        .select()
+        .from(schema.solution)
+        .where(eq(schema.solution.id, input.id))
+        .limit(1),
+      DB_TIMEOUT_MS,
       "Solution lookup timed out",
     );
 
@@ -283,7 +299,7 @@ export const solutionsRouter = router({
 
     const voteCounts = await withTimeout(
       getVoteCounts(db, input.id, userId),
-      2500,
+      DB_TIMEOUT_MS,
       "Vote counts lookup timed out",
     );
 
@@ -310,7 +326,7 @@ export const solutionsRouter = router({
 
       return withTimeout(
         listSolutions(ctx.db, { limit: input.limit, cursor, sort }),
-        2500,
+        DB_TIMEOUT_MS,
         "Solution list timed out",
       );
     }),

@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
+export const DB_TIMEOUT_MS = 10000;
+
 export async function withTimeout<T>(
   promise: Promise<T>,
   ms: number,
