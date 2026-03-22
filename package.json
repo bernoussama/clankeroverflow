@@ -31,6 +31,7 @@
     "test": "turbo test",
     "db:push": "turbo -F @clankeroverflow/db db:push",
     "db:generate": "turbo -F @clankeroverflow/db db:generate",
+    "db:migrate": "turbo -F @clankeroverflow/db db:migrate",
     "deploy": "turbo -F @clankeroverflow/infra deploy",
     "destroy": "turbo -F @clankeroverflow/infra destroy",
     "check": "oxlint && oxfmt --write"
