@@ -19,6 +19,8 @@
   },
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",
+    "drizzle-orm": "^0.45.1",
+    "pg": "catalog:",
     "typescript": "catalog:"
   }
 }
