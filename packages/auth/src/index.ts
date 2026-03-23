@@ -26,6 +26,26 @@ function getCrossSubDomainCookieOptions(baseURL: string) {
   return undefined;
 }
 
+function getDefaultCookieAttributes(baseURL: string) {
+  const { protocol, hostname } = new URL(baseURL);
+  const isLocalHttp =
+    protocol === "http:" && (hostname === "localhost" || hostname === "127.0.0.1");
+
+  if (isLocalHttp) {
+    return {
+      sameSite: "lax" as const,
+      secure: false,
+      httpOnly: true,
+    };
+  }
+
+  return {
+    sameSite: "none" as const,
+    secure: true,
+    httpOnly: true,
+  };
+}
+
 export function createAuth(
   db: Database = getDb(),
   waitUntil?: (promise: Promise<unknown>) => void,
@@ -56,11 +76,7 @@ export function createAuth(
             },
           }
         : {}),
-      defaultCookieAttributes: {
-        sameSite: "none",
-        secure: true,
-        httpOnly: true,
-      },
+      defaultCookieAttributes: getDefaultCookieAttributes(authEnv.BETTER_AUTH_URL),
       crossSubDomainCookies: getCrossSubDomainCookieOptions(authEnv.BETTER_AUTH_URL),
     },
   });

@@ -25,6 +25,8 @@ describe("packages/auth adapter wiring", () => {
     expect(authSource).toContain('storeStateStrategy: "cookie"');
     expect(authSource).toContain("GITHUB_CLIENT_ID");
     expect(authSource).toContain("GITHUB_CLIENT_SECRET");
+    expect(authSource).toContain("getDefaultCookieAttributes");
+    expect(authSource).toContain('hostname === "localhost"');
   });
 
   it("shares auth cookies across the production web and api subdomains", () => {
