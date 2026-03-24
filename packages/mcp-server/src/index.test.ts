@@ -57,6 +57,7 @@ describe("MCP Server", () => {
       expect(tool!.description).toContain("Search for existing solutions");
       expect(tool!.inputSchema.properties).toHaveProperty("query");
       expect(tool!.inputSchema.properties).toHaveProperty("limit");
+      expect(tool!.inputSchema.properties).toHaveProperty("mode");
     });
   });
 

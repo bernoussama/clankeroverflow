@@ -91,6 +91,11 @@ export function createProgram() {
     .description("Search for existing solutions")
     .argument("<query>", "The search query")
     .option("-l, --limit <number>", "Number of results to return", "1")
+    .option(
+      "-m, --mode <mode>",
+      "keyword (Postgres FTS), semantic (Vectorize), or hybrid",
+      "hybrid",
+    )
     .action(async (query, options) => {
       try {
         const limit = parseInt(options.limit, 10);
@@ -99,9 +104,16 @@ export function createProgram() {
           process.exit(1);
         }
 
+        const mode = options.mode as "keyword" | "semantic" | "hybrid";
+        if (!["keyword", "semantic", "hybrid"].includes(mode)) {
+          console.error("Error: --mode must be keyword, semantic, or hybrid");
+          process.exit(1);
+        }
+
         const results = await trpc.solutions.search.query({
           query,
           limit,
+          mode,
         });
 
         if (results.length === 0) {

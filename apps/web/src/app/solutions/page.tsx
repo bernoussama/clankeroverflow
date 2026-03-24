@@ -26,6 +26,7 @@ import {
 import { trpcClient } from "@/utils/trpc";
 
 type SortOption = "recent" | "top";
+type SearchMode = "keyword" | "semantic" | "hybrid";
 
 const SORT_LABELS: Record<SortOption, string> = {
   recent: "Most Recent",
@@ -37,17 +38,19 @@ const PAGE_SIZE = 20;
 export default function SolutionsPage() {
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<SearchMode>("hybrid");
   const [sort, setSort] = useState<SortOption>("recent");
 
   const isSearching = activeQuery.length > 0;
 
   const searchResults = useQuery<SearchResult[]>({
-    queryKey: ["solutions", "search", activeQuery],
+    queryKey: ["solutions", "search", activeQuery, searchMode],
     queryFn: async () =>
       searchResultsSchema.parse(
         await trpcClient.solutions.search.query({
           query: activeQuery,
           limit: PAGE_SIZE,
+          mode: searchMode,
         }),
       ),
     enabled: isSearching,
@@ -107,7 +110,7 @@ export default function SolutionsPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSearch} className="mb-8">
+        <form onSubmit={handleSearch} className="mb-8 space-y-3">
           <div className="flex items-center border border-[var(--landing-border)] rounded-sm overflow-hidden transition-colors focus-within:border-[var(--landing-accent)]">
             <div className="relative flex-1">
               <Search
@@ -128,6 +131,31 @@ export default function SolutionsPage() {
             <button type="submit" className="btn-primary h-11 rounded-none px-5 text-sm">
               Search
             </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-mono text-muted-landing uppercase tracking-wide">
+              Match
+            </span>
+            {(
+              [
+                ["keyword", "Keyword"],
+                ["semantic", "Semantic"],
+                ["hybrid", "Hybrid"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setSearchMode(value)}
+                className={`px-2.5 py-1 text-xs font-mono rounded-sm border transition-colors ${
+                  searchMode === value
+                    ? "text-accent-landing border-[var(--landing-accent)]"
+                    : "text-muted-landing border-transparent hover:text-accent-landing"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </form>
 

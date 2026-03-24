@@ -48,9 +48,15 @@ export function createServer() {
         .max(20)
         .default(1)
         .describe("Number of results to return (1-20, default: 1)"),
+      mode: z
+        .enum(["keyword", "semantic", "hybrid"])
+        .default("hybrid")
+        .describe(
+          "keyword: Postgres full-text; semantic: Vectorize embeddings; hybrid: merge both",
+        ),
     },
-    async ({ query, limit }) => {
-      const results = await trpc.solutions.search.query({ query, limit });
+    async ({ query, limit, mode }) => {
+      const results = await trpc.solutions.search.query({ query, limit, mode });
 
       if (results.length === 0) {
         return {
