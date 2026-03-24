@@ -1,5 +1,9 @@
 import { createContext } from "@clankeroverflow/api/context";
-import { parseAllowedOrigins } from "@clankeroverflow/auth/origins";
+import {
+  parseAllowedOrigins,
+  parseAllowedOriginsWithDevFallback,
+  type WorkerOriginBindings,
+} from "@clankeroverflow/auth/origins";
 import { appRouter } from "@clankeroverflow/api/routers/index";
 import { createAuth, type Auth } from "@clankeroverflow/auth";
 import { createDb, type Database } from "@clankeroverflow/db";
@@ -19,11 +23,23 @@ type AppEnv = {
 };
 
 const serverEnv = env as typeof env & {
-  CORS_ORIGIN: string;
+  CORS_ORIGIN?: string;
 };
 
-const allowedOrigins = parseAllowedOrigins(serverEnv.CORS_ORIGIN);
-const allowedOriginSet = new Set(allowedOrigins);
+function allowedOriginsForRequest(c: Context<AppEnv>): string[] {
+  const bindings = c.env as WorkerOriginBindings | undefined;
+  if (bindings) {
+    return parseAllowedOriginsWithDevFallback(bindings);
+  }
+  const cors = serverEnv.CORS_ORIGIN?.trim();
+  if (cors) {
+    return parseAllowedOrigins(cors);
+  }
+  return parseAllowedOriginsWithDevFallback({
+    CORS_ORIGIN: serverEnv.CORS_ORIGIN,
+    BETTER_AUTH_URL: (serverEnv as { BETTER_AUTH_URL?: string }).BETTER_AUTH_URL,
+  });
+}
 const securityHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-site",
@@ -112,7 +128,8 @@ const withTrustedMutationOrigins: MiddlewareHandler<AppEnv> = async (c, next) =>
   }
 
   const requestOrigin = getRequestOrigin(c.req.raw);
-  if (requestOrigin && allowedOriginSet.has(requestOrigin)) {
+  const allowed = new Set(allowedOriginsForRequest(c));
+  if (requestOrigin && allowed.has(requestOrigin)) {
     return next();
   }
 
@@ -124,7 +141,10 @@ app.use("/*", withSecurityHeaders);
 app.use(
   "/*",
   cors({
-    origin: allowedOrigins,
+    origin: (origin, c) => {
+      const list = allowedOriginsForRequest(c as Context<AppEnv>);
+      return list.includes(origin) ? origin : null;
+    },
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
