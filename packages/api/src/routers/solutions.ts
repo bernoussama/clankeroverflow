@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { hashApiKey } from "@clankeroverflow/auth/api-keys";
 import { schema, type Database } from "@clankeroverflow/db";
 import {
   listSolutions,
@@ -10,7 +9,14 @@ import {
 } from "@clankeroverflow/db/list";
 import { searchSolutions } from "@clankeroverflow/db/search";
 import { publicProcedure, router } from "../index";
-import { withTimeout } from "../utils/withTimeout";
+import { DB_TIMEOUT_MS, withTimeout } from "../utils/withTimeout";
+
+function getAuthenticatedUserId(ctx: {
+  session: { user: { id: string } } | null;
+  apiKey: { referenceId: string } | null;
+}) {
+  return ctx.session?.user.id ?? ctx.apiKey?.referenceId ?? null;
+}
 
 async function getVoteCounts(db: Database, solutionId: string, userId: string | null) {
   const [counts] = await db
@@ -28,12 +34,16 @@ async function getVoteCounts(db: Database, solutionId: string, userId: string | 
 
   let userVote: boolean | null = null;
   if (userId) {
-    const existing = await db.query.solutionVote.findFirst({
-      where: and(
-        eq(schema.solutionVote.userId, userId),
-        eq(schema.solutionVote.solutionId, solutionId),
-      ),
-    });
+    const [existing] = await db
+      .select({ isUpvote: schema.solutionVote.isUpvote })
+      .from(schema.solutionVote)
+      .where(
+        and(
+          eq(schema.solutionVote.userId, userId),
+          eq(schema.solutionVote.solutionId, solutionId),
+        ),
+      )
+      .limit(1);
     userVote = existing?.isUpvote ?? null;
   }
 
@@ -54,29 +64,7 @@ export const solutionsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
-      let userId: string | null = null;
-
-      if (ctx.session?.user) {
-        userId = ctx.session.user.id;
-      } else if (ctx.apiKey) {
-        const apiKeyHash = await hashApiKey(ctx.apiKey);
-        const keyRecord = await withTimeout(
-          db.query.apiKey.findFirst({
-            where: eq(schema.apiKey.key, apiKeyHash),
-          }),
-          2500,
-          "API key lookup timed out",
-        );
-
-        if (!keyRecord) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Invalid API Key provided",
-          });
-        }
-
-        userId = keyRecord.userId;
-      }
+      const userId = getAuthenticatedUserId(ctx);
 
       if (!userId) {
         throw new TRPCError({
@@ -85,11 +73,13 @@ export const solutionsRouter = router({
         });
       }
 
-      const solutionRecord = await withTimeout(
-        db.query.solution.findFirst({
-          where: eq(schema.solution.id, input.id),
-        }),
-        2500,
+      const [solutionRecord] = await withTimeout(
+        db
+          .select()
+          .from(schema.solution)
+          .where(eq(schema.solution.id, input.id))
+          .limit(1),
+        DB_TIMEOUT_MS,
         "Solution lookup timed out",
       );
 
@@ -101,14 +91,18 @@ export const solutionsRouter = router({
       }
 
       try {
-        const existingVote = await withTimeout(
-          db.query.solutionVote.findFirst({
-            where: and(
-              eq(schema.solutionVote.userId, userId),
-              eq(schema.solutionVote.solutionId, input.id),
-            ),
-          }),
-          2500,
+        const [existingVote] = await withTimeout(
+          db
+            .select()
+            .from(schema.solutionVote)
+            .where(
+              and(
+                eq(schema.solutionVote.userId, userId),
+                eq(schema.solutionVote.solutionId, input.id),
+              ),
+            )
+            .limit(1),
+          DB_TIMEOUT_MS,
           "Existing vote lookup timed out",
         );
 
@@ -125,7 +119,7 @@ export const solutionsRouter = router({
                     eq(schema.solutionVote.solutionId, input.id),
                   ),
                 ),
-              2500,
+              DB_TIMEOUT_MS,
               "Vote delete timed out",
             );
             scoreDiff = input.isUpvote ? -1 : 1;
@@ -140,7 +134,7 @@ export const solutionsRouter = router({
                     eq(schema.solutionVote.solutionId, input.id),
                   ),
                 ),
-              2500,
+              DB_TIMEOUT_MS,
               "Vote update timed out",
             );
             scoreDiff = input.isUpvote ? 2 : -2;
@@ -153,7 +147,7 @@ export const solutionsRouter = router({
               isUpvote: input.isUpvote,
               createdAt: new Date(),
             }),
-            2500,
+            DB_TIMEOUT_MS,
             "Vote insert timed out",
           );
           scoreDiff = input.isUpvote ? 1 : -1;
@@ -165,23 +159,25 @@ export const solutionsRouter = router({
               .update(schema.solution)
               .set({ score: sql`${schema.solution.score} + ${scoreDiff}` })
               .where(eq(schema.solution.id, input.id)),
-            2500,
+            DB_TIMEOUT_MS,
             "Score update timed out",
           );
         }
 
         const voteCounts = await withTimeout(
           getVoteCounts(db, input.id, userId),
-          2500,
+          DB_TIMEOUT_MS,
           "Vote counts lookup timed out",
         );
 
         return { success: true, ...voteCounts };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
+        console.error("solutions.vote error:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to record vote",
+          cause: error,
         });
       }
     }),
@@ -196,29 +192,7 @@ export const solutionsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
-      let userId: string | null = null;
-
-      if (ctx.session?.user) {
-        userId = ctx.session.user.id;
-      } else if (ctx.apiKey) {
-        const apiKeyHash = await hashApiKey(ctx.apiKey);
-        const keyRecord = await withTimeout(
-          db.query.apiKey.findFirst({
-            where: eq(schema.apiKey.key, apiKeyHash),
-          }),
-          2500,
-          "API key lookup timed out",
-        );
-
-        if (!keyRecord) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Invalid API Key provided",
-          });
-        }
-
-        userId = keyRecord.userId;
-      }
+      const userId = getAuthenticatedUserId(ctx);
 
       const id = crypto.randomUUID();
       const now = new Date();
@@ -229,10 +203,11 @@ export const solutionsRouter = router({
           solution: input.solution,
           tags: input.tags ?? null,
           userId,
+          score: 0,
           createdAt: now,
           updatedAt: now,
         }),
-        2500,
+        DB_TIMEOUT_MS,
         "Solution insert timed out",
       );
 
@@ -249,7 +224,7 @@ export const solutionsRouter = router({
     .query(async ({ ctx, input }) => {
       const results = await withTimeout(
         searchSolutions(ctx.db, input),
-        2500,
+        DB_TIMEOUT_MS,
         "Solution search timed out",
       );
 
@@ -258,11 +233,13 @@ export const solutionsRouter = router({
 
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const db = ctx.db;
-    const result = await withTimeout(
-      db.query.solution.findFirst({
-        where: eq(schema.solution.id, input.id),
-      }),
-      2500,
+    const [result] = await withTimeout(
+      db
+        .select()
+        .from(schema.solution)
+        .where(eq(schema.solution.id, input.id))
+        .limit(1),
+      DB_TIMEOUT_MS,
       "Solution lookup timed out",
     );
 
@@ -280,7 +257,7 @@ export const solutionsRouter = router({
 
     const voteCounts = await withTimeout(
       getVoteCounts(db, input.id, userId),
-      2500,
+      DB_TIMEOUT_MS,
       "Vote counts lookup timed out",
     );
 
@@ -307,7 +284,7 @@ export const solutionsRouter = router({
 
       return withTimeout(
         listSolutions(ctx.db, { limit: input.limit, cursor, sort }),
-        2500,
+        DB_TIMEOUT_MS,
         "Solution list timed out",
       );
     }),

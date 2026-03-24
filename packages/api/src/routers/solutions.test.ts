@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { getDb } from "@clankeroverflow/db";
 import { t } from "../index";
 import { appRouter } from "./index";
 
 const createCaller = t.createCallerFactory(appRouter);
 const db = getDb();
+const solutionsSource = readFileSync(new URL("./solutions.ts", import.meta.url), "utf8");
 
 function createSelectChain(result: unknown[]) {
   const chain: any = {};
@@ -12,6 +14,8 @@ function createSelectChain(result: unknown[]) {
   chain.where = mock(() => chain);
   chain.orderBy = mock(() => chain);
   chain.limit = mock(() => result);
+  chain.then = (resolve: (v: unknown) => unknown) => resolve(result);
+  chain[Symbol.iterator] = () => result[Symbol.iterator]();
   return chain;
 }
 
@@ -40,12 +44,17 @@ describe("solutionsRouter", () => {
 
   beforeEach(() => {
     (db.execute as any).mockClear?.();
-    (db.query.solution.findFirst as any).mockClear?.();
-    (db.query.solutionVote.findFirst as any).mockClear?.();
     (db.select as any).mockClear?.();
     (db.insert as any).mockClear?.();
     (db.update as any).mockClear?.();
     (db.delete as any).mockClear?.();
+  });
+
+  test("uses the verified Better Auth api key reference instead of hashing and querying the key table", () => {
+    expect(solutionsSource).toContain("ctx.apiKey?.referenceId");
+    expect(solutionsSource).toContain("getAuthenticatedUserId(ctx)");
+    expect(solutionsSource).not.toContain("hashApiKey");
+    expect(solutionsSource).not.toContain("schema.apiKey");
   });
 
   test("search should return empty array if query is empty after trim", async () => {
@@ -79,17 +88,15 @@ describe("solutionsRouter", () => {
   });
 
   test("getById should return solution with vote counts", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce({
-      id: "sol_1",
-      problem: "Test problem",
-      solution: "Test solution",
-      score: 0,
-    });
-    (db.select as any).mockReturnValueOnce({
-      from: mock(() => ({
-        where: mock(() => [{ upvotes: 3, downvotes: 1 }]),
-      })),
-    });
+    (db.select as any)
+      .mockReturnValueOnce(
+        createSelectChain([
+          { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 },
+        ]),
+      )
+      .mockReturnValueOnce(
+        createSelectChain([{ upvotes: 3, downvotes: 1 }]),
+      );
 
     const caller = createCaller({
       auth: null as any,
@@ -106,22 +113,18 @@ describe("solutionsRouter", () => {
   });
 
   test("getById should return userVote when session is present", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce({
-      id: "sol_1",
-      problem: "Test problem",
-      solution: "Test solution",
-      score: 0,
-    });
-    (db.select as any).mockReturnValueOnce({
-      from: mock(() => ({
-        where: mock(() => [{ upvotes: 5, downvotes: 2 }]),
-      })),
-    });
-    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce({
-      userId: "user_1",
-      solutionId: "sol_1",
-      isUpvote: true,
-    });
+    (db.select as any)
+      .mockReturnValueOnce(
+        createSelectChain([
+          { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 },
+        ]),
+      )
+      .mockReturnValueOnce(
+        createSelectChain([{ upvotes: 5, downvotes: 2 }]),
+      )
+      .mockReturnValueOnce(
+        createSelectChain([{ isUpvote: true }]),
+      );
 
     const caller = createCaller({
       db,
@@ -136,7 +139,7 @@ describe("solutionsRouter", () => {
   });
 
   test("getById should throw NOT_FOUND if not found", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce(undefined);
+    (db.select as any).mockReturnValueOnce(createSelectChain([]));
 
     const caller = createCaller({
       auth: null as any,
@@ -156,13 +159,13 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    expect(
-      caller.solutions.vote({ id: "sol_1", isUpvote: true }),
-    ).rejects.toThrow("You must be logged in or provide a valid API key to vote");
+    expect(caller.solutions.vote({ id: "sol_1", isUpvote: true })).rejects.toThrow(
+      "You must be logged in or provide a valid API key to vote",
+    );
   });
 
   test("vote should reject if solution not found", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce(undefined);
+    (db.select as any).mockReturnValueOnce(createSelectChain([]));
 
     const caller = createCaller({
       db,
@@ -170,25 +173,18 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    expect(
-      caller.solutions.vote({ id: "sol_nonexistent", isUpvote: true }),
-    ).rejects.toThrow("Solution not found");
+    expect(caller.solutions.vote({ id: "sol_nonexistent", isUpvote: true })).rejects.toThrow(
+      "Solution not found",
+    );
   });
 
   test("vote should insert new upvote for authenticated user", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce({
-      id: "sol_1",
-      problem: "Test",
-      solution: "Test",
-      score: 0,
-    });
-    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce(undefined);
-
-    (db.select as any).mockReturnValueOnce({
-      from: mock(() => ({
-        where: mock(() => [{ upvotes: 1, downvotes: 0 }]),
-      })),
-    });
+    (db.select as any)
+      .mockReturnValueOnce(
+        createSelectChain([{ id: "sol_1", problem: "Test", solution: "Test", score: 0 }]),
+      )
+      .mockReturnValueOnce(createSelectChain([]))
+      .mockReturnValueOnce(createSelectChain([{ upvotes: 1, downvotes: 0 }]));
 
     const caller = createCaller({
       db,
@@ -205,23 +201,14 @@ describe("solutionsRouter", () => {
   });
 
   test("vote should toggle off existing same-direction vote", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce({
-      id: "sol_1",
-      problem: "Test",
-      solution: "Test",
-      score: 1,
-    });
-    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce({
-      userId: "user_1",
-      solutionId: "sol_1",
-      isUpvote: true,
-    });
-
-    (db.select as any).mockReturnValueOnce({
-      from: mock(() => ({
-        where: mock(() => [{ upvotes: 0, downvotes: 0 }]),
-      })),
-    });
+    (db.select as any)
+      .mockReturnValueOnce(
+        createSelectChain([{ id: "sol_1", problem: "Test", solution: "Test", score: 1 }]),
+      )
+      .mockReturnValueOnce(
+        createSelectChain([{ userId: "user_1", solutionId: "sol_1", isUpvote: true }]),
+      )
+      .mockReturnValueOnce(createSelectChain([{ upvotes: 0, downvotes: 0 }]));
 
     const caller = createCaller({
       db,
@@ -235,23 +222,14 @@ describe("solutionsRouter", () => {
   });
 
   test("vote should flip existing opposite-direction vote", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce({
-      id: "sol_1",
-      problem: "Test",
-      solution: "Test",
-      score: -1,
-    });
-    (db.query.solutionVote.findFirst as any).mockResolvedValueOnce({
-      userId: "user_1",
-      solutionId: "sol_1",
-      isUpvote: false,
-    });
-
-    (db.select as any).mockReturnValueOnce({
-      from: mock(() => ({
-        where: mock(() => [{ upvotes: 1, downvotes: 0 }]),
-      })),
-    });
+    (db.select as any)
+      .mockReturnValueOnce(
+        createSelectChain([{ id: "sol_1", problem: "Test", solution: "Test", score: -1 }]),
+      )
+      .mockReturnValueOnce(
+        createSelectChain([{ userId: "user_1", solutionId: "sol_1", isUpvote: false }]),
+      )
+      .mockReturnValueOnce(createSelectChain([{ upvotes: 1, downvotes: 0 }]));
 
     const caller = createCaller({
       db,
@@ -265,15 +243,17 @@ describe("solutionsRouter", () => {
   });
 
   test("vote should wrap DB errors as INTERNAL_SERVER_ERROR", async () => {
-    (db.query.solution.findFirst as any).mockResolvedValueOnce({
-      id: "sol_1",
-      problem: "Test",
-      solution: "Test",
-      score: 0,
-    });
-    (db.query.solutionVote.findFirst as any).mockRejectedValueOnce(
-      new Error("connection refused"),
-    );
+    const errorChain: any = {};
+    errorChain.from = mock(() => errorChain);
+    errorChain.where = mock(() => errorChain);
+    errorChain.orderBy = mock(() => errorChain);
+    errorChain.limit = mock(() => { throw new Error("connection refused"); });
+
+    (db.select as any)
+      .mockReturnValueOnce(
+        createSelectChain([{ id: "sol_1", problem: "Test", solution: "Test", score: 0 }]),
+      )
+      .mockReturnValueOnce(errorChain);
 
     const caller = createCaller({
       db,

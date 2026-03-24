@@ -1,3 +1,4 @@
+import { apiKey } from "@better-auth/api-key";
 import { getDb, schema, type Database } from "@clankeroverflow/db";
 import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
@@ -24,6 +25,26 @@ function getCrossSubDomainCookieOptions(baseURL: string) {
   }
 
   return undefined;
+}
+
+function getDefaultCookieAttributes(baseURL: string) {
+  const { protocol, hostname } = new URL(baseURL);
+  const isLocalHttp =
+    protocol === "http:" && (hostname === "localhost" || hostname === "127.0.0.1");
+
+  if (isLocalHttp) {
+    return {
+      sameSite: "lax" as const,
+      secure: false,
+      httpOnly: true,
+    };
+  }
+
+  return {
+    sameSite: "none" as const,
+    secure: true,
+    httpOnly: true,
+  };
 }
 
 export function createAuth(
@@ -56,6 +77,25 @@ export function createAuth(
     },
     secret: authEnv.BETTER_AUTH_SECRET,
     baseURL: authEnv.BETTER_AUTH_URL,
+    plugins: [
+      apiKey({
+        apiKeyHeaders: "x-clanker-api-key",
+        defaultPrefix: "clk_",
+        requireName: true,
+        minimumNameLength: 1,
+        maximumNameLength: 100,
+        keyExpiration: {
+          defaultExpiresIn: null,
+        },
+        rateLimit: {
+          enabled: false,
+        },
+        startingCharactersConfig: {
+          shouldStore: true,
+          charactersLength: 8,
+        },
+      }),
+    ],
     advanced: {
       ...(waitUntil
         ? {
@@ -64,11 +104,7 @@ export function createAuth(
             },
           }
         : {}),
-      defaultCookieAttributes: {
-        sameSite: "none",
-        secure: true,
-        httpOnly: true,
-      },
+      defaultCookieAttributes: getDefaultCookieAttributes(authEnv.BETTER_AUTH_URL),
       crossSubDomainCookies: getCrossSubDomainCookieOptions(authEnv.BETTER_AUTH_URL),
     },
   });

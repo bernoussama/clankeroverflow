@@ -25,6 +25,8 @@ describe("packages/auth adapter wiring", () => {
     expect(authSource).toContain('storeStateStrategy: "cookie"');
     expect(authSource).toContain("GITHUB_CLIENT_ID");
     expect(authSource).toContain("GITHUB_CLIENT_SECRET");
+    expect(authSource).toContain("getDefaultCookieAttributes");
+    expect(authSource).toContain('hostname === "localhost"');
   });
 
   it("shares auth cookies across the production web and api subdomains", () => {
@@ -36,5 +38,15 @@ describe("packages/auth adapter wiring", () => {
   it("wires Cloudflare waitUntil into Better Auth background tasks", () => {
     expect(authSource).toContain("backgroundTasks");
     expect(authSource).toContain("handler: waitUntil");
+  });
+
+  it("configures the Better Auth API key plugin for ClankerOverflow clients", () => {
+    expect(authSource).toContain("plugins:");
+    expect(authSource).toContain("apiKey({");
+    expect(authSource).toContain('apiKeyHeaders: "x-clanker-api-key"');
+    expect(authSource).toContain('defaultPrefix: "clk_"');
+    expect(authSource).toContain("requireName: true");
+    expect(authSource).toContain("startingCharactersConfig");
+    expect(authSource).toContain("charactersLength: 8");
   });
 });

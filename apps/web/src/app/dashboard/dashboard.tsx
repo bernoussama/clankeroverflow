@@ -4,19 +4,23 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
 
-import { trpc, trpcClient } from "@/utils/trpc";
 import {
-  apiKeysSchema,
-  type ApiKeys,
-  type ApiKey,
+  createdApiKeySchema,
+  formatApiKeyPreview,
+  listApiKeysResultSchema,
+  type ApiKeyListItem,
   type CreatedApiKey,
-} from "@/utils/trpc-output-types";
+} from "@/lib/api-key-client";
 import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
-export default function Dashboard({ session }: { session: typeof authClient.$Infer.Session }) {
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unknown error";
+}
+
+export default function Dashboard() {
   const [newKeyName, setNewKeyName] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
@@ -24,63 +28,85 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
   const queryClient = useQueryClient();
   const apiKeysQueryKey = ["apiKeys", "list"] as const;
 
-  const { data: apiKeys = [], isLoading } = useQuery<ApiKeys>({
+  const { data: apiKeys = [], isLoading } = useQuery<ApiKeyListItem[]>({
     queryKey: apiKeysQueryKey,
-    queryFn: async () => apiKeysSchema.parse(await trpcClient.apiKeys.list.query()),
+    queryFn: async () => {
+      const result = listApiKeysResultSchema.parse(
+        await authClient.apiKey.list({
+          query: {
+            sortBy: "createdAt",
+            sortDirection: "desc",
+          },
+        }),
+      );
+
+      return result.apiKeys;
+    },
   });
 
-  const createMutation = useMutation(
-    trpc.apiKeys.create.mutationOptions({
-      onSuccess: (data) => {
-        queryClient.setQueryData<ApiKeys>(apiKeysQueryKey, (current = []) => [
-          {
-            createdAt: data.createdAt,
-            id: data.id,
-            keyPreview: data.keyPreview,
-            name: data.name,
-          },
-          ...current.filter((apiKey) => apiKey.id !== data.id),
-        ]);
-        queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
-        setNewKeyName("");
-        setCreatedKey(data);
-        toast.success("API Key created successfully");
+  const createMutation = useMutation({
+    mutationFn: async ({ name }: { name: string }) =>
+      createdApiKeySchema.parse(
+        await authClient.apiKey.create({
+          name,
+        }),
+      ),
+    onSuccess: (data) => {
+      queryClient.setQueryData<ApiKeyListItem[]>(apiKeysQueryKey, (current = []) => [
+        {
+          createdAt: data.createdAt,
+          id: data.id,
+          name: data.name,
+          prefix: data.prefix,
+          start: data.start,
+        },
+        ...current.filter((apiKey) => apiKey.id !== data.id),
+      ]);
+      queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
+      setNewKeyName("");
+      setCreatedKey(data);
+      toast.success("API Key created successfully");
 
-        if (data.key) {
-          void navigator.clipboard
-            .writeText(data.key)
-            .then(() => {
-              toast.info("API Key copied to clipboard.");
-            })
-            .catch(() => {
-              toast.info(
-                "API key created. Clipboard access was blocked, so copy it from the panel above before dismissing it.",
-              );
-            });
-        }
-      },
-      onError: (error) => {
-        toast.error(`Failed to create API key: ${error.message}`);
-      },
-    }),
-  );
+      void navigator.clipboard
+        .writeText(data.key)
+        .then(() => {
+          toast.info("API Key copied to clipboard.");
+        })
+        .catch(() => {
+          toast.info(
+            "API key created. Clipboard access was blocked, so copy it from the panel above before dismissing it.",
+          );
+        });
+    },
+    onError: (error) => {
+      toast.error(`Failed to create API key: ${getErrorMessage(error)}`);
+    },
+  });
 
-  const deleteMutation = useMutation(
-    trpc.apiKeys.delete.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
-        toast.success("API Key deleted successfully");
-      },
-      onError: (error) => {
-        toast.error(`Failed to delete API key: ${error.message}`);
-      },
-    }),
-  );
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id }: { id: string }) =>
+      authClient.apiKey.delete({
+        keyId: id,
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.setQueryData<ApiKeyListItem[]>(apiKeysQueryKey, (current = []) =>
+        current.filter((apiKey) => apiKey.id !== variables.id),
+      );
+      queryClient.invalidateQueries({ queryKey: apiKeysQueryKey });
+      if (createdKey?.id === variables.id) {
+        setCreatedKey(null);
+      }
+      toast.success("API Key deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete API key: ${getErrorMessage(error)}`);
+    },
+  });
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newKeyName.trim()) return;
-    createMutation.mutate({ name: newKeyName });
+    createMutation.mutate({ name: newKeyName.trim() });
   };
 
   const handleDelete = (id: string) => {
@@ -184,13 +210,13 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
               <Skeleton className="h-16 w-full rounded-sm" />
               <Skeleton className="h-16 w-full rounded-sm" />
             </div>
-          ) : apiKeys?.length === 0 ? (
+          ) : apiKeys.length === 0 ? (
             <div className="text-center py-8 border border-dashed border-landing rounded-sm text-muted-landing text-sm font-mono">
               No API keys yet. Create one above.
             </div>
           ) : (
             <div className="border border-landing rounded-sm overflow-hidden">
-              {apiKeys.map((apiKey: ApiKey, i: number) => (
+              {apiKeys.map((apiKey: ApiKeyListItem, i: number) => (
                 <div
                   key={apiKey.id}
                   className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between ${i !== apiKeys.length - 1 ? "border-b border-landing" : ""}`}
@@ -199,7 +225,7 @@ export default function Dashboard({ session }: { session: typeof authClient.$Inf
                     <p className="text-sm font-semibold">{apiKey.name || "Unnamed Key"}</p>
                     <div className="mt-2 space-y-2">
                       <code className="block break-all text-xs font-mono px-3 py-2 rounded-sm bg-surface-landing border border-landing text-foreground">
-                        {apiKey.keyPreview}
+                        {formatApiKeyPreview(apiKey)}
                       </code>
                       <span className="text-xs text-muted-landing font-mono">
                         Created {new Date(apiKey.createdAt).toLocaleDateString()}

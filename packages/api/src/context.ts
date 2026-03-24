@@ -7,9 +7,15 @@ export type CreateContextOptions = {
   context: HonoContext;
 };
 
+type VerifiedApiKey = Exclude<
+  Awaited<ReturnType<Auth["api"]["verifyApiKey"]>>["key"],
+  null
+>;
+
 export async function createContext({ context }: CreateContextOptions) {
   const cookieHeader = context.req.raw.headers.get("cookie");
   const hasAuthContext = Boolean(cookieHeader);
+  const apiKeyHeader = context.req.raw.headers.get("x-clanker-api-key");
   const auth = context.get("auth") as Auth;
   const db = context.get("db") as Database;
 
@@ -27,13 +33,19 @@ export async function createContext({ context }: CreateContextOptions) {
     }
   }
 
-  const apiKey = context.req.raw.headers.get("x-clanker-api-key");
+  const verifiedApiKey = apiKeyHeader
+    ? await auth.api.verifyApiKey({
+        body: {
+          key: apiKeyHeader,
+        },
+      })
+    : null;
 
   return {
     auth,
     db,
     session,
-    apiKey,
+    apiKey: (verifiedApiKey?.valid ? verifiedApiKey.key : null) as VerifiedApiKey | null,
   };
 }
 

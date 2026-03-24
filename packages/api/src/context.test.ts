@@ -71,4 +71,11 @@ describe("api context auth forwarding", () => {
 
     expect(result.session).toBeNull();
   });
+
+  it("verifies x-clanker-api-key headers through Better Auth before exposing them to routers", () => {
+    expect(contextSource).toContain('const apiKeyHeader = context.req.raw.headers.get("x-clanker-api-key");');
+    expect(contextSource).toContain("auth.api.verifyApiKey");
+    expect(contextSource).toContain("valid ? verifiedApiKey.key : null");
+    expect(contextSource).not.toContain('const apiKey = context.req.raw.headers.get("x-clanker-api-key");');
+  });
 });

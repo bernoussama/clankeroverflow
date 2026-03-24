@@ -41,13 +41,13 @@ docker compose up -d
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/clankeroverflow
 ```
 
-3. Apply the schema to your database:
+3. Sync your local schema to the current Drizzle models:
 
 ```bash
 bun run db:push
 ```
 
-Then, run the development server:
+Then, run the development servers:
 
 ```bash
 bun run dev
@@ -55,6 +55,7 @@ bun run dev
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
 The API is running at [http://localhost:3000](http://localhost:3000).
+`bun run dev` now starts Docker Compose with `--wait`, runs `bun run db:push` after Postgres is ready so local Better Auth and Drizzle schema changes are applied before boot, then starts the web and server apps, and tears Docker Compose down when you stop it. Use `bun run dev:bare` if Postgres is already running and you do not want Docker lifecycle management, or `bun run dev:all` if you intentionally want the full Turbo dev graph. If you use `bun run dev:bare` or start `apps/server` / `apps/web` separately, run `bun run db:push` yourself first.
 
 ## Deployment (Cloudflare via Alchemy)
 
@@ -114,11 +115,14 @@ clanker search "nextjs cache" --limit 1
 
 ## Available Scripts
 
-- `bun run dev`: Start all applications in development mode
+- `bun run dev`: Start web + server in development mode with Docker-managed Postgres
+- `bun run dev:bare`: Start web + server in development mode without Docker management
+- `bun run dev:all`: Start the full Turbo dev graph
 - `bun run build`: Build all applications
 - `bun run dev:web`: Start only the web application
 - `bun run dev:server`: Start only the server
 - `bun run check-types`: Check TypeScript types across all apps
+- `bun run db:migrate`: Apply checked-in database migrations
 - `bun run db:push`: Push schema changes to database
 - `bun run db:generate`: Generate database client/types
 - `bun run check`: Run Oxlint and Oxfmt
