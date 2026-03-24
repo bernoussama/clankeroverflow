@@ -22,7 +22,9 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "bun run scripts/dev-with-postgres.ts",
+    "dev:bare": "turbo dev --filter=web --filter=server",
+    "dev:all": "turbo dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:native": "turbo -F native dev",
