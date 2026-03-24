@@ -1,6 +1,10 @@
 import { describe, expect, it, mock } from "bun:test";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import { createContext } from "./context";
+
+const contextSource = readFileSync(fileURLToPath(new URL("./context.ts", import.meta.url)), "utf8");
 
 describe("api context auth forwarding", () => {
   it("forwards only the cookie header into auth.getSession", async () => {

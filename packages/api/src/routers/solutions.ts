@@ -9,6 +9,11 @@ import {
 } from "@clankeroverflow/db/list";
 import { searchSolutions } from "@clankeroverflow/db/search";
 import { publicProcedure, router } from "../index";
+import {
+  searchSolutionsHybrid,
+  searchSolutionsSemantic,
+  upsertSolutionVector,
+} from "../semantic/search";
 import { DB_TIMEOUT_MS, withTimeout } from "../utils/withTimeout";
 
 function getAuthenticatedUserId(ctx: {
@@ -211,6 +216,24 @@ export const solutionsRouter = router({
         "Solution insert timed out",
       );
 
+      const { ai, solutionVectors, waitUntil } = ctx;
+      if (ai && solutionVectors && waitUntil) {
+        waitUntil(
+          upsertSolutionVector({
+            ai,
+            vectorize: solutionVectors,
+            row: {
+              id,
+              problem: input.problem,
+              solution: input.solution,
+              tags: input.tags ?? null,
+            },
+          }).catch((err) => {
+            console.error("solution vector upsert failed:", err);
+          }),
+        );
+      }
+
       return { id };
     }),
 
@@ -219,16 +242,56 @@ export const solutionsRouter = router({
       z.object({
         query: z.string().min(1, "Search query is required"),
         limit: z.number().min(1).max(20).default(1),
+        mode: z.enum(["keyword", "semantic", "hybrid"]).default("keyword"),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const results = await withTimeout(
-        searchSolutions(ctx.db, input),
-        DB_TIMEOUT_MS,
-        "Solution search timed out",
-      );
+      const trimmed = input.query.trim();
+      if (!trimmed) {
+        return [];
+      }
 
-      return results;
+      const payload = { query: trimmed, limit: input.limit };
+
+      if (input.mode === "keyword") {
+        return withTimeout(
+          searchSolutions(ctx.db, payload),
+          DB_TIMEOUT_MS,
+          "Solution search timed out",
+        );
+      }
+
+      if (!ctx.ai || !ctx.solutionVectors) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message:
+            "Semantic search is not configured on this server (missing Workers AI or Vectorize binding).",
+        });
+      }
+
+      if (input.mode === "semantic") {
+        return withTimeout(
+          searchSolutionsSemantic({
+            db: ctx.db,
+            ai: ctx.ai,
+            vectorize: ctx.solutionVectors,
+            ...payload,
+          }),
+          DB_TIMEOUT_MS,
+          "Semantic solution search timed out",
+        );
+      }
+
+      return withTimeout(
+        searchSolutionsHybrid({
+          db: ctx.db,
+          ai: ctx.ai,
+          vectorize: ctx.solutionVectors,
+          ...payload,
+        }),
+        DB_TIMEOUT_MS,
+        "Hybrid solution search timed out",
+      );
     }),
 
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {

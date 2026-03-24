@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { getDb } from "@clankeroverflow/db";
 import { t } from "../index";
 import { appRouter } from "./index";
 
 const createCaller = t.createCallerFactory(appRouter);
 const db = getDb();
-const solutionsSource = readFileSync(new URL("./solutions.ts", import.meta.url), "utf8");
+const solutionsSource = readFileSync(
+  fileURLToPath(new URL("./solutions.ts", import.meta.url)),
+  "utf8",
+);
 
 function createSelectChain(result: unknown[]) {
   const chain: any = {};
@@ -82,9 +86,22 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    const result = await caller.solutions.search({ query: "Test" });
+    const result = await caller.solutions.search({ query: "Test", mode: "keyword" });
     expect(result).toHaveLength(1);
     expect(result[0]?.problem).toBe("Test problem");
+  });
+
+  test("search semantic without AI binding returns PRECONDITION_FAILED", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+    } as any);
+
+    expect(caller.solutions.search({ query: "x", mode: "semantic" })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+    });
   });
 
   test("getById should return solution with vote counts", async () => {
