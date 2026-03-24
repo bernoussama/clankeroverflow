@@ -41,7 +41,7 @@ describe("searchSolutions", () => {
   afterEach(async () => {
     await db.delete(schema.solutionVote);
     await db.delete(schema.solution);
-    await db.delete(schema.apiKey);
+    await db.delete(schema.apikey);
     await db.delete(schema.account);
     await db.delete(schema.session);
     await db.delete(schema.verification);

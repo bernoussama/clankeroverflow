@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { hashApiKey } from "@clankeroverflow/auth/api-keys";
 import { schema, type Database } from "@clankeroverflow/db";
 import {
   listSolutions,
@@ -11,6 +10,13 @@ import {
 import { searchSolutions } from "@clankeroverflow/db/search";
 import { publicProcedure, router } from "../index";
 import { DB_TIMEOUT_MS, withTimeout } from "../utils/withTimeout";
+
+function getAuthenticatedUserId(ctx: {
+  session: { user: { id: string } } | null;
+  apiKey: { referenceId: string } | null;
+}) {
+  return ctx.session?.user.id ?? ctx.apiKey?.referenceId ?? null;
+}
 
 async function getVoteCounts(db: Database, solutionId: string, userId: string | null) {
   const [counts] = await db
@@ -58,31 +64,7 @@ export const solutionsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
-      let userId: string | null = null;
-
-      if (ctx.session?.user) {
-        userId = ctx.session.user.id;
-      } else if (ctx.apiKey) {
-        const apiKeyHash = await hashApiKey(ctx.apiKey);
-        const [keyRecord] = await withTimeout(
-          db
-            .select({ userId: schema.apiKey.userId })
-            .from(schema.apiKey)
-            .where(eq(schema.apiKey.key, apiKeyHash))
-            .limit(1),
-          DB_TIMEOUT_MS,
-          "API key lookup timed out",
-        );
-
-        if (!keyRecord) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Invalid API Key provided",
-          });
-        }
-
-        userId = keyRecord.userId;
-      }
+      const userId = getAuthenticatedUserId(ctx);
 
       if (!userId) {
         throw new TRPCError({
@@ -210,31 +192,7 @@ export const solutionsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
-      let userId: string | null = null;
-
-      if (ctx.session?.user) {
-        userId = ctx.session.user.id;
-      } else if (ctx.apiKey) {
-        const apiKeyHash = await hashApiKey(ctx.apiKey);
-        const [keyRecord] = await withTimeout(
-          db
-            .select({ userId: schema.apiKey.userId })
-            .from(schema.apiKey)
-            .where(eq(schema.apiKey.key, apiKeyHash))
-            .limit(1),
-          DB_TIMEOUT_MS,
-          "API key lookup timed out",
-        );
-
-        if (!keyRecord) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Invalid API Key provided",
-          });
-        }
-
-        userId = keyRecord.userId;
-      }
+      const userId = getAuthenticatedUserId(ctx);
 
       const id = crypto.randomUUID();
       const now = new Date();

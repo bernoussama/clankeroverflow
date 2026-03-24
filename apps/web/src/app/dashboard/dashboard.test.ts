@@ -11,6 +11,14 @@ describe("dashboard API key UX", () => {
     expect(dashboardSource).toContain("invalidateQueries({ queryKey: apiKeysQueryKey })");
   });
 
+  it("loads and mutates keys through the Better Auth client plugin", () => {
+    expect(dashboardSource).toContain("authClient.apiKey.list");
+    expect(dashboardSource).toContain("authClient.apiKey.create");
+    expect(dashboardSource).toContain("authClient.apiKey.delete");
+    expect(dashboardSource).not.toContain("trpc.apiKeys");
+    expect(dashboardSource).not.toContain("trpcClient.apiKeys");
+  });
+
   it("keeps the freshly created API key visible when clipboard access fails", () => {
     expect(dashboardSource).toContain("const [createdKey, setCreatedKey]");
     expect(dashboardSource).toContain("setCreatedKey(data);");
@@ -18,9 +26,9 @@ describe("dashboard API key UX", () => {
   });
 
   it("keeps persisted API keys masked while still hydrating the list cache immediately", () => {
-    expect(dashboardSource).toContain("setQueryData<ApiKeys>");
-    expect(dashboardSource).toContain("keyPreview: data.keyPreview");
-    expect(dashboardSource).toContain("{apiKey.keyPreview}");
+    expect(dashboardSource).toContain("setQueryData<ApiKeyListItem[]>");
+    expect(dashboardSource).toContain("start: data.start");
+    expect(dashboardSource).toContain("{formatApiKeyPreview(apiKey)}");
     expect(dashboardSource).toContain(
       "You will only be able to copy it again from this panel until you dismiss it.",
     );

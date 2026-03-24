@@ -1,3 +1,4 @@
+import { apiKey } from "@better-auth/api-key";
 import { getDb, schema, type Database } from "@clankeroverflow/db";
 import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
@@ -68,6 +69,25 @@ export function createAuth(
     },
     secret: authEnv.BETTER_AUTH_SECRET,
     baseURL: authEnv.BETTER_AUTH_URL,
+    plugins: [
+      apiKey({
+        apiKeyHeaders: "x-clanker-api-key",
+        defaultPrefix: "clk_",
+        requireName: true,
+        minimumNameLength: 1,
+        maximumNameLength: 100,
+        keyExpiration: {
+          defaultExpiresIn: null,
+        },
+        rateLimit: {
+          enabled: false,
+        },
+        startingCharactersConfig: {
+          shouldStore: true,
+          charactersLength: 8,
+        },
+      }),
+    ],
     advanced: {
       ...(waitUntil
         ? {

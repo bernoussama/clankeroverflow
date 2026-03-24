@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { getDb } from "@clankeroverflow/db";
 import { t } from "../index";
 import { appRouter } from "./index";
 
 const createCaller = t.createCallerFactory(appRouter);
 const db = getDb();
+const solutionsSource = readFileSync(new URL("./solutions.ts", import.meta.url), "utf8");
 
 function createSelectChain(result: unknown[]) {
   const chain: any = {};
@@ -46,6 +48,13 @@ describe("solutionsRouter", () => {
     (db.insert as any).mockClear?.();
     (db.update as any).mockClear?.();
     (db.delete as any).mockClear?.();
+  });
+
+  test("uses the verified Better Auth api key reference instead of hashing and querying the key table", () => {
+    expect(solutionsSource).toContain("ctx.apiKey?.referenceId");
+    expect(solutionsSource).toContain("getAuthenticatedUserId(ctx)");
+    expect(solutionsSource).not.toContain("hashApiKey");
+    expect(solutionsSource).not.toContain("schema.apiKey");
   });
 
   test("search should return empty array if query is empty after trim", async () => {

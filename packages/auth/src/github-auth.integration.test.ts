@@ -11,11 +11,27 @@ const connectionString =
   process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/clankeroverflow";
 
 describe("GitHub auth + PostgreSQL", () => {
+  let adminPool: Pool;
   let pool: Pool;
   let db: ReturnType<typeof drizzle<typeof schema>>;
+  let testDatabaseName: string;
 
   beforeAll(async () => {
-    pool = new Pool({ connectionString });
+    const baseUrl = new URL(connectionString);
+    const adminUrl = new URL(baseUrl);
+    adminUrl.pathname = "/postgres";
+
+    testDatabaseName = `clankeroverflow_auth_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+
+    adminPool = new Pool({ connectionString: adminUrl.toString() });
+    await adminPool.query(`CREATE DATABASE "${testDatabaseName}"`);
+
+    const testUrl = new URL(baseUrl);
+    testUrl.pathname = `/${testDatabaseName}`;
+
+    pool = new Pool({ connectionString: testUrl.toString() });
     db = drizzle(pool, { schema });
     const migrationsFolder = fileURLToPath(new URL("../../db/src/migrations", import.meta.url));
     await migrate(db, { migrationsFolder });
@@ -28,6 +44,14 @@ describe("GitHub auth + PostgreSQL", () => {
 
   afterAll(async () => {
     await pool.end();
+    await adminPool.query(
+      `SELECT pg_terminate_backend(pid)
+       FROM pg_stat_activity
+       WHERE datname = $1 AND pid <> pg_backend_pid()`,
+      [testDatabaseName],
+    );
+    await adminPool.query(`DROP DATABASE "${testDatabaseName}"`);
+    await adminPool.end();
   });
 
   test("createAuth initializes against a live Postgres schema", () => {

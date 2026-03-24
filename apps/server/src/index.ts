@@ -9,6 +9,8 @@ import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
+import { createRequestResourceLifecycle } from "./request-lifecycle";
+
 type AppEnv = {
   Variables: {
     auth: Auth;
@@ -51,13 +53,18 @@ function getWaitUntilHandler(c: Context<AppEnv>) {
 
 const withRequestServices: MiddlewareHandler<AppEnv> = async (c, next) => {
   const { close, db } = await createDb();
+  const lifecycle = createRequestResourceLifecycle({
+    close,
+    waitUntil: getWaitUntilHandler(c),
+  });
+
   c.set("db", db);
-  c.set("auth", createAuth(db, getWaitUntilHandler(c)));
+  c.set("auth", createAuth(db, lifecycle.waitUntil));
 
   try {
     await next();
   } finally {
-    await close();
+    await lifecycle.closeWhenReady();
   }
 };
 

@@ -29,7 +29,7 @@ export default async function DashboardPage() {
           </p>
           <h1 className="page-title text-3xl sm:text-4xl">Welcome, {session.user.name}</h1>
         </div>
-        <Dashboard session={session} />
+        <Dashboard />
       </div>
     </div>
   );

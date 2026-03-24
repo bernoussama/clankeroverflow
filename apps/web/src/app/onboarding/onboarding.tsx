@@ -7,8 +7,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
-import { trpc } from "@/utils/trpc";
-import type { CreatedApiKey } from "@/utils/trpc-output-types";
+import { createdApiKeySchema, type CreatedApiKey } from "@/lib/api-key-client";
+import { authClient } from "@/lib/auth-client";
 
 function buildOpenCodeConfig(apiKey?: string) {
   return JSON.stringify(
@@ -35,26 +35,30 @@ export default function Onboarding({ userName }: { userName: string }) {
   const [keyName, setKeyName] = useState("");
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
 
-  const createMutation = useMutation(
-    trpc.apiKeys.create.mutationOptions({
-      onSuccess: (data) => {
-        setCreatedKey(data);
-        toast.success("API key created");
-        void navigator.clipboard
-          .writeText(data.key)
-          .then(() => toast.info("Key copied to clipboard"))
-          .catch(() => {});
-      },
-      onError: (error) => {
-        toast.error(`Failed to create key: ${error.message}`);
-      },
-    }),
-  );
+  const createMutation = useMutation({
+    mutationFn: async ({ name }: { name: string }) =>
+      createdApiKeySchema.parse(
+        await authClient.apiKey.create({
+          name,
+        }),
+      ),
+    onSuccess: (data) => {
+      setCreatedKey(data);
+      toast.success("API key created");
+      void navigator.clipboard
+        .writeText(data.key)
+        .then(() => toast.info("Key copied to clipboard"))
+        .catch(() => {});
+    },
+    onError: (error) => {
+      toast.error(`Failed to create key: ${error instanceof Error ? error.message : "Unknown error"}`);
+    },
+  });
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!keyName.trim()) return;
-    createMutation.mutate({ name: keyName });
+    createMutation.mutate({ name: keyName.trim() });
   };
 
   const handleCopy = (text: string, type: "key" | "config") => {

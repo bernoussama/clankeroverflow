@@ -3,7 +3,12 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Client, Pool } from "pg";
 
 import * as schema from "./schema";
-import { getDatabaseRuntime, resolveConnectionString, type DatabaseEnv } from "./runtime";
+import {
+  getDatabaseRuntime,
+  resolveConnectionString,
+  resolveDatabaseEnv,
+  type DatabaseEnv,
+} from "./runtime";
 
 export type Database = NodePgDatabase<typeof schema>;
 
@@ -16,10 +21,7 @@ let dbInstance: Database | null = null;
 let poolInstance: Pool | null = null;
 
 function getDatabaseEnv(): DatabaseEnv {
-  return {
-    ...(env as DatabaseEnv),
-    DATABASE_URL: (env as DatabaseEnv).DATABASE_URL ?? process.env.DATABASE_URL,
-  };
+  return resolveDatabaseEnv(env as DatabaseEnv, process.env.DATABASE_URL);
 }
 
 export function getDb(): Database {
@@ -57,7 +59,7 @@ export async function createDb(): Promise<RequestDatabase> {
     throw new Error("DATABASE_URL or Hyperdrive binding is required");
   }
 
-  if (getDatabaseRuntime(databaseEnv) === "pooled") {
+  if (getDatabaseRuntime(databaseEnv, "worker") === "pooled") {
     return {
       close: async () => {},
       db: getDb(),
