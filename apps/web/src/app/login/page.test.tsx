@@ -11,7 +11,10 @@ describe("login page", () => {
     expect(loginPageSource).toContain('provider: "github"');
     expect(loginPageSource).toContain("window.location.origin");
     expect(loginPageSource).toContain("window.location.search");
+    expect(loginPageSource).toContain("try {");
+    expect(loginPageSource).toContain("catch (error)");
     expect(loginPageSource).not.toContain("useSearchParams");
+    expect(loginPageSource).not.toContain("const { error }");
     expect(loginPageSource).not.toContain("signIn.email");
     expect(loginPageSource).not.toContain("signUp.email");
   });

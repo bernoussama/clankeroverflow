@@ -38,18 +38,16 @@ export default function LoginPage() {
     setIsSigningIn(true);
     const appOrigin = window.location.origin;
 
-    const { error } = await authClient.signIn.social({
-      provider: "github",
-      callbackURL: `${appOrigin}/onboarding`,
-      errorCallbackURL: `${appOrigin}/login`,
-    });
-
-    if (!error) {
-      return;
+    try {
+      await authClient.signIn.social({
+        provider: "github",
+        callbackURL: `${appOrigin}/onboarding`,
+        errorCallbackURL: `${appOrigin}/login`,
+      });
+    } catch (error) {
+      setIsSigningIn(false);
+      toast.error(error instanceof Error ? error.message : "Unable to start GitHub sign in");
     }
-
-    setIsSigningIn(false);
-    toast.error(error.message || "Unable to start GitHub sign in");
   }
 
   return (
