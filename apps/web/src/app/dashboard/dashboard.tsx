@@ -11,6 +11,7 @@ import {
   type ApiKeyListItem,
   type CreatedApiKey,
 } from "@/lib/api-key-client";
+import { trackEvent } from "@/lib/analytics";
 import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -66,6 +67,7 @@ export default function Dashboard() {
       setNewKeyName("");
       setCreatedKey(data);
       toast.success("API Key created successfully");
+      trackEvent("dashboard_api_key_created");
 
       void navigator.clipboard
         .writeText(data.key)

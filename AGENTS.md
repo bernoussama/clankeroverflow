@@ -6,10 +6,13 @@ Always update this file with things you discover about the codebase and would be
 
 For anything design-related, you MUST use the centralized design system in `apps/web/src/index.css`. This includes using the predefined CSS variables (e.g., `--landing-accent`, `--landing-surface`) and global utility classes (e.g., `.btn-primary`, `.landing-card`) to keep the design language unified in the whole app. Do not create one-off custom CSS or isolated styled-components.
 
-## PostHog (planned)
+## PostHog
 
-- Integration is **not implemented** yet; see **`docs/posthog-integration-plan.md`** for scope, event map, env vars, and rollout.
-- **`apps/web/next.config.ts` CSP** currently allows only Cloudflare Web Analytics in production `connect-src` / `script-src`; PostHog ingest (and any replay/config hosts) must be added explicitly before client events work in prod.
+- **`posthog-js`** initializes in **`apps/web/src/components/posthog-provider.tsx`** only when **`NEXT_PUBLIC_POSTHOG_KEY`** is set; **`NEXT_PUBLIC_POSTHOG_HOST`** is optional (defaults to US ingest `https://us.i.posthog.com`). EU projects should set the host to the EU ingest URL.
+- **`packages/env/src/web.ts`** validates optional PostHog public env vars; **`packages/infra/alchemy.run.ts`** forwards them to the Next worker when present.
+- **`apps/web/src/lib/analytics.ts`** exposes **`trackEvent`** / **`resetPosthog`**; **`posthog-user-sync.tsx`** identifies on session and emits **`signed_in`** once per user id (via `sessionStorage`); sign-out clears that key and resets PostHog.
+- Production CSP **`connect-src`** includes **`https://*.posthog.com`** alongside Cloudflare analytics; self-hosted PostHog needs its origin added explicitly.
+- See **`docs/posthog-integration-plan.md`** for the full event map and rollout notes.
 
 ## Codebase Notes
 

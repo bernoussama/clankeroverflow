@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { resetPosthog } from "@/lib/analytics";
 import { authClient } from "@/lib/auth-client";
 
 import { Skeleton } from "./ui/skeleton";
@@ -63,6 +64,10 @@ export default function UserMenu() {
               authClient.signOut({
                 fetchOptions: {
                   onSuccess: () => {
+                    if (typeof sessionStorage !== "undefined") {
+                      sessionStorage.removeItem("clankeroverflow_analytics_signed_in_user_id");
+                    }
+                    resetPosthog();
                     router.push("/");
                   },
                 },

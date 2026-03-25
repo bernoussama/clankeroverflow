@@ -2,7 +2,7 @@
 
 ## Current state
 
-- **No product analytics** in the web app today; only Cloudflare Web Analytics is allowed in production CSP (`connect-src` / `script-src` in `apps/web/next.config.ts`).
+- **PostHog (client)** is wired in `apps/web` when `NEXT_PUBLIC_POSTHOG_KEY` is set: provider, identify/reset, manual events, CSP `connect-src` includes `https://*.posthog.com`. Cloudflare Web Analytics remains in CSP for production scripts/connect.
 - **Stack**: Next.js 16 App Router (`apps/web`), React 19, `@t3-oss/env-nextjs` in `packages/env/src/web.ts` (only `NEXT_PUBLIC_SERVER_URL` today), Better Auth for identity.
 - **Deploy**: OpenNext + Cloudflare; API is separate (`NEXT_PUBLIC_SERVER_URL`).
 

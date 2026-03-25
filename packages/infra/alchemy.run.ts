@@ -45,6 +45,9 @@ const solutionVectorIndex = await VectorizeIndex("solution-vectors", {
 
 const workersAi = Ai();
 
+const posthogKey = (process.env.NEXT_PUBLIC_POSTHOG_KEY ?? alchemy.env.NEXT_PUBLIC_POSTHOG_KEY)?.trim();
+const posthogHost = (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? alchemy.env.NEXT_PUBLIC_POSTHOG_HOST)?.trim();
+
 export const web = await Nextjs("web", {
   cwd: "../../apps/web",
   adopt: true,
@@ -63,6 +66,8 @@ export const web = await Nextjs("web", {
     CORS_ORIGIN: corsOrigin,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
+    ...(posthogKey ? { NEXT_PUBLIC_POSTHOG_KEY: posthogKey } : {}),
+    ...(posthogHost ? { NEXT_PUBLIC_POSTHOG_HOST: posthogHost } : {}),
   },
   dev: {
     env: {

@@ -23,6 +23,7 @@ import {
   type SolutionListCursor,
   type SearchResult,
 } from "@/utils/trpc-output-types";
+import { trackEvent } from "@/lib/analytics";
 import { trpcClient } from "@/utils/trpc";
 
 type SortOption = "recent" | "top";
@@ -89,7 +90,11 @@ export default function SolutionsPage() {
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setActiveQuery(query.trim());
+    const trimmed = query.trim();
+    setActiveQuery(trimmed);
+    if (trimmed) {
+      trackEvent("solution_search", { mode: searchMode });
+    }
   };
 
   const clearSearch = () => {

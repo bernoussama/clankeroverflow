@@ -21,5 +21,6 @@ describe("next config security headers", () => {
     expect(nextConfigSource).not.toContain("browsing-topics=()");
     expect(nextConfigSource).toContain("https://static.cloudflareinsights.com");
     expect(nextConfigSource).toContain("https://cloudflareinsights.com");
+    expect(nextConfigSource).toContain("https://*.posthog.com");
   });
 });

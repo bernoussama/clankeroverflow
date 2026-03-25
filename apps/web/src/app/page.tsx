@@ -19,6 +19,7 @@ import {
   Droplet,
 } from "lucide-react";
 
+import { trackEvent } from "@/lib/analytics";
 import { trpcClient } from "@/utils/trpc";
 import {
   searchResultsSchema,
@@ -80,6 +81,9 @@ export default function Home() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchQuery(query);
+    if (query.trim()) {
+      trackEvent("solution_search", { mode: "keyword" });
+    }
   };
 
   return (

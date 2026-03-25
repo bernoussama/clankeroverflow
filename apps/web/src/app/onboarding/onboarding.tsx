@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { createdApiKeySchema, type CreatedApiKey } from "@/lib/api-key-client";
+import { trackEvent } from "@/lib/analytics";
 import { authClient } from "@/lib/auth-client";
 
 function buildOpenCodeConfig(apiKey?: string) {
@@ -44,6 +45,7 @@ export default function Onboarding({ userName }: { userName: string }) {
       ),
     onSuccess: (data) => {
       setCreatedKey(data);
+      trackEvent("dashboard_api_key_created", { source: "onboarding" });
       toast.success("API key created");
       void navigator.clipboard
         .writeText(data.key)
@@ -229,7 +231,13 @@ export default function Onboarding({ userName }: { userName: string }) {
 
       {/* Navigation */}
       <div className="fade-in-up stagger-4 pt-4 flex items-center justify-between">
-        <Link href="/dashboard" className="btn-primary">
+        <Link
+          href="/dashboard"
+          className="btn-primary"
+          onClick={() => {
+            trackEvent("onboarding_completed");
+          }}
+        >
           Go to Dashboard <ArrowRight className="w-4 h-4" />
         </Link>
         <Link
