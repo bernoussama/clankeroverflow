@@ -6,6 +6,11 @@ Always update this file with things you discover about the codebase and would be
 
 For anything design-related, you MUST use the centralized design system in `apps/web/src/index.css`. This includes using the predefined CSS variables (e.g., `--landing-accent`, `--landing-surface`) and global utility classes (e.g., `.btn-primary`, `.landing-card`) to keep the design language unified in the whole app. Do not create one-off custom CSS or isolated styled-components.
 
+## PostHog (planned)
+
+- Integration is **not implemented** yet; see **`docs/posthog-integration-plan.md`** for scope, event map, env vars, and rollout.
+- **`apps/web/next.config.ts` CSP** currently allows only Cloudflare Web Analytics in production `connect-src` / `script-src`; PostHog ingest (and any replay/config hosts) must be added explicitly before client events work in prod.
+
 ## Codebase Notes
 
 - `packages/auth/src/index.ts` uses GitHub-only Better Auth social login on the custom `/auth` base path; the server worker must receive `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` bindings, and the GitHub OAuth app callback must point at `${BETTER_AUTH_URL}/auth/callback/github` with `user:email` access enabled.
