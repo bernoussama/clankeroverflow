@@ -10,6 +10,6 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "env.d.ts", "../../packages/env/env.d.ts"],
   "exclude": ["src/**/*.test.ts", "test-setup.ts"]
 }

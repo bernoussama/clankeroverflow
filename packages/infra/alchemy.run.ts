@@ -1,5 +1,5 @@
 import alchemy from "alchemy";
-import { Hyperdrive, Nextjs, Worker } from "alchemy/cloudflare";
+import { Hyperdrive, KVNamespace, Nextjs, Worker } from "alchemy/cloudflare";
 import { getDatabaseUrlErrorMessage, loadInfraEnv } from "./src/env";
 
 const app = await alchemy("clankeroverflow");
@@ -35,6 +35,10 @@ const hyperdrive = isLocal
       origin: databaseUrl,
       adopt: true,
     });
+
+const solutionsKv = await KVNamespace("solutions-kv", {
+  title: "clankeroverflow-solutions-cache",
+});
 
 export const web = await Nextjs("web", {
   cwd: "../../apps/web",
@@ -79,6 +83,7 @@ export const server = await Worker("server", {
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
     GITHUB_CLIENT_ID: alchemy.env.GITHUB_CLIENT_ID!,
     GITHUB_CLIENT_SECRET: alchemy.secret.env.GITHUB_CLIENT_SECRET!,
+    SOLUTIONS_KV: solutionsKv,
   },
   dev: {
     port: 3000,

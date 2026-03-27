@@ -10,11 +10,13 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
 import { createRequestResourceLifecycle } from "./request-lifecycle";
+import { env as workerEnv } from "cloudflare:workers";
 
 type AppEnv = {
   Variables: {
     auth: Auth;
     db: Database;
+    solutionsKv: KVNamespace | null;
   };
 };
 
@@ -60,6 +62,7 @@ const withRequestServices: MiddlewareHandler<AppEnv> = async (c, next) => {
 
   c.set("db", db);
   c.set("auth", createAuth(db, lifecycle.waitUntil));
+  c.set("solutionsKv", workerEnv.SOLUTIONS_KV ?? null);
 
   try {
     await next();

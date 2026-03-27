@@ -21,4 +21,10 @@ describe("infra worker config", () => {
     expect(alchemyRunSource).toContain("GITHUB_CLIENT_ID");
     expect(alchemyRunSource).toContain("GITHUB_CLIENT_SECRET");
   });
+
+  it("binds a KV namespace for solution read caching on the API worker", () => {
+    expect(alchemyRunSource).toContain('KVNamespace("solutions-kv"');
+    expect(alchemyRunSource).toContain("SOLUTIONS_KV:");
+    expect(alchemyRunSource).toContain("solutionsKv");
+  });
 });

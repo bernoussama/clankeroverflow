@@ -6,5 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 [dev]
 port = 3000
 
+[[kv_namespaces]]
+binding = "SOLUTIONS_KV"
+id = "00000000000000000000000000000000"
+
 # Non-secret bindings for local `wrangler dev`. Copy apps/server/.env to .dev.vars for secrets
 # (GITHUB_CLIENT_SECRET, BETTER_AUTH_SECRET) or use `wrangler secret put`.

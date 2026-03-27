@@ -7,28 +7,37 @@ const createCaller = t.createCallerFactory(appRouter);
 describe("appRouter", () => {
   test("healthCheck should return OK", async () => {
     const caller = createCaller({
+      auth: null as any,
+      db: null as any,
       session: null,
       apiKey: null,
-    });
+      solutionsKv: null,
+    } as any);
     const result = await caller.healthCheck();
     expect(result).toBe("OK");
   });
 
   test("privateData should reject if not authenticated", async () => {
     const caller = createCaller({
+      auth: null as any,
+      db: null as any,
       session: null,
       apiKey: null,
-    });
+      solutionsKv: null,
+    } as any);
 
     expect(caller.privateData()).rejects.toThrow("Authentication required");
   });
 
   test("privateData should return data if authenticated", async () => {
     const caller = createCaller({
+      auth: null as any,
+      db: null as any,
       session: {
         session: {
           id: "sess_1",
           userId: "user_1",
+          token: "token_1",
           expiresAt: new Date(),
           ipAddress: "127.0.0.1",
           userAgent: "Mozilla",
@@ -46,7 +55,8 @@ describe("appRouter", () => {
         },
       },
       apiKey: null,
-    });
+      solutionsKv: null,
+    } as any);
 
     const result = await caller.privateData();
     expect(result.message).toBe("This is private");

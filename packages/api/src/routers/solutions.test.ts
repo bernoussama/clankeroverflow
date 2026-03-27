@@ -8,6 +8,24 @@ const createCaller = t.createCallerFactory(appRouter);
 const db = getDb();
 const solutionsSource = readFileSync(new URL("./solutions.ts", import.meta.url), "utf8");
 
+/** KV is disabled in unit tests unless a case overrides this. */
+const noKv = { solutionsKv: null as null };
+
+function createMemoryKv() {
+  const store = new Map<string, string>();
+  return {
+    async get(key: string) {
+      return store.get(key) ?? null;
+    },
+    async put(key: string, value: string, _opts?: { expirationTtl?: number }) {
+      store.set(key, value);
+    },
+    async delete(key: string) {
+      store.delete(key);
+    },
+  };
+}
+
 function createSelectChain(result: unknown[]) {
   const chain: any = {};
   chain.from = mock(() => chain);
@@ -63,6 +81,7 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      ...noKv,
     } as any);
 
     const result = await caller.solutions.search({ query: "   " });
@@ -80,6 +99,7 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      ...noKv,
     } as any);
 
     const result = await caller.solutions.search({ query: "Test" });
@@ -103,6 +123,7 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      ...noKv,
     } as any);
 
     const result = await caller.solutions.getById({ id: "sol_1" });
@@ -130,6 +151,7 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      ...noKv,
     } as any);
 
     const result = await caller.solutions.getById({ id: "sol_1" });
@@ -146,6 +168,7 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      ...noKv,
     } as any);
 
     expect(caller.solutions.getById({ id: "sol_1" })).rejects.toThrow("Solution not found");
@@ -157,6 +180,7 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      ...noKv,
     } as any);
 
     expect(caller.solutions.vote({ id: "sol_1", isUpvote: true })).rejects.toThrow(
@@ -171,6 +195,7 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      ...noKv,
     } as any);
 
     expect(caller.solutions.vote({ id: "sol_nonexistent", isUpvote: true })).rejects.toThrow(
@@ -190,6 +215,7 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      ...noKv,
     } as any);
 
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
@@ -214,6 +240,7 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      ...noKv,
     } as any);
 
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
@@ -235,6 +262,7 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      ...noKv,
     } as any);
 
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
@@ -259,6 +287,7 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      ...noKv,
     } as any);
 
     try {
@@ -276,6 +305,7 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      ...noKv,
     });
 
     expect(
@@ -305,6 +335,7 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      ...noKv,
     } as any);
 
     const result = await caller.solutions.list({ limit: 20, sort: "recent" });
@@ -327,6 +358,7 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      ...noKv,
     } as any);
 
     const result = await caller.solutions.list({ limit: 5, sort: "top" });
@@ -336,5 +368,76 @@ describe("solutionsRouter", () => {
       id: items[5]?.id,
       score: items[5]?.score,
     });
+  });
+
+  test("search should use KV on second call without hitting db.execute", async () => {
+    const rowTime = new Date("2024-01-01T00:00:00.000Z");
+    (db.execute as any).mockResolvedValueOnce({
+      rows: [
+        {
+          id: "sol_1",
+          problem: "A",
+          solution: "B",
+          tags: null,
+          userId: null,
+          score: 1,
+          createdAt: rowTime,
+          updatedAt: rowTime,
+        },
+      ],
+    });
+
+    const kv = createMemoryKv();
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+      solutionsKv: kv,
+    } as any);
+
+    await caller.solutions.search({ query: "hello", limit: 5 });
+    await caller.solutions.search({ query: "hello", limit: 5 });
+
+    expect((db.execute as any).mock.calls.length).toBe(1);
+  });
+
+  test("getById with KV should only query user vote on cache hit when session present", async () => {
+    const kv = createMemoryKv();
+    await kv.put(
+      "sol:detail:sol_1",
+      JSON.stringify({
+        row: {
+          id: "sol_1",
+          problem: "P",
+          solution: "S",
+          tags: null,
+          userId: null,
+          score: 0,
+          createdAt: new Date(0).toISOString(),
+          updatedAt: new Date(0).toISOString(),
+        },
+        upvotes: 2,
+        downvotes: 1,
+      }),
+    );
+
+    (db.select as any).mockReturnValueOnce(
+      createSelectChain([{ isUpvote: false }]),
+    );
+
+    const caller = createCaller({
+      db,
+      session: mockSession,
+      apiKey: null,
+      solutionsKv: kv,
+    } as any);
+
+    const result = await caller.solutions.getById({ id: "sol_1" });
+    expect(result.problem).toBe("P");
+    expect(result.upvotes).toBe(2);
+    expect(result.downvotes).toBe(1);
+    expect(result.userVote).toBe(false);
+    expect((db.select as any).mock.calls.length).toBe(1);
   });
 });

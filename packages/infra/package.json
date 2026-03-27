@@ -2,6 +2,9 @@
   "name": "@clankeroverflow/infra",
   "private": true,
   "type": "module",
+  "exports": {
+    "./alchemy.run": "./alchemy.run.ts"
+  },
   "scripts": {
     "dev": "alchemy dev",
     "deploy": "alchemy deploy",

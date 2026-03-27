@@ -3,6 +3,8 @@ import type { Context as HonoContext } from "hono";
 import type { Auth } from "@clankeroverflow/auth";
 import type { Database } from "@clankeroverflow/db";
 
+import type { KvLike } from "./cache/solution-kv";
+
 export type CreateContextOptions = {
   context: HonoContext;
 };
@@ -18,6 +20,7 @@ export async function createContext({ context }: CreateContextOptions) {
   const apiKeyHeader = context.req.raw.headers.get("x-clanker-api-key");
   const auth = context.get("auth") as Auth;
   const db = context.get("db") as Database;
+  const solutionsKv = (context.get("solutionsKv") as KvLike | null | undefined) ?? null;
 
   let session = null;
 
@@ -46,6 +49,7 @@ export async function createContext({ context }: CreateContextOptions) {
     db,
     session,
     apiKey: (verifiedApiKey?.valid ? verifiedApiKey.key : null) as VerifiedApiKey | null,
+    solutionsKv,
   };
 }
 

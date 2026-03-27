@@ -8,6 +8,19 @@ import {
   type SolutionListSort,
 } from "@clankeroverflow/db/list";
 import { searchSolutions } from "@clankeroverflow/db/search";
+import type { CachedSolutionRow } from "../cache/solution-kv";
+import {
+  bumpSolutionListCacheVersion,
+  getSolutionListCacheVersion,
+  invalidateSolutionDetailCache,
+  kvGetJson,
+  kvPutJson,
+  reviveSolutionRow,
+  serializeSolutionRow,
+  solutionDetailCacheKey,
+  solutionListCacheKey,
+  solutionSearchCacheKey,
+} from "../cache/solution-kv";
 import { publicProcedure, router } from "../index";
 import { DB_TIMEOUT_MS, withTimeout } from "../utils/withTimeout";
 
@@ -52,6 +65,25 @@ async function getVoteCounts(db: Database, solutionId: string, userId: string | 
     downvotes: counts?.downvotes ?? 0,
     userVote,
   };
+}
+
+async function getUserVote(
+  db: Database,
+  solutionId: string,
+  userId: string,
+): Promise<boolean | null> {
+  const [existing] = await withTimeout(
+    db
+      .select({ isUpvote: schema.solutionVote.isUpvote })
+      .from(schema.solutionVote)
+      .where(
+        and(eq(schema.solutionVote.userId, userId), eq(schema.solutionVote.solutionId, solutionId)),
+      )
+      .limit(1),
+    DB_TIMEOUT_MS,
+    "User vote lookup timed out",
+  );
+  return existing?.isUpvote ?? null;
 }
 
 export const solutionsRouter = router({
@@ -170,6 +202,12 @@ export const solutionsRouter = router({
           "Vote counts lookup timed out",
         );
 
+        const kv = ctx.solutionsKv;
+        if (kv) {
+          await bumpSolutionListCacheVersion(kv);
+          await invalidateSolutionDetailCache(kv, input.id);
+        }
+
         return { success: true, ...voteCounts };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -211,6 +249,11 @@ export const solutionsRouter = router({
         "Solution insert timed out",
       );
 
+      const kv = ctx.solutionsKv;
+      if (kv) {
+        await bumpSolutionListCacheVersion(kv);
+      }
+
       return { id };
     }),
 
@@ -222,17 +265,55 @@ export const solutionsRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
+      const kv = ctx.solutionsKv;
+      if (kv) {
+        const lv = await getSolutionListCacheVersion(kv);
+        const key = solutionSearchCacheKey(lv, input.query, input.limit);
+        const cached = await kvGetJson<CachedSolutionRow[]>(kv, key);
+        if (cached) {
+          return cached.map(reviveSolutionRow);
+        }
+      }
+
       const results = await withTimeout(
         searchSolutions(ctx.db, input),
         DB_TIMEOUT_MS,
         "Solution search timed out",
       );
 
+      if (kv) {
+        const lv = await getSolutionListCacheVersion(kv);
+        const key = solutionSearchCacheKey(lv, input.query, input.limit);
+        await kvPutJson(kv, key, results.map(serializeSolutionRow));
+      }
+
       return results;
     }),
 
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const db = ctx.db;
+    const kv = ctx.solutionsKv;
+    const detailKey = kv ? solutionDetailCacheKey(input.id) : null;
+
+    type DetailPayload = {
+      row: CachedSolutionRow;
+      upvotes: number;
+      downvotes: number;
+    };
+
+    if (kv && detailKey) {
+      const cached = await kvGetJson<DetailPayload>(kv, detailKey);
+      if (cached) {
+        const row = reviveSolutionRow(cached.row);
+        let userVote: boolean | null = null;
+        const userId = ctx.session?.user.id ?? null;
+        if (userId) {
+          userVote = await getUserVote(db, input.id, userId);
+        }
+        return { ...row, upvotes: cached.upvotes, downvotes: cached.downvotes, userVote };
+      }
+    }
+
     const [result] = await withTimeout(
       db
         .select()
@@ -250,16 +331,20 @@ export const solutionsRouter = router({
       });
     }
 
-    let userId: string | null = null;
-    if (ctx.session?.user) {
-      userId = ctx.session.user.id;
-    }
-
+    const userId = ctx.session?.user.id ?? null;
     const voteCounts = await withTimeout(
       getVoteCounts(db, input.id, userId),
       DB_TIMEOUT_MS,
       "Vote counts lookup timed out",
     );
+
+    if (kv && detailKey) {
+      await kvPutJson(kv, detailKey, {
+        row: serializeSolutionRow(result),
+        upvotes: voteCounts.upvotes,
+        downvotes: voteCounts.downvotes,
+      });
+    }
 
     return { ...result, ...voteCounts };
   }),
@@ -281,11 +366,38 @@ export const solutionsRouter = router({
     .query(async ({ ctx, input }) => {
       const cursor: SolutionListCursor | null = input.cursor ?? null;
       const sort: SolutionListSort = input.sort;
+      const kv = ctx.solutionsKv;
 
-      return withTimeout(
+      if (kv) {
+        const lv = await getSolutionListCacheVersion(kv);
+        const key = solutionListCacheKey(lv, sort, cursor, input.limit);
+        const cached = await kvGetJson<{
+          items: CachedSolutionRow[];
+          nextCursor: SolutionListCursor | null;
+        }>(kv, key);
+        if (cached) {
+          return {
+            items: cached.items.map(reviveSolutionRow),
+            nextCursor: cached.nextCursor,
+          };
+        }
+      }
+
+      const page = await withTimeout(
         listSolutions(ctx.db, { limit: input.limit, cursor, sort }),
         DB_TIMEOUT_MS,
         "Solution list timed out",
       );
+
+      if (kv) {
+        const lv = await getSolutionListCacheVersion(kv);
+        const key = solutionListCacheKey(lv, sort, cursor, input.limit);
+        await kvPutJson(kv, key, {
+          items: page.items.map(serializeSolutionRow),
+          nextCursor: page.nextCursor,
+        });
+      }
+
+      return page;
     }),
 });

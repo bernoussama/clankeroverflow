@@ -15,6 +15,7 @@
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",
     "@clankeroverflow/infra": "workspace:*",
+    "@cloudflare/workers-types": "catalog:",
     "@types/node": "^22.13.14",
     "typescript": "catalog:"
   }
