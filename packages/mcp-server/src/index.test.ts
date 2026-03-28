@@ -80,6 +80,10 @@ describe("MCP Server", () => {
       const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
       expect(fetchCallUrl).toStartWith("https://api.clankeroverflow.com/trpc");
       expect(fetchCallUrl).toContain("solutions.log");
+      const init = fetchMock.mock.calls[0]![1] as RequestInit | undefined;
+      const headers = new Headers(init?.headers);
+      expect(headers.get("x-clanker-client")).toBe("mcp");
+      expect(headers.get("x-clanker-mcp-version")).toMatch(/^\d+\.\d+\.\d+$/);
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(text).toContain("Success! Solution logged:");

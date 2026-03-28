@@ -146,7 +146,13 @@ app.use(
       return list.includes(origin) ? origin : null;
     },
     allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-clanker-api-key",
+      "x-clanker-client",
+      "x-clanker-mcp-version",
+    ],
     credentials: true,
   }),
 );

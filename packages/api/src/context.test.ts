@@ -82,4 +82,38 @@ describe("api context auth forwarding", () => {
     expect(contextSource).toContain("valid ? verifiedApiKey.key : null");
     expect(contextSource).not.toContain('const apiKey = context.req.raw.headers.get("x-clanker-api-key");');
   });
+
+  it("parses x-clanker-client and x-clanker-mcp-version for MCP telemetry", async () => {
+    const context = {
+      req: {
+        raw: new Request("http://localhost/trpc/solutions.search", {
+          headers: {
+            "x-clanker-client": "mcp",
+            "x-clanker-mcp-version": "1.0.2",
+          },
+        }),
+      },
+      get(key: string) {
+        if (key === "auth") {
+          return {
+            api: {
+              getSession: mock().mockResolvedValue(null),
+              verifyApiKey: mock(),
+            },
+          };
+        }
+
+        if (key === "db") {
+          return {};
+        }
+
+        return undefined;
+      },
+    } as any;
+
+    const result = await createContext({ context });
+
+    expect(result.clientKind).toBe("mcp");
+    expect(result.clientMcpVersion).toBe("1.0.2");
+  });
 });

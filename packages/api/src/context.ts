@@ -38,6 +38,12 @@ export async function createContext({ context }: CreateContextOptions) {
   const cookieHeader = context.req.raw.headers.get("cookie");
   const hasAuthContext = Boolean(cookieHeader);
   const apiKeyHeader = context.req.raw.headers.get("x-clanker-api-key");
+  const clientHeader = context.req.raw.headers.get("x-clanker-client")?.trim().toLowerCase();
+  const mcpVersionHeader = context.req.raw.headers.get("x-clanker-mcp-version")?.trim() ?? null;
+  const clientKind =
+    clientHeader === "mcp" ? ("mcp" as const) : clientHeader ? ("unknown" as const) : ("unknown" as const);
+  const clientMcpVersion = clientKind === "mcp" ? mcpVersionHeader : null;
+
   const auth = context.get("auth") as Auth;
   const db = context.get("db") as Database;
   const env = (context as { env?: ApiWorkerEnv }).env;
@@ -76,6 +82,8 @@ export async function createContext({ context }: CreateContextOptions) {
     ai,
     solutionVectors,
     waitUntil: getWaitUntil(context),
+    clientKind,
+    clientMcpVersion,
   };
 }
 
@@ -89,4 +97,8 @@ export type Context = {
   ai?: WorkersAiBinding;
   solutionVectors?: SolutionVectorizeBinding;
   waitUntil?: (p: Promise<unknown>) => void;
+  /** From `x-clanker-client` (e.g. MCP sends `mcp`). */
+  clientKind: "mcp" | "unknown";
+  /** From `x-clanker-mcp-version` when client is MCP. */
+  clientMcpVersion: string | null;
 };

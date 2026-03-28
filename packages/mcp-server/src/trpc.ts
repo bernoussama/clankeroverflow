@@ -1,8 +1,15 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@clankeroverflow/api/routers/index";
 
+import { getMcpPackageVersion } from "./telemetry.js";
+
 const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://api.clankeroverflow.com";
 const API_KEY = process.env.CLANKER_API_KEY || "";
+
+const clientHeaders = {
+  "x-clanker-client": "mcp",
+  "x-clanker-mcp-version": getMcpPackageVersion(),
+} as const;
 
 export const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -14,6 +21,7 @@ export const trpc = createTRPCClient<AppRouter>({
       },
       headers() {
         return {
+          ...clientHeaders,
           ...(API_KEY ? { "x-clanker-api-key": API_KEY } : {}),
         };
       },

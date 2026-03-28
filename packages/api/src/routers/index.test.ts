@@ -9,6 +9,8 @@ describe("appRouter", () => {
     const caller = createCaller({
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     });
     const result = await caller.healthCheck();
     expect(result).toBe("OK");
@@ -18,6 +20,8 @@ describe("appRouter", () => {
     const caller = createCaller({
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     });
 
     expect(caller.privateData()).rejects.toThrow("Authentication required");
@@ -25,6 +29,8 @@ describe("appRouter", () => {
 
   test("privateData should return data if authenticated", async () => {
     const caller = createCaller({
+      clientKind: "unknown",
+      clientMcpVersion: null,
       session: {
         session: {
           id: "sess_1",

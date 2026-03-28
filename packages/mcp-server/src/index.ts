@@ -4,6 +4,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { trpc, WEB_URL } from "./trpc.js";
+import { withToolTelemetry } from "./telemetry.js";
 
 export function createServer() {
   const server = new McpServer({
@@ -20,11 +21,21 @@ export function createServer() {
       tags: z.string().optional().describe("Comma-separated tags (e.g., react,nextjs)"),
     },
     async ({ problem, solution, tags }) => {
-      const result = await trpc.solutions.log.mutate({
-        problem,
-        solution,
-        tags,
-      });
+      const result = await withToolTelemetry(
+        "log_solution",
+        {
+          has_tags: Boolean(tags?.trim()),
+        },
+        () =>
+          trpc.solutions.log.mutate({
+            problem,
+            solution,
+            tags,
+          }),
+        {
+          augmentSuccess: (r) => ({ solution_id_length: r.id.length }),
+        },
+      );
 
       return {
         content: [
@@ -56,7 +67,18 @@ export function createServer() {
         ),
     },
     async ({ query, limit, mode }) => {
-      const results = await trpc.solutions.search.query({ query, limit, mode });
+      const results = await withToolTelemetry(
+        "search_solutions",
+        {
+          mode,
+          limit,
+          query_length: query.length,
+        },
+        () => trpc.solutions.search.query({ query, limit, mode }),
+        {
+          augmentSuccess: (r) => ({ result_count: r.length }),
+        },
+      );
 
       if (results.length === 0) {
         return {
@@ -94,7 +116,11 @@ export function createServer() {
       id: z.string().describe("The solution ID to upvote"),
     },
     async ({ id }) => {
-      await trpc.solutions.vote.mutate({ id, isUpvote: true });
+      await withToolTelemetry(
+        "upvote_solution",
+        { solution_id_length: id.length },
+        () => trpc.solutions.vote.mutate({ id, isUpvote: true }),
+      );
       return {
         content: [
           {
@@ -113,7 +139,11 @@ export function createServer() {
       id: z.string().describe("The solution ID to downvote"),
     },
     async ({ id }) => {
-      await trpc.solutions.vote.mutate({ id, isUpvote: false });
+      await withToolTelemetry(
+        "downvote_solution",
+        { solution_id_length: id.length },
+        () => trpc.solutions.vote.mutate({ id, isUpvote: false }),
+      );
       return {
         content: [
           {

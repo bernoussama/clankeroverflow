@@ -67,6 +67,8 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     const result = await caller.solutions.search({ query: "   " });
@@ -84,6 +86,8 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     const result = await caller.solutions.search({ query: "Test", mode: "keyword" });
@@ -97,6 +101,8 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     expect(caller.solutions.search({ query: "x", mode: "semantic" })).rejects.toMatchObject({
@@ -120,6 +126,8 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     const result = await caller.solutions.getById({ id: "sol_1" });
@@ -147,6 +155,8 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     const result = await caller.solutions.getById({ id: "sol_1" });
@@ -163,6 +173,8 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     expect(caller.solutions.getById({ id: "sol_1" })).rejects.toThrow("Solution not found");
@@ -174,6 +186,8 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     expect(caller.solutions.vote({ id: "sol_1", isUpvote: true })).rejects.toThrow(
@@ -188,6 +202,8 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     expect(caller.solutions.vote({ id: "sol_nonexistent", isUpvote: true })).rejects.toThrow(
@@ -207,6 +223,8 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
@@ -231,6 +249,8 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
@@ -252,6 +272,8 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
@@ -276,6 +298,8 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     try {
@@ -293,6 +317,8 @@ describe("solutionsRouter", () => {
       db,
       session: mockSession,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     });
 
     expect(
@@ -322,6 +348,8 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     const result = await caller.solutions.list({ limit: 20, sort: "recent" });
@@ -344,6 +372,8 @@ describe("solutionsRouter", () => {
       db,
       session: null,
       apiKey: null,
+      clientKind: "unknown",
+      clientMcpVersion: null,
     } as any);
 
     const result = await caller.solutions.list({ limit: 5, sort: "top" });
