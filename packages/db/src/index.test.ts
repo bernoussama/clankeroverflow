@@ -40,6 +40,7 @@ describe("Database Integration", () => {
     await db.delete(schema.solutionVote);
     await db.delete(schema.solution);
     await db.delete(schema.apikey);
+    await db.delete(schema.passkey);
     await db.delete(schema.account);
     await db.delete(schema.session);
     await db.delete(schema.verification);

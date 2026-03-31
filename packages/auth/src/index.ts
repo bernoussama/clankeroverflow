@@ -1,10 +1,12 @@
 import { apiKey } from "@better-auth/api-key";
+import { passkey } from "@better-auth/passkey";
 import { getDb, schema, type Database } from "@clankeroverflow/db";
 import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { parseAllowedOriginsWithDevFallback } from "./origins";
+import { resolveWebAuthnRpId } from "./passkey-config";
 
 const authEnv = env as typeof env & {
   CORS_ORIGIN: string;
@@ -12,6 +14,7 @@ const authEnv = env as typeof env & {
   BETTER_AUTH_URL: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  WEBAUTHN_RP_ID?: string | undefined;
 };
 
 function getCrossSubDomainCookieOptions(baseURL: string) {
@@ -59,6 +62,12 @@ export function createAuth(
       BETTER_AUTH_URL: authEnv.BETTER_AUTH_URL,
     });
 
+  const rpId = resolveWebAuthnRpId({
+    betterAuthUrl: authEnv.BETTER_AUTH_URL,
+    trustedOrigins,
+    webauthnRpId: authEnv.WEBAUTHN_RP_ID,
+  });
+
   return betterAuth({
     basePath: "/auth",
     database: drizzleAdapter(db, {
@@ -78,6 +87,11 @@ export function createAuth(
     secret: authEnv.BETTER_AUTH_SECRET,
     baseURL: authEnv.BETTER_AUTH_URL,
     plugins: [
+      passkey({
+        rpID: rpId,
+        rpName: "ClankerOverflow",
+        origin: trustedOrigins,
+      }),
       apiKey({
         apiKeyHeaders: "x-clanker-api-key",
         defaultPrefix: "clk_",

@@ -81,12 +81,14 @@ export const verification = pgTable(
 
 import { solution, solutionVote } from "./solutions";
 import { apikey } from "./api-keys";
+import { passkey } from "./passkeys";
 
 export const userRelations = relations(user, ({ many }) => ({
   session: many(session),
   account: many(account),
   solutions: many(solution),
   apiKeys: many(apikey),
+  passkeys: many(passkey),
   votes: many(solutionVote),
 }));
 

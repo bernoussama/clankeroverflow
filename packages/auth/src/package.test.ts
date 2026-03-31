@@ -49,4 +49,12 @@ describe("packages/auth adapter wiring", () => {
     expect(authSource).toContain("startingCharactersConfig");
     expect(authSource).toContain("charactersLength: 8");
   });
+
+  it("enables WebAuthn passkeys via @better-auth/passkey", () => {
+    expect(authSource).toContain('@better-auth/passkey');
+    expect(authSource).toContain("passkey({");
+    expect(authSource).toContain("rpName:");
+    expect(authSource).toContain("resolveWebAuthnRpId");
+    expect(authSource).toContain("WEBAUTHN_RP_ID");
+  });
 });

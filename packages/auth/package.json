@@ -12,6 +12,7 @@
   "scripts": {},
   "dependencies": {
     "@better-auth/api-key": "^1.5.6",
+    "@better-auth/passkey": "^1.5.6",
     "@clankeroverflow/db": "workspace:*",
     "@clankeroverflow/env": "workspace:*",
     "better-auth": "catalog:",
