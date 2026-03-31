@@ -5,7 +5,7 @@ import { describe, expect, it } from "bun:test";
 const loginPageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 
 describe("login page", () => {
-  it("uses a single GitHub sign-in entry point", () => {
+  it("offers GitHub OAuth and passkey sign-in", () => {
     expect(loginPageSource).toContain("Continue with GitHub");
     expect(loginPageSource).toContain('signIn.social({');
     expect(loginPageSource).toContain('provider: "github"');
@@ -13,6 +13,8 @@ describe("login page", () => {
     expect(loginPageSource).toContain("window.location.search");
     expect(loginPageSource).toContain("try {");
     expect(loginPageSource).toContain("catch (error)");
+    expect(loginPageSource).toContain("signIn.passkey");
+    expect(loginPageSource).toContain("Sign in with passkey");
     expect(loginPageSource).not.toContain("useSearchParams");
     expect(loginPageSource).not.toContain("const { error }");
     expect(loginPageSource).not.toContain("signIn.email");

@@ -16,4 +16,11 @@ describe("auth client", () => {
     expect(authClientSource).toContain("apiKeyClient()");
     expect(authClientSource).not.toContain('import { apiKey } from "@better-auth/api-key";');
   });
+
+  it("uses the Better Auth passkey client plugin", () => {
+    expect(authClientSource).toContain(
+      'import { passkeyClient } from "@better-auth/passkey/client";',
+    );
+    expect(authClientSource).toContain("passkeyClient()");
+  });
 });

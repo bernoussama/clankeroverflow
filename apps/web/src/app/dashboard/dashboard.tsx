@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
+import { Fingerprint, Key, Plus, Trash2, Copy, Check } from "lucide-react";
 
 import {
   createdApiKeySchema,
@@ -20,13 +20,21 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unknown error";
 }
 
+type UserPasskeyRow = {
+  id: string;
+  name?: string | null;
+  createdAt?: string | Date | null;
+};
+
 export default function Dashboard() {
   const [newKeyName, setNewKeyName] = useState("");
+  const [newPasskeyName, setNewPasskeyName] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
 
   const queryClient = useQueryClient();
   const apiKeysQueryKey = ["apiKeys", "list"] as const;
+  const passkeysQueryKey = ["passkeys", "list"] as const;
 
   const { data: apiKeys = [], isLoading } = useQuery<ApiKeyListItem[]>({
     queryKey: apiKeysQueryKey,
@@ -83,6 +91,56 @@ export default function Dashboard() {
     },
   });
 
+  const { data: passkeys = [], isLoading: passkeysLoading } = useQuery<UserPasskeyRow[]>({
+    queryKey: passkeysQueryKey,
+    queryFn: async () => {
+      const res = await authClient.$fetch("/passkey/list-user-passkeys", { method: "GET" });
+      if (!res.data || !Array.isArray(res.data)) {
+        return [];
+      }
+      return res.data as UserPasskeyRow[];
+    },
+  });
+
+  const addPasskeyMutation = useMutation({
+    mutationFn: async ({ name }: { name: string }) => {
+      const result = await authClient.passkey.addPasskey({
+        name: name.trim() || undefined,
+      });
+      if (result.error) {
+        throw new Error(
+          typeof result.error.message === "string"
+            ? result.error.message
+            : "Failed to register passkey",
+        );
+      }
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: passkeysQueryKey });
+      setNewPasskeyName("");
+      toast.success("Passkey registered");
+    },
+    onError: (error) => {
+      toast.error(`Failed to add passkey: ${getErrorMessage(error)}`);
+    },
+  });
+
+  const deletePasskeyMutation = useMutation({
+    mutationFn: async ({ id }: { id: string }) =>
+      authClient.$fetch("/passkey/delete-passkey", {
+        method: "POST",
+        body: { id },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: passkeysQueryKey });
+      toast.success("Passkey removed");
+    },
+    onError: (error) => {
+      toast.error(`Failed to remove passkey: ${getErrorMessage(error)}`);
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async ({ id }: { id: string }) =>
       authClient.apiKey.delete({
@@ -112,6 +170,17 @@ export default function Dashboard() {
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to revoke this API key? This cannot be undone.")) {
       deleteMutation.mutate({ id });
+    }
+  };
+
+  const handleAddPasskey = (e: React.FormEvent) => {
+    e.preventDefault();
+    addPasskeyMutation.mutate({ name: newPasskeyName });
+  };
+
+  const handleDeletePasskey = (id: string) => {
+    if (confirm("Remove this passkey from your account? You can add a new one anytime.")) {
+      deletePasskeyMutation.mutate({ id });
     }
   };
 
@@ -239,6 +308,83 @@ export default function Dashboard() {
                       onClick={() => handleDelete(apiKey.id)}
                       disabled={deleteMutation.isPending}
                       title="Delete Key"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Passkeys */}
+      <div className="dashboard-card">
+        <div className="dashboard-card__header">
+          <div className="flex items-center gap-2 mb-1">
+            <Fingerprint className="w-4 h-4 text-accent-landing" />
+            <h2 className="font-display text-lg font-bold tracking-tight">Passkeys</h2>
+          </div>
+          <p className="text-sm text-muted-landing">
+            Register a passkey to sign in without GitHub. You can use Touch ID, Windows Hello, or a
+            security key.
+          </p>
+        </div>
+        <div className="dashboard-card__body">
+          <form onSubmit={handleAddPasskey} className="flex gap-2 mb-6">
+            <Input
+              placeholder="Label (e.g. MacBook, YubiKey)"
+              value={newPasskeyName}
+              onChange={(e) => setNewPasskeyName(e.target.value)}
+              className="input-landing max-w-xs text-sm"
+              disabled={addPasskeyMutation.isPending}
+            />
+            <button
+              type="submit"
+              className="btn-primary text-sm py-2 px-4"
+              disabled={addPasskeyMutation.isPending}
+            >
+              {addPasskeyMutation.isPending ? (
+                "Registering…"
+              ) : (
+                <>
+                  <Plus className="w-3.5 h-3.5" /> Add passkey
+                </>
+              )}
+            </button>
+          </form>
+
+          {passkeysLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-16 w-full rounded-sm" />
+            </div>
+          ) : passkeys.length === 0 ? (
+            <div className="text-center py-8 border border-dashed border-landing rounded-sm text-muted-landing text-sm font-mono">
+              No passkeys yet. Add one to use passwordless sign-in.
+            </div>
+          ) : (
+            <div className="border border-landing rounded-sm overflow-hidden">
+              {passkeys.map((pk, i) => (
+                <div
+                  key={pk.id}
+                  className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between ${i !== passkeys.length - 1 ? "border-b border-landing" : ""}`}
+                >
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="text-sm font-semibold">{pk.name?.trim() || "Passkey"}</p>
+                    {pk.createdAt ? (
+                      <span className="text-xs text-muted-landing font-mono">
+                        Added {new Date(pk.createdAt).toLocaleDateString()}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-1 self-end sm:self-start">
+                    <button
+                      type="button"
+                      className="mode-toggle-btn w-8 h-8 hover:!border-[var(--destructive)] hover:!color-[var(--destructive)]"
+                      onClick={() => handleDeletePasskey(pk.id)}
+                      disabled={deletePasskeyMutation.isPending}
+                      title="Remove passkey"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
