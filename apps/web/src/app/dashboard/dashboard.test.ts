@@ -47,3 +47,24 @@ describe("dashboard API key UX", () => {
     expect(dashboardSource.indexOf("MCP Usage")).toBeLessThan(dashboardSource.indexOf("CLI Usage"));
   });
 });
+
+describe("dashboard passkey UX", () => {
+  it("reuses one query key for passkey list load and invalidation", () => {
+    expect(dashboardSource).toContain('const passkeysQueryKey = ["passkeys", "list"] as const;');
+    expect(dashboardSource).toContain("queryKey: passkeysQueryKey");
+    expect(dashboardSource).toContain("invalidateQueries({ queryKey: passkeysQueryKey })");
+  });
+
+  it("lists and removes passkeys through Better Auth HTTP paths", () => {
+    expect(dashboardSource).toContain(
+      'authClient.$fetch("/passkey/list-user-passkeys", { method: "GET" })',
+    );
+    expect(dashboardSource).toContain('authClient.$fetch("/passkey/delete-passkey"');
+    expect(dashboardSource).toContain("authClient.passkey.addPasskey");
+  });
+
+  it("handles addPasskey errors without relying on fetchOptions.throw for that flow", () => {
+    expect(dashboardSource).toContain("await authClient.passkey.addPasskey");
+    expect(dashboardSource).toContain("if (result.error)");
+  });
+});

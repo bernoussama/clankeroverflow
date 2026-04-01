@@ -136,4 +136,37 @@ describe("Database Integration", () => {
     expect(result?.name).toBe("Test Key");
     expect(result?.user?.email).toBe("api@example.com");
   });
+
+  test("can create passkey row linked to user", async () => {
+    const userId = "user-passkey-1";
+    await db.insert(schema.user).values({
+      id: userId,
+      name: "Passkey User",
+      email: "passkey@example.com",
+    });
+
+    const passkeyId = "pk-1";
+    await db.insert(schema.passkey).values({
+      id: passkeyId,
+      name: "Test passkey",
+      publicKey: "dGVzdC1rZXk",
+      userId,
+      credentialID: "cred-integration-1",
+      counter: 0,
+      deviceType: "singleDevice",
+      backedUp: false,
+      transports: "internal",
+      createdAt: new Date(),
+    });
+
+    const row = await db.query.passkey.findFirst({
+      where: (p, { eq }) => eq(p.id, passkeyId),
+      with: { user: true },
+    });
+
+    expect(row).toBeDefined();
+    expect(row?.name).toBe("Test passkey");
+    expect(row?.credentialID).toBe("cred-integration-1");
+    expect(row?.user?.email).toBe("passkey@example.com");
+  });
 });

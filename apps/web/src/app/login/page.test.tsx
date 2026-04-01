@@ -20,4 +20,17 @@ describe("login page", () => {
     expect(loginPageSource).not.toContain("signIn.email");
     expect(loginPageSource).not.toContain("signUp.email");
   });
+
+  it("preloads conditional UI passkeys when the browser supports it", () => {
+    expect(loginPageSource).toContain("PublicKeyCredential");
+    expect(loginPageSource).toContain("isConditionalMediationAvailable");
+    expect(loginPageSource).toContain("signIn.passkey({ autoFill: true })");
+  });
+
+  it("runs explicit passkey sign-in with autoFill false and handles { data, error }", () => {
+    expect(loginPageSource).toContain("autoFill: false");
+    expect(loginPageSource).toContain("if (result.data)");
+    expect(loginPageSource).toContain("if (result.error)");
+    expect(loginPageSource).toContain('router.replace("/dashboard")');
+  });
 });
