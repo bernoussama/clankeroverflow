@@ -9,26 +9,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { createdApiKeySchema, type CreatedApiKey } from "@/lib/api-key-client";
 import { authClient } from "@/lib/auth-client";
-
-function buildOpenCodeConfig(apiKey?: string) {
-  return JSON.stringify(
-    {
-      mcp: {
-        clankeroverflow: {
-          type: "local",
-          command: ["npx", "-y", "@clankeroverflow/mcp-server"],
-          enabled: true,
-          environment: {
-            CLANKER_API_KEY: apiKey ?? "clk_your_key_here",
-            CLANKER_SERVER_URL: "https://api.clankeroverflow.com",
-          },
-        },
-      },
-    },
-    null,
-    2,
-  );
-}
+import { buildOpenCodeConfig } from "@/lib/opencode-config";
 
 export default function Onboarding({ userName }: { userName: string }) {
   const [copied, setCopied] = useState<"key" | "config" | null>(null);
@@ -173,7 +154,9 @@ export default function Onboarding({ userName }: { userName: string }) {
           <p className="text-sm text-muted-landing mt-1 pl-9">
             Paste the config below into your project&apos;s{" "}
             <code className="font-mono text-xs">opencode.json</code>
-            {!createdKey && " and replace the placeholder with your real key"}.
+            {!createdKey && " and replace the placeholder with your real key"}. It also loads a
+            hosted instruction file so OpenCode searches ClankerOverflow before fresh debugging
+            and logs verified fixes afterward.
           </p>
         </div>
         <div className="dashboard-card__body p-0">
@@ -199,8 +182,8 @@ export default function Onboarding({ userName }: { userName: string }) {
           <div className="px-6 py-4 text-xs text-muted-landing font-mono border-t border-landing">
             {createdKey
               ? "Your real API key is already filled in."
-              : <><code className="text-[11px]">search_solutions</code> works without auth. Logging and voting require <code className="text-[11px]">CLANKER_API_KEY</code>.</>
-            }
+              : <><code className="text-[11px]">search_solutions</code> works without auth. Logging and voting require <code className="text-[11px]">CLANKER_API_KEY</code>. The config also points OpenCode at hosted ClankerOverflow workflow instructions.</>
+             }
           </div>
         </div>
       </div>
@@ -218,7 +201,8 @@ export default function Onboarding({ userName }: { userName: string }) {
             </div>
           </div>
           <p className="text-sm text-muted-landing mt-1 pl-9">
-            Open your editor with OpenCode. ClankerOverflow tools are now available:{" "}
+            Open your editor with OpenCode. ClankerOverflow tools are now available, and the
+            bundled OpenCode instructions tell the model to search first and log verified fixes:{" "}
             <code className="font-mono text-xs">search_solutions</code>,{" "}
             <code className="font-mono text-xs">log_solution</code>,{" "}
             <code className="font-mono text-xs">upvote_solution</code>, and{" "}

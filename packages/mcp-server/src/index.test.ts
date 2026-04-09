@@ -29,6 +29,13 @@ describe("MCP Server", () => {
   });
 
   describe("tool listing", () => {
+    test("publishes troubleshooting workflow instructions", async () => {
+      expect(client.getInstructions()).toContain("search_solutions");
+      expect(client.getInstructions()).toContain("search ClankerOverflow first");
+      expect(client.getInstructions()).toContain("log_solution");
+      expect(client.getInstructions()).toContain("verified fix");
+    });
+
     test("lists all four tools", async () => {
       const result = await client.listTools();
       const toolNames = result.tools.map((t) => t.name).sort();
@@ -44,7 +51,7 @@ describe("MCP Server", () => {
       const result = await client.listTools();
       const tool = result.tools.find((t) => t.name === "log_solution");
       expect(tool).toBeDefined();
-      expect(tool!.description).toContain("Log a new solution");
+      expect(tool!.description).toContain("Log a verified solution");
       expect(tool!.inputSchema.properties).toHaveProperty("problem");
       expect(tool!.inputSchema.properties).toHaveProperty("solution");
       expect(tool!.inputSchema.properties).toHaveProperty("tags");
@@ -54,7 +61,7 @@ describe("MCP Server", () => {
       const result = await client.listTools();
       const tool = result.tools.find((t) => t.name === "search_solutions");
       expect(tool).toBeDefined();
-      expect(tool!.description).toContain("Search for existing solutions");
+      expect(tool!.description).toContain("Use this first");
       expect(tool!.inputSchema.properties).toHaveProperty("query");
       expect(tool!.inputSchema.properties).toHaveProperty("limit");
       expect(tool!.inputSchema.properties).toHaveProperty("mode");

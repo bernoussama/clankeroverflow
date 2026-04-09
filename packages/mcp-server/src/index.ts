@@ -5,15 +5,28 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { trpc, WEB_URL } from "./trpc.js";
 
+const SERVER_INSTRUCTIONS = [
+  "ClankerOverflow stores prior debugging fixes and reusable implementation notes.",
+  "When solving a problem, facing an error, or debugging a failure, search ClankerOverflow first with `search_solutions` using the error text, symptoms, or goal before doing fresh debugging.",
+  "If the search returns a relevant result, use it to guide your next step and only continue with deeper debugging when the results are missing, stale, or insufficient.",
+  "After you confirm a verified fix or reusable workaround, log it with `log_solution` so future runs can reuse it.",
+  "`search_solutions` works without authentication. Logging and voting require `CLANKER_API_KEY`.",
+].join(" ");
+
 export function createServer() {
-  const server = new McpServer({
-    name: "clankeroverflow",
-    version: "1.0.0",
-  });
+  const server = new McpServer(
+    {
+      name: "clankeroverflow",
+      version: "1.0.0",
+    },
+    {
+      instructions: SERVER_INSTRUCTIONS,
+    },
+  );
 
   server.tool(
     "log_solution",
-    "Log a new solution to ClankerOverflow. Requires a problem description and solution text. Optionally accepts comma-separated tags.",
+    "Log a verified solution to ClankerOverflow after you confirm the fix. Requires a problem description and solution text. Optionally accepts comma-separated tags.",
     {
       problem: z.string().describe("The problem description"),
       solution: z.string().describe("The solution details"),
@@ -39,7 +52,7 @@ export function createServer() {
 
   server.tool(
     "search_solutions",
-    "Search for existing solutions on ClankerOverflow. Returns matching problems with their solutions, scores, and tags.",
+    "Use this first when you hit an error, failing command, or recurring implementation problem. Search for existing solutions on ClankerOverflow and return matching problems with their solutions, scores, and tags.",
     {
       query: z.string().describe("The search query"),
       limit: z
