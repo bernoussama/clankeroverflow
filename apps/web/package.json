@@ -7,6 +7,7 @@
     "start": "next start",
     "dev:bare": "next dev --port 3000",
     "test:e2e": "NEXT_PUBLIC_SERVER_URL=http://localhost:3000 playwright test",
+    "test:unit": "bun test src/lib/agent-discovery.test.ts",
     "test": "bun test:e2e"
   },
   "dependencies": {

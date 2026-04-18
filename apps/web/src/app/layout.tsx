@@ -6,6 +6,7 @@ import { Bricolage_Grotesque } from "next/font/google";
 import "../index.css";
 import Header from "@/components/header";
 import Providers from "@/components/providers";
+import WebMcpProvider from "@/components/webmcp-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,8 +37,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} antialiased`}
+      >
         <Providers>
+          <WebMcpProvider />
           <div className="landing-page grid grid-rows-[auto_1fr] min-h-svh">
             <Header />
             <main>{children}</main>

@@ -59,4 +59,13 @@ app.get("/", (c) => {
   return c.text("OK");
 });
 
+app.get("/health", (c) => {
+  return c.text("OK");
+});
+
+/** Public JWKS for discovery documents (empty until JWT signing is configured). */
+app.get("/jwks", (c) => {
+  return c.json({ keys: [] as unknown[] });
+});
+
 export default app;
