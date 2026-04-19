@@ -3,6 +3,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import packageJson from "../package.json";
 import { trpc, WEB_URL } from "./trpc.js";
 
 const SERVER_INSTRUCTIONS = [
@@ -15,10 +16,10 @@ const SERVER_INSTRUCTIONS = [
 
 export function createServer() {
   const server = new McpServer(
-    {
-      name: "clankeroverflow",
-      version: "1.0.0",
-    },
+      {
+        name: packageJson.name,
+        version: packageJson.version,
+      },
     {
       instructions: SERVER_INSTRUCTIONS,
     },

@@ -35,7 +35,7 @@ export function createProgram() {
   program
     .name("clanker")
     .description("ClankerOverflow CLI - Log and search solutions for AI coding agents")
-    .version("1.0.0");
+    .version("1.0.1");
 
   program
     .command("log")

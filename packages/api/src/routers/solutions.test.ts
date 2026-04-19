@@ -99,9 +99,86 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    expect(caller.solutions.search({ query: "x", mode: "semantic" })).rejects.toMatchObject({
+    await expect(caller.solutions.search({ query: "x", mode: "semantic" })).rejects.toMatchObject({
       code: "PRECONDITION_FAILED",
     });
+  });
+
+  test("search semantic should return results in vector match order when AI bindings are present", async () => {
+    (db.select as any).mockReturnValueOnce(
+      createSelectChain([
+        { id: "sol_b", problem: "Problem B", solution: "Solution B", score: 0 },
+        { id: "sol_a", problem: "Problem A", solution: "Solution A", score: 0 },
+      ]),
+    );
+
+    const ai = {
+      run: mock(async () => ({ data: [[0.1]] })),
+    };
+    const solutionVectors = {
+      query: mock(async () => ({
+        matches: [
+          { id: "sol_a", score: 0.9 },
+          { id: "sol_b", score: 0.6 },
+        ],
+      })),
+    };
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+      ai,
+      solutionVectors,
+    } as any);
+
+    const result = await caller.solutions.search({ query: "Test", mode: "semantic", limit: 2 });
+
+    expect(result.map((row) => row.id)).toEqual(["sol_a", "sol_b"]);
+    expect(ai.run).toHaveBeenCalledTimes(1);
+    expect(solutionVectors.query).toHaveBeenCalledTimes(1);
+  });
+
+  test("search hybrid should prioritize semantic matches before remaining keyword matches", async () => {
+    (db.select as any).mockReturnValueOnce(
+      createSelectChain([
+        { id: "sol_a", problem: "Problem A", solution: "Solution A", score: 0 },
+        { id: "sol_b", problem: "Problem B", solution: "Solution B", score: 0 },
+      ]),
+    );
+    (db.execute as any).mockResolvedValueOnce({
+      rows: [
+        { id: "sol_c", problem: "Problem C", solution: "Solution C", score: 0 },
+        { id: "sol_a", problem: "Problem A", solution: "Solution A", score: 0 },
+      ],
+    });
+
+    const ai = {
+      run: mock(async () => ({ data: [[0.1]] })),
+    };
+    const solutionVectors = {
+      query: mock(async () => ({
+        matches: [
+          { id: "sol_b", score: 0.95 },
+          { id: "sol_a", score: 0.8 },
+        ],
+      })),
+    };
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+      ai,
+      solutionVectors,
+    } as any);
+
+    const result = await caller.solutions.search({ query: "Test", mode: "hybrid", limit: 3 });
+
+    expect(result.map((row) => row.id)).toEqual(["sol_b", "sol_a", "sol_c"]);
+    expect(db.execute as any).toHaveBeenCalledTimes(1);
   });
 
   test("getById should return solution with vote counts", async () => {
@@ -165,7 +242,7 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    expect(caller.solutions.getById({ id: "sol_1" })).rejects.toThrow("Solution not found");
+    await expect(caller.solutions.getById({ id: "sol_1" })).rejects.toThrow("Solution not found");
   });
 
   test("vote should reject unauthenticated users", async () => {
@@ -176,7 +253,7 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    expect(caller.solutions.vote({ id: "sol_1", isUpvote: true })).rejects.toThrow(
+    await expect(caller.solutions.vote({ id: "sol_1", isUpvote: true })).rejects.toThrow(
       "You must be logged in or provide a valid API key to vote",
     );
   });
@@ -190,7 +267,7 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    expect(caller.solutions.vote({ id: "sol_nonexistent", isUpvote: true })).rejects.toThrow(
+    await expect(caller.solutions.vote({ id: "sol_nonexistent", isUpvote: true })).rejects.toThrow(
       "Solution not found",
     );
   });
@@ -295,14 +372,14 @@ describe("solutionsRouter", () => {
       apiKey: null,
     });
 
-    expect(
+    await expect(
       caller.solutions.log({
         problem: "p".repeat(301),
         solution: "s",
       }),
     ).rejects.toThrow();
 
-    expect(
+    await expect(
       caller.solutions.log({
         problem: "p",
         solution: "s".repeat(30_001),

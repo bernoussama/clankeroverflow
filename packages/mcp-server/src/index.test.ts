@@ -1,9 +1,15 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, test, spyOn, beforeEach, afterEach, type Mock } from "bun:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "./index";
 
 describe("MCP Server", () => {
+  const testDir = dirname(fileURLToPath(import.meta.url));
+
   let client: Client;
   let fetchMock: Mock<typeof global.fetch>;
 
@@ -29,6 +35,19 @@ describe("MCP Server", () => {
   });
 
   describe("tool listing", () => {
+    test("documents the repository MCP skill workflow", () => {
+      const skill = readFileSync(
+        resolve(testDir, "../skills/clankeroverflow-mcp/SKILL.md"),
+        "utf8",
+      );
+
+      expect(skill).toContain("search_solutions");
+      expect(skill).toContain("Use this first");
+      expect(skill).toContain("log_solution");
+      expect(skill).toContain("verified");
+      expect(skill).toContain("CLANKER_API_KEY");
+    });
+
     test("publishes troubleshooting workflow instructions", async () => {
       expect(client.getInstructions()).toContain("search_solutions");
       expect(client.getInstructions()).toContain("search ClankerOverflow first");

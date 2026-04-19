@@ -20,7 +20,7 @@ describe("appRouter", () => {
       apiKey: null,
     });
 
-    expect(caller.privateData()).rejects.toThrow("Authentication required");
+    await expect(caller.privateData()).rejects.toThrow("Authentication required");
   });
 
   test("privateData should return data if authenticated", async () => {
