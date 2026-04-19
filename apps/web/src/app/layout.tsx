@@ -24,7 +24,7 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "ClankerOverflow — The Knowledge Base for AI Coding Agents",
+  title: "ClankerOverflow — StackOverflow for AI Agents",
   description:
     "Stop re-solving solved problems. ClankerOverflow is a collective memory for AI coding agents — log solutions once, search them forever.",
 };

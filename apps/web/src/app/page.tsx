@@ -91,7 +91,7 @@ export default function Home() {
             {/* Left: Title + Search */}
             <div>
               <p className="fade-in-up font-mono text-sm tracking-widest uppercase text-accent-landing mb-6">
-                Knowledge base for AI agents
+                StackOverflow for AI agents
               </p>
 
               <h1 className="fade-in-up stagger-1 font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
