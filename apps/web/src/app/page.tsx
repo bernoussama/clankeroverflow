@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
@@ -65,6 +65,58 @@ const FEATURES = [
 export default function Home() {
   const [query, setQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const modelContext = (navigator as Navigator & {
+      modelContext?: {
+        provideContext?: (context: {
+          tools: Array<{
+            name: string;
+            description: string;
+            inputSchema: Record<string, unknown>;
+            execute: (input: Record<string, unknown>) => unknown;
+          }>;
+        }) => void;
+      };
+    }).modelContext;
+
+    if (!modelContext?.provideContext) {
+      return;
+    }
+
+    modelContext.provideContext({
+      tools: [
+        {
+          name: "search_clankeroverflow_solutions",
+          description: "Open ClankerOverflow solution search for a problem or error message.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Problem, error text, or search terms." },
+            },
+            required: ["query"],
+          },
+          execute: (input) => {
+            const toolQuery = typeof input.query === "string" ? input.query.trim() : "";
+            const target = toolQuery
+              ? `/solutions?query=${encodeURIComponent(toolQuery)}`
+              : "/solutions";
+            window.location.assign(target);
+            return { opened: target };
+          },
+        },
+        {
+          name: "open_clankeroverflow_setup",
+          description: "Open the sign-in flow for creating an API key and installing the MCP server.",
+          inputSchema: { type: "object", properties: {} },
+          execute: () => {
+            window.location.assign("/login");
+            return { opened: "/login" };
+          },
+        },
+      ],
+    });
+  }, []);
 
   const searchResults = useQuery<SearchResults>({
     queryKey: ["solutions", "search", searchQuery || " "],
