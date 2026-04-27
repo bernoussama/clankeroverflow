@@ -67,16 +67,42 @@ export const mockWorkerEnv = {
   GITHUB_CLIENT_SECRET: "test-github-client-secret",
   AI: undefined as unknown,
   SOLUTION_VECTORS: undefined as unknown,
+  POSTHOG_API_KEY: "test-posthog-key",
+  POSTHOG_HOST: "https://eu.i.posthog.com",
 };
+
+const posthogInstances: any[] = [];
+
+class PostHogMock {
+  apiKey: string;
+  options: Record<string, unknown>;
+  capture = mock();
+  captureException = mock();
+  identify = mock();
+  shutdown = mock(async () => {});
+
+  constructor(apiKey: string, options: Record<string, unknown>) {
+    this.apiKey = apiKey;
+    this.options = options;
+    posthogInstances.push(this);
+  }
+}
 
 (globalThis as any).__serverTestMocks = {
   createAuthMock,
   createDbMock,
+  posthogInstances,
 };
 
 mock.module("cloudflare:workers", () => {
   return {
     env: mockWorkerEnv,
+  };
+});
+
+mock.module("posthog-node", () => {
+  return {
+    PostHog: PostHogMock,
   };
 });
 

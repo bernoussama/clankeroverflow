@@ -3,7 +3,7 @@ import { mockWorkerEnv } from "../test-setup";
 import app from "./index";
 
 describe("Server", () => {
-  const { createDbMock } = (globalThis as any).__serverTestMocks;
+  const { createDbMock, posthogInstances } = (globalThis as any).__serverTestMocks;
 
   test("GET / should return OK", async () => {
     const res = await app.request("/", undefined, mockWorkerEnv);
@@ -32,6 +32,37 @@ describe("Server", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     expect(res.headers.get("Pragma")).toBe("no-cache");
+  });
+
+  test("GET /trpc/healthCheck should use a request-scoped PostHog client from Worker bindings", async () => {
+    posthogInstances.length = 0;
+
+    const res = await app.request("/trpc/healthCheck", undefined, mockWorkerEnv);
+
+    expect(res.status).toBe(200);
+    expect(posthogInstances).toHaveLength(1);
+    expect(posthogInstances[0].apiKey).toBe(mockWorkerEnv.POSTHOG_API_KEY);
+    expect(posthogInstances[0].options).toMatchObject({
+      host: mockWorkerEnv.POSTHOG_HOST,
+      flushAt: 1,
+      flushInterval: 0,
+      enableExceptionAutocapture: false,
+    });
+    expect(posthogInstances[0].shutdown).toHaveBeenCalledTimes(1);
+  });
+
+  test("uncaught request errors should be captured with PostHog", async () => {
+    posthogInstances.length = 0;
+    createDbMock.mockImplementationOnce(async () => {
+      throw new Error("db unavailable");
+    });
+
+    const res = await app.request("/trpc/healthCheck", undefined, mockWorkerEnv);
+
+    expect(res.status).toBe(500);
+    expect(posthogInstances).toHaveLength(1);
+    expect(posthogInstances[0].captureException).toHaveBeenCalledWith(expect.any(Error));
+    expect(posthogInstances[0].shutdown).toHaveBeenCalledTimes(1);
   });
 
   test("GET /auth/ok should serve Better Auth from the custom auth path", async () => {

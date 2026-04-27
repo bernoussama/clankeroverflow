@@ -1,5 +1,11 @@
 import { createContext } from "@clankeroverflow/api/context";
 import {
+  createPostHog,
+  shutdownPostHog,
+  type PostHogClient,
+  type PostHogEnv,
+} from "@clankeroverflow/api/posthog";
+import {
   parseAllowedOrigins,
   parseAllowedOriginsWithDevFallback,
   type WorkerOriginBindings,
@@ -19,11 +25,14 @@ type AppEnv = {
   Variables: {
     auth: Auth;
     db: Database;
+    posthog?: PostHogClient;
   };
 };
 
 const serverEnv = env as typeof env & {
   CORS_ORIGIN?: string;
+  POSTHOG_API_KEY?: string;
+  POSTHOG_HOST?: string;
 };
 
 function allowedOriginsForRequest(c: Context<AppEnv>): string[] {
@@ -40,6 +49,15 @@ function allowedOriginsForRequest(c: Context<AppEnv>): string[] {
     BETTER_AUTH_URL: (serverEnv as { BETTER_AUTH_URL?: string }).BETTER_AUTH_URL,
   });
 }
+
+function postHogEnvForRequest(c: Context<AppEnv>): PostHogEnv {
+  const bindings = c.env as PostHogEnv | undefined;
+  return {
+    POSTHOG_API_KEY: bindings?.POSTHOG_API_KEY ?? serverEnv.POSTHOG_API_KEY,
+    POSTHOG_HOST: bindings?.POSTHOG_HOST ?? serverEnv.POSTHOG_HOST,
+  };
+}
+
 const securityHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-site",
@@ -73,13 +91,18 @@ const withRequestServices: MiddlewareHandler<AppEnv> = async (c, next) => {
     close,
     waitUntil: getWaitUntilHandler(c),
   });
+  const posthog = createPostHog(postHogEnvForRequest(c));
 
   c.set("db", db);
   c.set("auth", createAuth(db, lifecycle.waitUntil));
+  if (posthog) {
+    c.set("posthog", posthog);
+  }
 
   try {
     await next();
   } finally {
+    await shutdownPostHog(posthog, lifecycle.waitUntil);
     await lifecycle.closeWhenReady();
   }
 };
@@ -171,6 +194,16 @@ app.use(
 
 app.get("/", (c) => {
   return c.text("OK");
+});
+
+app.onError((err, c) => {
+  const requestPostHog = c.get("posthog");
+  const posthog = requestPostHog ?? createPostHog(postHogEnvForRequest(c));
+  posthog?.captureException(err);
+  if (posthog !== requestPostHog) {
+    void shutdownPostHog(posthog, getWaitUntilHandler(c));
+  }
+  return c.text("Internal Server Error", 500);
 });
 
 export default app;

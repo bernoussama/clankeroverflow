@@ -90,6 +90,8 @@ export const server = await Worker("server", {
     GITHUB_CLIENT_SECRET: alchemy.secret.env.GITHUB_CLIENT_SECRET!,
     AI: workersAi,
     SOLUTION_VECTORS: solutionVectorIndex,
+    POSTHOG_API_KEY: alchemy.env.POSTHOG_API_KEY!,
+    POSTHOG_HOST: alchemy.env.POSTHOG_HOST!,
   },
   dev: {
     port: 3000,

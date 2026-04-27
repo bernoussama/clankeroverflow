@@ -4,6 +4,7 @@ import type { Auth } from "@clankeroverflow/auth";
 import type { Database } from "@clankeroverflow/db";
 
 import type { WorkersAiBinding } from "./semantic/embeddings";
+import type { PostHogClient } from "./posthog";
 import type { SolutionVectorizeBinding } from "./semantic/search";
 
 /** Bindings read from `c.env` on the API worker (see wrangler / Alchemy). */
@@ -40,6 +41,7 @@ export async function createContext({ context }: CreateContextOptions) {
   const apiKeyHeader = context.req.raw.headers.get("x-clanker-api-key");
   const auth = context.get("auth") as Auth;
   const db = context.get("db") as Database;
+  const posthog = context.get("posthog") as PostHogClient | undefined;
   const env = (context as { env?: ApiWorkerEnv }).env;
 
   let session = null;
@@ -67,9 +69,20 @@ export async function createContext({ context }: CreateContextOptions) {
   const ai = env?.AI as WorkersAiBinding | undefined;
   const solutionVectors = env?.SOLUTION_VECTORS as SolutionVectorizeBinding | undefined;
 
+  if (session?.user) {
+    posthog?.identify({
+      distinctId: session.user.id,
+      properties: {
+        email: session.user.email,
+        name: session.user.name,
+      },
+    });
+  }
+
   return {
     auth,
     db,
+    posthog,
     session,
     apiKey: (verifiedApiKey?.valid ? verifiedApiKey.key : null) as VerifiedApiKey | null,
     env,
@@ -83,6 +96,7 @@ export async function createContext({ context }: CreateContextOptions) {
 export type Context = {
   auth: Auth;
   db: Database;
+  posthog?: PostHogClient;
   session: Awaited<ReturnType<Auth["api"]["getSession"]>>;
   apiKey: VerifiedApiKey | null;
   env?: ApiWorkerEnv;

@@ -76,6 +76,55 @@ describe("api context auth forwarding", () => {
     expect(result.session).toBeNull();
   });
 
+  it("identifies authenticated users with the request-scoped PostHog client", async () => {
+    const identify = mock();
+    const getSession = mock().mockResolvedValueOnce({
+      user: {
+        id: "user_1",
+        email: "test@example.com",
+        name: "Test User",
+      },
+    });
+    const context = {
+      req: {
+        raw: new Request("http://localhost/trpc/healthCheck", {
+          headers: {
+            cookie: "better-auth.session_token=test-token",
+          },
+        }),
+      },
+      get(key: string) {
+        if (key === "auth") {
+          return {
+            api: {
+              getSession,
+            },
+          };
+        }
+
+        if (key === "db") {
+          return {};
+        }
+
+        if (key === "posthog") {
+          return { identify };
+        }
+
+        return undefined;
+      },
+    } as any;
+
+    await createContext({ context });
+
+    expect(identify).toHaveBeenCalledWith({
+      distinctId: "user_1",
+      properties: {
+        email: "test@example.com",
+        name: "Test User",
+      },
+    });
+  });
+
   it("verifies x-clanker-api-key headers through Better Auth before exposing them to routers", () => {
     expect(contextSource).toContain('const apiKeyHeader = context.req.raw.headers.get("x-clanker-api-key");');
     expect(contextSource).toContain("auth.api.verifyApiKey");

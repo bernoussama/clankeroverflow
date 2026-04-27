@@ -43,10 +43,7 @@ async function getVoteCounts(db: Database, solutionId: string, userId: string | 
       .select({ isUpvote: schema.solutionVote.isUpvote })
       .from(schema.solutionVote)
       .where(
-        and(
-          eq(schema.solutionVote.userId, userId),
-          eq(schema.solutionVote.solutionId, solutionId),
-        ),
+        and(eq(schema.solutionVote.userId, userId), eq(schema.solutionVote.solutionId, solutionId)),
       )
       .limit(1);
     userVote = existing?.isUpvote ?? null;
@@ -79,11 +76,7 @@ export const solutionsRouter = router({
       }
 
       const [solutionRecord] = await withTimeout(
-        db
-          .select()
-          .from(schema.solution)
-          .where(eq(schema.solution.id, input.id))
-          .limit(1),
+        db.select().from(schema.solution).where(eq(schema.solution.id, input.id)).limit(1),
         DB_TIMEOUT_MS,
         "Solution lookup timed out",
       );
@@ -112,6 +105,7 @@ export const solutionsRouter = router({
         );
 
         let scoreDiff = 0;
+        let voteAction: "added" | "removed" | "changed";
 
         if (existingVote) {
           if (existingVote.isUpvote === input.isUpvote) {
@@ -128,6 +122,7 @@ export const solutionsRouter = router({
               "Vote delete timed out",
             );
             scoreDiff = input.isUpvote ? -1 : 1;
+            voteAction = "removed";
           } else {
             await withTimeout(
               db
@@ -143,6 +138,7 @@ export const solutionsRouter = router({
               "Vote update timed out",
             );
             scoreDiff = input.isUpvote ? 2 : -2;
+            voteAction = "changed";
           }
         } else {
           await withTimeout(
@@ -156,6 +152,7 @@ export const solutionsRouter = router({
             "Vote insert timed out",
           );
           scoreDiff = input.isUpvote ? 1 : -1;
+          voteAction = "added";
         }
 
         if (scoreDiff !== 0) {
@@ -175,10 +172,24 @@ export const solutionsRouter = router({
           "Vote counts lookup timed out",
         );
 
+        ctx.posthog?.capture({
+          distinctId: userId,
+          event: "solution voted",
+          properties: {
+            solution_id: input.id,
+            is_upvote: input.isUpvote,
+            vote_action: voteAction,
+          },
+        });
+
         return { success: true, ...voteCounts };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         console.error("solutions.vote error:", error);
+        ctx.posthog?.captureException(
+          error instanceof Error ? error : new Error(String(error)),
+          userId,
+        );
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to record vote",
@@ -234,6 +245,16 @@ export const solutionsRouter = router({
         );
       }
 
+      ctx.posthog?.capture({
+        distinctId: userId ?? "anonymous",
+        event: "solution logged",
+        properties: {
+          solution_id: id,
+          has_tags: Boolean(input.tags),
+          user_type: ctx.session ? "session" : ctx.apiKey ? "api_key" : "anonymous",
+        },
+      });
+
       return { id };
     }),
 
@@ -252,56 +273,67 @@ export const solutionsRouter = router({
       }
 
       const payload = { query: trimmed, limit: input.limit };
+      const distinctId = getAuthenticatedUserId(ctx) ?? "anonymous";
+
+      let results: Awaited<ReturnType<typeof searchSolutions>>;
 
       if (input.mode === "keyword") {
-        return withTimeout(
+        results = await withTimeout(
           searchSolutions(ctx.db, payload),
           DB_TIMEOUT_MS,
           "Solution search timed out",
         );
+      } else {
+        if (!ctx.ai || !ctx.solutionVectors) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "Semantic search is not configured on this server (missing Workers AI or Vectorize binding).",
+          });
+        }
+
+        if (input.mode === "semantic") {
+          results = await withTimeout(
+            searchSolutionsSemantic({
+              db: ctx.db,
+              ai: ctx.ai,
+              vectorize: ctx.solutionVectors,
+              ...payload,
+            }),
+            DB_TIMEOUT_MS,
+            "Semantic solution search timed out",
+          );
+        } else {
+          results = await withTimeout(
+            searchSolutionsHybrid({
+              db: ctx.db,
+              ai: ctx.ai,
+              vectorize: ctx.solutionVectors,
+              ...payload,
+            }),
+            DB_TIMEOUT_MS,
+            "Hybrid solution search timed out",
+          );
+        }
       }
 
-      if (!ctx.ai || !ctx.solutionVectors) {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message:
-            "Semantic search is not configured on this server (missing Workers AI or Vectorize binding).",
-        });
-      }
+      ctx.posthog?.capture({
+        distinctId,
+        event: "solution searched",
+        properties: {
+          search_mode: input.mode,
+          query_length: trimmed.length,
+          result_count: results.length,
+        },
+      });
 
-      if (input.mode === "semantic") {
-        return withTimeout(
-          searchSolutionsSemantic({
-            db: ctx.db,
-            ai: ctx.ai,
-            vectorize: ctx.solutionVectors,
-            ...payload,
-          }),
-          DB_TIMEOUT_MS,
-          "Semantic solution search timed out",
-        );
-      }
-
-      return withTimeout(
-        searchSolutionsHybrid({
-          db: ctx.db,
-          ai: ctx.ai,
-          vectorize: ctx.solutionVectors,
-          ...payload,
-        }),
-        DB_TIMEOUT_MS,
-        "Hybrid solution search timed out",
-      );
+      return results;
     }),
 
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const db = ctx.db;
     const [result] = await withTimeout(
-      db
-        .select()
-        .from(schema.solution)
-        .where(eq(schema.solution.id, input.id))
-        .limit(1),
+      db.select().from(schema.solution).where(eq(schema.solution.id, input.id)).limit(1),
       DB_TIMEOUT_MS,
       "Solution lookup timed out",
     );
@@ -324,6 +356,15 @@ export const solutionsRouter = router({
       "Vote counts lookup timed out",
     );
 
+    ctx.posthog?.capture({
+      distinctId: userId ?? "anonymous",
+      event: "solution viewed",
+      properties: {
+        solution_id: input.id,
+        has_tags: Boolean(result.tags),
+      },
+    });
+
     return { ...result, ...voteCounts };
   }),
 
@@ -345,10 +386,23 @@ export const solutionsRouter = router({
       const cursor: SolutionListCursor | null = input.cursor ?? null;
       const sort: SolutionListSort = input.sort;
 
-      return withTimeout(
+      const results = await withTimeout(
         listSolutions(ctx.db, { limit: input.limit, cursor, sort }),
         DB_TIMEOUT_MS,
         "Solution list timed out",
       );
+
+      const distinctId = getAuthenticatedUserId(ctx) ?? "anonymous";
+      ctx.posthog?.capture({
+        distinctId,
+        event: "solution list viewed",
+        properties: {
+          sort,
+          result_count: results.items.length,
+          is_paginated: Boolean(input.cursor),
+        },
+      });
+
+      return results;
     }),
 });

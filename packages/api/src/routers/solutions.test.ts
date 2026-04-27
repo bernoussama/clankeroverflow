@@ -91,6 +91,33 @@ describe("solutionsRouter", () => {
     expect(result[0]?.problem).toBe("Test problem");
   });
 
+  test("search should capture analytics through the request context", async () => {
+    (db.execute as any).mockResolvedValueOnce({
+      rows: [{ id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }],
+    });
+    const capture = mock();
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+      posthog: { capture },
+    } as any);
+
+    await caller.solutions.search({ query: "Test", mode: "keyword" });
+
+    expect(capture).toHaveBeenCalledWith({
+      distinctId: "anonymous",
+      event: "solution searched",
+      properties: {
+        search_mode: "keyword",
+        query_length: 4,
+        result_count: 1,
+      },
+    });
+  });
+
   test("search semantic without AI binding returns PRECONDITION_FAILED", async () => {
     const caller = createCaller({
       auth: null as any,
@@ -404,6 +431,35 @@ describe("solutionsRouter", () => {
     const result = await caller.solutions.list({ limit: 20, sort: "recent" });
     expect(result.items).toHaveLength(2);
     expect(result.nextCursor).toBeNull();
+  });
+
+  test("list should capture analytics with the returned item count", async () => {
+    const items = [
+      { id: "sol_1", problem: "P1", solution: "S1", score: 5, createdAt: new Date() },
+      { id: "sol_2", problem: "P2", solution: "S2", score: 3, createdAt: new Date() },
+    ];
+    (db.select as any).mockReturnValueOnce(createSelectChain(items));
+    const capture = mock();
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+      posthog: { capture },
+    } as any);
+
+    await caller.solutions.list({ limit: 20, sort: "recent" });
+
+    expect(capture).toHaveBeenCalledWith({
+      distinctId: "anonymous",
+      event: "solution list viewed",
+      properties: {
+        sort: "recent",
+        result_count: 2,
+        is_paginated: false,
+      },
+    });
   });
 
   test("list should return nextCursor when more items exist for top sorting", async () => {
