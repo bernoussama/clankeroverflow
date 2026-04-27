@@ -4,7 +4,7 @@ import { describe, expect, it } from "bun:test";
 
 import { CLANKEROVERFLOW_MCP_SKILL } from "@/lib/agent-skill-content";
 import { HOME_MARKDOWN } from "@/lib/agent-discovery";
-import { proxy } from "@/proxy";
+import { middleware } from "@/middleware";
 import { GET as apiCatalog } from "./app/.well-known/api-catalog/route";
 import { GET as agentSkills } from "./app/.well-known/agent-skills/index.json/route";
 import { GET as mcpServerCard } from "./app/.well-known/mcp/server-card.json/route";
@@ -80,7 +80,7 @@ describe("agent discovery endpoints", () => {
 
 describe("markdown negotiation", () => {
   it("returns markdown for agents that request text/markdown on the homepage", async () => {
-    const response = proxy({
+    const response = middleware({
       headers: new Headers({ accept: "text/markdown" }),
     } as never);
 

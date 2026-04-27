@@ -6,7 +6,7 @@ export const config = {
   matcher: "/",
 };
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   if (request.headers.get("accept")?.includes("text/markdown")) {
     return new Response(HOME_MARKDOWN, {
       headers: {
