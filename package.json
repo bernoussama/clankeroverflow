@@ -22,7 +22,9 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "bun run scripts/dev-with-postgres.ts",
+    "dev:bare": "turbo dev --filter=web --filter=server",
+    "dev:all": "turbo dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:native": "turbo -F native dev",
@@ -31,6 +33,7 @@
     "test": "turbo test",
     "db:push": "turbo -F @clankeroverflow/db db:push",
     "db:generate": "turbo -F @clankeroverflow/db db:generate",
+    "db:migrate": "turbo -F @clankeroverflow/db db:migrate",
     "deploy": "turbo -F @clankeroverflow/infra deploy",
     "destroy": "turbo -F @clankeroverflow/infra destroy",
     "check": "oxlint && oxfmt --write"

@@ -26,7 +26,10 @@ export default function UserMenu() {
   if (!session) {
     return (
       <Link href="/login">
-        <button type="button" className="btn-secondary h-9 py-0 px-4 text-xs font-mono uppercase tracking-wider">
+        <button
+          type="button"
+          className="btn-secondary h-9 py-0 px-4 text-xs font-mono uppercase tracking-wider"
+        >
           Sign In
           <ArrowRight className="w-3 h-3" aria-hidden="true" />
         </button>

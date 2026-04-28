@@ -1,25 +1,63 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import { ArrowLeft, Terminal, Hash, Calendar, User } from "lucide-react";
+import { ArrowLeft, Terminal, Hash, Calendar, User, ThumbsUp, ThumbsDown } from "lucide-react";
 
-import { trpcClient } from "@/utils/trpc";
+import { trpcClient, queryClient } from "@/utils/trpc";
 import { solutionDetailsSchema, type SolutionDetails } from "@/utils/trpc-output-types";
+import { authClient } from "@/lib/auth-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SolutionPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { data: session } = authClient.useSession();
+  const [isVoting, setIsVoting] = useState(false);
 
-  const { data: solution, isLoading, isError } = useQuery<SolutionDetails>({
+  const {
+    data: solution,
+    isLoading,
+    isError,
+  } = useQuery<SolutionDetails>({
     queryKey: ["solutions", "getById", id],
     queryFn: async () =>
       solutionDetailsSchema.parse(await trpcClient.solutions.getById.query({ id })),
   });
+
+  const [voteError, setVoteError] = useState<string | null>(null);
+
+  const handleVote = useCallback(
+    async (isUpvote: boolean) => {
+      if (isVoting || !session) return;
+      setIsVoting(true);
+      setVoteError(null);
+      try {
+        const result = await trpcClient.solutions.vote.mutate({ id, isUpvote });
+        queryClient.setQueryData(
+          ["solutions", "getById", id],
+          (old: SolutionDetails | undefined) => {
+            if (!old) return old;
+            return {
+              ...old,
+              upvotes: result.upvotes,
+              downvotes: result.downvotes,
+              userVote: result.userVote,
+            };
+          },
+        );
+      } catch {
+        setVoteError("Failed to record vote. Please try again.");
+      } finally {
+        setIsVoting(false);
+      }
+    },
+    [id, isVoting, session],
+  );
 
   if (isLoading) {
     return (
@@ -50,11 +88,7 @@ export default function SolutionPage() {
           <p className="text-sm text-muted-landing mb-6">
             The solution you are looking for does not exist or an error occurred.
           </p>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="btn-secondary"
-          >
+          <button type="button" onClick={() => router.back()} className="btn-secondary">
             <ArrowLeft className="w-3.5 h-3.5" /> Go Back
           </button>
         </div>
@@ -74,9 +108,7 @@ export default function SolutionPage() {
         </Link>
 
         {/* Problem Title */}
-        <h1 className="page-title text-3xl sm:text-4xl mb-4">
-          {solution.problem}
-        </h1>
+        <h1 className="page-title text-3xl sm:text-4xl mb-4">{solution.problem}</h1>
 
         {/* Meta */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-mono text-muted-landing mb-6">
@@ -96,7 +128,7 @@ export default function SolutionPage() {
 
         {/* Tags */}
         {solution.tags && (
-          <div className="flex flex-wrap gap-2 mb-8 pb-8 border-b border-landing">
+          <div className="flex flex-wrap gap-2 mb-6">
             {solution.tags.split(",").map((tag: string) => {
               const trimmed = tag.trim();
               if (!trimmed) return null;
@@ -109,6 +141,39 @@ export default function SolutionPage() {
             })}
           </div>
         )}
+
+        {/* Voting */}
+        <div className="flex items-center gap-3 mb-8 pb-8 border-b border-landing">
+          <button
+            type="button"
+            className={`vote-btn ${solution.userVote === true ? "vote-btn--active-up" : ""}`}
+            onClick={() => handleVote(true)}
+            disabled={isVoting || !session}
+            title={session ? "Upvote" : "Sign in to vote"}
+          >
+            <ThumbsUp className="w-4 h-4" />
+            {solution.upvotes}
+          </button>
+          <button
+            type="button"
+            className={`vote-btn ${solution.userVote === false ? "vote-btn--active-down" : ""}`}
+            onClick={() => handleVote(false)}
+            disabled={isVoting || !session}
+            title={session ? "Downvote" : "Sign in to vote"}
+          >
+            <ThumbsDown className="w-4 h-4" />
+            {solution.downvotes}
+          </button>
+          {!session && (
+            <Link
+              href="/login"
+              className="text-xs font-mono text-muted-landing hover:text-accent-landing transition-colors"
+            >
+              Sign in to vote
+            </Link>
+          )}
+          {voteError && <span className="text-error text-xs font-mono">{voteError}</span>}
+        </div>
 
         {/* Solution Content */}
         <div>

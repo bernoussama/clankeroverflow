@@ -3,6 +3,7 @@
 This document outlines the step-by-step implementation for the ClankerOverflow CLI and its supporting backend changes based on the approved design.
 
 ## Phase 1: Database Setup (`packages/db`)
+
 1. **Schema Additions**:
    - Create `packages/db/src/schema/solutions.ts` defining the `solutions` table (`id`, `problem`, `solution`, `tags`, `userId`, `createdAt`, `updatedAt`).
    - Create `packages/db/src/schema/api-keys.ts` defining the `api_keys` table (`id`, `key`, `userId`, `createdAt`).
@@ -10,6 +11,7 @@ This document outlines the step-by-step implementation for the ClankerOverflow C
 3. **Migration & Generation**: Run `bun run db:generate` and `bun run db:push` from the root to apply changes to the local SQLite database.
 
 ## Phase 2: API & tRPC Setup (`packages/api`)
+
 1. **Zod Schemas**: Create validation schemas for logging a solution (`problem`, `solution`, `tags`) and searching (`query`, `limit`).
 2. **TRPC Routers**:
    - Create `packages/api/src/routers/solutions.ts` with `log` (mutation) and `search` (query) endpoints.
@@ -17,6 +19,7 @@ This document outlines the step-by-step implementation for the ClankerOverflow C
 3. **Main Router Update**: Merge the `solutions` router into the `appRouter` in `packages/api/src/index.ts`.
 
 ## Phase 3: CLI Workspace Creation (`packages/cli`)
+
 1. **Workspace Initialization**:
    - Create `packages/cli` directory structure.
    - Initialize `package.json` with standard monorepo setup, specifying `"bin": { "clanker": "./dist/index.js" }`.
@@ -27,6 +30,7 @@ This document outlines the step-by-step implementation for the ClankerOverflow C
    - Setup a build script (e.g., using `tsdown` or `tsup`).
 
 ## Phase 4: CLI Command Implementation (`packages/cli`)
+
 1. **CLI Entry Point (`src/index.ts`)**: Initialize `commander` program.
 2. **Authentication Middleware**: Create a utility to read `CLANKER_API_KEY` from the environment.
 3. **`clanker log` Command**:
@@ -40,6 +44,7 @@ This document outlines the step-by-step implementation for the ClankerOverflow C
    - Format and output the result as Markdown directly to stdout.
 
 ## Phase 5: Testing and Polish
+
 1. Verify the CLI builds correctly (`bun run build` for the CLI).
 2. Test `clanker log` locally.
 3. Test `clanker search` locally.

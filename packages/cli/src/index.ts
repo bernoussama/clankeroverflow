@@ -7,7 +7,7 @@ import fs from "fs/promises";
 import path from "path";
 
 // Allow overriding via environment variables
-const SERVER_URL = process.env.CLANKER_SERVER_URL || "http://localhost:3000";
+const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://api.clankeroverflow.com";
 const API_KEY = process.env.CLANKER_API_KEY || "";
 
 const trpc = createTRPCClient<AppRouter>({
@@ -35,7 +35,7 @@ export function createProgram() {
   program
     .name("clanker")
     .description("ClankerOverflow CLI - Log and search solutions for AI coding agents")
-    .version("1.0.0");
+    .version("1.0.1");
 
   program
     .command("log")
@@ -43,7 +43,10 @@ export function createProgram() {
     .option("-p, --problem <text>", "The problem description")
     .option("-s, --solution <text>", "The solution details")
     .option("-t, --tags <text>", "Comma-separated tags (e.g., react,nextjs)")
-    .option("-f, --file <path>", "Path to a markdown file containing the solution. If used, --problem is still required but --solution is ignored.")
+    .option(
+      "-f, --file <path>",
+      "Path to a markdown file containing the solution. If used, --problem is still required but --solution is ignored.",
+    )
     .action(async (options) => {
       try {
         if (!options.problem) {
@@ -88,6 +91,11 @@ export function createProgram() {
     .description("Search for existing solutions")
     .argument("<query>", "The search query")
     .option("-l, --limit <number>", "Number of results to return", "1")
+    .option(
+      "-m, --mode <mode>",
+      "keyword (Postgres FTS), semantic (Vectorize), or hybrid",
+      "hybrid",
+    )
     .action(async (query, options) => {
       try {
         const limit = parseInt(options.limit, 10);
@@ -96,9 +104,16 @@ export function createProgram() {
           process.exit(1);
         }
 
+        const mode = options.mode as "keyword" | "semantic" | "hybrid";
+        if (!["keyword", "semantic", "hybrid"].includes(mode)) {
+          console.error("Error: --mode must be keyword, semantic, or hybrid");
+          process.exit(1);
+        }
+
         const results = await trpc.solutions.search.query({
           query,
           limit,
+          mode,
         });
 
         if (results.length === 0) {

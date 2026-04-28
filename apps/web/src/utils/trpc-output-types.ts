@@ -14,19 +14,27 @@ export const searchResultSchema = z.object({
 });
 
 export const searchResultsSchema = z.array(searchResultSchema);
-export const solutionDetailsSchema = searchResultSchema;
 
-export const apiKeySchema = z.object({
-  id: z.string(),
-  key: z.string(),
-  name: z.string().nullable(),
-  createdAt: dateLikeSchema,
+export const solutionDetailsSchema = searchResultSchema.extend({
+  upvotes: z.number().default(0),
+  downvotes: z.number().default(0),
+  userVote: z.boolean().nullable().default(null),
 });
 
-export const apiKeysSchema = z.array(apiKeySchema);
+export const solutionListCursorSchema = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  score: z.number(),
+});
+
+export const solutionListSchema = z.object({
+  items: z.array(searchResultSchema),
+  nextCursor: solutionListCursorSchema.nullish(),
+});
+
+export type SolutionList = z.infer<typeof solutionListSchema>;
 
 export type SearchResult = z.infer<typeof searchResultSchema>;
 export type SearchResults = z.infer<typeof searchResultsSchema>;
 export type SolutionDetails = z.infer<typeof solutionDetailsSchema>;
-export type ApiKey = z.infer<typeof apiKeySchema>;
-export type ApiKeys = z.infer<typeof apiKeysSchema>;
+export type SolutionListCursor = z.infer<typeof solutionListCursorSchema>;

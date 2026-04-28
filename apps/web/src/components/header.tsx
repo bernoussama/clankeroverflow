@@ -6,6 +6,7 @@ import UserMenu from "./user-menu";
 export default function Header() {
   const links = [
     { to: "/", label: "Home" },
+    { to: "/solutions", label: "Solutions" },
     { to: "/dashboard", label: "Dashboard" },
   ] as const;
 
@@ -24,11 +25,49 @@ export default function Header() {
               className="w-6 h-6"
               aria-hidden="true"
             >
-              <path d="M12 19H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="7" y1="17" x2="1" y2="17" stroke="var(--landing-accent)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="7.50266" y1="14.7777" x2="1.70711" y2="13.2247" stroke="var(--landing-accent)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="7.96068" y1="12.4009" x2="2.76453" y2="9.40086" stroke="var(--landing-accent)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="9.56853" y1="10.3971" x2="5.08332" y2="6.41176" stroke="var(--landing-accent)" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M12 19H20"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <line
+                x1="7"
+                y1="17"
+                x2="1"
+                y2="17"
+                stroke="var(--landing-accent)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <line
+                x1="7.50266"
+                y1="14.7777"
+                x2="1.70711"
+                y2="13.2247"
+                stroke="var(--landing-accent)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <line
+                x1="7.96068"
+                y1="12.4009"
+                x2="2.76453"
+                y2="9.40086"
+                stroke="var(--landing-accent)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <line
+                x1="9.56853"
+                y1="10.3971"
+                x2="5.08332"
+                y2="6.41176"
+                stroke="var(--landing-accent)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
             <span>ClankerOverflow</span>
           </Link>

@@ -72,10 +72,7 @@ function applyTheme({
   resolvedTheme,
   themes,
   value,
-}: Pick<
-  ThemeProviderProps,
-  "attribute" | "disableTransitionOnChange" | "themes" | "value"
-> & {
+}: Pick<ThemeProviderProps, "attribute" | "disableTransitionOnChange" | "themes" | "value"> & {
   resolvedTheme: ResolvedTheme;
 }) {
   if (typeof document === "undefined") {

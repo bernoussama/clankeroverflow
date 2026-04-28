@@ -11,7 +11,8 @@
   },
   "scripts": {
     "db:push": "drizzle-kit push",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun run src/migrate.ts"
   },
   "dependencies": {
     "@clankeroverflow/env": "workspace:*",

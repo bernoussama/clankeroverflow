@@ -2,10 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "bun:test";
 
-const alchemyRunSource = readFileSync(
-  new URL("../alchemy.run.ts", import.meta.url),
-  "utf8",
-);
+const alchemyRunSource = readFileSync(new URL("../alchemy.run.ts", import.meta.url), "utf8");
 
 describe("infra worker config", () => {
   it("adopts the existing web worker during deploys", () => {
@@ -14,8 +11,14 @@ describe("infra worker config", () => {
   });
 
   it("binds production custom domains for web and server", () => {
+    expect(alchemyRunSource).toContain('domainName: "clankeroverflow.com"');
     expect(alchemyRunSource).toContain('domainName: "www.clankeroverflow.com"');
     expect(alchemyRunSource).toContain('domainName: "api.clankeroverflow.com"');
     expect(alchemyRunSource).toContain("domains:");
+  });
+
+  it("passes GitHub OAuth credentials to the auth worker", () => {
+    expect(alchemyRunSource).toContain("GITHUB_CLIENT_ID");
+    expect(alchemyRunSource).toContain("GITHUB_CLIENT_SECRET");
   });
 });

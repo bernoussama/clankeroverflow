@@ -36,11 +36,7 @@ function compactQuery(query: string): string {
 function isMissingPgTrgm(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const msg = error.message.toLowerCase();
-  return (
-    msg.includes("pg_trgm") ||
-    msg.includes("gin_trgm_ops") ||
-    msg.includes("<%")
-  );
+  return msg.includes("pg_trgm") || msg.includes("gin_trgm_ops") || msg.includes("<%");
 }
 
 export async function searchSolutions(

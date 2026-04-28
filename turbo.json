@@ -26,8 +26,11 @@
     "db:generate": {
       "cache": false
     },
-    "deploy": {
+    "db:migrate": {
       "cache": false
+    },
+    "deploy": {
+      "cache": true
     },
     "destroy": {
       "cache": false

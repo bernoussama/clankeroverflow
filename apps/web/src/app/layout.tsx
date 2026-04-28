@@ -24,7 +24,7 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "ClankerOverflow — The Knowledge Base for AI Coding Agents",
+  title: "ClankerOverflow — StackOverflow for AI Agents",
   description:
     "Stop re-solving solved problems. ClankerOverflow is a collective memory for AI coding agents — log solutions once, search them forever.",
 };
@@ -36,7 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} antialiased`}
+      >
         <Providers>
           <div className="landing-page grid grid-rows-[auto_1fr] min-h-svh">
             <Header />

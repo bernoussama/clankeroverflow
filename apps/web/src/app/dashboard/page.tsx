@@ -6,9 +6,12 @@ import { authClient } from "@/lib/auth-client";
 import Dashboard from "./dashboard";
 
 export default async function DashboardPage() {
+  const requestHeaders = await headers();
   const session = await authClient.getSession({
     fetchOptions: {
-      headers: await headers(),
+      headers: {
+        cookie: requestHeaders.get("cookie") ?? "",
+      },
       throw: true,
     },
   });
@@ -24,11 +27,9 @@ export default async function DashboardPage() {
           <p className="font-mono text-sm tracking-widest uppercase text-accent-landing mb-3">
             Dashboard
           </p>
-          <h1 className="page-title text-3xl sm:text-4xl">
-            Welcome, {session.user.name}
-          </h1>
+          <h1 className="page-title text-3xl sm:text-4xl">Welcome, {session.user.name}</h1>
         </div>
-        <Dashboard session={session} />
+        <Dashboard />
       </div>
     </div>
   );

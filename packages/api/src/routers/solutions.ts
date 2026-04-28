@@ -1,10 +1,60 @@
 import { TRPCError } from "@trpc/server";
-import { eq, and, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { publicProcedure, router } from "../index";
-import { schema } from "@clankeroverflow/db";
+import { schema, type Database } from "@clankeroverflow/db";
+import {
+  listSolutions,
+  type SolutionListCursor,
+  type SolutionListSort,
+} from "@clankeroverflow/db/list";
 import { searchSolutions } from "@clankeroverflow/db/search";
-import { withTimeout } from "../utils/withTimeout";
+import { publicProcedure, router } from "../index";
+import {
+  searchSolutionsHybrid,
+  searchSolutionsSemantic,
+  upsertSolutionVector,
+} from "../semantic/search";
+import { DB_TIMEOUT_MS, withTimeout } from "../utils/withTimeout";
+
+function getAuthenticatedUserId(ctx: {
+  session: { user: { id: string } } | null;
+  apiKey: { referenceId: string } | null;
+}) {
+  return ctx.session?.user.id ?? ctx.apiKey?.referenceId ?? null;
+}
+
+async function getVoteCounts(db: Database, solutionId: string, userId: string | null) {
+  const [counts] = await db
+    .select({
+      upvotes: sql<number>`count(*) filter (where ${schema.solutionVote.isUpvote} = true)`.mapWith(
+        Number,
+      ),
+      downvotes:
+        sql<number>`count(*) filter (where ${schema.solutionVote.isUpvote} = false)`.mapWith(
+          Number,
+        ),
+    })
+    .from(schema.solutionVote)
+    .where(eq(schema.solutionVote.solutionId, solutionId));
+
+  let userVote: boolean | null = null;
+  if (userId) {
+    const [existing] = await db
+      .select({ isUpvote: schema.solutionVote.isUpvote })
+      .from(schema.solutionVote)
+      .where(
+        and(eq(schema.solutionVote.userId, userId), eq(schema.solutionVote.solutionId, solutionId)),
+      )
+      .limit(1);
+    userVote = existing?.isUpvote ?? null;
+  }
+
+  return {
+    upvotes: counts?.upvotes ?? 0,
+    downvotes: counts?.downvotes ?? 0,
+    userVote,
+  };
+}
 
 export const solutionsRouter = router({
   vote: publicProcedure
@@ -12,31 +62,11 @@ export const solutionsRouter = router({
       z.object({
         id: z.string().min(1, "Solution ID is required"),
         isUpvote: z.boolean(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
-      let userId: string | null = null;
-
-      if (ctx.session?.user) {
-        userId = ctx.session.user.id;
-      } else if (ctx.apiKey) {
-        const keyRecord = await withTimeout(
-          db.query.apiKey.findFirst({
-            where: eq(schema.apiKey.key, ctx.apiKey),
-          }),
-          2500,
-          "API key lookup timed out",
-        );
-
-        if (!keyRecord) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Invalid API Key provided",
-          });
-        }
-        userId = keyRecord.userId;
-      }
+      const userId = getAuthenticatedUserId(ctx);
 
       if (!userId) {
         throw new TRPCError({
@@ -45,11 +75,9 @@ export const solutionsRouter = router({
         });
       }
 
-      const solutionRecord = await withTimeout(
-        db.query.solution.findFirst({
-          where: eq(schema.solution.id, input.id),
-        }),
-        2500,
+      const [solutionRecord] = await withTimeout(
+        db.select().from(schema.solution).where(eq(schema.solution.id, input.id)).limit(1),
+        DB_TIMEOUT_MS,
         "Solution lookup timed out",
       );
 
@@ -60,111 +88,130 @@ export const solutionsRouter = router({
         });
       }
 
-      const existingVote = await withTimeout(
-        db.query.solutionVote.findFirst({
-          where: and(
-            eq(schema.solutionVote.userId, userId),
-            eq(schema.solutionVote.solutionId, input.id)
-          ),
-        }),
-        2500,
-        "Existing vote lookup timed out",
-      );
-
-      let scoreDiff = 0;
-
-      if (existingVote) {
-        if (existingVote.isUpvote === input.isUpvote) {
-          // Toggle off
-          await withTimeout(
-            db.delete(schema.solutionVote).where(
+      try {
+        const [existingVote] = await withTimeout(
+          db
+            .select()
+            .from(schema.solutionVote)
+            .where(
               and(
                 eq(schema.solutionVote.userId, userId),
-                eq(schema.solutionVote.solutionId, input.id)
-              )
-            ),
-            2500,
-            "Vote delete timed out",
-          );
-          scoreDiff = input.isUpvote ? -1 : 1;
-        } else {
-          // Flip vote
-          await withTimeout(
-            db.update(schema.solutionVote)
-              .set({ isUpvote: input.isUpvote })
-              .where(
-                and(
-                  eq(schema.solutionVote.userId, userId),
-                  eq(schema.solutionVote.solutionId, input.id)
-                )
+                eq(schema.solutionVote.solutionId, input.id),
               ),
-            2500,
-            "Vote update timed out",
+            )
+            .limit(1),
+          DB_TIMEOUT_MS,
+          "Existing vote lookup timed out",
+        );
+
+        let scoreDiff = 0;
+        let voteAction: "added" | "removed" | "changed";
+
+        if (existingVote) {
+          if (existingVote.isUpvote === input.isUpvote) {
+            await withTimeout(
+              db
+                .delete(schema.solutionVote)
+                .where(
+                  and(
+                    eq(schema.solutionVote.userId, userId),
+                    eq(schema.solutionVote.solutionId, input.id),
+                  ),
+                ),
+              DB_TIMEOUT_MS,
+              "Vote delete timed out",
+            );
+            scoreDiff = input.isUpvote ? -1 : 1;
+            voteAction = "removed";
+          } else {
+            await withTimeout(
+              db
+                .update(schema.solutionVote)
+                .set({ isUpvote: input.isUpvote })
+                .where(
+                  and(
+                    eq(schema.solutionVote.userId, userId),
+                    eq(schema.solutionVote.solutionId, input.id),
+                  ),
+                ),
+              DB_TIMEOUT_MS,
+              "Vote update timed out",
+            );
+            scoreDiff = input.isUpvote ? 2 : -2;
+            voteAction = "changed";
+          }
+        } else {
+          await withTimeout(
+            db.insert(schema.solutionVote).values({
+              userId,
+              solutionId: input.id,
+              isUpvote: input.isUpvote,
+              createdAt: new Date(),
+            }),
+            DB_TIMEOUT_MS,
+            "Vote insert timed out",
           );
-          scoreDiff = input.isUpvote ? 2 : -2;
+          scoreDiff = input.isUpvote ? 1 : -1;
+          voteAction = "added";
         }
-      } else {
-        // New vote
-        await withTimeout(
-          db.insert(schema.solutionVote).values({
-            userId,
-            solutionId: input.id,
-            isUpvote: input.isUpvote,
-          }),
-          2500,
-          "Vote insert timed out",
-        );
-        scoreDiff = input.isUpvote ? 1 : -1;
-      }
 
-      if (scoreDiff !== 0) {
-        await withTimeout(
-          db.update(schema.solution)
-            .set({ score: sql`${schema.solution.score} + ${scoreDiff}` })
-            .where(eq(schema.solution.id, input.id)),
-          2500,
-          "Score update timed out",
-        );
-      }
+        if (scoreDiff !== 0) {
+          await withTimeout(
+            db
+              .update(schema.solution)
+              .set({ score: sql`${schema.solution.score} + ${scoreDiff}` })
+              .where(eq(schema.solution.id, input.id)),
+            DB_TIMEOUT_MS,
+            "Score update timed out",
+          );
+        }
 
-      return { success: true };
+        const voteCounts = await withTimeout(
+          getVoteCounts(db, input.id, userId),
+          DB_TIMEOUT_MS,
+          "Vote counts lookup timed out",
+        );
+
+        ctx.posthog?.capture({
+          distinctId: userId,
+          event: "solution voted",
+          properties: {
+            solution_id: input.id,
+            is_upvote: input.isUpvote,
+            vote_action: voteAction,
+          },
+        });
+
+        return { success: true, ...voteCounts };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error("solutions.vote error:", error);
+        ctx.posthog?.captureException(
+          error instanceof Error ? error : new Error(String(error)),
+          userId,
+        );
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to record vote",
+          cause: error,
+        });
+      }
     }),
 
   log: publicProcedure
     .input(
       z.object({
-        problem: z.string().min(1, "Problem description is required"),
-        solution: z.string().min(1, "Solution details are required"),
-        tags: z.string().optional(),
-      })
+        problem: z.string().trim().min(1, "Problem description is required").max(300),
+        solution: z.string().trim().min(1, "Solution details are required").max(30_000),
+        tags: z.string().trim().max(250).optional(),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
-      let userId: string | null = null;
-
-      // If they provided a session, use it
-      if (ctx.session?.user) {
-        userId = ctx.session.user.id;
-      } else if (ctx.apiKey) {
-        // Validate API key
-        const keyRecord = await withTimeout(
-          db.query.apiKey.findFirst({
-            where: eq(schema.apiKey.key, ctx.apiKey),
-          }),
-          2500,
-          "API key lookup timed out",
-        );
-
-        if (!keyRecord) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Invalid API Key provided",
-          });
-        }
-        userId = keyRecord.userId;
-      }
+      const userId = getAuthenticatedUserId(ctx);
 
       const id = crypto.randomUUID();
+      const now = new Date();
       await withTimeout(
         db.insert(schema.solution).values({
           id,
@@ -172,10 +219,41 @@ export const solutionsRouter = router({
           solution: input.solution,
           tags: input.tags ?? null,
           userId,
+          score: 0,
+          createdAt: now,
+          updatedAt: now,
         }),
-        2500,
+        DB_TIMEOUT_MS,
         "Solution insert timed out",
       );
+
+      const { ai, solutionVectors, waitUntil } = ctx;
+      if (ai && solutionVectors && waitUntil) {
+        waitUntil(
+          upsertSolutionVector({
+            ai,
+            vectorize: solutionVectors,
+            row: {
+              id,
+              problem: input.problem,
+              solution: input.solution,
+              tags: input.tags ?? null,
+            },
+          }).catch((err) => {
+            console.error("solution vector upsert failed:", err);
+          }),
+        );
+      }
+
+      ctx.posthog?.capture({
+        distinctId: userId ?? "anonymous",
+        event: "solution logged",
+        properties: {
+          solution_id: id,
+          has_tags: Boolean(input.tags),
+          user_type: ctx.session ? "session" : ctx.apiKey ? "api_key" : "anonymous",
+        },
+      });
 
       return { id };
     }),
@@ -185,37 +263,146 @@ export const solutionsRouter = router({
       z.object({
         query: z.string().min(1, "Search query is required"),
         limit: z.number().min(1).max(20).default(1),
-      })
+        mode: z.enum(["keyword", "semantic", "hybrid"]).default("keyword"),
+      }),
     )
     .query(async ({ ctx, input }) => {
-      const results = await withTimeout(
-        searchSolutions(ctx.db, input),
-        2500,
-        "Solution search timed out",
-      );
+      const trimmed = input.query.trim();
+      if (!trimmed) {
+        return [];
+      }
+
+      const payload = { query: trimmed, limit: input.limit };
+      const distinctId = getAuthenticatedUserId(ctx) ?? "anonymous";
+
+      let results: Awaited<ReturnType<typeof searchSolutions>>;
+
+      if (input.mode === "keyword") {
+        results = await withTimeout(
+          searchSolutions(ctx.db, payload),
+          DB_TIMEOUT_MS,
+          "Solution search timed out",
+        );
+      } else {
+        if (!ctx.ai || !ctx.solutionVectors) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "Semantic search is not configured on this server (missing Workers AI or Vectorize binding).",
+          });
+        }
+
+        if (input.mode === "semantic") {
+          results = await withTimeout(
+            searchSolutionsSemantic({
+              db: ctx.db,
+              ai: ctx.ai,
+              vectorize: ctx.solutionVectors,
+              ...payload,
+            }),
+            DB_TIMEOUT_MS,
+            "Semantic solution search timed out",
+          );
+        } else {
+          results = await withTimeout(
+            searchSolutionsHybrid({
+              db: ctx.db,
+              ai: ctx.ai,
+              vectorize: ctx.solutionVectors,
+              ...payload,
+            }),
+            DB_TIMEOUT_MS,
+            "Hybrid solution search timed out",
+          );
+        }
+      }
+
+      ctx.posthog?.capture({
+        distinctId,
+        event: "solution searched",
+        properties: {
+          search_mode: input.mode,
+          query_length: trimmed.length,
+          result_count: results.length,
+        },
+      });
 
       return results;
     }),
 
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
+  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const db = ctx.db;
+    const [result] = await withTimeout(
+      db.select().from(schema.solution).where(eq(schema.solution.id, input.id)).limit(1),
+      DB_TIMEOUT_MS,
+      "Solution lookup timed out",
+    );
+
+    if (!result) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Solution not found",
+      });
+    }
+
+    let userId: string | null = null;
+    if (ctx.session?.user) {
+      userId = ctx.session.user.id;
+    }
+
+    const voteCounts = await withTimeout(
+      getVoteCounts(db, input.id, userId),
+      DB_TIMEOUT_MS,
+      "Vote counts lookup timed out",
+    );
+
+    ctx.posthog?.capture({
+      distinctId: userId ?? "anonymous",
+      event: "solution viewed",
+      properties: {
+        solution_id: input.id,
+        has_tags: Boolean(result.tags),
+      },
+    });
+
+    return { ...result, ...voteCounts };
+  }),
+
+  list: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(50).default(20),
+        cursor: z
+          .object({
+            createdAt: z.string(),
+            id: z.string(),
+            score: z.number(),
+          })
+          .nullish(),
+        sort: z.enum(["recent", "top"]).default("recent"),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      const db = ctx.db;
-      const result = await withTimeout(
-        db.query.solution.findFirst({
-          where: eq(schema.solution.id, input.id),
-        }),
-        2500,
-        "Solution lookup timed out",
+      const cursor: SolutionListCursor | null = input.cursor ?? null;
+      const sort: SolutionListSort = input.sort;
+
+      const results = await withTimeout(
+        listSolutions(ctx.db, { limit: input.limit, cursor, sort }),
+        DB_TIMEOUT_MS,
+        "Solution list timed out",
       );
 
-      if (!result) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Solution not found",
-        });
-      }
+      const distinctId = getAuthenticatedUserId(ctx) ?? "anonymous";
+      ctx.posthog?.capture({
+        distinctId,
+        event: "solution list viewed",
+        properties: {
+          sort,
+          result_count: results.items.length,
+          is_paginated: Boolean(input.cursor),
+        },
+      });
 
-      return result;
+      return results;
     }),
 });

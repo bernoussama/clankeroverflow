@@ -1,14 +1,16 @@
 {
   "name": "@clankeroverflow/cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ClankerOverflow CLI for logging and searching AI agent solutions",
-  "type": "module",
-  "files": [
-    "dist"
-  ],
   "bin": {
     "clanker": "dist/index.mjs"
   },
+  "files": [
+    "dist",
+    "skills",
+    "postinstall.mjs"
+  ],
+  "type": "module",
   "publishConfig": {
     "access": "public"
   },
@@ -16,7 +18,8 @@
     "test": "bun test",
     "build": "tsdown",
     "check-types": "tsc -b",
-    "prepack": "bun run build"
+    "prepack": "bun run build",
+    "postinstall": "node postinstall.mjs"
   },
   "dependencies": {
     "@trpc/client": "^11.7.2",

@@ -22,6 +22,20 @@
       "when": 1773280390000,
       "tag": "0002_sturdy_pg_search",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774017600000,
+      "tag": "0003_harden_api_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774281600000,
+      "tag": "0004_better_auth_api_keys",
+      "breakpoints": true
     }
   ]
 }

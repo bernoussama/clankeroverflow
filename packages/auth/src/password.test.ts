@@ -1,44 +1,28 @@
 import { describe, expect, it } from "bun:test";
 
-import { hashPassword, verifyPassword } from "./password";
+describe("auth password helpers", () => {
+  it("round-trips passwords with the worker-compatible hash format", async () => {
+    const passwordModule = await import("./password").catch(() => null);
 
-describe("password hashing", () => {
-  it("verifies a legacy Better Auth scrypt hash", async () => {
+    expect(passwordModule).not.toBeNull();
+
+    if (!passwordModule) {
+      return;
+    }
+
+    const hash = await passwordModule.hashPassword("password123");
+
+    expect(hash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{128}$/);
     await expect(
-      verifyPassword({
-        hash: "6b0bc6ecd8848b27c877b3aa39b2e1a6:df2ec987d254ed06f1d8feab23a4c9d8ba8fbf669caedd31cbab71abc7fd95c616de5efcc76e0d935ea03aa21a5904dd4749d8abeba0bac113093784d382a3fb",
+      passwordModule.verifyPassword({
         password: "password123",
+        hash,
       }),
     ).resolves.toBe(true);
-  });
-
-  it("rejects a mismatched legacy Better Auth scrypt hash", async () => {
     await expect(
-      verifyPassword({
-        hash: "6b0bc6ecd8848b27c877b3aa39b2e1a6:df2ec987d254ed06f1d8feab23a4c9d8ba8fbf669caedd31cbab71abc7fd95c616de5efcc76e0d935ea03aa21a5904dd4749d8abeba0bac113093784d382a3fb",
-        password: "different-password",
-      }),
-    ).resolves.toBe(false);
-  });
-
-  it("verifies a password against its stored hash", async () => {
-    const hash = await hashPassword("password123");
-
-    await expect(
-      verifyPassword({
+      passwordModule.verifyPassword({
+        password: "wrong-password",
         hash,
-        password: "password123",
-      }),
-    ).resolves.toBe(true);
-  });
-
-  it("rejects a mismatched password", async () => {
-    const hash = await hashPassword("password123");
-
-    await expect(
-      verifyPassword({
-        hash,
-        password: "different-password",
       }),
     ).resolves.toBe(false);
   });

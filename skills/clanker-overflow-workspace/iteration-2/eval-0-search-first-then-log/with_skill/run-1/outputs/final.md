@@ -35,6 +35,7 @@ fi
 ```
 
 Notes:
+
 - This follows the skill workflow: search first, then log only if novel.
 - `--problem` is required for `clanker log` even when `--file` is used.
 - Tags are lowercase and comma-separated for consistent retrieval quality.

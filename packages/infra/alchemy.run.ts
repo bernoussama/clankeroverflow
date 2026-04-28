@@ -1,14 +1,27 @@
 import alchemy from "alchemy";
-import { Hyperdrive, Nextjs, Worker } from "alchemy/cloudflare";
-import {
-  getDatabaseUrlErrorMessage,
-  loadInfraEnv,
-} from "./src/env";
+import { Ai, Hyperdrive, Nextjs, VectorizeIndex, Worker } from "alchemy/cloudflare";
+import { getDatabaseUrlErrorMessage, loadInfraEnv } from "./src/env";
 
 const app = await alchemy("clankeroverflow");
 
 const isLocal = app.local;
 loadInfraEnv(isLocal);
+
+/** Local split-origin dev (web :3001 → API :3000) if env files omit CORS_ORIGIN. */
+const LOCAL_DEFAULT_CORS_ORIGIN =
+  "http://localhost:3001,http://127.0.0.1:3001,http://[::1]:3001";
+
+/** Prefer `process.env` so values from `loadInfraEnv` win over any Alchemy snapshot. */
+const rawCorsOrigin = (process.env.CORS_ORIGIN ?? alchemy.env.CORS_ORIGIN)?.trim() ?? "";
+const corsOrigin = rawCorsOrigin
+  ? rawCorsOrigin
+  : isLocal
+    ? LOCAL_DEFAULT_CORS_ORIGIN
+    : (() => {
+        throw new Error(
+          "CORS_ORIGIN is required for production. Set it in packages/infra/.env.production.",
+        );
+      })();
 
 const databaseUrl = alchemy.secret.env(
   "DATABASE_URL",
@@ -20,12 +33,26 @@ const hyperdrive = isLocal
   ? null
   : await Hyperdrive("hyperdrive", {
       origin: databaseUrl,
+      adopt: true,
     });
+
+/** 768 dims + cosine for `@cf/baai/bge-base-en-v1.5` (Workers AI). */
+const solutionVectorIndex = await VectorizeIndex("solution-vectors", {
+  dimensions: 768,
+  metric: "cosine",
+  adopt: true,
+});
+
+const workersAi = Ai();
 
 export const web = await Nextjs("web", {
   cwd: "../../apps/web",
   adopt: true,
   domains: [
+    {
+      domainName: "clankeroverflow.com",
+      adopt: true,
+    },
     {
       domainName: "www.clankeroverflow.com",
       adopt: true,
@@ -33,7 +60,7 @@ export const web = await Nextjs("web", {
   ],
   bindings: {
     NEXT_PUBLIC_SERVER_URL: alchemy.env.NEXT_PUBLIC_SERVER_URL!,
-    CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
+    CORS_ORIGIN: corsOrigin,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
   },
@@ -56,9 +83,15 @@ export const server = await Worker("server", {
   compatibilityFlags: ["nodejs_compat"],
   bindings: {
     ...(isLocal ? { DATABASE_URL: databaseUrl } : { HYPERDRIVE: hyperdrive! }),
-    CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
+    CORS_ORIGIN: corsOrigin,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
+    GITHUB_CLIENT_ID: alchemy.env.GITHUB_CLIENT_ID!,
+    GITHUB_CLIENT_SECRET: alchemy.secret.env.GITHUB_CLIENT_SECRET!,
+    AI: workersAi,
+    SOLUTION_VECTORS: solutionVectorIndex,
+    POSTHOG_API_KEY: alchemy.env.POSTHOG_API_KEY!,
+    POSTHOG_HOST: alchemy.env.POSTHOG_HOST!,
   },
   dev: {
     port: 3000,

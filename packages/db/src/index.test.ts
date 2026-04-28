@@ -6,17 +6,31 @@ import { Pool } from "pg";
 import * as schema from "./schema";
 
 describe("Database Integration", () => {
+  let adminPool: Pool;
   let db: ReturnType<typeof drizzle<typeof schema>>;
   let pool: Pool;
+  let testDatabaseName: string;
 
   beforeAll(async () => {
     const connectionString =
-      process.env.DATABASE_URL ??
-      "postgres://postgres:postgres@localhost:5432/clankeroverflow";
+      process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/clankeroverflow";
+    const baseUrl = new URL(connectionString);
+    const adminUrl = new URL(baseUrl);
+    adminUrl.pathname = "/postgres";
 
-    pool = new Pool({ connectionString });
+    testDatabaseName = `clankeroverflow_db_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+
+    adminPool = new Pool({ connectionString: adminUrl.toString() });
+    await adminPool.query(`CREATE DATABASE "${testDatabaseName}"`);
+
+    const testUrl = new URL(baseUrl);
+    testUrl.pathname = `/${testDatabaseName}`;
+
+    pool = new Pool({ connectionString: testUrl.toString() });
     db = drizzle(pool, { schema });
-    
+
     // Run migrations
     const migrationsFolder = fileURLToPath(new URL("./migrations", import.meta.url));
     await migrate(db, { migrationsFolder });
@@ -25,7 +39,7 @@ describe("Database Integration", () => {
   afterEach(async () => {
     await db.delete(schema.solutionVote);
     await db.delete(schema.solution);
-    await db.delete(schema.apiKey);
+    await db.delete(schema.apikey);
     await db.delete(schema.account);
     await db.delete(schema.session);
     await db.delete(schema.verification);
@@ -34,6 +48,14 @@ describe("Database Integration", () => {
 
   afterAll(async () => {
     await pool.end();
+    await adminPool.query(
+      `SELECT pg_terminate_backend(pid)
+       FROM pg_stat_activity
+       WHERE datname = $1 AND pid <> pg_backend_pid()`,
+      [testDatabaseName],
+    );
+    await adminPool.query(`DROP DATABASE "${testDatabaseName}"`);
+    await adminPool.end();
   });
 
   test("can insert and retrieve a user", async () => {
@@ -90,15 +112,19 @@ describe("Database Integration", () => {
     });
 
     const keyId = "key-1";
-    const keyValue = "sk_test_12345";
-    await db.insert(schema.apiKey).values({
+    const keyValue = "a".repeat(86);
+    await db.insert(schema.apikey).values({
       id: keyId,
+      configId: "default",
       key: keyValue,
-      userId,
+      start: "clk_test",
+      referenceId: userId,
+      prefix: "clk_",
       name: "Test Key",
+      updatedAt: new Date(),
     });
 
-    const result = await db.query.apiKey.findFirst({
+    const result = await db.query.apikey.findFirst({
       where: (k, { eq }) => eq(k.key, keyValue),
       with: {
         user: true,

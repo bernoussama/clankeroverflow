@@ -1,14 +1,17 @@
+import { apiKey } from "@better-auth/api-key";
 import { getDb, schema, type Database } from "@clankeroverflow/db";
 import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-import { hashPassword, verifyPassword } from "./password";
+import { parseAllowedOriginsWithDevFallback } from "./origins";
 
 const authEnv = env as typeof env & {
   CORS_ORIGIN: string;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
 };
 
 function getCrossSubDomainCookieOptions(baseURL: string) {
@@ -24,35 +27,84 @@ function getCrossSubDomainCookieOptions(baseURL: string) {
   return undefined;
 }
 
-export function createAuth(db: Database = getDb()) {
+function getDefaultCookieAttributes(baseURL: string) {
+  const { protocol, hostname } = new URL(baseURL);
+  const isLocalHttp =
+    protocol === "http:" && (hostname === "localhost" || hostname === "127.0.0.1");
+
+  if (isLocalHttp) {
+    return {
+      sameSite: "lax" as const,
+      secure: false,
+      httpOnly: true,
+    };
+  }
+
+  return {
+    sameSite: "none" as const,
+    secure: true,
+    httpOnly: true,
+  };
+}
+
+export function createAuth(
+  db: Database = getDb(),
+  waitUntil?: (promise: Promise<unknown>) => void,
+  options?: { trustedOrigins?: string[] },
+) {
+  const trustedOrigins =
+    options?.trustedOrigins ??
+    parseAllowedOriginsWithDevFallback({
+      CORS_ORIGIN: authEnv.CORS_ORIGIN,
+      BETTER_AUTH_URL: authEnv.BETTER_AUTH_URL,
+    });
+
   return betterAuth({
+    basePath: "/auth",
     database: drizzleAdapter(db, {
       provider: "pg",
       schema: schema,
     }),
-    trustedOrigins: [authEnv.CORS_ORIGIN],
-    emailAndPassword: {
-      enabled: true,
-      password: {
-        hash: hashPassword,
-        verify: verifyPassword,
+    trustedOrigins,
+    socialProviders: {
+      github: {
+        clientId: authEnv.GITHUB_CLIENT_ID,
+        clientSecret: authEnv.GITHUB_CLIENT_SECRET,
       },
     },
-    // uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
-    // session: {
-    //   cookieCache: {
-    //     enabled: true,
-    //     maxAge: 60,
-    //   },
-    // },
+    account: {
+      storeStateStrategy: "cookie",
+    },
     secret: authEnv.BETTER_AUTH_SECRET,
     baseURL: authEnv.BETTER_AUTH_URL,
+    plugins: [
+      apiKey({
+        apiKeyHeaders: "x-clanker-api-key",
+        defaultPrefix: "clk_",
+        requireName: true,
+        minimumNameLength: 1,
+        maximumNameLength: 100,
+        keyExpiration: {
+          defaultExpiresIn: null,
+        },
+        rateLimit: {
+          enabled: false,
+        },
+        startingCharactersConfig: {
+          shouldStore: true,
+          charactersLength: 8,
+        },
+      }),
+    ],
     advanced: {
-      defaultCookieAttributes: {
-        sameSite: "none",
-        secure: true,
-        httpOnly: true,
-      },
+      ...(waitUntil
+        ? {
+            backgroundTasks: {
+              handler: waitUntil,
+            },
+          }
+        : {}),
+      defaultCookieAttributes: getDefaultCookieAttributes(authEnv.BETTER_AUTH_URL),
       crossSubDomainCookies: getCrossSubDomainCookieOptions(authEnv.BETTER_AUTH_URL),
     },
   });

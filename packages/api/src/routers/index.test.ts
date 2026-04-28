@@ -19,8 +19,8 @@ describe("appRouter", () => {
       session: null,
       apiKey: null,
     });
-    
-    expect(caller.privateData()).rejects.toThrow("Authentication required");
+
+    await expect(caller.privateData()).rejects.toThrow("Authentication required");
   });
 
   test("privateData should return data if authenticated", async () => {
@@ -33,7 +33,7 @@ describe("appRouter", () => {
           ipAddress: "127.0.0.1",
           userAgent: "Mozilla",
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
         user: {
           id: "user_1",
@@ -42,12 +42,12 @@ describe("appRouter", () => {
           emailVerified: true,
           image: null,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
       },
       apiKey: null,
     });
-    
+
     const result = await caller.privateData();
     expect(result.message).toBe("This is private");
     expect(result.user?.email).toBe("test@example.com");
