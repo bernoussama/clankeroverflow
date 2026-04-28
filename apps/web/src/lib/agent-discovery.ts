@@ -8,6 +8,7 @@ export const DISCOVERY_LINK_HEADER = [
   '</robots.txt>; rel="service-meta"; type="text/plain"',
   '</sitemap.xml>; rel="sitemap"; type="application/xml"',
   '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"',
+  '</.well-known/oauth-protected-resource>; rel="oauth-protected-resource"; type="application/json"',
   '</.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json"',
   '</.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json"',
   '</opencode/clankeroverflow.md>; rel="service-doc"; type="text/markdown"',

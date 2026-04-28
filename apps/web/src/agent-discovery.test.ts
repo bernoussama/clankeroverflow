@@ -87,6 +87,7 @@ describe("markdown negotiation", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/markdown");
     expect(response.headers.get("link")).toContain("rel=\"api-catalog\"");
+    expect(response.headers.get("link")).toContain("/.well-known/oauth-protected-resource");
     expect(response.headers.get("x-markdown-tokens")).toBeTruthy();
     expect(await response.text()).toBe(HOME_MARKDOWN);
   });

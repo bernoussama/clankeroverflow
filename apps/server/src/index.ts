@@ -73,6 +73,15 @@ const nonCacheableHeaders = {
   "Cache-Control": "no-store",
   Pragma: "no-cache",
 } as const;
+const apiOrigin = "https://api.clankeroverflow.com";
+const authIssuer = `${apiOrigin}/auth`;
+const oauthProtectedResourceMetadata = {
+  resource: apiOrigin,
+  authorization_servers: [authIssuer],
+  scopes_supported: ["solutions:read", "solutions:write"],
+  bearer_methods_supported: ["header"],
+  resource_documentation: "https://clankeroverflow.com/opencode/clankeroverflow.md",
+} as const;
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 const app = new Hono<AppEnv>();
@@ -182,6 +191,10 @@ app.use("/trpc/*", withNoStore);
 app.use("/trpc/*", withTrustedMutationOrigins);
 app.use("/trpc/*", withRequestServices);
 
+app.get("/.well-known/oauth-protected-resource", (c) => {
+  return c.json(oauthProtectedResourceMetadata);
+});
+
 app.use(
   "/trpc/*",
   trpcServer({
@@ -193,6 +206,10 @@ app.use(
 );
 
 app.get("/", (c) => {
+  c.header(
+    "Link",
+    '</.well-known/oauth-protected-resource>; rel="oauth-protected-resource"; type="application/json"',
+  );
   return c.text("OK");
 });
 

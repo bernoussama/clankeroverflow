@@ -11,6 +11,26 @@ describe("Server", () => {
     expect(await res.text()).toBe("OK");
   });
 
+  test("GET / should advertise OAuth protected resource metadata", async () => {
+    const res = await app.request("/", undefined, mockWorkerEnv);
+
+    expect(res.headers.get("Link")).toContain("/.well-known/oauth-protected-resource");
+    expect(res.headers.get("Link")).toContain('rel="oauth-protected-resource"');
+  });
+
+  test("GET /.well-known/oauth-protected-resource should publish RFC 9728 metadata", async () => {
+    const res = await app.request("/.well-known/oauth-protected-resource", undefined, mockWorkerEnv);
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("application/json");
+    expect(body.resource).toBe("https://api.clankeroverflow.com");
+    expect(body.authorization_servers).toContain("https://api.clankeroverflow.com/auth");
+    expect(body.scopes_supported).toContain("solutions:read");
+    expect(body.scopes_supported).toContain("solutions:write");
+    expect(body.bearer_methods_supported).toContain("header");
+  });
+
   test("GET / should include hardened security headers", async () => {
     const res = await app.request("/", undefined, mockWorkerEnv);
 
