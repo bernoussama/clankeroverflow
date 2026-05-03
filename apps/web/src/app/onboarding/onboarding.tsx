@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowRight, Check, Copy, Key, Plus, Terminal } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import Loader from "@/components/loader";
 import { Input } from "@/components/ui/input";
 import { createdApiKeySchema, type CreatedApiKey } from "@/lib/api-key-client";
 import { authClient } from "@/lib/auth-client";
 import { buildOpenCodeConfig } from "@/lib/opencode-config";
 
-export default function Onboarding({ userName }: { userName: string }) {
+export default function Onboarding() {
+  const router = useRouter();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [copied, setCopied] = useState<"key" | "config" | null>(null);
   const [keyName, setKeyName] = useState("");
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
@@ -54,13 +58,24 @@ export default function Onboarding({ userName }: { userName: string }) {
 
   const openCodeConfig = buildOpenCodeConfig(createdKey?.key);
 
+  useEffect(() => {
+    if (!isSessionPending && !session) {
+      router.replace("/login");
+    }
+  }, [isSessionPending, router, session]);
+
+  if (isSessionPending || !session) {
+    return <Loader />;
+  }
+
   return (
-    <div>
+    <div className="page-shell">
+      <div className="page-container max-w-3xl">
       <div className="mb-10 fade-in-up">
         <p className="font-mono text-xs tracking-widest uppercase text-accent-landing mb-2">
           Getting Started
         </p>
-        <h1 className="page-title text-3xl sm:text-4xl mb-2">Welcome, {userName}</h1>
+        <h1 className="page-title text-3xl sm:text-4xl mb-2">Welcome, {session.user.name}</h1>
         <p className="text-sm text-muted-landing font-mono">
           Set up ClankerOverflow with your MCP client in three steps.
         </p>
@@ -222,6 +237,7 @@ export default function Onboarding({ userName }: { userName: string }) {
         >
           Browse Solutions →
         </Link>
+      </div>
       </div>
     </div>
   );

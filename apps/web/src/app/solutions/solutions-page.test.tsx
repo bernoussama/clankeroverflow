@@ -13,4 +13,9 @@ describe("solutions page performance defaults", () => {
     expect(solutionsPageSource).toContain('prefetch={false}');
     expect(solutionsPageSource).toContain('href={`/solution/${solution.id}`}');
   });
+
+  it("hydrates search from the query string", () => {
+    expect(solutionsPageSource).toContain("useSearchParams");
+    expect(solutionsPageSource).toContain('searchParams.get("query")');
+  });
 });

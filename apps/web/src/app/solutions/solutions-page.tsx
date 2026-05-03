@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useInfiniteQuery, useQuery, type InfiniteData } from "@tanstack/react-query";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpDown,
@@ -36,8 +37,10 @@ const SORT_LABELS: Record<SortOption, string> = {
 const PAGE_SIZE = 20;
 
 export default function SolutionsPage() {
-  const [query, setQuery] = useState("");
-  const [activeQuery, setActiveQuery] = useState("");
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("query")?.trim() ?? "";
+  const [query, setQuery] = useState(initialQuery);
+  const [activeQuery, setActiveQuery] = useState(initialQuery);
   const [searchMode, setSearchMode] = useState<SearchMode>("keyword");
   const [sort, setSort] = useState<SortOption>("recent");
 
