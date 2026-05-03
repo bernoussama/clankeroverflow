@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { authClient } from "@/lib/auth-client";
 
 import Onboarding from "./onboarding";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/onboarding",
+  },
+};
 
 export default async function OnboardingPage() {
   const requestHeaders = await headers();

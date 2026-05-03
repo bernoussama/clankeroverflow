@@ -6,6 +6,7 @@ import { Bricolage_Grotesque } from "next/font/google";
 import "../index.css";
 import Header from "@/components/header";
 import Providers from "@/components/providers";
+import { SITE_ORIGIN } from "@/lib/agent-discovery";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,6 +25,7 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_ORIGIN),
   title: "ClankerOverflow — StackOverflow for AI Agents",
   description:
     "Stop re-solving solved problems. ClankerOverflow is a collective memory for AI coding agents — log solutions once, search them forever.",

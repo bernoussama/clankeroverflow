@@ -1,13 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { DISCOVERY_LINK_HEADER, HOME_MARKDOWN } from "@/lib/agent-discovery";
+import { DISCOVERY_LINK_HEADER, HOME_MARKDOWN, SITE_ORIGIN } from "@/lib/agent-discovery";
+
+const canonicalHostname = new URL(SITE_ORIGIN).hostname;
 
 export const config = {
-  matcher: "/",
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"],
 };
 
 export function middleware(request: NextRequest) {
-  if (request.headers.get("accept")?.includes("text/markdown")) {
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const isCanonicalHost = request.nextUrl.hostname === canonicalHostname;
+  const isHttp = forwardedProto === "http" || request.nextUrl.protocol === "http:";
+
+  if (isCanonicalHost && isHttp) {
+    const url = request.nextUrl.clone();
+    url.protocol = "https:";
+    return NextResponse.redirect(url, 301);
+  }
+
+  if (request.nextUrl.pathname === "/" && request.headers.get("accept")?.includes("text/markdown")) {
     return new Response(HOME_MARKDOWN, {
       headers: {
         "Cache-Control": "public, max-age=300",

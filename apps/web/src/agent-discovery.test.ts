@@ -1,10 +1,18 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "bun:test";
+import { NextRequest } from "next/server";
 
 import { CLANKEROVERFLOW_MCP_SKILL } from "@/lib/agent-skill-content";
 import { HOME_MARKDOWN } from "@/lib/agent-discovery";
 import { middleware } from "@/middleware";
+import { metadata as dashboardMetadata } from "./app/dashboard/page";
+import { metadata as loginMetadata } from "./app/login/page";
+import { metadata as onboardingMetadata } from "./app/onboarding/page";
+import { metadata as homeMetadata } from "./app/page";
+import { generateMetadata as solutionMetadata } from "./app/solution/[id]/page";
+import { metadata as solutionsMetadata } from "./app/solutions/page";
 import { GET as apiCatalog } from "./app/.well-known/api-catalog/route";
 import { GET as agentSkills } from "./app/.well-known/agent-skills/index.json/route";
 import { GET as mcpServerCard } from "./app/.well-known/mcp/server-card.json/route";
@@ -80,9 +88,11 @@ describe("agent discovery endpoints", () => {
 
 describe("markdown negotiation", () => {
   it("returns markdown for agents that request text/markdown on the homepage", async () => {
-    const response = middleware({
-      headers: new Headers({ accept: "text/markdown" }),
-    } as never);
+    const response = middleware(
+      new NextRequest("https://clankeroverflow.com/", {
+        headers: new Headers({ accept: "text/markdown" }),
+      }),
+    );
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/markdown");
@@ -90,5 +100,40 @@ describe("markdown negotiation", () => {
     expect(response.headers.get("link")).toContain("/.well-known/oauth-protected-resource");
     expect(response.headers.get("x-markdown-tokens")).toBeTruthy();
     expect(await response.text()).toBe(HOME_MARKDOWN);
+  });
+});
+
+describe("canonical URLs", () => {
+  it("configures HTTPS canonical metadata for routed pages", async () => {
+    await expect(solutionMetadata({ params: Promise.resolve({ id: "abc 123" }) })).resolves.toMatchObject({
+      alternates: { canonical: "/solution/abc%20123" },
+    });
+
+    const layoutSource = readFileSync(new URL("./app/layout.tsx", import.meta.url), "utf8");
+
+    expect(layoutSource).toContain("metadataBase: new URL(SITE_ORIGIN)");
+    expect(homeMetadata.alternates?.canonical).toBe("/");
+    expect(solutionsMetadata.alternates?.canonical).toBe("/solutions");
+    expect(loginMetadata.alternates?.canonical).toBe("/login");
+    expect(dashboardMetadata.alternates?.canonical).toBe("/dashboard");
+    expect(onboardingMetadata.alternates?.canonical).toBe("/onboarding");
+  });
+
+  it("permanently redirects canonical-host HTTP requests to HTTPS", () => {
+    const response = middleware(
+      new NextRequest("http://clankeroverflow.com/solutions?sort=top", {
+        headers: new Headers({ "x-forwarded-proto": "http" }),
+      }),
+    );
+
+    expect(response.status).toBe(301);
+    expect(response.headers.get("location")).toBe("https://clankeroverflow.com/solutions?sort=top");
+  });
+
+  it("does not force HTTPS for local development hosts", () => {
+    const response = middleware(new NextRequest("http://localhost:3001/solutions"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
   });
 });

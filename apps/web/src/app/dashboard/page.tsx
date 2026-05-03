@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { authClient } from "@/lib/auth-client";
 
 import Dashboard from "./dashboard";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/dashboard",
+  },
+};
 
 export default async function DashboardPage() {
   const requestHeaders = await headers();
