@@ -1,0 +1,74 @@
+packages/api/src/routers/solutions.ts
+  s_6f6644c2eabd96::t_754329828b82d1 12,31-41,255-256,258-259,323-327,329
+  s_0b48ca42fde0b8::t_3f77cf433c8d44 127,135-136,140-148,151,160-161,165-172,189-209
+  s_6f6644c2eabd96::t_e95d6589d27533 20-23,257,328
+  s_0b48ca42fde0b8::t_b382320b386d13 311,340-348
+packages/db/src/list.ts
+  s_0b48ca42fde0b8::t_bd356e57d3eee7 65-66,68-70
+packages/api/src/context.ts
+  s_6f6644c2eabd96::t_754329828b82d1 16-21,98,113
+apps/web/src/app/solutions/solutions-page.tsx
+  s_0b48ca42fde0b8::t_7e1d009eb613de 47-55
+  s_0b48ca42fde0b8::t_5ba4f83a08087f 154-156,158,162-164,168-170
+  s_0b48ca42fde0b8::t_7211855f546b80 3
+  s_0b48ca42fde0b8::t_93cf678ffcec34 19
+apps/web/src/app/dashboard/dashboard.test.ts
+  s_6f6644c2eabd96::t_bf6ca252f79ed4 12-13
+AGENTS.md
+  s_6f6644c2eabd96::t_a39aa7af1060d0 22
+packages/api/test-setup.ts
+  s_0b48ca42fde0b8::t_93ca54532b932e 54-68
+apps/web/src/app/dashboard/dashboard.tsx
+  s_0b48ca42fde0b8::t_8f2aa2cae4f1fd 44-50
+  s_0b48ca42fde0b8::t_c70ac6c8dd6f78 35-36
+packages/api/src/routers/solutions.test.ts
+  s_0b48ca42fde0b8::t_2134705569a3db 374
+  s_0b48ca42fde0b8::t_3b9ba21ab5742b 593,598,602-603,616-619
+  s_0b48ca42fde0b8::t_83719a210dbde5 399
+  s_0b48ca42fde0b8::t_2424cbf9e1a04e 421
+  s_0b48ca42fde0b8::t_009fd04d411111 584,586-588
+  s_0b48ca42fde0b8::t_20600360147dd4 143,151-165,194,236
+  s_6f6644c2eabd96::t_e5cc4db856d687 493
+  s_6f6644c2eabd96::t_5f8e5f843a1cab 6,51,123-142,248-274,486-492,494-514
+  s_0b48ca42fde0b8::t_8a6454f26d562b 591-592,594-597,599-601,604-615,620
+packages/cli/src/index.ts
+  s_0b48ca42fde0b8::t_09f662d7507218 86
+  s_0b48ca42fde0b8::t_ee658170e21f57 9-14
+  s_0b48ca42fde0b8::t_b87d2a8108f3b1 131-134,136-137,139
+packages/cli/src/index.test.ts
+  s_0b48ca42fde0b8::t_c5ecba5401070c 75
+  s_0b48ca42fde0b8::t_40105f7d786078 120-149
+packages/mcp-server/src/index.test.ts
+  s_0b48ca42fde0b8::t_f33a0f8db4606a 166
+  s_0b48ca42fde0b8::t_88f550896a0d68 56-57
+packages/mcp-server/src/index.ts
+  s_0b48ca42fde0b8::t_8dff23b6679710 15
+  s_0b48ca42fde0b8::t_3d4ea003f051ef 101-103
+  s_0b48ca42fde0b8::t_8085328ebdcfca 104
+packages/api/src/rate-limit.ts
+  s_6f6644c2eabd96::t_754329828b82d1 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "4195c984fe3d7afea1ac4af839e624d3521d1b70",
+  "prompts": {},
+  "sessions": {
+    "s_0b48ca42fde0b8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e18c8-ffe1-75af-95f0-3260c69753d3",
+        "model": "glm-5.1"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    },
+    "s_6f6644c2eabd96": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1e72815edffelpIrT3qCLhw6Mv",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    }
+  }
+}
