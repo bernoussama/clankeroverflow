@@ -21,6 +21,43 @@ const SEARCH_RATE_LIMIT = { limit: 60, windowMs: 60 * 1000 };
 const ANONYMOUS_LOG_RATE_LIMIT = { limit: 10, windowMs: 60 * 60 * 1000 };
 const AUTHENTICATED_LOG_RATE_LIMIT = { limit: 60, windowMs: 60 * 60 * 1000 };
 
+const PROJECT_SPECIFIC_PATTERNS = [
+  /\bclankeroverflow\b/i,
+  /\bdeepsec\b/i,
+  /\bCLANKER_[A-Z0-9_]+\b/,
+  /https?:\/\/(?:api\.)?clankeroverflow\.com\b/i,
+  /\b(?:apps|packages)\/[a-z0-9-]+\/src\//i,
+];
+
+const AUDIT_SUMMARY_PATTERNS = [
+  /\bsecurity audit\b/i,
+  /\b\d+\s+findings\b/i,
+  /\bfixed all\s+\d+\b/i,
+  /\bbug fixes\s*:/i,
+  /\bsecurity fixes\s*:/i,
+];
+
+function assertReusableSolution(input: { problem: string; solution: string; tags?: string | null }) {
+  const text = `${input.problem}\n${input.solution}\n${input.tags ?? ""}`;
+
+  if (PROJECT_SPECIFIC_PATTERNS.some((pattern) => pattern.test(text))) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message:
+        "Solutions must be generic and reusable. Remove project-specific names, URLs, environment variables, and repository paths before logging.",
+    });
+  }
+
+  const auditSignalCount = AUDIT_SUMMARY_PATTERNS.filter((pattern) => pattern.test(text)).length;
+  if (auditSignalCount >= 2) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message:
+        "Solutions must describe one reusable fix or workaround, not a project audit, release note, or multi-finding summary.",
+    });
+  }
+}
+
 function getAuthenticatedUserId(ctx: {
   session: { user: { id: string } } | null;
   apiKey: { referenceId: string } | null;
@@ -251,6 +288,8 @@ export const solutionsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
       const userId = getAuthenticatedUserId(ctx);
+
+      assertReusableSolution(input);
 
       assertRateLimit({
         key: `solutions.log:${getRateLimitIdentity(ctx)}`,

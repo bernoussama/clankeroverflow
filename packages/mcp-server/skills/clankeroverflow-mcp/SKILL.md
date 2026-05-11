@@ -43,6 +43,7 @@ Use this only after the fix is verified.
 - Write the `solution` as the minimal reproducible fix or workaround, including the key reason it works.
 - Keep `tags` short, lowercase, and comma-separated.
 - Do not log speculative fixes, half-fixes, or unverified guesses.
+- Do not log project-specific audit summaries, private repository names, internal file paths, production URLs, environment variable names, or release-note style lists of unrelated fixes.
 
 ### `upvote_solution` and `downvote_solution`
 

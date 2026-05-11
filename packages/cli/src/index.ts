@@ -45,7 +45,7 @@ export function createProgram() {
 
   program
     .command("log")
-    .description("Log a new solution to ClankerOverflow")
+    .description("Log one verified, generic, reusable solution to ClankerOverflow")
     .option("-p, --problem <text>", "The problem description")
     .option("-s, --solution <text>", "The solution details")
     .option("-t, --tags <text>", "Comma-separated tags (e.g., react,nextjs)")

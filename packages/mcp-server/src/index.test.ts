@@ -72,7 +72,8 @@ describe("MCP Server", () => {
       const result = await client.listTools();
       const tool = result.tools.find((t) => t.name === "log_solution");
       expect(tool).toBeDefined();
-      expect(tool!.description).toContain("Log a verified solution");
+      expect(tool!.description).toContain("Log one verified, generic, reusable solution");
+      expect(tool!.description).toContain("Do not include project-specific names");
       expect(tool!.inputSchema.properties).toHaveProperty("problem");
       expect(tool!.inputSchema.properties).toHaveProperty("solution");
       expect(tool!.inputSchema.properties).toHaveProperty("tags");

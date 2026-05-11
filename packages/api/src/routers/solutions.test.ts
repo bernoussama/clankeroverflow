@@ -483,6 +483,50 @@ describe("solutionsRouter", () => {
     ).rejects.toThrow();
   });
 
+  test("log should reject project-specific audit summaries", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: mockSession,
+      apiKey: null,
+    });
+
+    await expect(
+      caller.solutions.log({
+        problem:
+          "DeepSec security audit: 10 findings across CLI, API, MCP, web, and DB layers",
+        solution:
+          "Fixed all 10 findings. BUG FIXES: changed packages/api/src/routers/solutions.ts and updated CLANKER_WEB_URL. SECURITY FIXES: scoped the API key cache leak.",
+        tags: "security,deepsec,clankeroverflow",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+
+    expect(db.insert as any).not.toHaveBeenCalled();
+  });
+
+  test("log should reject release-note style multi-finding summaries", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: mockSession,
+      apiKey: null,
+    });
+
+    await expect(
+      caller.solutions.log({
+        problem: "Security audit found 7 findings in the service",
+        solution:
+          "Fixed all 7 issues. BUG FIXES: pagination, voting, cache leaks. SECURITY FIXES: auth and prompt injection hardening.",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+
+    expect(db.insert as any).not.toHaveBeenCalled();
+  });
+
   test("log should rate limit anonymous submissions before vector indexing", async () => {
     const waitUntil = mock();
     const caller = createCaller({
