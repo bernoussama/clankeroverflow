@@ -1,0 +1,12 @@
+{
+  "tags": [
+    "bun",
+    "node"
+  ],
+  "sentinels": [
+    "bun.lock",
+    "package.json"
+  ],
+  "detectedAt": "2026-05-11T19:13:00.355Z",
+  "rootPath": "/home/oussama/projects/clankeroverflow"
+}
