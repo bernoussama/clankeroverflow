@@ -9,6 +9,7 @@ import {
 } from "@clankeroverflow/db/list";
 import { searchSolutions } from "@clankeroverflow/db/search";
 import { publicProcedure, router } from "../index";
+import { assertRateLimit } from "../rate-limit";
 import {
   searchSolutionsHybrid,
   searchSolutionsSemantic,
@@ -16,11 +17,26 @@ import {
 } from "../semantic/search";
 import { DB_TIMEOUT_MS, withTimeout } from "../utils/withTimeout";
 
+const SEARCH_RATE_LIMIT = { limit: 60, windowMs: 60 * 1000 };
+const ANONYMOUS_LOG_RATE_LIMIT = { limit: 10, windowMs: 60 * 60 * 1000 };
+const AUTHENTICATED_LOG_RATE_LIMIT = { limit: 60, windowMs: 60 * 60 * 1000 };
+
 function getAuthenticatedUserId(ctx: {
   session: { user: { id: string } } | null;
   apiKey: { referenceId: string } | null;
 }) {
   return ctx.session?.user.id ?? ctx.apiKey?.referenceId ?? null;
+}
+
+function getRateLimitIdentity(ctx: {
+  session: { user: { id: string } } | null;
+  apiKey: { id?: string; referenceId: string } | null;
+  requestIdentity?: string;
+}) {
+  if (ctx.session?.user.id) return `user:${ctx.session.user.id}`;
+  if (ctx.apiKey?.id) return `api-key:${ctx.apiKey.id}`;
+  if (ctx.apiKey?.referenceId) return `api-key-user:${ctx.apiKey.referenceId}`;
+  return ctx.requestIdentity ?? "ip:unknown";
 }
 
 async function getVoteCounts(db: Database, solutionId: string, userId: string | null) {
@@ -104,12 +120,11 @@ export const solutionsRouter = router({
           "Existing vote lookup timed out",
         );
 
-        let scoreDiff = 0;
         let voteAction: "added" | "removed" | "changed";
 
         if (existingVote) {
           if (existingVote.isUpvote === input.isUpvote) {
-            await withTimeout(
+            const result = await withTimeout(
               db
                 .delete(schema.solutionVote)
                 .where(
@@ -117,14 +132,23 @@ export const solutionsRouter = router({
                     eq(schema.solutionVote.userId, userId),
                     eq(schema.solutionVote.solutionId, input.id),
                   ),
-                ),
+                )
+                .returning(),
               DB_TIMEOUT_MS,
               "Vote delete timed out",
             );
-            scoreDiff = input.isUpvote ? -1 : 1;
+            if (result.length === 0) {
+              // Row was already deleted by a concurrent request; no-op
+              const voteCounts = await withTimeout(
+                getVoteCounts(db, input.id, userId),
+                DB_TIMEOUT_MS,
+                "Vote counts lookup timed out",
+              );
+              return { success: true, ...voteCounts };
+            }
             voteAction = "removed";
           } else {
-            await withTimeout(
+            const result = await withTimeout(
               db
                 .update(schema.solutionVote)
                 .set({ isUpvote: input.isUpvote })
@@ -133,11 +157,19 @@ export const solutionsRouter = router({
                     eq(schema.solutionVote.userId, userId),
                     eq(schema.solutionVote.solutionId, input.id),
                   ),
-                ),
+                )
+                .returning(),
               DB_TIMEOUT_MS,
               "Vote update timed out",
             );
-            scoreDiff = input.isUpvote ? 2 : -2;
+            if (result.length === 0) {
+              const voteCounts = await withTimeout(
+                getVoteCounts(db, input.id, userId),
+                DB_TIMEOUT_MS,
+                "Vote counts lookup timed out",
+              );
+              return { success: true, ...voteCounts };
+            }
             voteAction = "changed";
           }
         } else {
@@ -151,20 +183,30 @@ export const solutionsRouter = router({
             DB_TIMEOUT_MS,
             "Vote insert timed out",
           );
-          scoreDiff = input.isUpvote ? 1 : -1;
           voteAction = "added";
         }
 
-        if (scoreDiff !== 0) {
-          await withTimeout(
-            db
-              .update(schema.solution)
-              .set({ score: sql`${schema.solution.score} + ${scoreDiff}` })
-              .where(eq(schema.solution.id, input.id)),
-            DB_TIMEOUT_MS,
-            "Score update timed out",
-          );
-        }
+        // Recompute score from actual votes to avoid race conditions
+        const [voteAgg] = await withTimeout(
+          db
+            .select({
+              score: sql<number>`coalesce(sum(case when ${schema.solutionVote.isUpvote} then 1 else -1 end), 0)`,
+            })
+            .from(schema.solutionVote)
+            .where(eq(schema.solutionVote.solutionId, input.id)),
+          DB_TIMEOUT_MS,
+          "Vote recomputation timed out",
+        );
+        const recomputedScore = voteAgg?.score ?? 0;
+
+        await withTimeout(
+          db
+            .update(schema.solution)
+            .set({ score: recomputedScore })
+            .where(eq(schema.solution.id, input.id)),
+          DB_TIMEOUT_MS,
+          "Score update timed out",
+        );
 
         const voteCounts = await withTimeout(
           getVoteCounts(db, input.id, userId),
@@ -209,6 +251,11 @@ export const solutionsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
       const userId = getAuthenticatedUserId(ctx);
+
+      assertRateLimit({
+        key: `solutions.log:${getRateLimitIdentity(ctx)}`,
+        ...(userId ? AUTHENTICATED_LOG_RATE_LIMIT : ANONYMOUS_LOG_RATE_LIMIT),
+      });
 
       const id = crypto.randomUUID();
       const now = new Date();
@@ -261,7 +308,7 @@ export const solutionsRouter = router({
   search: publicProcedure
     .input(
       z.object({
-        query: z.string().min(1, "Search query is required"),
+        query: z.string().min(1, "Search query is required").max(500, "Search query too long"),
         limit: z.number().min(1).max(20).default(1),
         mode: z.enum(["keyword", "semantic", "hybrid"]).default("keyword"),
       }),
@@ -273,7 +320,13 @@ export const solutionsRouter = router({
       }
 
       const payload = { query: trimmed, limit: input.limit };
-      const distinctId = getAuthenticatedUserId(ctx) ?? "anonymous";
+      const userId = getAuthenticatedUserId(ctx);
+      const distinctId = userId ?? "anonymous";
+
+      assertRateLimit({
+        key: `solutions.search:${input.mode}:${getRateLimitIdentity(ctx)}`,
+        ...SEARCH_RATE_LIMIT,
+      });
 
       let results: Awaited<ReturnType<typeof searchSolutions>>;
 
@@ -284,6 +337,15 @@ export const solutionsRouter = router({
           "Solution search timed out",
         );
       } else {
+        // Require authentication for semantic/hybrid modes to prevent abuse
+        if (!getAuthenticatedUserId(ctx)) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message:
+              "Authentication required for semantic and hybrid search. Provide a valid session cookie or API key.",
+          });
+        }
+
         if (!ctx.ai || !ctx.solutionVectors) {
           throw new TRPCError({
             code: "PRECONDITION_FAILED",

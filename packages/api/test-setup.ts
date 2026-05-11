@@ -51,14 +51,21 @@ mock.module("@clankeroverflow/db", () => {
       })),
     })),
     execute: mock(),
-    update: mock(() => ({
-      set: mock(() => ({
-        where: mock(),
-      })),
-    })),
-    delete: mock(() => ({
-      where: mock(),
-    })),
+    update: mock(() => {
+      const chain: any = {};
+      chain.set = mock(() => chain);
+      chain.where = mock(() => chain);
+      chain.returning = mock(() => Promise.resolve([{}]));
+      chain.then = (resolve: (value: unknown) => unknown) => resolve([{}]);
+      return chain;
+    }),
+    delete: mock(() => {
+      const chain: any = {};
+      chain.where = mock(() => chain);
+      chain.returning = mock(() => Promise.resolve([{}]));
+      chain.then = (resolve: (value: unknown) => unknown) => resolve([{}]);
+      return chain;
+    }),
   };
 
   return {

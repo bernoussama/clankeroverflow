@@ -9,8 +9,8 @@ const openCodeConfigSource = readFileSync(
 );
 
 describe("dashboard API key UX", () => {
-  it("reuses one query key for loading and invalidation", () => {
-    expect(dashboardSource).toContain('const apiKeysQueryKey = ["apiKeys", "list"] as const;');
+  it("reuses one user-scoped query key for loading and invalidation", () => {
+    expect(dashboardSource).toContain('const apiKeysQueryKey = ["apiKeys", "list", sessionUserId] as const;');
     expect(dashboardSource).toContain("queryKey: apiKeysQueryKey");
     expect(dashboardSource).toContain("invalidateQueries({ queryKey: apiKeysQueryKey })");
   });

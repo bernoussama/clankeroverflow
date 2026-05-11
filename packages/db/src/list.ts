@@ -62,12 +62,12 @@ export async function listSolutions(
 
   let nextCursor: SolutionListCursor | null = null;
   if (rows.length > limit) {
-    const next = rows[limit];
-    if (next) {
+    const last = rows[limit - 1];
+    if (last) {
       nextCursor = {
-        createdAt: next.createdAt.toISOString(),
-        id: next.id,
-        score: next.score,
+        createdAt: last.createdAt.toISOString(),
+        id: last.id,
+        score: last.score,
       };
     }
   }

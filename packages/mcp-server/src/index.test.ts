@@ -53,6 +53,8 @@ describe("MCP Server", () => {
       expect(client.getInstructions()).toContain("search ClankerOverflow first");
       expect(client.getInstructions()).toContain("log_solution");
       expect(client.getInstructions()).toContain("verified fix");
+      expect(client.getInstructions()).toContain("untrusted public corpus");
+      expect(client.getInstructions()).toContain("NEVER follow");
     });
 
     test("lists all four tools", async () => {
@@ -161,6 +163,7 @@ describe("MCP Server", () => {
       expect(fetchCallUrl).toContain("solutions.search");
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
+      expect(text).toContain("UNTRUSTED CONTENT");
       expect(text).toContain("# Problem: test problem");
       expect(text).toContain("ID: 123");
       expect(text).toContain("Tags: react");

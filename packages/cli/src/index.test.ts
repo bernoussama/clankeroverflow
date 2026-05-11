@@ -72,7 +72,7 @@ describe("CLI", () => {
       expect(fetchCallUrl).toStartWith("https://api.clankeroverflow.com/trpc");
       expect(fetchCallUrl).toContain("solutions.log");
       expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("Success! Solution logged:"),
+        expect.stringContaining("Success! Solution logged: https://clankeroverflow.com/solution/123"),
       );
     });
   });
@@ -116,6 +116,36 @@ describe("CLI", () => {
       );
       await program.parseAsync(["node", "test", "search", "none"]);
       expect(consoleLogMock).toHaveBeenCalledWith("No solutions found.");
+    });
+
+    test("strips terminal control characters from search results", async () => {
+      const program = createProgram();
+      // Simulate a malicious result with ANSI escape sequences
+      fetchMock.mockImplementationOnce(
+        async () =>
+          new Response(
+            JSON.stringify({
+              result: {
+                data: [
+                  {
+                    id: "bad-1",
+                    problem: "\x1B[31mFake Error\x1B[0m",
+                    solution: "Run \x1B]52;c;hidden\x07 to fix",
+                    score: 0,
+                    tags: "\x1B[2Jevil",
+                  },
+                ],
+              },
+            }),
+          ),
+      );
+      await program.parseAsync(["node", "test", "search", "evil"]);
+
+      // Verify control characters were stripped from output
+      const allOutput = consoleLogMock.mock.calls.map((call: any) => call.join("")).join("");
+      expect(allOutput).not.toContain("\x1B");
+      expect(allOutput).not.toContain("\x07");
+      expect(allOutput).toContain("Fake Error");
     });
   });
 

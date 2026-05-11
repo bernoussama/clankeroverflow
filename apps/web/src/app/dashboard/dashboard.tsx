@@ -32,13 +32,21 @@ export default function Dashboard() {
   const openCodeConfig = buildOpenCodeConfig();
 
   const queryClient = useQueryClient();
-  const apiKeysQueryKey = ["apiKeys", "list"] as const;
+  const sessionUserId = session?.user?.id;
+  const apiKeysQueryKey = ["apiKeys", "list", sessionUserId] as const;
 
   useEffect(() => {
     if (!isSessionPending && !session) {
       router.replace("/login");
     }
   }, [isSessionPending, router, session]);
+
+  // Clear stale API key cache when the authenticated user changes
+  useEffect(() => {
+    return () => {
+      queryClient.removeQueries({ queryKey: ["apiKeys"] });
+    };
+  }, [sessionUserId, queryClient]);
 
   const { data: apiKeys = [], isLoading } = useQuery<ApiKeyListItem[]>({
     queryKey: apiKeysQueryKey,

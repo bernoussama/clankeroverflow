@@ -13,6 +13,12 @@ type ApiWorkerEnv = {
   SOLUTION_VECTORS?: SolutionVectorizeBinding;
 };
 
+function getRequestIdentity(headers: Headers) {
+  const forwardedFor = headers.get("cf-connecting-ip") ?? headers.get("x-forwarded-for");
+  const firstForwardedIp = forwardedFor?.split(",")[0]?.trim();
+  return firstForwardedIp ? `ip:${firstForwardedIp}` : "ip:unknown";
+}
+
 export type CreateContextOptions = {
   context: HonoContext;
 };
@@ -89,6 +95,7 @@ export async function createContext({ context }: CreateContextOptions) {
     ai,
     solutionVectors,
     waitUntil: getWaitUntil(context),
+    requestIdentity: getRequestIdentity(context.req.raw.headers),
   };
 }
 
@@ -103,4 +110,5 @@ export type Context = {
   ai?: WorkersAiBinding;
   solutionVectors?: SolutionVectorizeBinding;
   waitUntil?: (p: Promise<unknown>) => void;
+  requestIdentity?: string;
 };

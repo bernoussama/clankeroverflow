@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { getDb } from "@clankeroverflow/db";
 import { t } from "../index";
+import { resetRateLimits } from "../rate-limit";
 import { appRouter } from "./index";
 
 const createCaller = t.createCallerFactory(appRouter);
@@ -47,6 +48,7 @@ describe("solutionsRouter", () => {
   };
 
   beforeEach(() => {
+    resetRateLimits();
     (db.execute as any).mockClear?.();
     (db.select as any).mockClear?.();
     (db.insert as any).mockClear?.();
@@ -118,12 +120,47 @@ describe("solutionsRouter", () => {
     });
   });
 
-  test("search semantic without AI binding returns PRECONDITION_FAILED", async () => {
+  test("search should rate limit anonymous keyword requests by request identity", async () => {
+    (db.execute as any).mockResolvedValue({ rows: [] });
+
     const caller = createCaller({
       auth: null as any,
       db,
       session: null,
       apiKey: null,
+      requestIdentity: "ip:203.0.113.10",
+    } as any);
+
+    for (let i = 0; i < 60; i++) {
+      await caller.solutions.search({ query: `Test ${i}`, mode: "keyword" });
+    }
+
+    await expect(caller.solutions.search({ query: "Test overflow", mode: "keyword" })).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+    });
+  });
+
+  test("search semantic without authentication returns UNAUTHORIZED", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+    } as any);
+
+    await expect(caller.solutions.search({ query: "x", mode: "semantic" })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+  });
+
+  test("search semantic without AI binding returns PRECONDITION_FAILED when authenticated", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: mockSession,
+      apiKey: null,
+      ai: null,
+      solutionVectors: null,
     } as any);
 
     await expect(caller.solutions.search({ query: "x", mode: "semantic" })).rejects.toMatchObject({
@@ -154,7 +191,7 @@ describe("solutionsRouter", () => {
     const caller = createCaller({
       auth: null as any,
       db,
-      session: null,
+      session: mockSession,
       apiKey: null,
       ai,
       solutionVectors,
@@ -196,7 +233,7 @@ describe("solutionsRouter", () => {
     const caller = createCaller({
       auth: null as any,
       db,
-      session: null,
+      session: mockSession,
       apiKey: null,
       ai,
       solutionVectors,
@@ -206,6 +243,35 @@ describe("solutionsRouter", () => {
 
     expect(result.map((row) => row.id)).toEqual(["sol_b", "sol_a", "sol_c"]);
     expect(db.execute as any).toHaveBeenCalledTimes(1);
+  });
+
+  test("search should rate limit authenticated semantic requests", async () => {
+    (db.select as any).mockReturnValue(createSelectChain([]));
+
+    const ai = {
+      run: mock(async () => ({ data: [[0.1]] })),
+    };
+    const solutionVectors = {
+      query: mock(async () => ({ matches: [] })),
+    };
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: mockSession,
+      apiKey: null,
+      ai,
+      solutionVectors,
+      requestIdentity: "ip:203.0.113.11",
+    } as any);
+
+    for (let i = 0; i < 60; i++) {
+      await caller.solutions.search({ query: `Test ${i}`, mode: "semantic" });
+    }
+
+    await expect(caller.solutions.search({ query: "Test overflow", mode: "semantic" })).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+    });
   });
 
   test("getById should return solution with vote counts", async () => {
@@ -305,6 +371,7 @@ describe("solutionsRouter", () => {
         createSelectChain([{ id: "sol_1", problem: "Test", solution: "Test", score: 0 }]),
       )
       .mockReturnValueOnce(createSelectChain([]))
+      .mockReturnValueOnce(createSelectChain([{ score: 1 }]))
       .mockReturnValueOnce(createSelectChain([{ upvotes: 1, downvotes: 0 }]));
 
     const caller = createCaller({
@@ -329,6 +396,7 @@ describe("solutionsRouter", () => {
       .mockReturnValueOnce(
         createSelectChain([{ userId: "user_1", solutionId: "sol_1", isUpvote: true }]),
       )
+      .mockReturnValueOnce(createSelectChain([{ score: 0 }]))
       .mockReturnValueOnce(createSelectChain([{ upvotes: 0, downvotes: 0 }]));
 
     const caller = createCaller({
@@ -350,6 +418,7 @@ describe("solutionsRouter", () => {
       .mockReturnValueOnce(
         createSelectChain([{ userId: "user_1", solutionId: "sol_1", isUpvote: false }]),
       )
+      .mockReturnValueOnce(createSelectChain([{ score: 1 }]))
       .mockReturnValueOnce(createSelectChain([{ upvotes: 1, downvotes: 0 }]));
 
     const caller = createCaller({
@@ -412,6 +481,37 @@ describe("solutionsRouter", () => {
         solution: "s".repeat(30_001),
       }),
     ).rejects.toThrow();
+  });
+
+  test("log should rate limit anonymous submissions before vector indexing", async () => {
+    const waitUntil = mock();
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+      ai: { run: mock(async () => ({ data: [Array(768).fill(0.1)] })) },
+      solutionVectors: { upsert: mock(async () => undefined) },
+      waitUntil,
+      requestIdentity: "ip:203.0.113.12",
+    } as any);
+
+    for (let i = 0; i < 10; i++) {
+      await caller.solutions.log({
+        problem: `Problem ${i}`,
+        solution: "Solution",
+      });
+    }
+
+    await expect(
+      caller.solutions.log({
+        problem: "Problem overflow",
+        solution: "Solution",
+      }),
+    ).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+    });
+    expect(waitUntil).toHaveBeenCalledTimes(10);
   });
 
   test("list should return items and no nextCursor when fewer than limit", async () => {
@@ -481,10 +581,41 @@ describe("solutionsRouter", () => {
 
     const result = await caller.solutions.list({ limit: 5, sort: "top" });
     expect(result.items).toHaveLength(5);
+    // Cursor now comes from the last *returned* row (index 4), not the extra row (index 5)
     expect(result.nextCursor).toEqual({
-      createdAt: items[5]?.createdAt.toISOString(),
-      id: items[5]?.id,
-      score: items[5]?.score,
+      createdAt: items[4]?.createdAt.toISOString(),
+      id: items[4]?.id,
+      score: items[4]?.score,
     });
+  });
+
+  test("list cursor should not skip solutions between pages", async () => {
+    // Verify cursor points to last returned row so no item is skipped
+    const allItems = Array.from({ length: 7 }, (_, i) => ({
+      id: `sol_${i}`,
+      problem: `P${i}`,
+      solution: `S${i}`,
+      score: 7 - i,
+      createdAt: new Date(Date.now() - i * 60_000),
+    }));
+
+    // Page 1 mock: 4 rows = limit(3) + 1 extra
+    (db.select as any).mockReturnValueOnce(createSelectChain(allItems.slice(0, 4)));
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+    } as any);
+
+    const page1 = await caller.solutions.list({ limit: 3, sort: "top" });
+    expect(page1.items).toHaveLength(3);
+    expect(page1.items.map((item) => item.id)).toEqual(["sol_0", "sol_1", "sol_2"]);
+
+    // Cursor should point to last returned item (sol_2), not the extra item (sol_3)
+    // This ensures sol_3 is included on the next page, not skipped
+    expect(page1.nextCursor).toBeTruthy();
+    expect(page1.nextCursor!.id).toBe("sol_2");
   });
 });

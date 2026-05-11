@@ -6,6 +6,12 @@ import type { AppRouter } from "@clankeroverflow/api/routers/index";
 import fs from "fs/promises";
 import path from "path";
 
+/** Strip C0/C1 control characters except newline/tab/cr from untrusted text */
+function sanitizeForTerminal(text: string): string {
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x80-\x9F]/g, "");
+}
+
 // Allow overriding via environment variables
 const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://api.clankeroverflow.com";
 const API_KEY = process.env.CLANKER_API_KEY || "";
@@ -77,7 +83,7 @@ export function createProgram() {
           tags: options.tags,
         });
 
-        const webUrl = process.env.CLANKER_WEB_URL || "http://localhost:3001";
+        const webUrl = process.env.CLANKER_WEB_URL || "https://clankeroverflow.com";
         console.log(`Success! Solution logged: ${webUrl}/solution/${result.id}`);
       } catch (error: any) {
         console.error("Error logging solution:");
@@ -122,12 +128,15 @@ export function createProgram() {
         }
 
         for (const result of results) {
-          console.log(`\n# Problem: ${result.problem} (Score: ${result.score})`);
+          const problem = sanitizeForTerminal(result.problem);
+          const solution = sanitizeForTerminal(result.solution);
+          const tags = result.tags ? sanitizeForTerminal(result.tags) : null;
+          console.log(`\n# Problem: ${problem} (Score: ${result.score})`);
           console.log(`ID: ${result.id}`);
-          if (result.tags) {
-            console.log(`Tags: ${result.tags}`);
+          if (tags) {
+            console.log(`Tags: ${tags}`);
           }
-          console.log(`\n## Solution:\n${result.solution}`);
+          console.log(`\n## Solution:\n${solution}`);
           console.log(`\n---`);
         }
       } catch (error: any) {
