@@ -1,0 +1,20 @@
+.deepsec/data/clankeroverflow/INFO.md
+  s_9a099748e810ad::t_d90f37e9fc1428 5-11,14-17,20-21,25-34,38-44,48-57,61-70
+  s_9a099748e810ad::t_24143dacbf3ff5 3,13,18-19,23,36,46,59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "ebf0a4216071e43358a726ceda59c44cfba6656a",
+  "prompts": {},
+  "sessions": {
+    "s_9a099748e810ad": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1e78d73a3ffePlGeBWkD9Fcdo3",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    }
+  }
+}
