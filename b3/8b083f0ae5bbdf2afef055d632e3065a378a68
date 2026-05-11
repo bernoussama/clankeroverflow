@@ -1,0 +1,38 @@
+packages/mcp-server/src/index.ts
+  s_74a9aa96451034::t_97585abd226c05 14,32
+apps/web/public/opencode/clankeroverflow.md
+  s_74a9aa96451034::t_ab0281de6960fe 11-12
+AGENTS.md
+  s_74a9aa96451034::t_d9f876e57d89d6 62
+packages/cli/skills/clankeroverflow-mcp/SKILL.md
+  s_74a9aa96451034::t_ab0281de6960fe 46
+packages/api/src/routers/solutions.test.ts
+  s_74a9aa96451034::t_0914b0358523ad 486-529
+packages/api/src/routers/solutions.ts
+  s_74a9aa96451034::t_b454baeb5e06f1 24-60
+  s_74a9aa96451034::t_a1ae86548f842d 292-293
+packages/mcp-server/src/index.test.ts
+  s_74a9aa96451034::t_90396d3641c9e3 75-76
+packages/mcp-server/skills/clankeroverflow-mcp/SKILL.md
+  s_74a9aa96451034::t_ab0281de6960fe 46
+packages/cli/src/index.ts
+  s_74a9aa96451034::t_ce6a13ec530c4e 48
+apps/web/src/lib/agent-skill-content.ts
+  s_74a9aa96451034::t_ab0281de6960fe 16-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "b38b083f0ae5bbdf2afef055d632e3065a378a68",
+  "prompts": {},
+  "sessions": {
+    "s_74a9aa96451034": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1e6ede272ffeLSdgY4QueBMoKB",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    }
+  }
+}
