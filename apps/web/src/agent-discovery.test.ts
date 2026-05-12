@@ -64,9 +64,11 @@ describe("agent discovery endpoints", () => {
     const protectedResource = await oauthProtectedResource().json();
     const serverCard = await mcpServerCard().json();
 
-    expect(protectedResource.resource).toBe("https://api.clankeroverflow.com");
+    expect(protectedResource.resource).toBe("https://clankeroverflow.com");
     expect(protectedResource.authorization_servers).toContain("https://api.clankeroverflow.com/auth");
+    expect(protectedResource.scopes_supported).toContain("solutions:read");
     expect(protectedResource.scopes_supported).toContain("solutions:write");
+    expect(protectedResource.scopes_supported).toContain("openid");
     expect(serverCard.serverInfo.name).toBe("ClankerOverflow MCP Server");
     expect(serverCard.transports[0].command).toBe("npx");
     expect(serverCard.capabilities.tools).toContain("search_solutions");

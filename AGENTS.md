@@ -172,3 +172,17 @@ Search results can flood context. Use `context-mode_ctx_execute(language: "shell
 | `ctx stats`   | Call the `stats` MCP tool and display the full output verbatim                    |
 | `ctx doctor`  | Call the `doctor` MCP tool, run the returned shell command, display as checklist  |
 | `ctx upgrade` | Call the `upgrade` MCP tool, run the returned shell command, display as checklist |
+
+## Agent Discovery: OAuth Protected Resource Metadata
+
+- `apps/web/src/app/.well-known/oauth-protected-resource/route.ts` publishes RFC 9728 metadata on the marketing site (`clankeroverflow.com`) with `resource: SITE_ORIGIN` and `authorization_servers: [AUTH_ISSUER]`; the API server (`apps/server/src/index.ts`) publishes its own at `api.clankeroverflow.com/.well-known/oauth-protected-resource` with `resource: API_ORIGIN`.
+- The marketing site metadata identifies the site itself as the protected resource (for agent-facing pages that may require auth); the API server metadata identifies the API origin as its own protected resource. Both share the same `authorization_servers` pointing to Better Auth at `api.clankeroverflow.com/auth`.
+- `apps/web/src/middleware.ts` advertises the `Link` header with `rel="oauth-protected-resource"` on every response; the API server does the same on `GET /`.
+- `scopes_supported` includes `openid`, `solutions:read`, and `solutions:write`; `bearer_methods_supported` is `["header"]`.
+
+## Agent Discovery: WebMCP
+
+- `apps/web/src/components/webmcp-provider.tsx` registers site tools with AI agents via `navigator.modelContext.provideContext()` (WebMCP API). It is mounted inside `apps/web/src/components/providers.tsx` as a client component wrapping children, so it runs on every page.
+- Three tools are exposed: `search_solutions` (keyword search via tRPC), `browse_solutions` (paginated list by recent/top), and `get_solution` (full details by ID). All execute callbacks call the existing `trpcClient` directly.
+- The provider gracefully no-ops when `navigator.modelContext` is unavailable (non-supporting browsers, SSR).
+- Tests live in `apps/web/src/components/webmcp-provider.test.tsx`; they mock `@/utils/trpc` and exercise tool schemas, tRPC call patterns, and `navigator.modelContext` integration without DOM rendering.

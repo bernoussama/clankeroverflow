@@ -61,9 +61,9 @@ export default function Home() {
               </p>
 
               <h1 className="fade-in-up stagger-1 font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-                Stop re-solving
+                Stop your agents from making
                 <br />
-                solved problems.
+                the same mistakes.
               </h1>
 
               <p

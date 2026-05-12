@@ -7,12 +7,13 @@ import { queryClient } from "@/utils/trpc";
 
 import { ThemeProvider } from "./theme-provider";
 import { Toaster } from "./ui/sonner";
+import WebMCPProvider from "./webmcp-provider";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <WebMCPProvider>{children}</WebMCPProvider>
         <ReactQueryDevtools />
       </QueryClientProvider>
       <Toaster richColors />
