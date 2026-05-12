@@ -1,0 +1,19 @@
+docs/plans/2026-05-12-cq-compatible-hosted-clankeroverflow.md
+  s_6319f0bad7a1e4::t_88c69710419c17 1-245
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "b253681d611de4b4c6e61383284ebb4d3bfb07bf",
+  "prompts": {},
+  "sessions": {
+    "s_6319f0bad7a1e4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1e26e5619ffeDPmV0LVTzNMWM1",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    }
+  }
+}
