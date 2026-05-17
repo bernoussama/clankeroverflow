@@ -1,8 +1,9 @@
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { describe, expect, test, spyOn, beforeEach, afterEach, type Mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "./index";
@@ -11,10 +12,10 @@ describe("MCP Server", () => {
   const testDir = dirname(fileURLToPath(import.meta.url));
 
   let client: Client;
-  let fetchMock: Mock<typeof global.fetch>;
+  let fetchMock: MockInstance<typeof global.fetch>;
 
   beforeEach(async () => {
-    fetchMock = spyOn(global, "fetch").mockImplementation(
+    fetchMock = vi.spyOn(global, "fetch").mockImplementation(
       async () =>
         new Response(JSON.stringify({ result: { data: {} } }), {
           headers: { "Content-Type": "application/json" },
@@ -107,7 +108,7 @@ describe("MCP Server", () => {
 
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
-      expect(fetchCallUrl).toStartWith("https://api.clankeroverflow.com/trpc");
+      expect(fetchCallUrl).toMatch(/^https:\/\/api\.clankeroverflow\.com\/trpc/);
       expect(fetchCallUrl).toContain("solutions.log");
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
@@ -183,6 +184,45 @@ describe("MCP Server", () => {
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(text).toBe("No solutions found.");
+    });
+
+    test("local semantic search returns not-configured message without fetch", async () => {
+      const previousMode = process.env.CLANKER_MODE;
+      const previousDb = process.env.CLANKER_LOCAL_DB;
+      const dir = mkdtempSync(join(tmpdir(), "clanker-mcp-local-server-"));
+
+      try {
+        process.env.CLANKER_MODE = "local";
+        process.env.CLANKER_LOCAL_DB = join(dir, "solutions.sqlite");
+
+        const localServer = createServer();
+        const [localClientTransport, localServerTransport] = InMemoryTransport.createLinkedPair();
+        const localClient = new Client({ name: "local-test-client", version: "1.0.0" });
+
+        await localServer.connect(localServerTransport);
+        await localClient.connect(localClientTransport);
+
+        const result = await localClient.callTool({
+          name: "search_solutions",
+          arguments: { query: "oauth", mode: "semantic" },
+        });
+
+        const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
+        expect(text).toContain("Local semantic search is not configured yet.");
+        expect(fetchMock).not.toHaveBeenCalled();
+      } finally {
+        if (previousMode === undefined) {
+          delete process.env.CLANKER_MODE;
+        } else {
+          process.env.CLANKER_MODE = previousMode;
+        }
+        if (previousDb === undefined) {
+          delete process.env.CLANKER_LOCAL_DB;
+        } else {
+          process.env.CLANKER_LOCAL_DB = previousDb;
+        }
+        rmSync(dir, { recursive: true, force: true });
+      }
     });
   });
 

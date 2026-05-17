@@ -1,24 +1,29 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "@clankeroverflow/api/routers/index";
+import type { LogSolutionInput, SearchSolutionsInput, SolutionResult, VoteSolutionInput } from "./backend";
 
-const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://api.clankeroverflow.com";
-const API_KEY = process.env.CLANKER_API_KEY || "";
+export type HostedTrpcClient = {
+  solutions: {
+    log: { mutate(input: LogSolutionInput): Promise<{ id: string }> };
+    search: { query(input: SearchSolutionsInput): Promise<SolutionResult[]> };
+    vote: { mutate(input: VoteSolutionInput): Promise<unknown> };
+  };
+};
 
-export const trpc = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: `${SERVER_URL}/trpc`,
-      fetch(url, options) {
-        const { signal: _signal, ...rest } = options ?? {};
-        return fetch(url, rest);
-      },
-      headers() {
-        return {
-          ...(API_KEY ? { "x-clanker-api-key": API_KEY } : {}),
-        };
-      },
-    }),
-  ],
-});
-
-export const WEB_URL = process.env.CLANKER_WEB_URL || "https://clankeroverflow.com";
+export function createTrpcClient(options: { serverUrl: string; apiKey: string }) {
+  return createTRPCClient<any>({
+    links: [
+      httpBatchLink({
+        url: `${options.serverUrl}/trpc`,
+        fetch(url, fetchOptions) {
+          const { signal: _signal, ...rest } = fetchOptions ?? {};
+          return fetch(url, rest);
+        },
+        headers() {
+          return {
+            ...(options.apiKey ? { "x-clanker-api-key": options.apiKey } : {}),
+          };
+        },
+      }),
+    ],
+  }) as unknown as HostedTrpcClient;
+}
