@@ -1,0 +1,54 @@
+packages/mcp-server/src/remote-backend.ts
+  s_ebc1efc05b251e::t_dfa44de36aea2c 1-28
+packages/mcp-server/src/config.ts
+  s_ebc1efc05b251e::t_dfa44de36aea2c 1-39
+packages/mcp-server/src/format.ts
+  s_ebc1efc05b251e::t_dfa44de36aea2c 1-23
+packages/mcp-server/skills/clankeroverflow-mcp/SKILL.md
+  s_ebc1efc05b251e::t_1a08b740cee55c 59-65
+packages/mcp-server/src/backend.ts
+  s_ebc1efc05b251e::t_dfa44de36aea2c 1-32
+packages/mcp-server/src/trpc.ts
+  s_ebc1efc05b251e::t_cb0b58ac244b14 13
+  s_ebc1efc05b251e::t_51d037eeb5a08a 2,4-10
+  s_ebc1efc05b251e::t_3b4fb2ed641911 28
+  s_ebc1efc05b251e::t_b252daabafe04d 12,14-27,29
+packages/mcp-server/package.json
+  s_ebc1efc05b251e::t_136ff81a0a0de1 25,29
+  s_ebc1efc05b251e::t_ab78215ae5eda1 17,20,32
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 33
+packages/mcp-server/src/index.test.ts
+  s_ebc1efc05b251e::t_1cdc123f02e8f6 1-3,188-225
+  s_ebc1efc05b251e::t_c1b7922e0ff451 111
+  s_ebc1efc05b251e::t_ab78215ae5eda1 6,15,18
+packages/mcp-server/src/local-db.ts
+  s_ebc1efc05b251e::t_ab78215ae5eda1 4,12,17-19
+  s_ebc1efc05b251e::t_e9b5299312e1cc 6-10,13
+  s_ebc1efc05b251e::t_dfa44de36aea2c 1-3,5,11,14-16,20-53
+packages/mcp-server/src/local-backend.test.ts
+  s_ebc1efc05b251e::t_27a673790a267a 89-96
+  s_ebc1efc05b251e::t_ab78215ae5eda1 5,13,18
+  s_ebc1efc05b251e::t_08b6156c487874 1-4,6-12,14-17,19-88,97-123
+packages/mcp-server/src/package.test.ts
+  s_ebc1efc05b251e::t_ab78215ae5eda1 1
+packages/mcp-server/src/local-backend.ts
+  s_ebc1efc05b251e::t_dfa44de36aea2c 1-118
+packages/mcp-server/src/index.ts
+  s_ebc1efc05b251e::t_b252daabafe04d 7-10,23-27,47,57-60,86-87,89,91-95,107,126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "d69d522cc84ff6c266f3e26614b8aca1bfa513ad",
+  "prompts": {},
+  "sessions": {
+    "s_ebc1efc05b251e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1c9e6163bffesqKcCLavVJQ15L",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    }
+  }
+}
