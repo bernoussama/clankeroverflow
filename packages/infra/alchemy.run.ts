@@ -1,6 +1,9 @@
 import alchemy from "alchemy";
 import { Ai, Hyperdrive, Nextjs, VectorizeIndex, Worker } from "alchemy/cloudflare";
-import { getDatabaseUrlErrorMessage, loadInfraEnv } from "./src/env";
+
+const { getDatabaseUrlErrorMessage, loadInfraEnv } = await import(
+  new URL("./src/env.ts", import.meta.url).href
+);
 
 const app = await alchemy("clankeroverflow");
 
@@ -60,6 +63,8 @@ export const web = await Nextjs("web", {
   ],
   bindings: {
     NEXT_PUBLIC_SERVER_URL: alchemy.env.NEXT_PUBLIC_SERVER_URL!,
+    NEXT_PUBLIC_POSTHOG_KEY: alchemy.env.POSTHOG_API_KEY!,
+    NEXT_PUBLIC_POSTHOG_HOST: alchemy.env.POSTHOG_HOST!,
     CORS_ORIGIN: corsOrigin,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,

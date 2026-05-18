@@ -15,10 +15,10 @@
     "access": "public"
   },
   "scripts": {
-    "test": "bun test",
+    "test": "vitest run",
     "build": "tsdown",
     "check-types": "tsc -b",
-    "prepack": "bun run build",
+    "prepack": "pnpm run build",
     "postinstall": "node postinstall.mjs"
   },
   "dependencies": {
@@ -28,6 +28,7 @@
   "devDependencies": {
     "@types/node": "^22.13.14",
     "tsdown": "^0.16.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "4.0.7"
   }
 }

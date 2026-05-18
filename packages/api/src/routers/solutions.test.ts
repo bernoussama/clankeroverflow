@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { getDb } from "@clankeroverflow/db";
@@ -15,10 +15,10 @@ const solutionsSource = readFileSync(
 
 function createSelectChain(result: unknown[]) {
   const chain: any = {};
-  chain.from = mock(() => chain);
-  chain.where = mock(() => chain);
-  chain.orderBy = mock(() => chain);
-  chain.limit = mock(() => result);
+  chain.from = vi.fn(() => chain);
+  chain.where = vi.fn(() => chain);
+  chain.orderBy = vi.fn(() => chain);
+  chain.limit = vi.fn(() => result);
   chain.then = (resolve: (v: unknown) => unknown) => resolve(result);
   chain[Symbol.iterator] = () => result[Symbol.iterator]();
   return chain;
@@ -97,7 +97,7 @@ describe("solutionsRouter", () => {
     (db.execute as any).mockResolvedValueOnce({
       rows: [{ id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }],
     });
-    const capture = mock();
+    const capture = vi.fn();
 
     const caller = createCaller({
       auth: null as any,
@@ -177,10 +177,10 @@ describe("solutionsRouter", () => {
     );
 
     const ai = {
-      run: mock(async () => ({ data: [[0.1]] })),
+      run: vi.fn(async () => ({ data: [[0.1]] })),
     };
     const solutionVectors = {
-      query: mock(async () => ({
+      query: vi.fn(async () => ({
         matches: [
           { id: "sol_a", score: 0.9 },
           { id: "sol_b", score: 0.6 },
@@ -219,10 +219,10 @@ describe("solutionsRouter", () => {
     });
 
     const ai = {
-      run: mock(async () => ({ data: [[0.1]] })),
+      run: vi.fn(async () => ({ data: [[0.1]] })),
     };
     const solutionVectors = {
-      query: mock(async () => ({
+      query: vi.fn(async () => ({
         matches: [
           { id: "sol_b", score: 0.95 },
           { id: "sol_a", score: 0.8 },
@@ -249,10 +249,10 @@ describe("solutionsRouter", () => {
     (db.select as any).mockReturnValue(createSelectChain([]));
 
     const ai = {
-      run: mock(async () => ({ data: [[0.1]] })),
+      run: vi.fn(async () => ({ data: [[0.1]] })),
     };
     const solutionVectors = {
-      query: mock(async () => ({ matches: [] })),
+      query: vi.fn(async () => ({ matches: [] })),
     };
 
     const caller = createCaller({
@@ -388,6 +388,29 @@ describe("solutionsRouter", () => {
     expect(db.insert as any).toHaveBeenCalled();
   });
 
+  test("vote should still succeed if analytics capture fails after the write", async () => {
+    (db.select as any)
+      .mockReturnValueOnce(
+        createSelectChain([{ id: "sol_1", problem: "Test", solution: "Test", score: 0 }]),
+      )
+      .mockReturnValueOnce(createSelectChain([]))
+      .mockReturnValueOnce(createSelectChain([{ score: 1 }]))
+      .mockReturnValueOnce(createSelectChain([{ upvotes: 1, downvotes: 0 }]));
+
+    const caller = createCaller({
+      db,
+      session: mockSession,
+      apiKey: null,
+      posthog: { capture: vi.fn(() => { throw new Error("analytics unavailable"); }) },
+    } as any);
+
+    const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
+
+    expect(result.success).toBe(true);
+    expect(result.upvotes).toBe(1);
+    expect(result.downvotes).toBe(0);
+  });
+
   test("vote should toggle off existing same-direction vote", async () => {
     (db.select as any)
       .mockReturnValueOnce(
@@ -434,10 +457,10 @@ describe("solutionsRouter", () => {
 
   test("vote should wrap DB errors as INTERNAL_SERVER_ERROR", async () => {
     const errorChain: any = {};
-    errorChain.from = mock(() => errorChain);
-    errorChain.where = mock(() => errorChain);
-    errorChain.orderBy = mock(() => errorChain);
-    errorChain.limit = mock(() => { throw new Error("connection refused"); });
+    errorChain.from = vi.fn(() => errorChain);
+    errorChain.where = vi.fn(() => errorChain);
+    errorChain.orderBy = vi.fn(() => errorChain);
+    errorChain.limit = vi.fn(() => { throw new Error("connection refused"); });
 
     (db.select as any)
       .mockReturnValueOnce(
@@ -456,7 +479,7 @@ describe("solutionsRouter", () => {
       expect(false).toBe(true);
     } catch (e: any) {
       expect(e.code).toBe("INTERNAL_SERVER_ERROR");
-      expect(e.message).toBe("Failed to record vote");
+      expect(e.message).toBe("Failed to record vote (existing-vote-lookup)");
     }
   });
 
@@ -528,14 +551,14 @@ describe("solutionsRouter", () => {
   });
 
   test("log should rate limit anonymous submissions before vector indexing", async () => {
-    const waitUntil = mock();
+    const waitUntil = vi.fn();
     const caller = createCaller({
       auth: null as any,
       db,
       session: null,
       apiKey: null,
-      ai: { run: mock(async () => ({ data: [Array(768).fill(0.1)] })) },
-      solutionVectors: { upsert: mock(async () => undefined) },
+      ai: { run: vi.fn(async () => ({ data: [Array(768).fill(0.1)] })) },
+      solutionVectors: { upsert: vi.fn(async () => undefined) },
       waitUntil,
       requestIdentity: "ip:203.0.113.12",
     } as any);
@@ -583,7 +606,7 @@ describe("solutionsRouter", () => {
       { id: "sol_2", problem: "P2", solution: "S2", score: 3, createdAt: new Date() },
     ];
     (db.select as any).mockReturnValueOnce(createSelectChain(items));
-    const capture = mock();
+    const capture = vi.fn();
 
     const caller = createCaller({
       auth: null as any,

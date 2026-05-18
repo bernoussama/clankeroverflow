@@ -12,7 +12,9 @@
   "scripts": {
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "bun run src/migrate.ts"
+    "db:migrate": "tsx src/migrate.ts",
+    "test": "vitest run src/package.test.ts src/runtime.test.ts",
+    "test:integration": "vitest run src/index.test.ts src/search.test.ts"
   },
   "dependencies": {
     "@clankeroverflow/env": "workspace:*",
@@ -25,6 +27,7 @@
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",
     "drizzle-kit": "^0.31.8",
+    "tsx": "^4.20.6",
     "typescript": "catalog:"
   }
 }

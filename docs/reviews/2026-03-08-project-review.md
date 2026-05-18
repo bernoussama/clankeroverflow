@@ -40,11 +40,11 @@ Date: 2026-03-08
 
 ## Coverage Gaps
 
-- The root `bun run check-types` command only executed `server` and `@clankeroverflow/cli`. `apps/web` and several shared packages do not currently expose `check-types` scripts, so the workspace typecheck is narrower than it looks.
-- A direct `bun run build` in `apps/web` succeeded.
+- The root `pnpm run check-types` command only executed `server` and `@clankeroverflow/cli`. `apps/web` and several shared packages do not currently expose `check-types` scripts, so the workspace typecheck is narrower than it looks.
+- A direct `pnpm run build` in `apps/web` succeeded.
 - I could not find any test files under `apps/` or `packages/`, so these flows currently have no automated regression coverage.
 
 ## Verification
 
-- Ran `bun run check-types` from the repository root.
-- Ran `bun run build` in `apps/web`.
+- Ran `pnpm run check-types` from the repository root.
+- Ran `pnpm run build` in `apps/web`.

@@ -1,19 +1,19 @@
-import { describe, expect, test, spyOn, beforeEach, afterEach, type Mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 import { createProgram } from "./index";
 
 describe("CLI", () => {
-  let consoleLogMock: Mock<typeof console.log>;
-  let consoleErrorMock: Mock<typeof console.error>;
-  let processExitMock: Mock<typeof process.exit>;
-  let fetchMock: Mock<typeof global.fetch>;
+  let consoleLogMock: MockInstance<typeof console.log>;
+  let consoleErrorMock: MockInstance<typeof console.error>;
+  let processExitMock: MockInstance<typeof process.exit>;
+  let fetchMock: MockInstance<typeof global.fetch>;
 
   beforeEach(() => {
-    consoleLogMock = spyOn(console, "log").mockImplementation(() => {});
-    consoleErrorMock = spyOn(console, "error").mockImplementation(() => {});
-    processExitMock = spyOn(process, "exit").mockImplementation(((code?: number) => {
+    consoleLogMock = vi.spyOn(console, "log").mockImplementation(() => {});
+    consoleErrorMock = vi.spyOn(console, "error").mockImplementation(() => {});
+    processExitMock = vi.spyOn(process, "exit").mockImplementation(((code?: number) => {
       throw new Error(`Process.exit(${code})`);
     }) as any);
-    fetchMock = spyOn(global, "fetch").mockImplementation(async () => {
+    fetchMock = vi.spyOn(global, "fetch").mockImplementation(async () => {
       return new Response(JSON.stringify({ result: { data: {} } }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -69,7 +69,7 @@ describe("CLI", () => {
 
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
-      expect(fetchCallUrl).toStartWith("https://api.clankeroverflow.com/trpc");
+      expect(fetchCallUrl).toMatch(/^https:\/\/api\.clankeroverflow\.com\/trpc/);
       expect(fetchCallUrl).toContain("solutions.log");
       expect(consoleLogMock).toHaveBeenCalledWith(
         expect.stringContaining("Success! Solution logged: https://clankeroverflow.com/solution/123"),

@@ -3,7 +3,7 @@ name: integration-javascript_node
 description: PostHog integration for server-side Node.js applications using posthog-node
 metadata:
   author: PostHog
-  version: 1.12.0
+  version: 1.13.0
 ---
 
 # PostHog integration for JavaScript Node

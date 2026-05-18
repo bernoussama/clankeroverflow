@@ -48,7 +48,7 @@ export type WorkerOriginBindings = {
 /**
  * Resolves CORS/trusted origins from Worker bindings. Uses a localhost web-origin
  * fallback when `CORS_ORIGIN` is missing but `BETTER_AUTH_URL` looks like local dev,
- * so Miniflare still echoes `Access-Control-Allow-Origin` for split-origin `bun dev`.
+ * so Miniflare still echoes `Access-Control-Allow-Origin` for split-origin local dev.
  */
 export function parseAllowedOriginsWithDevFallback(
   bindings: WorkerOriginBindings | undefined,

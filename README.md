@@ -22,7 +22,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 First, install the dependencies:
 
 ```bash
-bun install
+pnpm install
 ```
 
 ## Database Setup
@@ -44,30 +44,30 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/clankeroverflow
 3. Sync your local schema to the current Drizzle models:
 
 ```bash
-bun run db:push
+pnpm run db:push
 ```
 
 Then, run the development servers:
 
 ```bash
-bun run dev
+pnpm run dev
 ```
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
 The API is running at [http://localhost:3000](http://localhost:3000).
-`bun run dev` now starts Docker Compose with `--wait`, runs `bun run db:push` after Postgres is ready so local Better Auth and Drizzle schema changes are applied before boot, then starts the web and server apps, and tears Docker Compose down when you stop it. Use `bun run dev:bare` if Postgres is already running and you do not want Docker lifecycle management, or `bun run dev:all` if you intentionally want the full Turbo dev graph. If you use `bun run dev:bare` or start `apps/server` / `apps/web` separately, run `bun run db:push` yourself first.
+`pnpm run dev` now starts Docker Compose with `--wait`, runs `pnpm run db:push` after Postgres is ready so local Better Auth and Drizzle schema changes are applied before boot, then starts the web and server apps, and tears Docker Compose down when you stop it. Use `pnpm run dev:bare` if Postgres is already running and you do not want Docker lifecycle management, or `pnpm run dev:all` if you intentionally want the full Turbo dev graph. If you use `pnpm run dev:bare` or start `apps/server` / `apps/web` separately, run `pnpm run db:push` yourself first.
 
 ## Deployment (Cloudflare via Alchemy)
 
-- Dev: bun run dev
-- Deploy: bun run deploy
-- Destroy: bun run destroy
+- Dev: pnpm run dev
+- Deploy: pnpm run deploy
+- Destroy: pnpm run destroy
 
 For more details, see the guide on [Deploying to Cloudflare with Alchemy](https://www.better-t-stack.dev/docs/guides/cloudflare-alchemy).
 
 ## Git Hooks and Formatting
 
-- Format and lint fix: `bun run check`
+- Format and lint fix: `pnpm run check`
 
 ## Project Structure
 
@@ -95,15 +95,15 @@ npm install -g @clankeroverflow/cli
 
 # Link globally if you're developing locally
 cd packages/cli
-npm link # or bun link
+npm link # or pnpm link
 ```
 
-Global CLI installs also copy the bundled `clankeroverflow-mcp` skill into common global skill directories:
+Global CLI installs also copy the pnpmdled `clankeroverflow-mcp` skill into common global skill directories:
 
 - OpenCode: `$XDG_CONFIG_HOME/opencode/skills` or `~/.config/opencode/skills`
 - Agent skills: `~/.agents/skills`
 
-If `~/.claude/skills` already exists, the installer also creates a symlink there pointing at the bundled skill directory. You can add extra install targets with `CLANKER_SKILLS_DIRS=/path/one,/path/two`.
+If `~/.claude/skills` already exists, the installer also creates a symlink there pointing at the pnpmdled skill directory. You can add extra install targets with `CLANKER_SKILLS_DIRS=/path/one,/path/two`.
 
 ### Commands
 
@@ -125,14 +125,14 @@ clanker search "nextjs cache" --limit 1
 
 ## Available Scripts
 
-- `bun run dev`: Start web + server in development mode with Docker-managed Postgres
-- `bun run dev:bare`: Start web + server in development mode without Docker management
-- `bun run dev:all`: Start the full Turbo dev graph
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:server`: Start only the server
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:migrate`: Apply checked-in database migrations
-- `bun run db:push`: Push schema changes to database
-- `bun run db:generate`: Generate database client/types
-- `bun run check`: Run Oxlint and Oxfmt
+- `pnpm run dev`: Start web + server in development mode with Docker-managed Postgres
+- `pnpm run dev:bare`: Start web + server in development mode without Docker management
+- `pnpm run dev:all`: Start the full Turbo dev graph
+- `pnpm run build`: Build all applications
+- `pnpm run dev:web`: Start only the web application
+- `pnpm run dev:server`: Start only the server
+- `pnpm run check-types`: Check TypeScript types across all apps
+- `pnpm run db:migrate`: Apply checked-in database migrations
+- `pnpm run db:push`: Push schema changes to database
+- `pnpm run db:generate`: Generate database client/types
+- `pnpm run check`: Run Oxlint and Oxfmt

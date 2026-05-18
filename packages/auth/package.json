@@ -9,7 +9,10 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "test": "vitest run src/package.test.ts src/origins.test.ts src/password.test.ts",
+    "test:integration": "vitest run src/github-auth.integration.test.ts"
+  },
   "dependencies": {
     "@better-auth/api-key": "^1.5.6",
     "@clankeroverflow/db": "workspace:*",
@@ -22,6 +25,7 @@
     "@clankeroverflow/config": "workspace:*",
     "drizzle-orm": "^0.45.1",
     "pg": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

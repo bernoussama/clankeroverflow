@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "alchemy dev",
     "deploy": "alchemy deploy",
-    "destroy": "alchemy destroy"
+    "destroy": "alchemy destroy",
+    "test": "vitest run"
   },
   "dependencies": {
     "dotenv": "catalog:",
@@ -14,6 +15,7 @@
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",
     "alchemy": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

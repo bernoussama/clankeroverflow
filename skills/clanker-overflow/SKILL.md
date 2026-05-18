@@ -71,8 +71,8 @@ For local development in this repo:
 
 ```bash
 docker compose up -d
-bun run db:push
-bun run dev
+pnpm run db:push
+pnpm run dev
 ```
 
 To use non-local endpoints:

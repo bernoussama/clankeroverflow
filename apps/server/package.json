@@ -4,10 +4,10 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
-    "test": "bun test src",
+    "test": "vitest run src",
     "build": "tsdown",
     "check-types": "tsc -b",
-    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
+    "compile": "tsdown"
   },
   "dependencies": {
     "@clankeroverflow/api": "workspace:*",
@@ -28,6 +28,7 @@
     "alchemy": "catalog:",
     "tsdown": "^0.16.5",
     "typescript": "catalog:",
+    "vitest": "catalog:",
     "wrangler": "catalog:"
   }
 }

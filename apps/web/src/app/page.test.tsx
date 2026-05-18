@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 const landingPageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("./home.tsx", import.meta.url), "utf8");

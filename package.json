@@ -1,41 +1,22 @@
 {
   "name": "clankeroverflow",
   "private": true,
-  "workspaces": {
-    "packages": [
-      "apps/*",
-      "packages/*"
-    ],
-    "catalog": {
-      "dotenv": "^17.2.2",
-      "zod": "^4.1.13",
-      "typescript": "^5",
-      "@cloudflare/workers-types": "^4.20251213.0",
-      "hono": "^4.8.2",
-      "@trpc/server": "^11.7.2",
-      "better-auth": "^1.4.18",
-      "alchemy": "^0.82.1",
-      "wrangler": "^4.54.0",
-      "@trpc/client": "^11.7.2",
-      "pg": "^8.16.3"
-    }
-  },
   "type": "module",
   "scripts": {
-    "dev": "bun run scripts/dev-with-postgres.ts",
-    "dev:bare": "turbo dev --filter=web --filter=server",
-    "dev:all": "turbo dev",
-    "build": "turbo build",
-    "check-types": "turbo check-types",
-    "dev:native": "turbo -F native dev",
-    "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F server dev",
-    "test": "turbo test",
-    "db:push": "turbo -F @clankeroverflow/db db:push",
-    "db:generate": "turbo -F @clankeroverflow/db db:generate",
-    "db:migrate": "turbo -F @clankeroverflow/db db:migrate",
-    "deploy": "turbo -F @clankeroverflow/infra deploy",
-    "destroy": "turbo -F @clankeroverflow/infra destroy",
+    "dev": "tsx scripts/dev-with-postgres.ts",
+    "dev:bare": "turbo run dev --filter=web --filter=server",
+    "dev:all": "turbo run dev",
+    "build": "turbo run build",
+    "check-types": "turbo run check-types",
+    "dev:native": "turbo run dev --filter=native",
+    "dev:web": "turbo run dev --filter=web",
+    "dev:server": "turbo run dev --filter=server",
+    "test": "turbo run test",
+    "db:push": "turbo run db:push --filter=@clankeroverflow/db",
+    "db:generate": "turbo run db:generate --filter=@clankeroverflow/db",
+    "db:migrate": "turbo run db:migrate --filter=@clankeroverflow/db",
+    "deploy": "turbo run deploy --filter=@clankeroverflow/infra",
+    "destroy": "turbo run destroy --filter=@clankeroverflow/infra",
     "check": "oxlint && oxfmt --write"
   },
   "dependencies": {
@@ -49,8 +30,19 @@
     "@types/node": "^22.13.14",
     "oxfmt": "^0.26.0",
     "oxlint": "^1.41.0",
+    "tsx": "^4.20.6",
     "turbo": "^2.6.3",
+    "vitest": "^4.0.7",
     "typescript": "catalog:"
   },
-  "packageManager": "bun@1.3.5"
+  "packageManager": "pnpm@10.27.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "msw",
+      "sharp",
+      "workerd"
+    ]
+  }
 }

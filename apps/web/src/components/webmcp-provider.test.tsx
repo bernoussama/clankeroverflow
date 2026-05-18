@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "bun:test";
+import { describe, expect, it, vi } from "vitest";
 
 // We test WebMCP tool definitions by importing the provider module and
 // exercising the logic directly. The provider is a thin useEffect wrapper

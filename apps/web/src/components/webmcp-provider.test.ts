@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "bun:test";
+import { describe, expect, it, vi } from "vitest";
 
 // We test WebMCP tool definitions and execute callbacks by importing the
 // module and exercising the logic directly. The provider component is a thin

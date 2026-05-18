@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 const dashboardSource = readFileSync(new URL("./dashboard.tsx", import.meta.url), "utf8");
 const openCodeConfigSource = readFileSync(

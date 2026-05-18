@@ -56,6 +56,13 @@ Use this only after the fix is verified.
 - `log_solution`, `upvote_solution`, and `downvote_solution` require `CLANKER_API_KEY`.
 - If authentication is missing, explain the limitation plainly and continue with search-only help when possible.
 
+## Private local mode
+
+- Users can opt into private offline storage with `CLANKER_MODE=local clanker-mcp`.
+- Local mode stores solutions in SQLite and never calls the hosted API.
+- `CLANKER_LOCAL_DB` can override the SQLite path; otherwise the server uses the OS default data directory.
+- In local mode, all four tools work without `CLANKER_API_KEY`; `semantic` search is not configured and should be treated as unavailable.
+
 ## Response style
 
 - Be explicit that you searched first when you did.

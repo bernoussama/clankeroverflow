@@ -7,13 +7,15 @@ const isDev = process.env.NODE_ENV !== "production";
 const serverOrigin = new URL(env.NEXT_PUBLIC_SERVER_URL).origin;
 const analyticsConnectSource = "https://cloudflareinsights.com";
 const analyticsScriptSource = "https://static.cloudflareinsights.com";
+const postHogConnectSource = "https://eu.i.posthog.com";
+const postHogScriptSource = "https://eu-assets.i.posthog.com";
 const connectSources = isDev
   ? ["'self'", serverOrigin, "http://localhost:*", "ws://localhost:*", "ws:", "wss:"]
-  : ["'self'", serverOrigin, analyticsConnectSource];
+  : ["'self'", serverOrigin, analyticsConnectSource, postHogConnectSource];
 const scriptSources = [
   "'self'",
   "'unsafe-inline'",
-  ...(isDev ? ["'unsafe-eval'"] : [analyticsScriptSource]),
+  ...(isDev ? ["'unsafe-eval'"] : [analyticsScriptSource, postHogScriptSource]),
 ];
 
 const contentSecurityPolicy = [

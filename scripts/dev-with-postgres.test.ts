@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 import { runDevWithPostgres } from "./dev-with-postgres";
 
@@ -34,11 +34,11 @@ const turboConfig = JSON.parse(
 ) as TurboConfig;
 
 describe("root dev workflow", () => {
-  it("routes bun run dev through the postgres wrapper and keeps the schema sync and migrate tasks available", () => {
-    expect(packageJson.scripts?.dev).toBe("bun run scripts/dev-with-postgres.ts");
-    expect(packageJson.scripts?.["db:migrate"]).toBe("turbo -F @clankeroverflow/db db:migrate");
-    expect(packageJson.scripts?.["db:push"]).toBe("turbo -F @clankeroverflow/db db:push");
-    expect(packageJson.scripts?.["dev:bare"]).toBe("turbo dev --filter=web --filter=server");
+  it("routes pnpm dev through the postgres wrapper and keeps the schema sync and migrate tasks available", () => {
+    expect(packageJson.scripts?.dev).toBe("tsx scripts/dev-with-postgres.ts");
+    expect(packageJson.scripts?.["db:migrate"]).toBe("turbo run db:migrate --filter=@clankeroverflow/db");
+    expect(packageJson.scripts?.["db:push"]).toBe("turbo run db:push --filter=@clankeroverflow/db");
+    expect(packageJson.scripts?.["dev:bare"]).toBe("turbo run dev --filter=web --filter=server");
     expect(turboConfig.tasks?.["db:migrate"]).toBeDefined();
   });
 });
@@ -66,8 +66,8 @@ describe("dev-with-postgres", () => {
 
     expect(calls).toEqual([
       ["docker", "compose", "up", "-d", "--wait"],
-      ["bun", "run", "db:push"],
-      ["bun", "run", "dev:bare"],
+      ["pnpm", "run", "db:push"],
+      ["pnpm", "run", "dev:bare"],
       ["docker", "compose", "down"],
     ]);
   });
@@ -110,8 +110,8 @@ describe("dev-with-postgres", () => {
     expect(kills).toEqual(["SIGINT"]);
     expect(calls).toEqual([
       ["docker", "compose", "up", "-d", "--wait"],
-      ["bun", "run", "db:push"],
-      ["bun", "run", "dev:bare"],
+      ["pnpm", "run", "db:push"],
+      ["pnpm", "run", "dev:bare"],
       ["docker", "compose", "down"],
     ]);
   });

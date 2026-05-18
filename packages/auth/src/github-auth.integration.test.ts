@@ -1,7 +1,7 @@
 import { schema } from "@clankeroverflow/db";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
 

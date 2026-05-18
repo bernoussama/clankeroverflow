@@ -1,4 +1,4 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -8,7 +8,7 @@ const contextSource = readFileSync(fileURLToPath(new URL("./context.ts", import.
 
 describe("api context auth forwarding", () => {
   it("forwards only the cookie header into auth.getSession", async () => {
-    const getSession = mock().mockResolvedValueOnce({ user: { id: "user_1" } });
+    const getSession = vi.fn().mockResolvedValueOnce({ user: { id: "user_1" } });
     const context = {
       req: {
         raw: new Request("http://localhost/trpc/healthCheck", {
@@ -45,7 +45,7 @@ describe("api context auth forwarding", () => {
   });
 
   it("treats auth session lookup failures as unauthenticated requests", async () => {
-    const getSession = mock().mockRejectedValueOnce(new Error("session lookup failed"));
+    const getSession = vi.fn().mockRejectedValueOnce(new Error("session lookup failed"));
     const context = {
       req: {
         raw: new Request("http://localhost/trpc/apiKeys.list", {
@@ -77,8 +77,8 @@ describe("api context auth forwarding", () => {
   });
 
   it("identifies authenticated users with the request-scoped PostHog client", async () => {
-    const identify = mock();
-    const getSession = mock().mockResolvedValueOnce({
+    const identify = vi.fn();
+    const getSession = vi.fn().mockResolvedValueOnce({
       user: {
         id: "user_1",
         email: "test@example.com",

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 
 import { CLANKEROVERFLOW_MCP_SKILL } from "@/lib/agent-skill-content";

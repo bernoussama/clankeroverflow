@@ -1,10 +1,10 @@
 {
   "tags": [
-    "bun",
+    "pnpm",
     "node"
   ],
   "sentinels": [
-    "bun.lock",
+    "pnpm-lock.yaml",
     "package.json"
   ],
   "detectedAt": "2026-05-11T19:13:00.355Z",

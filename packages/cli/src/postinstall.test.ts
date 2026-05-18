@@ -2,7 +2,7 @@ import { lstat, mkdtemp, mkdir, readFile, readlink, rm, writeFile } from "node:f
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { installBundledSkill, resolveGlobalSkillsDirs } from "./postinstall";
 

@@ -76,6 +76,6 @@ export function getDatabaseUrlErrorMessage(isLocal: boolean): string {
     "Environment variable DATABASE_URL is not set.",
     "For Cloudflare deploys, set it in packages/infra/.env.production",
     "or quote the inline value so shell separators do not break it:",
-    "DATABASE_URL='postgresql://...&channel_binding=require' bun run deploy",
+    "DATABASE_URL='postgresql://...&channel_binding=require' pnpm run deploy",
   ].join(" ");
 }

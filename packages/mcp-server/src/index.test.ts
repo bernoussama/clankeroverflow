@@ -262,5 +262,40 @@ describe("MCP Server", () => {
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(text).toBe("Successfully downvoted solution 456");
     });
+
+    test("downvote_solution reaches the server even without CLANKER_API_KEY", async () => {
+      const previousApiKey = process.env.CLANKER_API_KEY;
+      delete process.env.CLANKER_API_KEY;
+
+      try {
+        const unauthenticatedServer = createServer();
+        const [unauthClientTransport, unauthServerTransport] =
+          InMemoryTransport.createLinkedPair();
+        const unauthClient = new Client({ name: "test-client", version: "1.0.0" });
+
+        fetchMock.mockImplementationOnce(
+          async () => new Response(JSON.stringify({ result: { data: { success: true } } })),
+        );
+
+        await unauthenticatedServer.connect(unauthServerTransport);
+        await unauthClient.connect(unauthClientTransport);
+
+        await unauthClient.callTool({
+          name: "downvote_solution",
+          arguments: { id: "456" },
+        });
+
+        expect(fetchMock).toHaveBeenCalled();
+        const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
+        expect(fetchCallUrl).toContain("solutions.vote");
+        expect(fetchMock.mock.calls[0]![1]?.headers).not.toHaveProperty("x-clanker-api-key");
+      } finally {
+        if (previousApiKey === undefined) {
+          delete process.env.CLANKER_API_KEY;
+        } else {
+          process.env.CLANKER_API_KEY = previousApiKey;
+        }
+      }
+    });
   });
 });

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 const authSource = readFileSync(new URL("./index.ts", import.meta.url), "utf8");
 

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { mockWorkerEnv } from "../test-setup";
 import app from "./index";
 
@@ -66,7 +66,7 @@ describe("Server", () => {
       host: mockWorkerEnv.POSTHOG_HOST,
       flushAt: 1,
       flushInterval: 0,
-      enableExceptionAutocapture: false,
+      enableExceptionAutocapture: true,
     });
     expect(posthogInstances[0].shutdown).toHaveBeenCalledTimes(1);
   });

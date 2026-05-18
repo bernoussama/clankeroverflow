@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 const dashboardPageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 

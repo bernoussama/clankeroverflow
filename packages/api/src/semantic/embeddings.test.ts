@@ -1,10 +1,10 @@
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test, vi } from "vitest";
 import { SOLUTION_EMBEDDING_MODEL } from "./constants";
 import { embedTexts } from "./embeddings";
 
 describe("embedTexts", () => {
   test("calls Workers AI with cls pooling", async () => {
-    const run = mock(async () => ({
+    const run = vi.fn(async () => ({
       data: [[0.1, 0.2]],
       shape: [1, 2],
     }));

@@ -103,7 +103,7 @@ const withRequestServices: MiddlewareHandler<AppEnv> = async (c, next) => {
   const posthog = createPostHog(postHogEnvForRequest(c));
 
   c.set("db", db);
-  c.set("auth", createAuth(db, lifecycle.waitUntil));
+  c.set("auth", createAuth(db, lifecycle.waitUntil, { posthog: posthog ?? undefined }));
   if (posthog) {
     c.set("posthog", posthog);
   }

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 const onboardingSource = readFileSync(new URL("./onboarding.tsx", import.meta.url), "utf8");
 const openCodeConfigSource = readFileSync(

@@ -1,56 +1,56 @@
-import { mock } from "bun:test";
+import { vi } from "vitest";
 
 const fakeDb = {
   query: {
     apiKey: {
-      findMany: mock(),
-      findFirst: mock(),
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
     },
     solution: {
-      findFirst: mock(),
-      findMany: mock(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
     },
     solutionVote: {
-      findFirst: mock(),
+      findFirst: vi.fn(),
     },
   },
-  select: mock(() => {
+  select: vi.fn(() => {
     const chain: any = {};
     const mockResult = [{ upvotes: 0, downvotes: 0 }];
-    chain.from = mock(() => chain);
-    chain.where = mock(() => chain);
-    chain.orderBy = mock(() => chain);
-    chain.limit = mock(() => chain.__result ?? mockResult);
+    chain.from = vi.fn(() => chain);
+    chain.where = vi.fn(() => chain);
+    chain.orderBy = vi.fn(() => chain);
+    chain.limit = vi.fn(() => chain.__result ?? mockResult);
     chain.then = (resolve: (value: unknown) => unknown) => resolve(chain.__result ?? mockResult);
     chain.__result = mockResult;
     return chain;
   }),
-  insert: mock(() => ({
-    values: mock(() => ({
-      returning: mock(() => Promise.resolve([])),
+  insert: vi.fn(() => ({
+    values: vi.fn(() => ({
+      returning: vi.fn(() => Promise.resolve([])),
       then: (resolve: (value: unknown) => unknown) => resolve(undefined),
     })),
   })),
-  execute: mock(),
-  update: mock(() => ({
-    set: mock(() => ({
-      where: mock(),
+  execute: vi.fn(),
+  update: vi.fn(() => ({
+    set: vi.fn(() => ({
+      where: vi.fn(),
     })),
   })),
-  delete: mock(() => ({
-    where: mock(),
+  delete: vi.fn(() => ({
+    where: vi.fn(),
   })),
 };
 
-const createDbMock = mock(async () => ({
+const createDbMock = vi.fn(async () => ({
   close: async () => {},
   db: fakeDb,
 }));
 
-const createAuthMock = mock(() => ({
+const createAuthMock = vi.fn(() => ({
   handler: () => new Response("OK"),
   api: {
-    getSession: mock().mockResolvedValue(null),
+    getSession: vi.fn().mockResolvedValue(null),
   },
 }));
 
@@ -76,10 +76,10 @@ const posthogInstances: any[] = [];
 class PostHogMock {
   apiKey: string;
   options: Record<string, unknown>;
-  capture = mock();
-  captureException = mock();
-  identify = mock();
-  shutdown = mock(async () => {});
+  capture = vi.fn();
+  captureException = vi.fn();
+  identify = vi.fn();
+  shutdown = vi.fn(async () => {});
 
   constructor(apiKey: string, options: Record<string, unknown>) {
     this.apiKey = apiKey;
@@ -94,19 +94,30 @@ class PostHogMock {
   posthogInstances,
 };
 
-mock.module("cloudflare:workers", () => {
+vi.mock("cloudflare:workers", () => {
   return {
     env: mockWorkerEnv,
   };
 });
 
-mock.module("posthog-node", () => {
+vi.mock("@clankeroverflow/api/posthog", () => {
   return {
-    PostHog: PostHogMock,
+    createPostHog: (env: { POSTHOG_API_KEY?: string; POSTHOG_HOST?: string }) => {
+      if (!env.POSTHOG_API_KEY || !env.POSTHOG_HOST) {
+        return undefined;
+      }
+      return new PostHogMock(env.POSTHOG_API_KEY, {
+        host: env.POSTHOG_HOST,
+        flushAt: 1,
+        flushInterval: 0,
+        enableExceptionAutocapture: true,
+      });
+    },
+    shutdownPostHog: (posthog: PostHogMock | undefined) => posthog?.shutdown(),
   };
 });
 
-mock.module("@clankeroverflow/db", () => {
+vi.mock("@clankeroverflow/db", () => {
   return {
     createDb: createDbMock,
     getDb: () => fakeDb,
@@ -137,7 +148,7 @@ mock.module("@clankeroverflow/db", () => {
   };
 });
 
-mock.module("@clankeroverflow/auth", () => {
+vi.mock("@clankeroverflow/auth", () => {
   return {
     createAuth: createAuthMock,
   };

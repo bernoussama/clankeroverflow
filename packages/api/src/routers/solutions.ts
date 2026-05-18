@@ -76,6 +76,35 @@ function getRateLimitIdentity(ctx: {
   return ctx.requestIdentity ?? "ip:unknown";
 }
 
+type AnalyticsEvent = {
+  distinctId: string;
+  event: string;
+  properties?: Record<string, unknown>;
+};
+
+function captureAnalytics(
+  posthog: { capture: (event: AnalyticsEvent) => unknown } | undefined,
+  event: AnalyticsEvent,
+) {
+  try {
+    posthog?.capture(event);
+  } catch (error) {
+    console.error("PostHog capture failed:", error);
+  }
+}
+
+function captureAnalyticsException(
+  posthog: { captureException?: (error: Error, distinctId?: string) => unknown } | undefined,
+  error: unknown,
+  distinctId: string,
+) {
+  try {
+    posthog?.captureException?.(error instanceof Error ? error : new Error(String(error)), distinctId);
+  } catch (captureError) {
+    console.error("PostHog exception capture failed:", captureError);
+  }
+}
+
 async function getVoteCounts(db: Database, solutionId: string, userId: string | null) {
   const [counts] = await db
     .select({
@@ -141,6 +170,7 @@ export const solutionsRouter = router({
         });
       }
 
+      let voteStep = "existing-vote-lookup";
       try {
         const [existingVote] = await withTimeout(
           db
@@ -161,6 +191,7 @@ export const solutionsRouter = router({
 
         if (existingVote) {
           if (existingVote.isUpvote === input.isUpvote) {
+            voteStep = "vote-delete";
             const result = await withTimeout(
               db
                 .delete(schema.solutionVote)
@@ -176,6 +207,7 @@ export const solutionsRouter = router({
             );
             if (result.length === 0) {
               // Row was already deleted by a concurrent request; no-op
+              voteStep = "vote-counts-after-concurrent-delete";
               const voteCounts = await withTimeout(
                 getVoteCounts(db, input.id, userId),
                 DB_TIMEOUT_MS,
@@ -185,6 +217,7 @@ export const solutionsRouter = router({
             }
             voteAction = "removed";
           } else {
+            voteStep = "vote-update";
             const result = await withTimeout(
               db
                 .update(schema.solutionVote)
@@ -200,6 +233,7 @@ export const solutionsRouter = router({
               "Vote update timed out",
             );
             if (result.length === 0) {
+              voteStep = "vote-counts-after-concurrent-update";
               const voteCounts = await withTimeout(
                 getVoteCounts(db, input.id, userId),
                 DB_TIMEOUT_MS,
@@ -210,6 +244,7 @@ export const solutionsRouter = router({
             voteAction = "changed";
           }
         } else {
+          voteStep = "vote-insert";
           await withTimeout(
             db.insert(schema.solutionVote).values({
               userId,
@@ -224,6 +259,7 @@ export const solutionsRouter = router({
         }
 
         // Recompute score from actual votes to avoid race conditions
+        voteStep = "vote-score-recompute";
         const [voteAgg] = await withTimeout(
           db
             .select({
@@ -236,22 +272,24 @@ export const solutionsRouter = router({
         );
         const recomputedScore = voteAgg?.score ?? 0;
 
+        voteStep = "solution-score-update";
         await withTimeout(
           db
             .update(schema.solution)
             .set({ score: recomputedScore })
             .where(eq(schema.solution.id, input.id)),
           DB_TIMEOUT_MS,
-          "Score update timed out",
+            "Score update timed out",
         );
 
+        voteStep = "vote-counts-lookup";
         const voteCounts = await withTimeout(
           getVoteCounts(db, input.id, userId),
           DB_TIMEOUT_MS,
           "Vote counts lookup timed out",
         );
 
-        ctx.posthog?.capture({
+        captureAnalytics(ctx.posthog, {
           distinctId: userId,
           event: "solution voted",
           properties: {
@@ -264,14 +302,16 @@ export const solutionsRouter = router({
         return { success: true, ...voteCounts };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        console.error("solutions.vote error:", error);
-        ctx.posthog?.captureException(
-          error instanceof Error ? error : new Error(String(error)),
-          userId,
-        );
+        console.error("solutions.vote error:", {
+          step: voteStep,
+          solutionId: input.id,
+          isUpvote: input.isUpvote,
+          error,
+        });
+        captureAnalyticsException(ctx.posthog, error, userId);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to record vote",
+          message: `Failed to record vote (${voteStep})`,
           cause: error,
         });
       }
@@ -331,7 +371,7 @@ export const solutionsRouter = router({
         );
       }
 
-      ctx.posthog?.capture({
+      captureAnalytics(ctx.posthog, {
         distinctId: userId ?? "anonymous",
         event: "solution logged",
         properties: {
@@ -418,7 +458,7 @@ export const solutionsRouter = router({
         }
       }
 
-      ctx.posthog?.capture({
+      captureAnalytics(ctx.posthog, {
         distinctId,
         event: "solution searched",
         properties: {
@@ -457,7 +497,7 @@ export const solutionsRouter = router({
       "Vote counts lookup timed out",
     );
 
-    ctx.posthog?.capture({
+    captureAnalytics(ctx.posthog, {
       distinctId: userId ?? "anonymous",
       event: "solution viewed",
       properties: {
@@ -494,7 +534,7 @@ export const solutionsRouter = router({
       );
 
       const distinctId = getAuthenticatedUserId(ctx) ?? "anonymous";
-      ctx.posthog?.capture({
+      captureAnalytics(ctx.posthog, {
         distinctId,
         event: "solution list viewed",
         properties: {
