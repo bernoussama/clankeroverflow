@@ -1,0 +1,239 @@
+packages/db/src/index.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+packages/api/src/semantic/solution-text.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+packages/infra/tsconfig.json
+  s_5e8563bd675ba1::t_0ddd9ae422f391 1-8
+apps/web/package.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+apps/server/package.json
+  s_ebc1efc05b251e::t_819b3bbdd3beeb 7
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 10,31
+apps/server/src/index.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+  s_c7c1210ba3b89e::t_824fdeaf18ba9c 69
+apps/web/src/app/login/page.test.tsx
+  s_ebc1efc05b251e::t_874ec83934d66e 5
+  s_ebc1efc05b251e::t_997dd76cb86e0a 3
+packages/db/package.json
+  s_ebc1efc05b251e::t_dfbbb7b790e3eb 16-17
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 15,30
+packages/infra/src/env.test.ts
+  s_ebc1efc05b251e::t_1a2585639e4d2a 136
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+apps/web/src/app/dashboard/page.test.tsx
+  s_ebc1efc05b251e::t_997dd76cb86e0a 3
+packages/api/vitest.config.ts
+  s_ebc1efc05b251e::t_819b3bbdd3beeb 1-7
+apps/web/src/agent-discovery.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 4
+packages/infra/package.json
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 8-9,18-19
+packages/cli/package.json
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 18,21,31-32
+packages/api/src/semantic/search.test.ts
+  s_ebc1efc05b251e::t_18d0f4f7434b60 1,25-26,30-31,42,46,49,66,69-70,95,98,104
+pnpm-workspace.yaml
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 1-17
+packages/cli/src/postinstall.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 5
+apps/web/vitest.config.ts
+  s_ebc1efc05b251e::t_997dd76cb86e0a 1-10,12-14
+  s_ebc1efc05b251e::t_874ec83934d66e 11
+apps/web/src/components/webmcp-provider.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+apps/server/src/request-lifecycle.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+packages/api/src/semantic/embeddings.test.ts
+  s_ebc1efc05b251e::t_18d0f4f7434b60 1,7
+packages/api/src/routers/solutions.test.ts
+  s_ebc1efc05b251e::t_18d0f4f7434b60 1,18-21,100,180,183,222,225,252,255,460-463,554,560-561,609
+  s_5e8563bd675ba1::t_42df050d2a4ca6 391-413
+  s_5e8563bd675ba1::t_f2d4bbb355e279 482
+packages/auth/src/package.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+apps/web/src/app/onboarding/page.test.tsx
+  s_ebc1efc05b251e::t_997dd76cb86e0a 3
+apps/web/src/components/header-menu.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+apps/web/playwright.config.ts
+  s_ebc1efc05b251e::t_1a2585639e4d2a 22
+packages/auth/src/origins.ts
+  s_ebc1efc05b251e::t_1a2585639e4d2a 51
+scripts/dev-with-postgres.ts
+  s_ebc1efc05b251e::t_559becc5cd4dbe 30,45
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 24-25
+  s_ebc1efc05b251e::t_c7a5a0e1b4b16d 1-4,29,33-36,44,49-52,100
+packages/auth/src/github-auth.integration.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 4
+packages/db/src/runtime.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+packages/mcp-server/src/index.test.ts
+  s_5e8563bd675ba1::t_2136ac646e7a07 265-276,278-282,287-290,292-299
+  s_5e8563bd675ba1::t_359dcf7b35c7f0 277,283-286,291
+apps/server/vitest.config.ts
+  s_ebc1efc05b251e::t_819b3bbdd3beeb 1-7
+packages/infra/src/alchemy-run.test.ts
+  s_5e8563bd675ba1::t_17cbbdce95d49d 3,7,9-10
+  s_5e8563bd675ba1::t_5892c78fc717f2 13-14
+  s_5e8563bd675ba1::t_e9a525243a76bf 16
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 5
+  s_5e8563bd675ba1::t_2e945f50b9fe83 15,17-18
+  s_5e8563bd675ba1::t_c2810bfd766c8d 2,8
+packages/infra/src/production-env.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 5
+  s_5e8563bd675ba1::t_c2810bfd766c8d 2,8
+  s_5e8563bd675ba1::t_17cbbdce95d49d 3,7,9-10
+apps/web/src/next-config.test.ts
+  s_c7c1210ba3b89e::t_9a5fff5f6f03eb 24-25
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+packages/cli/skills/clankeroverflow-mcp/SKILL.md
+  s_ebc1efc05b251e::t_1a08b740cee55c 59-65
+apps/web/src/components/theme-provider.test.tsx
+  s_ebc1efc05b251e::t_997dd76cb86e0a 3
+apps/web/src/index.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+packages/api/src/posthog.ts
+  s_c7c1210ba3b89e::t_793002848e8b69 24
+packages/db/src/search.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+.deepsec/data/clankeroverflow/tech.json
+  s_ebc1efc05b251e::t_6d6630c6cb4d52 3,7
+apps/server/wrangler.toml
+  s_ebc1efc05b251e::t_1a2585639e4d2a 13
+packages/cli/src/package.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+apps/web/src/components/posthog-analytics.test.ts
+  s_c7c1210ba3b89e::t_88b0e7d98f45dc 1-2,4-14,16-22,26-44
+  s_80165495f877f8::t_7c01630480e628 15,23-25
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+AGENTS.md
+  s_80165495f877f8::t_506b0ac11f47a2 56
+  s_ebc1efc05b251e::t_9f9dae1debf3ee 4-5,25,28-29,51
+  s_5e8563bd675ba1::t_5892c78fc717f2 38
+  s_c7c1210ba3b89e::t_acbafb8f916caf 55
+  s_5e8563bd675ba1::t_8ee26e679867de 54
+  s_ebc1efc05b251e::t_ab78215ae5eda1 70
+  s_5e8563bd675ba1::t_d9641d933cb41f 71
+packages/auth/src/index.ts
+  s_c7c1210ba3b89e::t_a9aa7553c713c6 17-18,63,72-73,111-144
+apps/web/package.json
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 56
+  s_ebc1efc05b251e::t_997dd76cb86e0a 11-12
+package.json
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 6-19,33,35
+  s_ebc1efc05b251e::t_cf7831c75f700b 38-47
+apps/web/src/components/posthog-analytics.tsx
+  s_c7c1210ba3b89e::t_2bdf7abb979321 1-3,5-26,28-38,40-42,47-60
+  s_c7c1210ba3b89e::t_9376236e7513ac 4,27,39,43-46
+apps/web/vitest.setup.ts
+  s_ebc1efc05b251e::t_874ec83934d66e 1
+apps/web/src/app/solutions/solutions-page.test.tsx
+  s_ebc1efc05b251e::t_997dd76cb86e0a 3
+packages/api/src/routers/solutions.ts
+  s_5e8563bd675ba1::t_87a5b46894964d 79-107,292,311,374,461,500,537
+  s_5e8563bd675ba1::t_fb35d11f86cc15 173,194,210,220,236,247,262,275,282,285,305-310,314
+packages/api/test-setup.ts
+  s_ebc1efc05b251e::t_bd272295b6d93b 2,24-25,28-29,32,35,38-41,46-48,52-53,55-57,61,63-64
+  s_ebc1efc05b251e::t_f33032f035ba8d 4,20
+packages/auth/src/origins.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+packages/db/src/package.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+docs/plans/2026-05-17-local-mcp-design.md
+  s_ea943a1c1e5411::t_86279d630efd0e 1-256
+apps/web/next.config.ts
+  s_c7c1210ba3b89e::t_722e1f2b364653 10-11,14,18
+packages/cli/src/index.test.ts
+  s_ebc1efc05b251e::t_f33032f035ba8d 1,5-8,11-13,16
+  s_ebc1efc05b251e::t_819b3bbdd3beeb 72
+apps/web/src/app/onboarding/onboarding.test.tsx
+  s_ebc1efc05b251e::t_997dd76cb86e0a 3
+apps/web/src/lib/opencode-config.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+packages/infra/src/env.ts
+  s_ebc1efc05b251e::t_1a2585639e4d2a 79
+apps/web/src/components/webmcp-provider.test.tsx
+  s_ebc1efc05b251e::t_997dd76cb86e0a 1
+packages/infra/alchemy.run.ts
+  s_c7c1210ba3b89e::t_2bdf7abb979321 66-67
+  s_5e8563bd675ba1::t_5892c78fc717f2 3-6
+packages/auth/src/password.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+packages/env/src/web.ts
+  s_c7c1210ba3b89e::t_2bdf7abb979321 7-8,12-13
+packages/api/package.json
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 29-30
+  s_ebc1efc05b251e::t_819b3bbdd3beeb 13
+apps/server/test-setup.ts
+  s_ebc1efc05b251e::t_7db62e55b6a846 103,105-116
+  s_ebc1efc05b251e::t_f33032f035ba8d 97,120,151
+  s_ebc1efc05b251e::t_bd272295b6d93b 1,6-7,10-11,14,17,20-23,28-30,34-37,40-41,45,50,53,79-82
+apps/web/src/app/page.test.tsx
+  s_ebc1efc05b251e::t_997dd76cb86e0a 3
+apps/web/src/app/dashboard/dashboard.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+scripts/dev-with-postgres.test.ts
+  s_ebc1efc05b251e::t_c7a5a0e1b4b16d 3,37-41,69-70,113-114
+packages/auth/package.json
+  s_ebc1efc05b251e::t_b15f2f2ad8b296 12,15,28-29
+  s_ebc1efc05b251e::t_dfbbb7b790e3eb 13-14
+packages/auth/vitest.config.ts
+  s_ebc1efc05b251e::t_819b3bbdd3beeb 1-7
+apps/web/src/components/providers.tsx
+  s_c7c1210ba3b89e::t_2bdf7abb979321 9,16
+packages/api/src/routers/index.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 1
+packages/api/src/context.test.ts
+  s_ebc1efc05b251e::t_18d0f4f7434b60 1,11,48,80-81
+apps/web/src/lib/auth-client.test.ts
+  s_ebc1efc05b251e::t_5ff4e2baf75b3d 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "78e3368e78fa538fec585eb4031a3363ae028518",
+  "prompts": {},
+  "sessions": {
+    "s_5e8563bd675ba1": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1c7d81426ffe8Ycvi0bz2Wktzr",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    },
+    "s_80165495f877f8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1e1702511ffeQbvZ6JmoWsLlwQ",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    },
+    "s_c7c1210ba3b89e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1e1fe46e0ffedAYdffWRsxodEc",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    },
+    "s_ea943a1c1e5411": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1c9fd665affeE3JDU5VZWX6tjC",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    },
+    "s_ebc1efc05b251e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1c9e6163bffesqKcCLavVJQ15L",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    }
+  }
+}
