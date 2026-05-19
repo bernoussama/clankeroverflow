@@ -1,0 +1,47 @@
+AGENTS.md
+  s_3e1e8fb382831b::t_d33f753736bbde 67
+packages/cli/package.json
+  s_7af1862d444ec7::t_47e61365ce00d9 25
+packages/mcp-log/package.json
+  s_7af1862d444ec7::t_47e61365ce00d9 12
+packages/cli/src/mcp/server.ts
+  s_7af1862d444ec7::t_47e61365ce00d9 3,210
+  s_3e1e8fb382831b::t_2f6461b9f93e83 48,51-60,95,98-111,113-114,141,144-148,172,175-179
+  s_f991489e4a729f::t_e586ddca541719 9-10,12,15-16,32-33,64,66-81,120,122,154-157,185-188
+packages/cli/tsdown.config.ts
+  s_7af1862d444ec7::t_6d1b8924d2154b 7
+packages/cli/src/mcp/server.test.ts
+  s_3e1e8fb382831b::t_a2aae1c9b134b9 60-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "089e64aaa988fac393abdc2d51698983bfd16bdb",
+  "prompts": {},
+  "sessions": {
+    "s_3e1e8fb382831b": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1c2542192ffeVWXPERy5F64oaj",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    },
+    "s_7af1862d444ec7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1c261519bffeCLNI586fNM3hQe",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    },
+    "s_f991489e4a729f": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1c357cf4cffe5XBYDXrmA7pk80",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    }
+  }
+}
