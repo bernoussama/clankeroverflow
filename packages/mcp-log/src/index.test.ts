@@ -27,7 +27,7 @@ describe("McpLogger", () => {
       const spy = vi
         .spyOn(process.stderr, "write")
         .mockImplementation(() => true);
-      const logger = McpLogger.make({ name: "test" });
+      const logger = new McpLogger({ name: "test" });
       logger.info("hello");
       expect(spy).toHaveBeenCalledOnce();
       spy.mockRestore();
@@ -38,7 +38,7 @@ describe("McpLogger", () => {
       const processSpy = vi
         .spyOn(process.stderr, "write")
         .mockImplementation(() => true);
-      McpLogger.make({
+      new McpLogger({
         name: "test",
         stderr: stream as unknown as NodeJS.WriteStream,
       }).info("hi");
@@ -52,7 +52,7 @@ describe("McpLogger", () => {
         .spyOn(process.stdout, "write")
         .mockImplementation(() => true);
       const stream = makeStream();
-      McpLogger.make({
+      new McpLogger({
         name: "test",
         stderr: stream as unknown as NodeJS.WriteStream,
       }).info("msg");
@@ -79,7 +79,7 @@ describe("McpLogger", () => {
 
     it("writes to CLANKER_LOG_FILE when set", async () => {
       process.env["CLANKER_LOG_FILE"] = tmpFile;
-      const logger = McpLogger.make({ name: "test" });
+      const logger = new McpLogger({ name: "test" });
       logger.info("file-write");
       // Give the stream a tick to flush
       await new Promise((r) => setTimeout(r, 20));
@@ -95,7 +95,7 @@ describe("McpLogger", () => {
     it("filePath option takes priority over CLANKER_LOG_FILE", async () => {
       const envFile = path.join(os.tmpdir(), `mcp-log-env-${Date.now()}.jsonl`);
       process.env["CLANKER_LOG_FILE"] = envFile;
-      const logger = McpLogger.make({ name: "test", filePath: tmpFile });
+      const logger = new McpLogger({ name: "test", filePath: tmpFile });
       logger.info("explicit-path");
       await new Promise((r) => setTimeout(r, 20));
       expect(fs.existsSync(envFile)).toBe(false);
@@ -116,7 +116,7 @@ describe("McpLogger", () => {
   describe("JSON line format", () => {
     it("emits valid JSON with name, level, time, and msg fields", () => {
       const stream = makeStream();
-      McpLogger.make({
+      new McpLogger({
         name: "my-server",
         stderr: stream as unknown as NodeJS.WriteStream,
       }).info("test msg");
@@ -131,7 +131,7 @@ describe("McpLogger", () => {
 
     it("merges extra fields into the JSON line", () => {
       const stream = makeStream();
-      McpLogger.make({
+      new McpLogger({
         name: "test",
         stderr: stream as unknown as NodeJS.WriteStream,
       }).error("oops", { code: 42, path: "/foo" });
@@ -142,7 +142,7 @@ describe("McpLogger", () => {
 
     it("each call produces exactly one newline-terminated line", () => {
       const stream = makeStream();
-      const logger = McpLogger.make({
+      const logger = new McpLogger({
         name: "test",
         stderr: stream as unknown as NodeJS.WriteStream,
       });
@@ -155,7 +155,7 @@ describe("McpLogger", () => {
   describe("level filtering", () => {
     it("defaults to info — suppresses debug", () => {
       const stream = makeStream();
-      const logger = McpLogger.make({
+      const logger = new McpLogger({
         name: "test",
         stderr: stream as unknown as NodeJS.WriteStream,
       });
@@ -167,7 +167,7 @@ describe("McpLogger", () => {
 
     it("respects level: debug — emits all levels", () => {
       const stream = makeStream();
-      const logger = McpLogger.make({
+      const logger = new McpLogger({
         name: "test",
         level: "debug",
         stderr: stream as unknown as NodeJS.WriteStream,
@@ -181,7 +181,7 @@ describe("McpLogger", () => {
 
     it("respects level: error — only emits error", () => {
       const stream = makeStream();
-      const logger = McpLogger.make({
+      const logger = new McpLogger({
         name: "test",
         level: "error",
         stderr: stream as unknown as NodeJS.WriteStream,
@@ -196,7 +196,7 @@ describe("McpLogger", () => {
 
     it("respects level: warn — emits warn and error", () => {
       const stream = makeStream();
-      const logger = McpLogger.make({
+      const logger = new McpLogger({
         name: "test",
         level: "warn",
         stderr: stream as unknown as NodeJS.WriteStream,

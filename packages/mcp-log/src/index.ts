@@ -9,54 +9,58 @@ const LEVEL_RANK: Record<LogLevel, number> = {
   error: 3,
 };
 
-interface McpLogger {
-  debug(message: string, extra?: Record<string, unknown>): void;
-  info(message: string, extra?: Record<string, unknown>): void;
-  warn(message: string, extra?: Record<string, unknown>): void;
-  error(message: string, extra?: Record<string, unknown>): void;
-}
+export class McpLogger {
+  private readonly out: NodeJS.WriteStream | fs.WriteStream;
+  private readonly minRank: number;
+  private readonly name: string;
 
-export const McpLogger = {
-  make(options: {
+  constructor(options: {
     name: string;
     level?: LogLevel;
     filePath?: string;
     stderr?: NodeJS.WriteStream;
-  }): McpLogger {
-    const minRank = LEVEL_RANK[options.level ?? "info"];
-    const name = options.name;
+  }) {
+    this.name = options.name;
+    this.minRank = LEVEL_RANK[options.level ?? "info"];
 
-    // Priority: explicit filePath > CLANKER_LOG_FILE env > provided stderr > process.stderr
-    const resolvedPath = options.filePath ?? process.env["CLANKER_LOG_FILE"];
-
-    const out: NodeJS.WriteStream | fs.WriteStream = resolvedPath
+    const resolvedPath = options.filePath;
+    this.out = resolvedPath
       ? fs.createWriteStream(resolvedPath, { flags: "a" })
       : (options.stderr ?? process.stderr);
+  }
 
-    const write = (
-      level: LogLevel,
-      message: string,
-      extra?: Record<string, unknown>,
-    ): void => {
-      if (LEVEL_RANK[level] < minRank) return;
+  private write(
+    level: LogLevel,
+    message: string,
+    extra?: Record<string, unknown>,
+  ): void {
+    if (LEVEL_RANK[level] < this.minRank) return;
 
-      const line =
-        JSON.stringify({
-          name,
-          level,
-          time: new Date().toISOString(),
-          msg: message,
-          ...extra,
-        }) + "\n";
+    const line =
+      JSON.stringify({
+        name: this.name,
+        level,
+        time: new Date().toISOString(),
+        msg: message,
+        ...extra,
+      }) + "\n";
 
-      out.write(line);
-    };
+    this.out.write(line);
+  }
 
-    return {
-      debug: (msg, extra) => write("debug", msg, extra),
-      info: (msg, extra) => write("info", msg, extra),
-      warn: (msg, extra) => write("warn", msg, extra),
-      error: (msg, extra) => write("error", msg, extra),
-    };
-  },
-} as const;
+  debug(message: string, extra?: Record<string, unknown>): void {
+    this.write("debug", message, extra);
+  }
+
+  info(message: string, extra?: Record<string, unknown>): void {
+    this.write("info", message, extra);
+  }
+
+  warn(message: string, extra?: Record<string, unknown>): void {
+    this.write("warn", message, extra);
+  }
+
+  error(message: string, extra?: Record<string, unknown>): void {
+    this.write("error", message, extra);
+  }
+}
