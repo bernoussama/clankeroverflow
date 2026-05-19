@@ -15,8 +15,7 @@ Representative entry points:
   OAuth protected resource metadata.
 - `packages/api/src/routers/solutions.ts`: tRPC procedures for `log`,
   `search`, `vote`, `getById`, `list`.
-- `packages/mcp-server/src/index.ts`: MCP tools that call the public API over tRPC.
-- `packages/cli`: agent-facing CLI that sends API-key-authenticated requests.
+- `packages/cli`: agent-facing CLI and `clanker mcp` stdio server that send requests over tRPC.
 - `apps/web/src/middleware.ts`: canonical HTTPS redirect and markdown discovery
   response.
 

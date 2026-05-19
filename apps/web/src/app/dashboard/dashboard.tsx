@@ -308,7 +308,7 @@ export default function Dashboard() {
             clients can reuse the same command and environment values in their own config format.
             The OpenCode config also loads hosted ClankerOverflow workflow instructions so the
             model searches first and logs verified fixes afterward. Global installs can run
-            <code className="text-[11px]"> clanker-mcp</code> directly.
+            <code className="text-[11px]"> clanker mcp</code> directly.
           </div>
         </div>
       </div>

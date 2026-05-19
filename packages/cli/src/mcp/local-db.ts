@@ -3,12 +3,6 @@ import { dirname } from "node:path";
 
 import Database from "better-sqlite3";
 
-export type LocalStatement = {
-  run(...params: unknown[]): { changes: number; lastInsertRowid: number | bigint };
-  get(...params: unknown[]): unknown;
-  all(...params: unknown[]): unknown[];
-};
-
 export type LocalDb = Database.Database;
 
 export function openLocalDb(dbPath: string): LocalDb {

@@ -10,7 +10,7 @@ export function buildOpenCodeConfig(apiKey?: string) {
       mcp: {
         clankeroverflow: {
           type: "local",
-          command: ["npx", "-y", "@clankeroverflow/mcp-server"],
+          command: ["npx", "-y", "@clankeroverflow/cli", "mcp"],
           enabled: true,
           environment: {
             CLANKER_API_KEY: apiKey ?? "clk_your_key_here",

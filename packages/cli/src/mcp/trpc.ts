@@ -1,4 +1,5 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
+
 import type { LogSolutionInput, SearchSolutionsInput, SolutionResult, VoteSolutionInput } from "./backend";
 
 export type HostedTrpcClient = {

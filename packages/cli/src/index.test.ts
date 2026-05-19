@@ -174,4 +174,16 @@ describe("CLI", () => {
       expect(consoleLogMock).toHaveBeenCalledWith("Successfully downvoted solution 123");
     });
   });
+
+  describe("mcp command", () => {
+    test("starts the MCP server from the CLI", async () => {
+      const startMcpServer = vi.fn(async () => {});
+      const program = createProgram({ startMcpServer });
+
+      await program.parseAsync(["node", "test", "mcp"]);
+
+      expect(startMcpServer).toHaveBeenCalledOnce();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
 });

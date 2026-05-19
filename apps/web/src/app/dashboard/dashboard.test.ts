@@ -43,7 +43,7 @@ describe("dashboard API key UX", () => {
     expect(dashboardSource).toContain("OpenCode");
     expect(dashboardSource).toContain("opencode.json");
     expect(dashboardSource).toContain("buildOpenCodeConfig");
-    expect(dashboardSource).toContain("clanker-mcp");
+    expect(dashboardSource).toContain("clanker mcp");
     expect(dashboardSource).toContain("hosted ClankerOverflow workflow instructions");
     expect(dashboardSource).toContain("https://api.clankeroverflow.com");
     expect(openCodeConfigSource).toContain("instructions");

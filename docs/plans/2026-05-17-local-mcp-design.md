@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add a private offline mode to `@clankeroverflow/mcp-server` so users can log and search reusable fixes locally without Postgres, Cloudflare Workers AI, Cloudflare Vectorize, hosted tRPC, or authentication.
+Add a private offline mode to `clanker mcp` so users can log and search reusable fixes locally without Postgres, Cloudflare Workers AI, Cloudflare Vectorize, hosted tRPC, or authentication.
 
 The first version should optimize for reliability and low setup cost. It should keep the existing MCP tool surface intact, preserve hosted mode as the default, and add local mode as an explicit opt-in.
 
@@ -18,19 +18,19 @@ The first version should optimize for reliability and low setup cost. It should 
 Hosted mode remains the default:
 
 ```sh
-clanker-mcp
+clanker mcp
 ```
 
 Local mode is enabled explicitly:
 
 ```sh
-CLANKER_MODE=local clanker-mcp
+CLANKER_MODE=local clanker mcp
 ```
 
 The local database path can be customized:
 
 ```sh
-CLANKER_LOCAL_DB=~/.local/share/clankeroverflow/solutions.sqlite clanker-mcp
+CLANKER_LOCAL_DB=~/.local/share/clankeroverflow/solutions.sqlite clanker mcp
 ```
 
 If `CLANKER_LOCAL_DB` is unset, use an OS-appropriate default. On Linux, default to:
@@ -48,7 +48,7 @@ The existing MCP tools should remain available:
 
 ## Architecture
 
-Introduce a small backend interface inside `packages/mcp-server` so MCP tools do not depend directly on hosted tRPC.
+Introduce a small backend interface inside `packages/cli/src/mcp` so MCP tools do not depend directly on hosted tRPC.
 
 ```ts
 type SolutionBackend = {
@@ -66,13 +66,13 @@ Provide two implementations:
 Suggested module layout:
 
 ```txt
-packages/mcp-server/src/backend.ts
-packages/mcp-server/src/config.ts
-packages/mcp-server/src/format.ts
-packages/mcp-server/src/local-backend.ts
-packages/mcp-server/src/local-db.ts
-packages/mcp-server/src/remote-backend.ts
-packages/mcp-server/src/trpc.ts
+packages/cli/src/mcp/backend.ts
+packages/cli/src/mcp/config.ts
+packages/cli/src/mcp/format.ts
+packages/cli/src/mcp/local-backend.ts
+packages/cli/src/mcp/local-db.ts
+packages/cli/src/mcp/remote-backend.ts
+packages/cli/src/mcp/trpc.ts
 ```
 
 Responsibilities:
@@ -204,7 +204,7 @@ In local mode:
 
 ## Testing Plan
 
-Add tests under `packages/mcp-server/src`.
+Add tests under `packages/cli/src/mcp`.
 
 Remote compatibility tests:
 
@@ -230,7 +230,7 @@ Local backend tests:
 Run the focused package tests:
 
 ```sh
-cd packages/mcp-server && pnpm test
+pnpm --filter @clankeroverflow/cli test
 ```
 
 ## Implementation Steps

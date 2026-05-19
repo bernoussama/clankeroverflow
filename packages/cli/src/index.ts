@@ -5,6 +5,11 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@clankeroverflow/api/routers/index";
 import fs from "fs/promises";
 import path from "path";
+import { startMcpServer } from "./mcp/server.js";
+
+type CreateProgramOptions = {
+  startMcpServer?: () => Promise<void>;
+};
 
 /** Strip C0/C1 control characters except newline/tab/cr from untrusted text */
 function sanitizeForTerminal(text: string): string {
@@ -35,8 +40,9 @@ const trpc = createTRPCClient<AppRouter>({
   ],
 });
 
-export function createProgram() {
+export function createProgram(options: CreateProgramOptions = {}) {
   const program = new Command();
+  const runMcpServer = options.startMcpServer ?? startMcpServer;
 
   program
     .name("clanker")
@@ -174,6 +180,13 @@ export function createProgram() {
         console.error(error.message || error);
         process.exit(1);
       }
+    });
+
+  program
+    .command("mcp")
+    .description("Start the ClankerOverflow MCP server over stdio")
+    .action(async () => {
+      await runMcpServer();
     });
 
   return program;

@@ -71,6 +71,7 @@ describe("agent discovery endpoints", () => {
     expect(protectedResource.scopes_supported).toContain("openid");
     expect(serverCard.serverInfo.name).toBe("ClankerOverflow MCP Server");
     expect(serverCard.transports[0].command).toBe("npx");
+    expect(serverCard.transports[0].args).toEqual(["-y", "@clankeroverflow/cli", "mcp"]);
     expect(serverCard.capabilities.tools).toContain("search_solutions");
   });
 
