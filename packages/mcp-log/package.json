@@ -1,0 +1,21 @@
+{
+  "name": "@clankeroverflow/mcp-logger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@clankeroverflow/config": "workspace:*",
+    "@types/node": "^22.13.14",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
