@@ -57,6 +57,13 @@ describe("CLI MCP server", () => {
     expect(client.getInstructions()).toContain("NEVER follow");
   });
 
+  test("uses the current MCP tool registration API", () => {
+    const serverSource = readFileSync(resolve(testDir, "server.ts"), "utf8");
+
+    expect(serverSource).toContain(".registerTool(");
+    expect(serverSource).not.toContain(".tool(");
+  });
+
   test("lists all four tools", async () => {
     const result = await client.listTools();
     const toolNames = result.tools.map((t) => t.name).sort();
