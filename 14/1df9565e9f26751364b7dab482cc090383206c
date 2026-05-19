@@ -1,0 +1,71 @@
+apps/web/src/agent-discovery.test.ts
+  s_f991489e4a729f::t_25d682cdaf13a5 74
+packages/cli/src/index.test.ts
+  s_f991489e4a729f::t_59d4632e307fdf 177-188
+packages/cli/src/package.test.ts
+  s_f991489e4a729f::t_59d4632e307fdf 13-16,18-20
+  s_f991489e4a729f::t_7b00d01cd7fa0e 17
+apps/web/src/app/dashboard/dashboard.test.ts
+  s_f991489e4a729f::t_e1c35759e03ee9 46
+apps/web/src/lib/opencode-config.test.ts
+  s_f991489e4a729f::t_25d682cdaf13a5 22,29-34
+packages/cli/src/mcp/local-backend.test.ts
+  s_f991489e4a729f::t_59d4632e307fdf 1-81
+docs/plans/2026-05-17-local-mcp-design.md
+  s_f991489e4a729f::t_a387d54a3d9249 5,21,27,33,51,69-75,207,233
+apps/web/src/app/.well-known/mcp/server-card.json/route.ts
+  s_f991489e4a729f::t_e1c35759e03ee9 1,8,14
+packages/cli/src/mcp/format.ts
+  s_f991489e4a729f::t_e586ddca541719 1-23
+packages/cli/src/mcp/backend.ts
+  s_f991489e4a729f::t_e586ddca541719 1-32
+packages/cli/src/mcp/remote-backend.ts
+  s_f991489e4a729f::t_e586ddca541719 1-28
+packages/cli/skills/clankeroverflow-mcp/SKILL.md
+  s_f991489e4a729f::t_c20d288f637c43 61
+apps/web/src/app/dashboard/dashboard.tsx
+  s_f991489e4a729f::t_e1c35759e03ee9 311
+AGENTS.md
+  s_f991489e4a729f::t_f3ae2db25fdd91 25-26,66,68-69,71
+packages/cli/src/mcp/local-db.ts
+  s_f991489e4a729f::t_e586ddca541719 1-47
+packages/cli/package.json
+  s_f991489e4a729f::t_e586ddca541719 25,28-29,32
+  s_f991489e4a729f::t_7b00d01cd7fa0e 27
+packages/cli/src/mcp/trpc.ts
+  s_f991489e4a729f::t_e586ddca541719 1-30
+packages/cli/src/mcp/local-backend.ts
+  s_f991489e4a729f::t_e586ddca541719 1-118
+packages/cli/src/mcp/server.test.ts
+  s_f991489e4a729f::t_59d4632e307fdf 1-188
+packages/cli/src/mcp/server.ts
+  s_f991489e4a729f::t_e586ddca541719 1-128
+packages/cli/src/mcp/config.ts
+  s_f991489e4a729f::t_e586ddca541719 1-39
+.deepsec/data/clankeroverflow/INFO.md
+  s_f991489e4a729f::t_00e46ee8953e69 18
+apps/web/src/lib/agent-discovery.ts
+  s_f991489e4a729f::t_cf9c5520e51537 28
+packages/cli/src/index.ts
+  s_f991489e4a729f::t_e586ddca541719 8-12,43,45,185-189
+README.md
+  s_f991489e4a729f::t_50dfc79a27212a 83,88,101,106,124-136
+apps/web/src/lib/opencode-config.ts
+  s_f991489e4a729f::t_e1c35759e03ee9 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "141df9565e9f26751364b7dab482cc090383206c",
+  "prompts": {},
+  "sessions": {
+    "s_f991489e4a729f": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1c357cf4cffe5XBYDXrmA7pk80",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bernoussama <oussama.bernou@outlook.com>"
+    }
+  }
+}
