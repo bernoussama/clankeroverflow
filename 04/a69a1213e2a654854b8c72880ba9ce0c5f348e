@@ -1,0 +1,27 @@
+packages/cli/package.json
+  s_92270594dfe154::t_65129f0615c792 29
+packages/cli/src/mcp/server.test.ts
+  s_92270594dfe154::t_56a0dc97cb3e37 67-73
+packages/cli/src/mcp/server.ts
+  s_92270594dfe154::t_65129f0615c792 3
+AGENTS.md
+  s_92270594dfe154::t_65129f0615c792 68
+packages/cli/src/package.test.ts
+  s_92270594dfe154::t_56a0dc97cb3e37 18,21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "04a69a1213e2a654854b8c72880ba9ce0c5f348e",
+  "prompts": {},
+  "sessions": {
+    "s_92270594dfe154": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1b598d095ffePIW6r5iriGe0Qg",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
