@@ -1,0 +1,21 @@
+packages/cli/src/package.test.ts
+  s_6442a5b02de69e::t_7795002c7b22b0 19-20
+packages/cli/package.json
+  s_6442a5b02de69e::t_9a9eea30a2aaa0 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "66871736f63954e33013e70611d6b20a8ec7713b",
+  "prompts": {},
+  "sessions": {
+    "s_6442a5b02de69e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1be7af012ffe3MWcyVp47fGhXP",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
