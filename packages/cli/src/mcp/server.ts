@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { McpLogger } from "@clankeroverflow/mcp-logger";
+import { McpLogger } from "mcplog";
 import { z } from "zod";
 
 import packageJson from "../../package.json";

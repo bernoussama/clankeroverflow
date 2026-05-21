@@ -364,13 +364,13 @@ importers:
       commander:
         specifier: ^12.0.0
         version: 12.1.0
+      mcplog:
+        specifier: ^0.0.5
+        version: 0.0.5
       zod:
         specifier: ^4.1.13
         version: 4.4.3
     devDependencies:
-      '@clankeroverflow/mcp-logger':
-        specifier: workspace:*
-        version: link:../mcp-log
       '@types/better-sqlite3':
         specifier: 7.6.13
         version: 7.6.13
@@ -463,21 +463,6 @@ importers:
       alchemy:
         specifier: 'catalog:'
         version: 0.82.2(@aws-sdk/client-dynamodb@3.984.0)(@aws-sdk/client-lambda@3.984.0)(@aws-sdk/client-s3@3.984.0)(@aws-sdk/client-sqs@3.984.0)(@opennextjs/cloudflare@1.19.10(next@16.2.6(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(wrangler@4.92.0(@cloudflare/workers-types@4.20260517.1)))(@types/better-sqlite3@7.6.13)(@types/pg@8.20.0)(better-sqlite3@12.10.0)(kysely@0.28.17)(pg@8.20.0)(vite@7.3.3(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.16.9)(tsx@4.22.1)(yaml@2.9.0))(workerd@1.20260515.1)(wrangler@4.92.0(@cloudflare/workers-types@4.20260517.1))
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.0.7(@types/debug@4.1.13)(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.14.6(@types/node@22.19.19)(typescript@5.9.3))(terser@5.16.9)(tsx@4.22.1)(yaml@2.9.0)
-
-  packages/mcp-log:
-    devDependencies:
-      '@clankeroverflow/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: ^22.13.14
-        version: 22.19.19
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -4819,6 +4804,9 @@ packages:
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
+
+  mcplog@0.0.5:
+    resolution: {integrity: sha512-Eb/bQkOkKz7LCHQnitYcd3qNKguIoyHNcsgS/+wgJ61mnKE2ZBVW8itSlBQPmz/AecveSDyggU0mvfTuqTDQ9A==}
 
   mdast-util-from-markdown@2.0.3:
     resolution: {integrity: sha512-W4mAWTvSlKvf8L6J+VN9yLSqQ9AOAAvHuoDAmPkz4dHf553m5gVj2ejadHJhoJmcmxEnOv6Pa8XJhpxE93kb8Q==}
@@ -10340,6 +10328,8 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   math-intrinsics@1.1.0: {}
+
+  mcplog@0.0.5: {}
 
   mdast-util-from-markdown@2.0.3:
     dependencies:

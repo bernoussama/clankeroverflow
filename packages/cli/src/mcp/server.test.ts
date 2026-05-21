@@ -64,6 +64,13 @@ describe("CLI MCP server", () => {
     expect(serverSource).not.toContain(".tool(");
   });
 
+  test("uses the published mcplog package for MCP logging", () => {
+    const serverSource = readFileSync(resolve(testDir, "server.ts"), "utf8");
+
+    expect(serverSource).toContain('from "mcplog"');
+    expect(serverSource).not.toContain("@clankeroverflow/mcp-logger");
+  });
+
   test("lists all four tools", async () => {
     const result = await client.listTools();
     const toolNames = result.tools.map((t) => t.name).sort();
