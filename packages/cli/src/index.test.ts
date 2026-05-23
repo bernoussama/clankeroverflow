@@ -186,4 +186,99 @@ describe("CLI", () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });
+
+  describe("setup command", () => {
+    let installMock: MockInstance<typeof import("./postinstall").installBundledSkill>;
+
+    beforeEach(async () => {
+      const mod = await import("./postinstall");
+      installMock = vi.spyOn(mod, "installBundledSkill").mockResolvedValue([
+        "/tmp/xdg-config/opencode/skills/clankeroverflow-mcp",
+        "/tmp/home/.agents/skills/clankeroverflow-mcp",
+      ]);
+    });
+
+    afterEach(() => {
+      installMock.mockRestore();
+    });
+
+    test("installs the skill and reports paths", async () => {
+      const program = createProgram();
+      await program.parseAsync(["node", "test", "setup"]);
+
+      expect(installMock).toHaveBeenCalledOnce();
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("ClankerOverflow skill installed to:"),
+      );
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("/tmp/xdg-config/opencode/skills/clankeroverflow-mcp"),
+      );
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("/tmp/home/.agents/skills/clankeroverflow-mcp"),
+      );
+    });
+
+    test("passes --target as CLANKER_SKILLS_DIRS to installBundledSkill", async () => {
+      const program = createProgram();
+      await program.parseAsync([
+        "node",
+        "test",
+        "setup",
+        "--target",
+        "/tmp/custom/skills",
+      ]);
+
+      expect(installMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          env: expect.objectContaining({
+            CLANKER_SKILLS_DIRS: "/tmp/custom/skills",
+          }),
+        }),
+      );
+    });
+
+    test("merges --target with existing CLANKER_SKILLS_DIRS env var", async () => {
+      const original = process.env.CLANKER_SKILLS_DIRS;
+      process.env.CLANKER_SKILLS_DIRS = "/tmp/existing";
+
+      try {
+        const program = createProgram();
+        await program.parseAsync([
+          "node",
+          "test",
+          "setup",
+          "--target",
+          "/tmp/extra",
+        ]);
+
+        expect(installMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            env: expect.objectContaining({
+              CLANKER_SKILLS_DIRS: "/tmp/existing,/tmp/extra",
+            }),
+          }),
+        );
+      } finally {
+        if (original === undefined) {
+          delete process.env.CLANKER_SKILLS_DIRS;
+        } else {
+          process.env.CLANKER_SKILLS_DIRS = original;
+        }
+      }
+    });
+
+    test("handles install failure gracefully", async () => {
+      installMock.mockRejectedValue(new Error("No home directory"));
+
+      const program = createProgram();
+      try {
+        await program.parseAsync(["node", "test", "setup"]);
+      } catch (e: any) {
+        expect(e.message).toBe("Process.exit(1)");
+      }
+
+      expect(consoleErrorMock).toHaveBeenCalledWith("Error installing ClankerOverflow:");
+      expect(consoleErrorMock).toHaveBeenCalledWith("No home directory");
+    });
+  });
 });

@@ -8,7 +8,11 @@
   "files": [
     "dist",
     "skills",
-    "postinstall.mjs"
+    "postinstall.mjs",
+    ".claude-plugin",
+    "commands",
+    "hooks",
+    ".mcp.json"
   ],
   "type": "module",
   "publishConfig": {
@@ -16,7 +20,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "build": "tsdown",
+    "build": "tsdown && node dist/plugin/generate-plugin-json.mjs",
     "check-types": "tsc -b",
     "prepack": "pnpm run build",
     "postinstall": "node postinstall.mjs"

@@ -32,17 +32,8 @@
     "oxlint": "^1.41.0",
     "tsx": "^4.20.6",
     "turbo": "^2.6.3",
-    "vitest": "^4.0.7",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.0.7"
   },
-  "packageManager": "pnpm@10.27.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild",
-      "msw",
-      "sharp",
-      "workerd"
-    ]
-  }
+  "packageManager": "pnpm@11.2.2"
 }

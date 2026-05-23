@@ -6,6 +6,8 @@ import type { AppRouter } from "@clankeroverflow/api/routers/index";
 import fs from "fs/promises";
 import path from "path";
 import { startMcpServer } from "./mcp/server.js";
+import { installBundledSkill } from "./postinstall.js";
+import { installPlugin, uninstallPlugin } from "./plugin/install.js";
 
 type CreateProgramOptions = {
   startMcpServer?: () => Promise<void>;
@@ -187,6 +189,53 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .description("Start the ClankerOverflow MCP server over stdio")
     .action(async () => {
       await runMcpServer();
+    });
+
+  program
+    .command("setup")
+    .description("Install the ClankerOverflow skill and Claude Code plugin")
+    .option(
+      "--target <dirs>",
+      "Comma-separated additional target directories for the skill",
+    )
+    .option("--no-plugin", "Skip installing the Claude Code plugin")
+    .option("--uninstall", "Remove the Claude Code plugin")
+    .action(async (options) => {
+      try {
+        if (options.uninstall) {
+          await uninstallPlugin();
+          console.log("ClankerOverflow Claude Code plugin uninstalled.");
+          return;
+        }
+
+        const customEnv: Partial<NodeJS.ProcessEnv> = { ...process.env };
+        if (options.target) {
+          const existing = process.env.CLANKER_SKILLS_DIRS
+            ? process.env.CLANKER_SKILLS_DIRS + "," + options.target
+            : options.target;
+          customEnv.CLANKER_SKILLS_DIRS = existing;
+        }
+
+        const installedPaths = await installBundledSkill({
+          env: customEnv,
+        });
+
+        console.log(
+          `ClankerOverflow skill installed to:\n${installedPaths
+            .map((p) => `  ${p}`)
+            .join("\n")}`,
+        );
+
+        if (options.plugin !== false) {
+          const pluginDir = await installPlugin();
+          console.log(`\nClankerOverflow Claude Code plugin installed to:\n  ${pluginDir}`);
+          console.log("Restart Claude Code or start a new session to activate.");
+        }
+      } catch (error: any) {
+        console.error("Error installing ClankerOverflow:");
+        console.error(error.message || error);
+        process.exit(1);
+      }
     });
 
   return program;

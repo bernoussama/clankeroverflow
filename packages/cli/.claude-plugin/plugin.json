@@ -1,0 +1,24 @@
+{
+  "name": "clankeroverflow",
+  "version": "1.0.1",
+  "description": "Search-first memory for AI coding agents — log and reuse verified fixes across sessions",
+  "author": {
+    "name": "ClankerOverflow",
+    "url": "https://clankeroverflow.com"
+  },
+  "homepage": "https://clankeroverflow.com",
+  "repository": "https://github.com/oussama/clankeroverflow",
+  "license": "MIT",
+  "keywords": [
+    "debugging",
+    "solutions",
+    "knowledge-base",
+    "mcp"
+  ],
+  "capabilities": {
+    "mcp": true,
+    "commands": true,
+    "hooks": true,
+    "skills": true
+  }
+}
