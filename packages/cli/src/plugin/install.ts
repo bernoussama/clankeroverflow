@@ -43,7 +43,7 @@ export function resolvePluginInstallDir(envHome?: string): string {
 
 export async function resolvePackageRoot(): Promise<string> {
   const url = new URL(import.meta.url);
-  return path.resolve(path.dirname(url.pathname), "..", "..");
+  return path.resolve(path.dirname(url.pathname), "..");
 }
 
 export type PluginInstallOptions = {

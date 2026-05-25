@@ -189,6 +189,7 @@ describe("CLI", () => {
 
   describe("setup command", () => {
     let installMock: MockInstance<typeof import("./postinstall").installBundledSkill>;
+    let pluginInstallMock: MockInstance<typeof import("./plugin/install").installPlugin>;
 
     beforeEach(async () => {
       const mod = await import("./postinstall");
@@ -196,10 +197,13 @@ describe("CLI", () => {
         "/tmp/xdg-config/opencode/skills/clankeroverflow-mcp",
         "/tmp/home/.agents/skills/clankeroverflow-mcp",
       ]);
+      const pluginMod = await import("./plugin/install");
+      pluginInstallMock = vi.spyOn(pluginMod, "installPlugin").mockResolvedValue("/tmp/home/.claude/plugins/clankeroverflow");
     });
 
     afterEach(() => {
       installMock.mockRestore();
+      pluginInstallMock.mockRestore();
     });
 
     test("installs the skill and reports paths", async () => {
