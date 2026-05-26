@@ -17,15 +17,16 @@ import { env } from "@clankeroverflow/env/server";
 import { trpcServer } from "@hono/trpc-server";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 
 import { createRequestResourceLifecycle } from "./request-lifecycle";
+import { withRequestLogging, type RequestLogEvent } from "./request-logging";
 
 type AppEnv = {
   Variables: {
     auth: Auth;
     db: Database;
     posthog?: PostHogClient;
+    requestLog?: RequestLogEvent;
   };
 };
 
@@ -168,7 +169,7 @@ const withTrustedMutationOrigins: MiddlewareHandler<AppEnv> = async (c, next) =>
   return c.text("Forbidden", 403);
 };
 
-app.use(logger());
+app.use(withRequestLogging);
 app.use("/*", withSecurityHeaders);
 app.use(
   "/*",
@@ -214,6 +215,12 @@ app.get("/", (c) => {
 });
 
 app.onError((err, c) => {
+  const requestLog = c.get("requestLog");
+  if (requestLog) {
+    requestLog.error_type = err.name;
+    requestLog.error_message = err.message;
+  }
+
   const requestPostHog = c.get("posthog");
   const posthog = requestPostHog ?? createPostHog(postHogEnvForRequest(c));
   posthog?.captureException(err);

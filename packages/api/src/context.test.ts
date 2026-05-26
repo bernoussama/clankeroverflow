@@ -125,10 +125,65 @@ describe("api context auth forwarding", () => {
     });
   });
 
+  it("adds safe auth metadata to the request wide event", async () => {
+    const requestLog: Record<string, unknown> = {};
+    const verifyApiKey = vi.fn().mockResolvedValueOnce({
+      valid: true,
+      key: {
+        id: "key_1",
+        referenceId: "user_1",
+      },
+    });
+    const context = {
+      req: {
+        raw: new Request("http://localhost/trpc/healthCheck", {
+          headers: {
+            "x-clanker-api-key": "clk_secret",
+          },
+        }),
+      },
+      get(key: string) {
+        if (key === "auth") {
+          return {
+            api: {
+              verifyApiKey,
+            },
+          };
+        }
+
+        if (key === "db") {
+          return {};
+        }
+
+        if (key === "requestLog") {
+          return requestLog;
+        }
+
+        return undefined;
+      },
+    } as any;
+
+    await createContext({ context });
+
+    expect(requestLog).toMatchObject({
+      auth_type: "api_key",
+      api_key_id: "key_1",
+      api_key_user_id: "user_1",
+      has_session_cookie: false,
+      has_api_key_header: true,
+      api_key_valid: true,
+    });
+    expect(JSON.stringify(requestLog)).not.toContain("clk_secret");
+  });
+
   it("verifies x-clanker-api-key headers through Better Auth before exposing them to routers", () => {
-    expect(contextSource).toContain('const apiKeyHeader = context.req.raw.headers.get("x-clanker-api-key");');
+    expect(contextSource).toContain(
+      'const apiKeyHeader = context.req.raw.headers.get("x-clanker-api-key");',
+    );
     expect(contextSource).toContain("auth.api.verifyApiKey");
     expect(contextSource).toContain("valid ? verifiedApiKey.key : null");
-    expect(contextSource).not.toContain('const apiKey = context.req.raw.headers.get("x-clanker-api-key");');
+    expect(contextSource).not.toContain(
+      'const apiKey = context.req.raw.headers.get("x-clanker-api-key");',
+    );
   });
 });

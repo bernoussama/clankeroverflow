@@ -120,6 +120,33 @@ describe("solutionsRouter", () => {
     });
   });
 
+  test("search should enrich the request wide event with business context", async () => {
+    (db.execute as any).mockResolvedValueOnce({
+      rows: [{ id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }],
+    });
+    const requestLog: Record<string, unknown> = {};
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+      requestLog,
+    } as any);
+
+    await caller.solutions.search({ query: " Test ", mode: "keyword", limit: 5 });
+
+    expect(requestLog).toMatchObject({
+      trpc_procedure: "solutions.search",
+      search_mode: "keyword",
+      query_length: 4,
+      result_count: 1,
+      user_type: "anonymous",
+    });
+    expect(JSON.stringify(requestLog)).not.toContain("Test problem");
+    expect(JSON.stringify(requestLog)).not.toContain("Test solution");
+  });
+
   test("search should rate limit anonymous keyword requests by request identity", async () => {
     (db.execute as any).mockResolvedValue({ rows: [] });
 
@@ -135,7 +162,9 @@ describe("solutionsRouter", () => {
       await caller.solutions.search({ query: `Test ${i}`, mode: "keyword" });
     }
 
-    await expect(caller.solutions.search({ query: "Test overflow", mode: "keyword" })).rejects.toMatchObject({
+    await expect(
+      caller.solutions.search({ query: "Test overflow", mode: "keyword" }),
+    ).rejects.toMatchObject({
       code: "TOO_MANY_REQUESTS",
     });
   });
@@ -269,7 +298,9 @@ describe("solutionsRouter", () => {
       await caller.solutions.search({ query: `Test ${i}`, mode: "semantic" });
     }
 
-    await expect(caller.solutions.search({ query: "Test overflow", mode: "semantic" })).rejects.toMatchObject({
+    await expect(
+      caller.solutions.search({ query: "Test overflow", mode: "semantic" }),
+    ).rejects.toMatchObject({
       code: "TOO_MANY_REQUESTS",
     });
   });
@@ -281,9 +312,7 @@ describe("solutionsRouter", () => {
           { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 },
         ]),
       )
-      .mockReturnValueOnce(
-        createSelectChain([{ upvotes: 3, downvotes: 1 }]),
-      );
+      .mockReturnValueOnce(createSelectChain([{ upvotes: 3, downvotes: 1 }]));
 
     const caller = createCaller({
       auth: null as any,
@@ -306,12 +335,8 @@ describe("solutionsRouter", () => {
           { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 },
         ]),
       )
-      .mockReturnValueOnce(
-        createSelectChain([{ upvotes: 5, downvotes: 2 }]),
-      )
-      .mockReturnValueOnce(
-        createSelectChain([{ isUpvote: true }]),
-      );
+      .mockReturnValueOnce(createSelectChain([{ upvotes: 5, downvotes: 2 }]))
+      .mockReturnValueOnce(createSelectChain([{ isUpvote: true }]));
 
     const caller = createCaller({
       db,
@@ -396,12 +421,19 @@ describe("solutionsRouter", () => {
       .mockReturnValueOnce(createSelectChain([]))
       .mockReturnValueOnce(createSelectChain([{ score: 1 }]))
       .mockReturnValueOnce(createSelectChain([{ upvotes: 1, downvotes: 0 }]));
+    const requestLog: Record<string, unknown> = {};
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const caller = createCaller({
       db,
       session: mockSession,
       apiKey: null,
-      posthog: { capture: vi.fn(() => { throw new Error("analytics unavailable"); }) },
+      requestLog,
+      posthog: {
+        capture: vi.fn(() => {
+          throw new Error("analytics unavailable");
+        }),
+      },
     } as any);
 
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
@@ -409,6 +441,14 @@ describe("solutionsRouter", () => {
     expect(result.success).toBe(true);
     expect(result.upvotes).toBe(1);
     expect(result.downvotes).toBe(0);
+    expect(requestLog).toMatchObject({
+      analytics_capture_failed: true,
+      analytics_event: "solution voted",
+      error_type: "Error",
+      error_message: "analytics unavailable",
+    });
+    expect(consoleError).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   test("vote should toggle off existing same-direction vote", async () => {
@@ -422,10 +462,12 @@ describe("solutionsRouter", () => {
       .mockReturnValueOnce(createSelectChain([{ score: 0 }]))
       .mockReturnValueOnce(createSelectChain([{ upvotes: 0, downvotes: 0 }]));
 
+    const requestLog: Record<string, unknown> = {};
     const caller = createCaller({
       db,
       session: mockSession,
       apiKey: null,
+      requestLog,
     } as any);
 
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
@@ -460,7 +502,9 @@ describe("solutionsRouter", () => {
     errorChain.from = vi.fn(() => errorChain);
     errorChain.where = vi.fn(() => errorChain);
     errorChain.orderBy = vi.fn(() => errorChain);
-    errorChain.limit = vi.fn(() => { throw new Error("connection refused"); });
+    errorChain.limit = vi.fn(() => {
+      throw new Error("connection refused");
+    });
 
     (db.select as any)
       .mockReturnValueOnce(
@@ -468,10 +512,12 @@ describe("solutionsRouter", () => {
       )
       .mockReturnValueOnce(errorChain);
 
+    const requestLog: Record<string, unknown> = {};
     const caller = createCaller({
       db,
       session: mockSession,
       apiKey: null,
+      requestLog,
     } as any);
 
     try {
@@ -480,6 +526,11 @@ describe("solutionsRouter", () => {
     } catch (e: any) {
       expect(e.code).toBe("INTERNAL_SERVER_ERROR");
       expect(e.message).toBe("Failed to record vote (existing-vote-lookup)");
+      expect(requestLog).toMatchObject({
+        failure_step: "existing-vote-lookup",
+        error_type: "Error",
+        error_message: "connection refused",
+      });
     }
   });
 
@@ -516,8 +567,7 @@ describe("solutionsRouter", () => {
 
     await expect(
       caller.solutions.log({
-        problem:
-          "DeepSec security audit: 10 findings across CLI, API, MCP, web, and DB layers",
+        problem: "DeepSec security audit: 10 findings across CLI, API, MCP, web, and DB layers",
         solution:
           "Fixed all 10 findings. BUG FIXES: changed packages/api/src/routers/solutions.ts and updated CLANKER_WEB_URL. SECURITY FIXES: scoped the API key cache leak.",
         tags: "security,deepsec,clankeroverflow",

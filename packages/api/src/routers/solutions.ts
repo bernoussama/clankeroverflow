@@ -8,7 +8,9 @@ import {
   type SolutionListSort,
 } from "@clankeroverflow/db/list";
 import { searchSolutions } from "@clankeroverflow/db/search";
+import { addRequestLogFields } from "../context";
 import { publicProcedure, router } from "../index";
+import { errorFields, logError } from "../logger";
 import { assertRateLimit } from "../rate-limit";
 import {
   searchSolutionsHybrid,
@@ -37,7 +39,11 @@ const AUDIT_SUMMARY_PATTERNS = [
   /\bsecurity fixes\s*:/i,
 ];
 
-function assertReusableSolution(input: { problem: string; solution: string; tags?: string | null }) {
+function assertReusableSolution(input: {
+  problem: string;
+  solution: string;
+  tags?: string | null;
+}) {
   const text = `${input.problem}\n${input.solution}\n${input.tags ?? ""}`;
 
   if (PROJECT_SPECIFIC_PATTERNS.some((pattern) => pattern.test(text))) {
@@ -76,32 +82,65 @@ function getRateLimitIdentity(ctx: {
   return ctx.requestIdentity ?? "ip:unknown";
 }
 
+function getUserType(ctx: {
+  session: { user: { id: string } } | null;
+  apiKey: { referenceId: string } | null;
+}) {
+  return ctx.session ? "session" : ctx.apiKey ? "api_key" : "anonymous";
+}
+
 type AnalyticsEvent = {
   distinctId: string;
   event: string;
   properties?: Record<string, unknown>;
 };
 
-function captureAnalytics(
-  posthog: { capture: (event: AnalyticsEvent) => unknown } | undefined,
-  event: AnalyticsEvent,
-) {
+type AnalyticsContext = {
+  posthog?: {
+    capture?: (event: AnalyticsEvent) => unknown;
+    captureException?: (error: Error, distinctId?: string) => unknown;
+  };
+  requestLog?: Record<string, unknown>;
+};
+
+function captureAnalytics(ctx: AnalyticsContext, event: AnalyticsEvent) {
   try {
-    posthog?.capture(event);
+    ctx.posthog?.capture?.(event);
   } catch (error) {
-    console.error("PostHog capture failed:", error);
+    const fields = errorFields(error);
+    addRequestLogFields(ctx, {
+      analytics_capture_failed: true,
+      analytics_event: event.event,
+      ...fields,
+    });
+    if (!ctx.requestLog) {
+      logError({
+        event: "posthog_capture_failed",
+        analytics_event: event.event,
+        ...fields,
+      });
+    }
   }
 }
 
-function captureAnalyticsException(
-  posthog: { captureException?: (error: Error, distinctId?: string) => unknown } | undefined,
-  error: unknown,
-  distinctId: string,
-) {
+function captureAnalyticsException(ctx: AnalyticsContext, error: unknown, distinctId: string) {
   try {
-    posthog?.captureException?.(error instanceof Error ? error : new Error(String(error)), distinctId);
+    ctx.posthog?.captureException?.(
+      error instanceof Error ? error : new Error(String(error)),
+      distinctId,
+    );
   } catch (captureError) {
-    console.error("PostHog exception capture failed:", captureError);
+    const fields = errorFields(captureError);
+    addRequestLogFields(ctx, {
+      analytics_exception_capture_failed: true,
+      ...fields,
+    });
+    if (!ctx.requestLog) {
+      logError({
+        event: "posthog_exception_capture_failed",
+        ...fields,
+      });
+    }
   }
 }
 
@@ -149,6 +188,12 @@ export const solutionsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
       const userId = getAuthenticatedUserId(ctx);
+      addRequestLogFields(ctx, {
+        trpc_procedure: "solutions.vote",
+        solution_id: input.id,
+        is_upvote: input.isUpvote,
+        user_type: getUserType(ctx),
+      });
 
       if (!userId) {
         throw new TRPCError({
@@ -279,7 +324,7 @@ export const solutionsRouter = router({
             .set({ score: recomputedScore })
             .where(eq(schema.solution.id, input.id)),
           DB_TIMEOUT_MS,
-            "Score update timed out",
+          "Score update timed out",
         );
 
         voteStep = "vote-counts-lookup";
@@ -289,7 +334,7 @@ export const solutionsRouter = router({
           "Vote counts lookup timed out",
         );
 
-        captureAnalytics(ctx.posthog, {
+        captureAnalytics(ctx, {
           distinctId: userId,
           event: "solution voted",
           properties: {
@@ -298,17 +343,16 @@ export const solutionsRouter = router({
             vote_action: voteAction,
           },
         });
+        addRequestLogFields(ctx, { vote_action: voteAction });
 
         return { success: true, ...voteCounts };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        console.error("solutions.vote error:", {
-          step: voteStep,
-          solutionId: input.id,
-          isUpvote: input.isUpvote,
-          error,
+        addRequestLogFields(ctx, {
+          failure_step: voteStep,
+          ...errorFields(error),
         });
-        captureAnalyticsException(ctx.posthog, error, userId);
+        captureAnalyticsException(ctx, error, userId);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to record vote (${voteStep})`,
@@ -328,6 +372,11 @@ export const solutionsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = ctx.db;
       const userId = getAuthenticatedUserId(ctx);
+      addRequestLogFields(ctx, {
+        trpc_procedure: "solutions.log",
+        has_tags: Boolean(input.tags),
+        user_type: getUserType(ctx),
+      });
 
       assertReusableSolution(input);
 
@@ -354,6 +403,11 @@ export const solutionsRouter = router({
       );
 
       const { ai, solutionVectors, waitUntil } = ctx;
+      addRequestLogFields(ctx, {
+        solution_id: id,
+        vector_index_requested: Boolean(ai && solutionVectors),
+        vector_index_enqueued: Boolean(ai && solutionVectors && waitUntil),
+      });
       if (ai && solutionVectors && waitUntil) {
         waitUntil(
           upsertSolutionVector({
@@ -366,12 +420,16 @@ export const solutionsRouter = router({
               tags: input.tags ?? null,
             },
           }).catch((err) => {
-            console.error("solution vector upsert failed:", err);
+            logError({
+              event: "solution_vector_upsert_failed",
+              solution_id: id,
+              ...errorFields(err),
+            });
           }),
         );
       }
 
-      captureAnalytics(ctx.posthog, {
+      captureAnalytics(ctx, {
         distinctId: userId ?? "anonymous",
         event: "solution logged",
         properties: {
@@ -394,7 +452,14 @@ export const solutionsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const trimmed = input.query.trim();
+      addRequestLogFields(ctx, {
+        trpc_procedure: "solutions.search",
+        search_mode: input.mode,
+        query_length: trimmed.length,
+        user_type: getUserType(ctx),
+      });
       if (!trimmed) {
+        addRequestLogFields(ctx, { result_count: 0 });
         return [];
       }
 
@@ -458,7 +523,7 @@ export const solutionsRouter = router({
         }
       }
 
-      captureAnalytics(ctx.posthog, {
+      captureAnalytics(ctx, {
         distinctId,
         event: "solution searched",
         properties: {
@@ -467,12 +532,18 @@ export const solutionsRouter = router({
           result_count: results.length,
         },
       });
+      addRequestLogFields(ctx, { result_count: results.length });
 
       return results;
     }),
 
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const db = ctx.db;
+    addRequestLogFields(ctx, {
+      trpc_procedure: "solutions.getById",
+      solution_id: input.id,
+      user_type: getUserType(ctx),
+    });
     const [result] = await withTimeout(
       db.select().from(schema.solution).where(eq(schema.solution.id, input.id)).limit(1),
       DB_TIMEOUT_MS,
@@ -497,7 +568,7 @@ export const solutionsRouter = router({
       "Vote counts lookup timed out",
     );
 
-    captureAnalytics(ctx.posthog, {
+    captureAnalytics(ctx, {
       distinctId: userId ?? "anonymous",
       event: "solution viewed",
       properties: {
@@ -526,6 +597,12 @@ export const solutionsRouter = router({
     .query(async ({ ctx, input }) => {
       const cursor: SolutionListCursor | null = input.cursor ?? null;
       const sort: SolutionListSort = input.sort;
+      addRequestLogFields(ctx, {
+        trpc_procedure: "solutions.list",
+        sort,
+        is_paginated: Boolean(input.cursor),
+        user_type: getUserType(ctx),
+      });
 
       const results = await withTimeout(
         listSolutions(ctx.db, { limit: input.limit, cursor, sort }),
@@ -534,7 +611,7 @@ export const solutionsRouter = router({
       );
 
       const distinctId = getAuthenticatedUserId(ctx) ?? "anonymous";
-      captureAnalytics(ctx.posthog, {
+      captureAnalytics(ctx, {
         distinctId,
         event: "solution list viewed",
         properties: {
@@ -543,6 +620,7 @@ export const solutionsRouter = router({
           is_paginated: Boolean(input.cursor),
         },
       });
+      addRequestLogFields(ctx, { result_count: results.items.length });
 
       return results;
     }),

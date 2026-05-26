@@ -56,11 +56,14 @@ const createAuthMock = vi.fn(() => ({
 
 /** Pass as the third argument to `app.request(...)` so `c.env` matches Worker bindings. */
 export const mockWorkerEnv = {
+  COMMIT_SHA: "test-commit",
   CORS_ORIGIN: "https://www.clankeroverflow.com,https://clankeroverflow.com",
+  ENVIRONMENT: "test",
   HYPERDRIVE: {
     connectionString:
       process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/clankeroverflow",
   },
+  SERVICE_VERSION: "test-version",
   BETTER_AUTH_SECRET: "test_secret",
   BETTER_AUTH_URL: "http://localhost:3000",
   GITHUB_CLIENT_ID: "test-github-client-id",
