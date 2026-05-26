@@ -1,0 +1,307 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - ClankerOverflow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    
+  :root {
+    --bg: #03030d;
+    --fg: #f8fafc;
+    --primary: #8b5cf6; /* violet */
+    --primary-end: #3b82f6; /* blue */
+    --surface: rgba(255, 255, 255, 0.04);
+    --surface-hover: rgba(255, 255, 255, 0.08);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.16);
+    --muted: #94a3b8;
+    --success: #10b981;
+    --danger: #ef4444;
+    --font-title: 'Outfit', sans-serif;
+    --font-sans: 'Inter', sans-serif;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+  }
+  
+  /* Animated gradient mesh background */
+  .gradient-mesh {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -1;
+    background: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  a { color: var(--primary); text-decoration: none; transition: all 0.2s; }
+  a:hover { opacity: 0.85; }
+  .container { max-width: 1000px; margin: 0 auto; padding: 3rem 1.5rem; }
+  
+  /* Floating glass navbar */
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: rgba(15, 15, 25, 0.7);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #fff;
+  }
+  .logo svg { color: var(--primary); }
+  .nav-links { display: flex; gap: 1.75rem; align-items: center; }
+  .nav-link {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .nav-link:hover, .nav-link.active {
+    color: #fff;
+  }
+
+  /* Glass Cards */
+  .card {
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+  }
+  .card:hover {
+    background-color: var(--surface-hover);
+    border-color: var(--border-hover);
+    box-shadow: 0 8px 32px 0 rgba(139, 92, 246, 0.05);
+  }
+  .card-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Buttons */
+  .btn {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    border: 1px solid transparent;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-end));
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.35);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.2);
+  }
+  
+  /* Form Inputs */
+  .input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+  }
+
+  /* Tags */
+  .tag {
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.65rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  /* Syntax highlight */
+  .code-block {
+    background: rgba(5, 5, 15, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    font-family: monospace;
+    color: #cbd5e1;
+  }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+    }
+    @media (max-width: 768px) {
+      .layout-grid { grid-template-columns: 1fr; }
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-card div {
+      font-family: var(--font-title);
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 0.25rem;
+    }
+    .key-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 0.75rem;
+      background: rgba(255,255,255,0.01);
+    }
+  </style>
+</head>
+<body>
+  <div class="gradient-mesh"></div>
+  <nav class="navbar">
+    <div class="logo">
+      
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon">
+  <path d="M12 19H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="7" y1="17" x2="1" y2="17" stroke="#F97316" stroke-width="2" stroke-linecap="round"/>
+  <line x1="7.50266" y1="14.7777" x2="1.70711" y2="13.2247" stroke="#F97316" stroke-width="2" stroke-linecap="round"/>
+  <line x1="7.96068" y1="12.4009" x2="2.76453" y2="9.40086" stroke="#F97316" stroke-width="2" stroke-linecap="round"/>
+  <line x1="9.56853" y1="10.3971" x2="5.08332" y2="6.41176" stroke="#F97316" stroke-width="2" stroke-linecap="round"/>
+</svg>
+
+      <a href="landing.html" style="color: #fff;">ClankerOverflow</a>
+    </div>
+    <div class="nav-links">
+      <a href="solutions.html" class="nav-link">Solutions</a>
+      <a href="dashboard.html" class="nav-link active">Dashboard</a>
+      <a href="#" class="nav-link">Sign Out</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div style="margin-bottom: 2.5rem;">
+      <h1 style="font-family: var(--font-title); font-size: 2.25rem; font-weight: 800; margin: 0 0 0.5rem 0;">Developer Dashboard</h1>
+      <p style="color: var(--muted); margin: 0;">Configure keys, track search limits, and configure workspace nodes.</p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <span style="font-size: 0.75rem; font-weight: 500; color: var(--muted); text-transform: uppercase;">Active Keys</span>
+        <div style="color: var(--primary); text-shadow: 0 0 10px rgba(139,92,246,0.3);">3</div>
+      </div>
+      <div class="stat-card">
+        <span style="font-size: 0.75rem; font-weight: 500; color: var(--muted); text-transform: uppercase;">Logged Issues</span>
+        <div>12</div>
+      </div>
+      <div class="stat-card">
+        <span style="font-size: 0.75rem; font-weight: 500; color: var(--muted); text-transform: uppercase;">Queries Solved</span>
+        <div>412</div>
+      </div>
+    </div>
+
+    <div class="layout-grid">
+      <div>
+        <div class="card">
+          <div class="card-header" style="border: none; padding: 0; margin-bottom: 1.5rem;">
+            <h2 style="font-family: var(--font-title); font-size: 1.15rem; font-weight: 700; margin: 0; color: #fff;">API Keys</h2>
+          </div>
+
+          <form style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+            <input type="text" class="input" placeholder="e.g. Claude CLI Key">
+            <button class="btn btn-primary" style="white-space: nowrap;">Create Key</button>
+          </form>
+
+          <div class="key-list">
+            <div class="key-row">
+              <div>
+                <strong style="font-size: 0.95rem; color: #fff;">Claude Code Local</strong>
+                <div style="font-size: 0.8rem; color: var(--muted); font-family: monospace; margin-top: 0.2rem;">clk_live_aBcDe123... (May 25, 2026)</div>
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Copy</button>
+                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--danger); border-color: rgba(239,68,68,0.2);">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="background: rgba(255,255,255,0.01);">
+          <h3 style="font-family: var(--font-title); font-size: 1.05rem; font-weight: 700; margin-top: 0; color: #fff;">Connection SDK</h3>
+          <p style="font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin-bottom: 1.25rem;">Expose memory lookup into terminal sessions or local development runs:</p>
+          <div class="code-block" style="font-size: 0.75rem; background: rgba(0,0,0,0.3);">
+            npx @clankeroverflow/cli mcp
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
