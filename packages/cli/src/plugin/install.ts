@@ -1,6 +1,7 @@
-import { cp, mkdir, rm, access, writeFile } from "node:fs/promises";
+import { cp, mkdir, rm, access, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
 
 const PLUGIN_NAME = "clankeroverflow";
 
@@ -42,8 +43,30 @@ export function resolvePluginInstallDir(envHome?: string): string {
 }
 
 export async function resolvePackageRoot(): Promise<string> {
-  const url = new URL(import.meta.url);
-  return path.resolve(path.dirname(url.pathname), "..");
+  let currentDir = path.dirname(fileURLToPath(import.meta.url));
+  const rootDir = path.parse(currentDir).root;
+
+  while (true) {
+    const packageJsonPath = path.join(currentDir, "package.json");
+
+    try {
+      const pkg = JSON.parse(await readFile(packageJsonPath, "utf-8")) as {
+        name?: string;
+      };
+
+      if (pkg.name === "@clankeroverflow/cli") {
+        return currentDir;
+      }
+    } catch {
+      // Keep walking until we find this package's manifest.
+    }
+
+    if (currentDir === rootDir) {
+      throw new Error("Could not resolve @clankeroverflow/cli package root.");
+    }
+
+    currentDir = path.dirname(currentDir);
+  }
 }
 
 export type PluginInstallOptions = {

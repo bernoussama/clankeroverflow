@@ -1,11 +1,13 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import {
   installPlugin,
   uninstallPlugin,
   isPluginInstalled,
+  resolvePackageRoot,
 } from "./install.js";
 
 let testRoot: string;
@@ -62,6 +64,15 @@ async function createPackageRoot() {
 }
 
 describe("installPlugin", () => {
+  it("resolves the package root from the source module location", async () => {
+    const packageRoot = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../..",
+    );
+
+    await expect(resolvePackageRoot()).resolves.toBe(packageRoot);
+  });
+
   it("creates the expected directory structure", async () => {
     const pkgRoot = await createPackageRoot();
     const installDir = await installPlugin({
