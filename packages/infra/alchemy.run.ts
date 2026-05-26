@@ -79,6 +79,7 @@ export const web = await Nextjs("web", {
 export const server = await Worker("server", {
   cwd: "../../apps/server",
   entrypoint: "src/index.ts",
+  sourceMap: true,
   domains: [
     {
       domainName: "api.clankeroverflow.com",

@@ -15,6 +15,7 @@ import { createAuth, type Auth } from "@clankeroverflow/auth";
 import { createDb, type Database } from "@clankeroverflow/db";
 import { env } from "@clankeroverflow/env/server";
 import { trpcServer } from "@hono/trpc-server";
+import * as Sentry from "@sentry/cloudflare";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 
@@ -76,6 +77,8 @@ const nonCacheableHeaders = {
 } as const;
 const apiOrigin = "https://api.clankeroverflow.com";
 const authIssuer = `${apiOrigin}/auth`;
+const sentryDsn =
+  "https://2c5a2f26e1dabc117e673996410d02cb@o4511458204319744.ingest.de.sentry.io/4511458219458640";
 const oauthProtectedResourceMetadata = {
   resource: apiOrigin,
   authorization_servers: [authIssuer],
@@ -85,7 +88,23 @@ const oauthProtectedResourceMetadata = {
 } as const;
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-const app = new Hono<AppEnv>();
+export const app = new Hono<AppEnv>();
+
+type SentryBindings = {
+  ENVIRONMENT?: string;
+  SERVICE_VERSION?: string;
+};
+
+export function sentryOptionsForEnv(env: SentryBindings): Sentry.CloudflareOptions {
+  return {
+    dsn: sentryDsn,
+    enableLogs: true,
+    environment: env.ENVIRONMENT,
+    release: env.SERVICE_VERSION,
+    sendDefaultPii: true,
+    tracesSampleRate: 1.0,
+  };
+}
 
 function getWaitUntilHandler(c: Context<AppEnv>) {
   try {
@@ -230,4 +249,4 @@ app.onError((err, c) => {
   return c.text("Internal Server Error", 500);
 });
 
-export default app;
+export default Sentry.withSentry((env) => sentryOptionsForEnv(env as SentryBindings), app);

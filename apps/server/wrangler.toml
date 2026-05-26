@@ -2,6 +2,7 @@ name = "clankeroverflow-server"
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
+upload_source_maps = true
 
 [dev]
 port = 3000

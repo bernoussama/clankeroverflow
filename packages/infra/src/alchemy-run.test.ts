@@ -8,6 +8,10 @@ const alchemyRunSource = readFileSync(
   resolve(dirname(fileURLToPath(import.meta.url)), "../alchemy.run.ts"),
   "utf8",
 );
+const serverWranglerSource = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), "../../../apps/server/wrangler.toml"),
+  "utf8",
+);
 
 describe("infra worker config", () => {
   it("loads local TypeScript helpers without static .ts imports", () => {
@@ -31,5 +35,10 @@ describe("infra worker config", () => {
   it("passes GitHub OAuth credentials to the auth worker", () => {
     expect(alchemyRunSource).toContain("GITHUB_CLIENT_ID");
     expect(alchemyRunSource).toContain("GITHUB_CLIENT_SECRET");
+  });
+
+  it("enables production source maps for Sentry readable stack traces", () => {
+    expect(alchemyRunSource).toContain("sourceMap: true");
+    expect(serverWranglerSource).toContain("upload_source_maps = true");
   });
 });

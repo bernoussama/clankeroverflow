@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { mockWorkerEnv } from "../test-setup";
-import app from "./index";
+import defaultHandler, { app, sentryOptionsForEnv } from "./index";
 
 describe("Server", () => {
-  const { createDbMock, posthogInstances } = (globalThis as any).__serverTestMocks;
+  const { createDbMock, posthogInstances, sentryWithSentryMock } = (globalThis as any)
+    .__serverTestMocks;
 
   afterEach(() => {
     vi.restoreAllMocks();
@@ -25,6 +26,22 @@ describe("Server", () => {
     const res = await app.request("/", undefined, mockWorkerEnv);
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("OK");
+  });
+
+  test("default export should wrap the worker with Sentry", () => {
+    expect(defaultHandler).toBe(app);
+    expect(sentryWithSentryMock).toHaveBeenCalledWith(expect.any(Function), app);
+  });
+
+  test("Sentry should be configured for Cloudflare error monitoring", () => {
+    expect(sentryOptionsForEnv(mockWorkerEnv)).toMatchObject({
+      dsn: "https://2c5a2f26e1dabc117e673996410d02cb@o4511458204319744.ingest.de.sentry.io/4511458219458640",
+      enableLogs: true,
+      environment: "test",
+      release: "test-version",
+      sendDefaultPii: true,
+      tracesSampleRate: 1,
+    });
   });
 
   test("GET / should advertise OAuth protected resource metadata", async () => {

@@ -1,5 +1,9 @@
 import { vi } from "vitest";
 
+const sentryMocks = vi.hoisted(() => ({
+  withSentry: vi.fn((_optionsCallback: unknown, handler: unknown) => handler),
+}));
+
 const fakeDb = {
   query: {
     apiKey: {
@@ -95,7 +99,14 @@ class PostHogMock {
   createAuthMock,
   createDbMock,
   posthogInstances,
+  sentryWithSentryMock: sentryMocks.withSentry,
 };
+
+vi.mock("@sentry/cloudflare", () => {
+  return {
+    withSentry: sentryMocks.withSentry,
+  };
+});
 
 vi.mock("cloudflare:workers", () => {
   return {
