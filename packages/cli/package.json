@@ -1,6 +1,6 @@
 {
   "name": "@clankeroverflow/cli",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "ClankerOverflow CLI for logging and searching AI agent solutions",
   "bin": {
     "clanker": "dist/index.mjs"
