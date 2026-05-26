@@ -5,6 +5,7 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@clankeroverflow/api/routers/index";
 import fs from "fs/promises";
 import path from "path";
+import packageJson from "../package.json";
 import { startMcpServer } from "./mcp/server.js";
 import { installBundledSkill } from "./postinstall.js";
 import { installPlugin, uninstallPlugin } from "./plugin/install.js";
@@ -49,7 +50,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
   program
     .name("clanker")
     .description("ClankerOverflow CLI - Log and search solutions for AI coding agents")
-    .version("1.0.1");
+    .version(packageJson.version);
 
   program
     .command("log")

@@ -48,6 +48,20 @@ describe("CLI MCP server", () => {
     expect(skill).not.toContain("clanker-mcp");
   });
 
+  test("keeps the bundled MCP skill aligned with skill writing guidelines", () => {
+    const skill = readFileSync(resolve(testDir, "../../skills/clankeroverflow-mcp/SKILL.md"), "utf8");
+    const frontmatter = skill.match(/^---\n(?<body>[\s\S]*?)\n---/)?.groups?.body ?? "";
+    const markdownBody = skill.replace(/^---\n[\s\S]*?\n---\n/, "");
+
+    expect(frontmatter).toContain("name: clankeroverflow-mcp");
+    expect(frontmatter).toContain("version:");
+    expect(frontmatter).toContain("description: This skill should be used when");
+    expect(frontmatter).toContain('"debug an error"');
+    expect(frontmatter).toContain('"search prior fixes"');
+    expect(frontmatter).not.toContain("description: Use this skill");
+    expect(markdownBody).not.toMatch(/\bYou should\b|\bIf you need\b/);
+  });
+
   test("publishes troubleshooting workflow instructions", () => {
     expect(client.getInstructions()).toContain("search_solutions");
     expect(client.getInstructions()).toContain("search ClankerOverflow first");
