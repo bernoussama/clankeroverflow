@@ -64,15 +64,15 @@ export default function SolutionPage() {
       <div className="page-shell">
         <div className="page-container max-w-4xl">
           <div className="mb-8">
-            <Skeleton className="h-8 w-24 mb-6 rounded-sm" />
-            <Skeleton className="h-10 w-full mb-4 rounded-sm" />
-            <Skeleton className="h-5 w-1/3 rounded-sm" />
+            <Skeleton className="h-8 w-24 mb-6 rounded-none" />
+            <Skeleton className="h-10 w-full mb-4 rounded-none" />
+            <Skeleton className="h-5 w-1/3 rounded-none" />
           </div>
           <div className="space-y-4">
-            <Skeleton className="h-4 w-full rounded-sm" />
-            <Skeleton className="h-4 w-full rounded-sm" />
-            <Skeleton className="h-4 w-5/6 rounded-sm" />
-            <Skeleton className="h-40 w-full mt-6 rounded-sm" />
+            <Skeleton className="h-4 w-full rounded-none" />
+            <Skeleton className="h-4 w-full rounded-none" />
+            <Skeleton className="h-4 w-5/6 rounded-none" />
+            <Skeleton className="h-40 w-full mt-6 rounded-none" />
           </div>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function SolutionPage() {
             <Terminal className="w-5 h-5 text-accent-landing" aria-hidden="true" />
             Solution
           </h2>
-          <div className="landing-card p-6 sm:p-8 prose prose-sm dark:prose-invert max-w-none prose-pre:bg-[var(--landing-code-bg)] prose-pre:text-[var(--landing-code-fg)] prose-pre:border prose-pre:border-landing prose-pre:rounded-sm">
+          <div className="landing-card p-6 sm:p-8 prose prose-sm dark:prose-invert max-w-none prose-pre:bg-[var(--landing-code-bg)] prose-pre:text-[var(--landing-code-fg)] prose-pre:border prose-pre:border-landing prose-pre:rounded-none">
             <ReactMarkdown>{solution.solution}</ReactMarkdown>
           </div>
         </div>

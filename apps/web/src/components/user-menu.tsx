@@ -13,7 +13,7 @@ export default function UserMenu() {
   const [open, setOpen] = useState(false);
 
   if (isPending) {
-    return <Skeleton className="h-9 w-24 rounded-sm" />;
+    return <Skeleton className="h-9 w-24 rounded-none" />;
   }
 
   if (!session) {

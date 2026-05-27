@@ -12,7 +12,7 @@ export default function Header() {
 
   return (
     <header className="landing-header">
-      <div className="flex items-center justify-between px-6 py-3 max-w-5xl mx-auto w-full">
+      <div className="flex items-center justify-between px-6 py-3 max-w-[1280px] mx-auto w-full">
         <div className="flex items-center gap-8">
           <Link
             href="/"
@@ -76,7 +76,7 @@ export default function Header() {
               <Link
                 key={to}
                 href={to}
-                className="px-3 py-1.5 text-xs font-mono tracking-wide uppercase text-muted-landing hover:text-accent-landing rounded-sm transition-colors"
+                className="px-3 py-1.5 text-xs font-mono tracking-wide uppercase text-muted-landing hover:text-accent-landing transition-colors"
               >
                 {label}
               </Link>

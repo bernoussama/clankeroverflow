@@ -124,7 +124,7 @@ export default function SolutionsPage() {
         </div>
 
         <form onSubmit={handleSearch} className="mb-8 space-y-3">
-          <div className="flex items-center border border-[var(--landing-border)] rounded-sm overflow-hidden transition-colors focus-within:border-[var(--landing-accent)]">
+          <div className="flex items-center border border-[var(--landing-border)] rounded-none overflow-hidden transition-colors focus-within:border-[var(--landing-accent)]">
             <div className="relative flex-1">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-landing"
@@ -162,7 +162,7 @@ export default function SolutionsPage() {
                 onClick={() => enabled && setSearchMode(value)}
                 disabled={!enabled}
                 title={!enabled ? "Sign in to use semantic search" : undefined}
-                className={`px-2.5 py-1 text-xs font-mono rounded-sm border transition-colors ${
+                className={`px-2.5 py-1 text-xs font-mono rounded-none border transition-colors ${
                   searchMode === value
                     ? "text-accent-landing border-[var(--landing-accent)]"
                     : !enabled
@@ -198,7 +198,7 @@ export default function SolutionsPage() {
                   key={key}
                   type="button"
                   onClick={() => setSort(key)}
-                  className={`px-3 py-1.5 text-xs font-mono tracking-wide uppercase rounded-sm transition-colors ${
+                  className={`px-3 py-1.5 text-xs font-mono tracking-wide uppercase rounded-none transition-colors ${
                     sort === key
                       ? "text-accent-landing border border-[var(--landing-accent)]"
                       : "text-muted-landing hover:text-accent-landing border border-transparent"
@@ -293,7 +293,7 @@ function SearchResultsPanel({
           Try adjusting your search terms or log a new solution.
         </p>
         <code
-          className="text-xs font-mono px-3 py-2 rounded-sm inline-block"
+          className="text-xs font-mono px-3 py-2 rounded-none inline-block"
           style={{
             background: "var(--landing-surface)",
             border: "1px solid var(--landing-border)",
@@ -328,9 +328,9 @@ function LoadingList({ rows = 6 }: { rows?: number }) {
     <div className="space-y-0">
       {Array.from({ length: rows }).map((_, index) => (
         <div key={index} className="py-5 border-b border-landing">
-          <Skeleton className="h-5 w-3/4 mb-2 rounded-sm" />
-          <Skeleton className="h-4 w-full mb-2 rounded-sm" />
-          <Skeleton className="h-3 w-1/3 rounded-sm" />
+          <Skeleton className="h-5 w-3/4 mb-2 rounded-none" />
+          <Skeleton className="h-4 w-full mb-2 rounded-none" />
+          <Skeleton className="h-3 w-1/3 rounded-none" />
         </div>
       ))}
     </div>
@@ -354,7 +354,7 @@ function EmptyBrowseState() {
       <h3 className="text-base font-semibold mb-2">No solutions yet</h3>
       <p className="text-sm text-muted-landing mb-4">Be the first to log a solution.</p>
       <code
-        className="text-xs font-mono px-3 py-2 rounded-sm inline-block"
+        className="text-xs font-mono px-3 py-2 rounded-none inline-block"
         style={{
           background: "var(--landing-surface)",
           border: "1px solid var(--landing-border)",
@@ -382,7 +382,7 @@ function SolutionListItem({ solution }: { solution: SearchResult }) {
             style={{
               color:
                 solution.score > 0
-                  ? "#16a34a"
+                  ? "var(--secondary)"
                   : solution.score < 0
                     ? "var(--destructive)"
                     : "var(--landing-muted)",

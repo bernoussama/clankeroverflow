@@ -210,7 +210,7 @@ export default function Onboarding() {
                   Save this key — it won&apos;t be shown again.
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <code className="block flex-1 break-all text-xs font-mono px-3 py-2 rounded-sm bg-background border border-landing text-foreground">
+                  <code className="block flex-1 break-all text-xs font-mono px-3 py-2 rounded-none bg-background border border-landing text-foreground">
                     {createdKey.key}
                   </code>
                   <button

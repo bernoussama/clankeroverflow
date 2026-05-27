@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 
-import { Geist, Geist_Mono } from "next/font/google";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Inter, JetBrains_Mono, Bricolage_Grotesque } from "next/font/google";
 
 import "../index.css";
 import Header from "@/components/header";
 import Providers from "@/components/providers";
 import { SITE_ORIGIN } from "@/lib/agent-discovery";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -63,15 +62,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} antialiased`}
+        className={`${inter.variable} ${jetbrainsMono.variable} ${bricolage.variable} antialiased`}
       >
         <Providers>
-          <div className="landing-page grid grid-rows-[auto_1fr] min-h-svh">
+          <div className="landing-page grid grid-rows-[auto_1fr] min-h-svh relative overflow-x-hidden bg-background text-on-surface">
+            {/* Decorative background */}
+            <div className="fixed inset-0 pointer-events-none z-0 bg-grid-pattern [mask-image:linear-gradient(to_bottom,white,transparent)] opacity-50" />
             <Header />
-            <main>{children}</main>
+            <main className="relative z-10">{children}</main>
           </div>
         </Providers>
       </body>
     </html>
   );
 }
+

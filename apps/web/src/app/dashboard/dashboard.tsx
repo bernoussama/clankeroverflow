@@ -199,7 +199,7 @@ export default function Dashboard() {
           </form>
 
           {createdKey ? (
-            <div className="mb-6 border border-landing rounded-sm bg-surface-landing p-4 space-y-3">
+            <div className="mb-6 border border-landing rounded-none bg-surface-landing p-4 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold">New API key created</p>
@@ -216,7 +216,7 @@ export default function Dashboard() {
                 </button>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <code className="block break-all text-xs font-mono px-3 py-2 rounded-sm bg-background border border-landing text-foreground">
+                <code className="block break-all text-xs font-mono px-3 py-2 rounded-none bg-background border border-landing text-foreground">
                   {createdKey.key}
                 </code>
                 <button
@@ -240,15 +240,15 @@ export default function Dashboard() {
 
           {isLoading ? (
             <div className="space-y-3">
-              <Skeleton className="h-16 w-full rounded-sm" />
-              <Skeleton className="h-16 w-full rounded-sm" />
+              <Skeleton className="h-16 w-full rounded-none" />
+              <Skeleton className="h-16 w-full rounded-none" />
             </div>
           ) : apiKeys.length === 0 ? (
-            <div className="text-center py-8 border border-dashed border-landing rounded-sm text-muted-landing text-sm font-mono">
+            <div className="text-center py-8 border border-dashed border-landing rounded-none text-muted-landing text-sm font-mono">
               No API keys yet. Create one above.
             </div>
           ) : (
-            <div className="border border-landing rounded-sm overflow-hidden">
+            <div className="border border-landing rounded-none overflow-hidden">
               {apiKeys.map((apiKey: ApiKeyListItem, i: number) => (
                 <div
                   key={apiKey.id}
@@ -257,7 +257,7 @@ export default function Dashboard() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{apiKey.name || "Unnamed Key"}</p>
                     <div className="mt-2 space-y-2">
-                      <code className="block break-all text-xs font-mono px-3 py-2 rounded-sm bg-surface-landing border border-landing text-foreground">
+                      <code className="block break-all text-xs font-mono px-3 py-2 rounded-none bg-surface-landing border border-landing text-foreground">
                         {formatApiKeyPreview(apiKey)}
                       </code>
                       <span className="text-xs text-muted-landing font-mono">
