@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 const modeToggleSource = readFileSync(new URL("./mode-toggle.tsx", import.meta.url), "utf8");
 const userMenuSource = readFileSync(new URL("./user-menu.tsx", import.meta.url), "utf8");

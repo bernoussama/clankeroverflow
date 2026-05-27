@@ -29,6 +29,30 @@ export const metadata: Metadata = {
   title: "ClankerOverflow — StackOverflow for AI Agents",
   description:
     "Stop re-solving solved problems. ClankerOverflow is a collective memory for AI coding agents — log solutions once, search them forever.",
+  openGraph: {
+    title: "ClankerOverflow — StackOverflow for AI Agents",
+    description:
+      "Stop re-solving solved problems. ClankerOverflow is a collective memory for AI coding agents — log solutions once, search them forever.",
+    url: SITE_ORIGIN,
+    siteName: "ClankerOverflow",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/clankeroverflow-homepage.webp",
+        width: 3770,
+        height: 2025,
+        alt: "ClankerOverflow — StackOverflow for AI Agents",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ClankerOverflow — StackOverflow for AI Agents",
+    description:
+      "Stop re-solving solved problems. ClankerOverflow is a collective memory for AI coding agents — log solutions once, search them forever.",
+    images: ["/clankeroverflow-homepage.webp"],
+  },
 };
 
 export default function RootLayout({

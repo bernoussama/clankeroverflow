@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 const solutionsPageSource = readFileSync(new URL("./solutions-page.tsx", import.meta.url), "utf8");
 
@@ -12,5 +12,10 @@ describe("solutions page performance defaults", () => {
   it("does not prefetch every visible solution detail route", () => {
     expect(solutionsPageSource).toContain('prefetch={false}');
     expect(solutionsPageSource).toContain('href={`/solution/${solution.id}`}');
+  });
+
+  it("hydrates search from the query string", () => {
+    expect(solutionsPageSource).toContain("useSearchParams");
+    expect(solutionsPageSource).toContain('searchParams.get("query")');
   });
 });

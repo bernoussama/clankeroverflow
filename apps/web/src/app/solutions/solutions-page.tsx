@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInfiniteQuery, useQuery, type InfiniteData } from "@tanstack/react-query";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpDown,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   searchResultsSchema,
@@ -36,10 +38,21 @@ const SORT_LABELS: Record<SortOption, string> = {
 const PAGE_SIZE = 20;
 
 export default function SolutionsPage() {
-  const [query, setQuery] = useState("");
-  const [activeQuery, setActiveQuery] = useState("");
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("query")?.trim() ?? "";
+  const [query, setQuery] = useState(initialQuery);
+  const [activeQuery, setActiveQuery] = useState(initialQuery);
   const [searchMode, setSearchMode] = useState<SearchMode>("keyword");
   const [sort, setSort] = useState<SortOption>("recent");
+  const { data: session } = authClient.useSession();
+  const isAuthenticated = Boolean(session);
+
+  // Auto-fallback to keyword when user selects semantic/hybrid without being logged in
+  useEffect(() => {
+    if (!isAuthenticated && searchMode !== "keyword") {
+      setSearchMode("keyword");
+    }
+  }, [isAuthenticated, searchMode]);
 
   const isSearching = activeQuery.length > 0;
 
@@ -138,19 +151,23 @@ export default function SolutionsPage() {
             </span>
             {(
               [
-                ["keyword", "Keyword"],
-                ["semantic", "Semantic"],
-                ["hybrid", "Hybrid"],
+                ["keyword", "Keyword", true],
+                ["semantic", "Semantic", isAuthenticated],
+                ["hybrid", "Hybrid", isAuthenticated],
               ] as const
-            ).map(([value, label]) => (
+            ).map(([value, label, enabled]) => (
               <button
                 key={value}
                 type="button"
-                onClick={() => setSearchMode(value)}
+                onClick={() => enabled && setSearchMode(value)}
+                disabled={!enabled}
+                title={!enabled ? "Sign in to use semantic search" : undefined}
                 className={`px-2.5 py-1 text-xs font-mono rounded-sm border transition-colors ${
                   searchMode === value
                     ? "text-accent-landing border-[var(--landing-accent)]"
-                    : "text-muted-landing border-transparent hover:text-accent-landing"
+                    : !enabled
+                      ? "text-muted-landing/40 border-transparent cursor-not-allowed"
+                      : "text-muted-landing border-transparent hover:text-accent-landing"
                 }`}
               >
                 {label}

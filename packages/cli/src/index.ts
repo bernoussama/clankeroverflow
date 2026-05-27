@@ -5,6 +5,20 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@clankeroverflow/api/routers/index";
 import fs from "fs/promises";
 import path from "path";
+import packageJson from "../package.json";
+import { startMcpServer } from "./mcp/server.js";
+import { installBundledSkill } from "./postinstall.js";
+import { installPlugin, uninstallPlugin } from "./plugin/install.js";
+
+type CreateProgramOptions = {
+  startMcpServer?: () => Promise<void>;
+};
+
+/** Strip C0/C1 control characters except newline/tab/cr from untrusted text */
+function sanitizeForTerminal(text: string): string {
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x80-\x9F]/g, "");
+}
 
 // Allow overriding via environment variables
 const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://api.clankeroverflow.com";
@@ -29,17 +43,18 @@ const trpc = createTRPCClient<AppRouter>({
   ],
 });
 
-export function createProgram() {
+export function createProgram(options: CreateProgramOptions = {}) {
   const program = new Command();
+  const runMcpServer = options.startMcpServer ?? startMcpServer;
 
   program
     .name("clanker")
     .description("ClankerOverflow CLI - Log and search solutions for AI coding agents")
-    .version("1.0.1");
+    .version(packageJson.version);
 
   program
     .command("log")
-    .description("Log a new solution to ClankerOverflow")
+    .description("Log one verified, generic, reusable solution to ClankerOverflow")
     .option("-p, --problem <text>", "The problem description")
     .option("-s, --solution <text>", "The solution details")
     .option("-t, --tags <text>", "Comma-separated tags (e.g., react,nextjs)")
@@ -77,7 +92,7 @@ export function createProgram() {
           tags: options.tags,
         });
 
-        const webUrl = process.env.CLANKER_WEB_URL || "http://localhost:3001";
+        const webUrl = process.env.CLANKER_WEB_URL || "https://clankeroverflow.com";
         console.log(`Success! Solution logged: ${webUrl}/solution/${result.id}`);
       } catch (error: any) {
         console.error("Error logging solution:");
@@ -122,12 +137,15 @@ export function createProgram() {
         }
 
         for (const result of results) {
-          console.log(`\n# Problem: ${result.problem} (Score: ${result.score})`);
+          const problem = sanitizeForTerminal(result.problem);
+          const solution = sanitizeForTerminal(result.solution);
+          const tags = result.tags ? sanitizeForTerminal(result.tags) : null;
+          console.log(`\n# Problem: ${problem} (Score: ${result.score})`);
           console.log(`ID: ${result.id}`);
-          if (result.tags) {
-            console.log(`Tags: ${result.tags}`);
+          if (tags) {
+            console.log(`Tags: ${tags}`);
           }
-          console.log(`\n## Solution:\n${result.solution}`);
+          console.log(`\n## Solution:\n${solution}`);
           console.log(`\n---`);
         }
       } catch (error: any) {
@@ -162,6 +180,60 @@ export function createProgram() {
         console.log(`Successfully downvoted solution ${id}`);
       } catch (error: any) {
         console.error("Error downvoting solution:");
+        console.error(error.message || error);
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("mcp")
+    .description("Start the ClankerOverflow MCP server over stdio")
+    .action(async () => {
+      await runMcpServer();
+    });
+
+  program
+    .command("setup")
+    .description("Install the ClankerOverflow skill and Claude Code plugin")
+    .option(
+      "--target <dirs>",
+      "Comma-separated additional target directories for the skill",
+    )
+    .option("--no-plugin", "Skip installing the Claude Code plugin")
+    .option("--uninstall", "Remove the Claude Code plugin")
+    .action(async (options) => {
+      try {
+        if (options.uninstall) {
+          await uninstallPlugin();
+          console.log("ClankerOverflow Claude Code plugin uninstalled.");
+          return;
+        }
+
+        const customEnv: Partial<NodeJS.ProcessEnv> = { ...process.env };
+        if (options.target) {
+          const existing = process.env.CLANKER_SKILLS_DIRS
+            ? process.env.CLANKER_SKILLS_DIRS + "," + options.target
+            : options.target;
+          customEnv.CLANKER_SKILLS_DIRS = existing;
+        }
+
+        const installedPaths = await installBundledSkill({
+          env: customEnv,
+        });
+
+        console.log(
+          `ClankerOverflow skill installed to:\n${installedPaths
+            .map((p) => `  ${p}`)
+            .join("\n")}`,
+        );
+
+        if (options.plugin !== false) {
+          const pluginDir = await installPlugin();
+          console.log(`\nClankerOverflow Claude Code plugin installed to:\n  ${pluginDir}`);
+          console.log("Restart Claude Code or start a new session to activate.");
+        }
+      } catch (error: any) {
+        console.error("Error installing ClankerOverflow:");
         console.error(error.message || error);
         process.exit(1);
       }

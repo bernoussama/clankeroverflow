@@ -1,3 +1,7 @@
+import { spawn } from "node:child_process";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 type SignalName = "SIGINT" | "SIGTERM";
 
 type ChildProcessLike = {
@@ -17,19 +21,19 @@ type RunDevWithPostgresOptions = {
 
 const DEFAULT_COMPOSE_UP_COMMAND = ["docker", "compose", "up", "-d", "--wait"];
 const DEFAULT_COMPOSE_DOWN_COMMAND = ["docker", "compose", "down"];
-const DEFAULT_SCHEMA_SYNC_COMMAND = ["bun", "run", "db:push"];
-const DEFAULT_DEV_COMMAND = ["bun", "run", "dev:bare"];
+const DEFAULT_SCHEMA_SYNC_COMMAND = ["pnpm", "run", "db:push"];
+const DEFAULT_DEV_COMMAND = ["pnpm", "run", "dev:bare"];
 const SHUTDOWN_SIGNALS: SignalName[] = ["SIGINT", "SIGTERM"];
 
 async function runCommand(cmd: string[]) {
-  const proc = Bun.spawn({
-    cmd,
-    stdin: "inherit",
-    stdout: "inherit",
-    stderr: "inherit",
+  const proc = spawn(cmd[0]!, cmd.slice(1), {
+    stdio: "inherit",
   });
 
-  const exitCode = await proc.exited;
+  const exitCode = await new Promise<number | null>((resolveProcess, rejectProcess) => {
+    proc.on("error", rejectProcess);
+    proc.on("exit", resolveProcess);
+  });
 
   if (exitCode !== 0) {
     throw new Error(`Command failed with exit code ${exitCode}: ${cmd.join(" ")}`);
@@ -37,15 +41,15 @@ async function runCommand(cmd: string[]) {
 }
 
 function spawnCommand(cmd: string[]): ChildProcessLike {
-  const proc = Bun.spawn({
-    cmd,
-    stdin: "inherit",
-    stdout: "inherit",
-    stderr: "inherit",
+  const proc = spawn(cmd[0]!, cmd.slice(1), {
+    stdio: "inherit",
   });
 
   return {
-    exited: proc.exited,
+    exited: new Promise<number>((resolveProcess, rejectProcess) => {
+      proc.on("error", rejectProcess);
+      proc.on("exit", (code) => resolveProcess(code ?? 0));
+    }),
     kill: (signal) => {
       proc.kill(signal);
     },
@@ -93,7 +97,7 @@ export async function runDevWithPostgres({
   }
 }
 
-if (import.meta.main) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const exitCode = await runDevWithPostgres();
   process.exit(exitCode);
 }

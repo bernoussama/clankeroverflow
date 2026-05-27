@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import SolutionsPage from "./solutions-page";
 
@@ -9,5 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <SolutionsPage />;
+  return (
+    <Suspense fallback={null}>
+      <SolutionsPage />
+    </Suspense>
+  );
 }

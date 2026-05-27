@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import packageJson from "../package.json";
 
 describe("packages/cli package metadata", () => {
@@ -9,5 +9,16 @@ describe("packages/cli package metadata", () => {
     expect((packageJson.scripts as Record<string, string> | undefined)?.postinstall).toBe(
       "node postinstall.mjs",
     );
+  });
+
+  test("publishes the CLI as the MCP runtime", () => {
+    expect(packageJson.bin).toEqual({ clanker: "dist/index.mjs" });
+    expect(packageJson.dependencies?.["@modelcontextprotocol/sdk"]).toBe("^1.27.1");
+    expect(packageJson.dependencies?.["better-sqlite3"]).toBe("12.10.0");
+    expect(packageJson.dependencies?.mcplog).toBe("^0.0.5");
+    expect(packageJson.dependencies?.zod).toBe("^4.1.13");
+    expect(packageJson.dependencies?.["@clankeroverflow/mcp-logger"]).toBeUndefined();
+    expect(packageJson.devDependencies?.["@clankeroverflow/mcp-logger"]).toBeUndefined();
+    expect(Object.values(packageJson.dependencies ?? {})).not.toContain("catalog:");
   });
 });

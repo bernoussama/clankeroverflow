@@ -8,7 +8,7 @@ This document outlines the step-by-step implementation for the ClankerOverflow C
    - Create `packages/db/src/schema/solutions.ts` defining the `solutions` table (`id`, `problem`, `solution`, `tags`, `userId`, `createdAt`, `updatedAt`).
    - Create `packages/db/src/schema/api-keys.ts` defining the `api_keys` table (`id`, `key`, `userId`, `createdAt`).
 2. **Schema Exports**: Update `packages/db/src/schema/index.ts` to export the new schemas.
-3. **Migration & Generation**: Run `bun run db:generate` and `bun run db:push` from the root to apply changes to the local SQLite database.
+3. **Migration & Generation**: Run `pnpm run db:generate` and `pnpm run db:push` from the root to apply changes to the local SQLite database.
 
 ## Phase 2: API & tRPC Setup (`packages/api`)
 
@@ -45,7 +45,7 @@ This document outlines the step-by-step implementation for the ClankerOverflow C
 
 ## Phase 5: Testing and Polish
 
-1. Verify the CLI builds correctly (`bun run build` for the CLI).
+1. Verify the CLI builds correctly (`pnpm run build` for the CLI).
 2. Test `clanker log` locally.
 3. Test `clanker search` locally.
 4. Verify anonymous fallback works as expected.

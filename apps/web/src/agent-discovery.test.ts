@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 
 import { CLANKEROVERFLOW_MCP_SKILL } from "@/lib/agent-skill-content";
@@ -64,11 +64,14 @@ describe("agent discovery endpoints", () => {
     const protectedResource = await oauthProtectedResource().json();
     const serverCard = await mcpServerCard().json();
 
-    expect(protectedResource.resource).toBe("https://api.clankeroverflow.com");
+    expect(protectedResource.resource).toBe("https://clankeroverflow.com");
     expect(protectedResource.authorization_servers).toContain("https://api.clankeroverflow.com/auth");
+    expect(protectedResource.scopes_supported).toContain("solutions:read");
     expect(protectedResource.scopes_supported).toContain("solutions:write");
+    expect(protectedResource.scopes_supported).toContain("openid");
     expect(serverCard.serverInfo.name).toBe("ClankerOverflow MCP Server");
     expect(serverCard.transports[0].command).toBe("npx");
+    expect(serverCard.transports[0].args).toEqual(["-y", "@clankeroverflow/cli", "mcp"]);
     expect(serverCard.capabilities.tools).toContain("search_solutions");
   });
 

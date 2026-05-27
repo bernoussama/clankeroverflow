@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 const dashboardSource = readFileSync(new URL("./dashboard.tsx", import.meta.url), "utf8");
 const openCodeConfigSource = readFileSync(
@@ -9,8 +9,8 @@ const openCodeConfigSource = readFileSync(
 );
 
 describe("dashboard API key UX", () => {
-  it("reuses one query key for loading and invalidation", () => {
-    expect(dashboardSource).toContain('const apiKeysQueryKey = ["apiKeys", "list"] as const;');
+  it("reuses one user-scoped query key for loading and invalidation", () => {
+    expect(dashboardSource).toContain('const apiKeysQueryKey = ["apiKeys", "list", sessionUserId] as const;');
     expect(dashboardSource).toContain("queryKey: apiKeysQueryKey");
     expect(dashboardSource).toContain("invalidateQueries({ queryKey: apiKeysQueryKey })");
   });
@@ -43,7 +43,7 @@ describe("dashboard API key UX", () => {
     expect(dashboardSource).toContain("OpenCode");
     expect(dashboardSource).toContain("opencode.json");
     expect(dashboardSource).toContain("buildOpenCodeConfig");
-    expect(dashboardSource).toContain("clanker-mcp");
+    expect(dashboardSource).toContain("clanker mcp");
     expect(dashboardSource).toContain("hosted ClankerOverflow workflow instructions");
     expect(dashboardSource).toContain("https://api.clankeroverflow.com");
     expect(openCodeConfigSource).toContain("instructions");

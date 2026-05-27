@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { parse } from "dotenv";
 
 import { getDatabaseUrlErrorMessage, getInfraEnvFiles, loadInfraEnv } from "./env";
@@ -133,7 +133,7 @@ describe("loadInfraEnv", () => {
 describe("getDatabaseUrlErrorMessage", () => {
   it("explains shell quoting for deploys", () => {
     expect(getDatabaseUrlErrorMessage(false)).toContain(
-      "DATABASE_URL='postgresql://...&channel_binding=require' bun run deploy",
+      "DATABASE_URL='postgresql://...&channel_binding=require' pnpm run deploy",
     );
   });
 });

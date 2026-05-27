@@ -1,8 +1,13 @@
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
-const envProduction = readFileSync(new URL("../.env.production", import.meta.url), "utf8");
+const envProduction = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), "../.env.production"),
+  "utf8",
+);
 
 describe("production env", () => {
   it("uses the production custom domains for app-to-api traffic", () => {

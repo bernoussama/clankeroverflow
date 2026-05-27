@@ -1,14 +1,47 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { mockWorkerEnv } from "../test-setup";
-import app from "./index";
+import defaultHandler, { app, sentryOptionsForEnv } from "./index";
 
 describe("Server", () => {
-  const { createDbMock, posthogInstances } = (globalThis as any).__serverTestMocks;
+  const { createDbMock, posthogInstances, sentryWithSentryMock } = (globalThis as any)
+    .__serverTestMocks;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function spyRequestLogs() {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    return { info, error };
+  }
+
+  function parseLog(call: unknown[]) {
+    expect(call).toHaveLength(1);
+    expect(typeof call[0]).toBe("string");
+    return JSON.parse(call[0] as string) as Record<string, unknown>;
+  }
 
   test("GET / should return OK", async () => {
     const res = await app.request("/", undefined, mockWorkerEnv);
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("OK");
+  });
+
+  test("default export should wrap the worker with Sentry", () => {
+    expect(defaultHandler).toBe(app);
+    expect(sentryWithSentryMock).toHaveBeenCalledWith(expect.any(Function), app);
+  });
+
+  test("Sentry should be configured for Cloudflare error monitoring", () => {
+    expect(sentryOptionsForEnv(mockWorkerEnv)).toMatchObject({
+      dsn: "https://2c5a2f26e1dabc117e673996410d02cb@o4511458204319744.ingest.de.sentry.io/4511458219458640",
+      enableLogs: true,
+      environment: "test",
+      release: "test-version",
+      sendDefaultPii: true,
+      tracesSampleRate: 1,
+    });
   });
 
   test("GET / should advertise OAuth protected resource metadata", async () => {
@@ -19,7 +52,11 @@ describe("Server", () => {
   });
 
   test("GET /.well-known/oauth-protected-resource should publish RFC 9728 metadata", async () => {
-    const res = await app.request("/.well-known/oauth-protected-resource", undefined, mockWorkerEnv);
+    const res = await app.request(
+      "/.well-known/oauth-protected-resource",
+      undefined,
+      mockWorkerEnv,
+    );
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -66,9 +103,87 @@ describe("Server", () => {
       host: mockWorkerEnv.POSTHOG_HOST,
       flushAt: 1,
       flushInterval: 0,
-      enableExceptionAutocapture: false,
+      enableExceptionAutocapture: true,
     });
     expect(posthogInstances[0].shutdown).toHaveBeenCalledTimes(1);
+  });
+
+  test("requests should emit one structured wide event without secrets", async () => {
+    const logs = spyRequestLogs();
+
+    const res = await app.request(
+      "/trpc/healthCheck?x-clanker-api-key=secret-query-value",
+      {
+        headers: {
+          authorization: "Bearer secret-token",
+          "cf-connecting-ip": "203.0.113.24",
+          "cf-ray": "test-ray",
+          cookie: "better-auth.session_token=secret-cookie",
+          origin: "https://clankeroverflow.com",
+          "user-agent": "vitest",
+          "x-request-id": "request-123",
+        },
+      },
+      mockWorkerEnv,
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-request-id")).toBe("request-123");
+    expect(logs.info).toHaveBeenCalledTimes(1);
+    expect(logs.error).not.toHaveBeenCalled();
+
+    const event = parseLog(logs.info.mock.calls[0]);
+    expect(event).toMatchObject({
+      event: "api_request",
+      service: "server",
+      runtime: "cloudflare-workers",
+      deployment_environment: "test",
+      service_version: "test-version",
+      commit_sha: "test-commit",
+      request_id: "request-123",
+      method: "GET",
+      path: "/trpc/healthCheck",
+      route_family: "trpc",
+      origin: "https://clankeroverflow.com",
+      user_agent: "vitest",
+      cf_ray: "test-ray",
+      request_identity: "ip:203.0.113.24",
+      outcome: "success",
+      status_code: 200,
+    });
+    expect(typeof event.timestamp).toBe("string");
+    expect(typeof event.duration_ms).toBe("number");
+
+    const serialized = JSON.stringify(event);
+    expect(serialized).not.toContain("secret-query-value");
+    expect(serialized).not.toContain("secret-cookie");
+    expect(serialized).not.toContain("secret-token");
+  });
+
+  test("request failures should emit an error wide event", async () => {
+    const logs = spyRequestLogs();
+    createDbMock.mockImplementationOnce(async () => {
+      throw new Error("db unavailable");
+    });
+
+    const res = await app.request("/trpc/healthCheck", undefined, mockWorkerEnv);
+
+    expect(res.status).toBe(500);
+    expect(res.headers.get("x-request-id")).toBeTruthy();
+    expect(logs.info).not.toHaveBeenCalled();
+    expect(logs.error).toHaveBeenCalledTimes(1);
+
+    const event = parseLog(logs.error.mock.calls[0]);
+    expect(event).toMatchObject({
+      event: "api_request",
+      service: "server",
+      method: "GET",
+      path: "/trpc/healthCheck",
+      outcome: "error",
+      status_code: 500,
+      error_type: "Error",
+      error_message: "db unavailable",
+    });
   });
 
   test("uncaught request errors should be captured with PostHog", async () => {
@@ -94,20 +209,24 @@ describe("Server", () => {
   });
 
   test("POST /trpc/solutions.log should reject cookie-authenticated mutations from untrusted origins", async () => {
-    const res = await app.request("/trpc/solutions.log", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        cookie: "better-auth.session_token=csrf-test",
-        origin: "https://evil.example.com",
-      },
-      body: JSON.stringify({
-        json: {
-          problem: "Cross-site request",
-          solution: "Should be blocked before it reaches the procedure",
+    const res = await app.request(
+      "/trpc/solutions.log",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          cookie: "better-auth.session_token=csrf-test",
+          origin: "https://evil.example.com",
         },
-      }),
-    }, mockWorkerEnv);
+        body: JSON.stringify({
+          json: {
+            problem: "Cross-site request",
+            solution: "Should be blocked before it reaches the procedure",
+          },
+        }),
+      },
+      mockWorkerEnv,
+    );
 
     expect(res.status).toBe(403);
     expect(await res.text()).toContain("Forbidden");

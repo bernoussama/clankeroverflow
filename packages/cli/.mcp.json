@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "clankeroverflow": {
+      "command": "npx",
+      "args": ["-y", "@clankeroverflow/cli", "mcp"],
+      "env": {
+        "CLANKER_API_KEY": "${CLANKER_API_KEY}",
+        "CLANKER_SERVER_URL": "${CLANKER_SERVER_URL}"
+      }
+    }
+  }
+}

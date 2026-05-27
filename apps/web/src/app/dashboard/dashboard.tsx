@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import {
   createdApiKeySchema,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/api-key-client";
 import { authClient } from "@/lib/auth-client";
 import { buildOpenCodeConfig } from "@/lib/opencode-config";
+import Loader from "@/components/loader";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -22,13 +24,29 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [newKeyName, setNewKeyName] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
   const openCodeConfig = buildOpenCodeConfig();
 
   const queryClient = useQueryClient();
-  const apiKeysQueryKey = ["apiKeys", "list"] as const;
+  const sessionUserId = session?.user?.id;
+  const apiKeysQueryKey = ["apiKeys", "list", sessionUserId] as const;
+
+  useEffect(() => {
+    if (!isSessionPending && !session) {
+      router.replace("/login");
+    }
+  }, [isSessionPending, router, session]);
+
+  // Clear stale API key cache when the authenticated user changes
+  useEffect(() => {
+    return () => {
+      queryClient.removeQueries({ queryKey: ["apiKeys"] });
+    };
+  }, [sessionUserId, queryClient]);
 
   const { data: apiKeys = [], isLoading } = useQuery<ApiKeyListItem[]>({
     queryKey: apiKeysQueryKey,
@@ -44,6 +62,7 @@ export default function Dashboard() {
 
       return result.apiKeys;
     },
+    enabled: Boolean(session),
   });
 
   const createMutation = useMutation({
@@ -129,8 +148,20 @@ export default function Dashboard() {
       });
   };
 
+  if (isSessionPending || !session) {
+    return <Loader />;
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="page-shell">
+      <div className="page-container">
+        <div className="mb-10">
+          <p className="font-mono text-sm tracking-widest uppercase text-accent-landing mb-3">
+            Dashboard
+          </p>
+          <h1 className="page-title text-3xl sm:text-4xl">Welcome, {session.user.name}</h1>
+        </div>
+        <div className="space-y-8">
       {/* API Keys Section */}
       <div className="dashboard-card">
         <div className="dashboard-card__header">
@@ -277,7 +308,7 @@ export default function Dashboard() {
             clients can reuse the same command and environment values in their own config format.
             The OpenCode config also loads hosted ClankerOverflow workflow instructions so the
             model searches first and logs verified fixes afterward. Global installs can run
-            <code className="text-[11px]"> clanker-mcp</code> directly.
+            <code className="text-[11px]"> clanker mcp</code> directly.
           </div>
         </div>
       </div>
@@ -317,6 +348,8 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </div>

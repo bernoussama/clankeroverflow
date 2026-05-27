@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 const nextConfigSource = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
 
@@ -21,5 +21,7 @@ describe("next config security headers", () => {
     expect(nextConfigSource).not.toContain("browsing-topics=()");
     expect(nextConfigSource).toContain("https://static.cloudflareinsights.com");
     expect(nextConfigSource).toContain("https://cloudflareinsights.com");
+    expect(nextConfigSource).toContain("https://eu-assets.i.posthog.com");
+    expect(nextConfigSource).toContain("https://eu.i.posthog.com");
   });
 });

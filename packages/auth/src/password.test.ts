@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 describe("auth password helpers", () => {
   it("round-trips passwords with the worker-compatible hash format", async () => {

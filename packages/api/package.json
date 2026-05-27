@@ -10,7 +10,7 @@
     }
   },
   "scripts": {
-    "test": "bun test"
+    "test": "vitest run"
   },
   "dependencies": {
     "@clankeroverflow/auth": "workspace:*",
@@ -26,6 +26,7 @@
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",
     "hono": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

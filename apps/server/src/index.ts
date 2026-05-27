@@ -15,17 +15,19 @@ import { createAuth, type Auth } from "@clankeroverflow/auth";
 import { createDb, type Database } from "@clankeroverflow/db";
 import { env } from "@clankeroverflow/env/server";
 import { trpcServer } from "@hono/trpc-server";
+import * as Sentry from "@sentry/cloudflare";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 
 import { createRequestResourceLifecycle } from "./request-lifecycle";
+import { withRequestLogging, type RequestLogEvent } from "./request-logging";
 
 type AppEnv = {
   Variables: {
     auth: Auth;
     db: Database;
     posthog?: PostHogClient;
+    requestLog?: RequestLogEvent;
   };
 };
 
@@ -75,6 +77,8 @@ const nonCacheableHeaders = {
 } as const;
 const apiOrigin = "https://api.clankeroverflow.com";
 const authIssuer = `${apiOrigin}/auth`;
+const sentryDsn =
+  "https://2c5a2f26e1dabc117e673996410d02cb@o4511458204319744.ingest.de.sentry.io/4511458219458640";
 const oauthProtectedResourceMetadata = {
   resource: apiOrigin,
   authorization_servers: [authIssuer],
@@ -84,7 +88,23 @@ const oauthProtectedResourceMetadata = {
 } as const;
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-const app = new Hono<AppEnv>();
+export const app = new Hono<AppEnv>();
+
+type SentryBindings = {
+  ENVIRONMENT?: string;
+  SERVICE_VERSION?: string;
+};
+
+export function sentryOptionsForEnv(env: SentryBindings): Sentry.CloudflareOptions {
+  return {
+    dsn: sentryDsn,
+    enableLogs: true,
+    environment: env.ENVIRONMENT,
+    release: env.SERVICE_VERSION,
+    sendDefaultPii: true,
+    tracesSampleRate: 1.0,
+  };
+}
 
 function getWaitUntilHandler(c: Context<AppEnv>) {
   try {
@@ -103,7 +123,7 @@ const withRequestServices: MiddlewareHandler<AppEnv> = async (c, next) => {
   const posthog = createPostHog(postHogEnvForRequest(c));
 
   c.set("db", db);
-  c.set("auth", createAuth(db, lifecycle.waitUntil));
+  c.set("auth", createAuth(db, lifecycle.waitUntil, { posthog: posthog ?? undefined }));
   if (posthog) {
     c.set("posthog", posthog);
   }
@@ -168,7 +188,7 @@ const withTrustedMutationOrigins: MiddlewareHandler<AppEnv> = async (c, next) =>
   return c.text("Forbidden", 403);
 };
 
-app.use(logger());
+app.use(withRequestLogging);
 app.use("/*", withSecurityHeaders);
 app.use(
   "/*",
@@ -214,6 +234,12 @@ app.get("/", (c) => {
 });
 
 app.onError((err, c) => {
+  const requestLog = c.get("requestLog");
+  if (requestLog) {
+    requestLog.error_type = err.name;
+    requestLog.error_message = err.message;
+  }
+
   const requestPostHog = c.get("posthog");
   const posthog = requestPostHog ?? createPostHog(postHogEnvForRequest(c));
   posthog?.captureException(err);
@@ -223,4 +249,4 @@ app.onError((err, c) => {
   return c.text("Internal Server Error", 500);
 });
 
-export default app;
+export default Sentry.withSentry((env) => sentryOptionsForEnv(env as SentryBindings), app);

@@ -1,8 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - bun:test is available at runtime but types may not be present
-import { mock } from "bun:test";
+import { vi } from "vitest";
 
-mock.module("cloudflare:workers", () => {
+vi.mock("cloudflare:workers", () => {
   return {
     env: {
       CORS_ORIGIN: "http://localhost:3001",
@@ -18,47 +17,54 @@ mock.module("cloudflare:workers", () => {
   };
 });
 
-mock.module("@clankeroverflow/db", () => {
+vi.mock("@clankeroverflow/db", () => {
   const db = {
     query: {
       apiKey: {
-        findMany: mock(),
-        findFirst: mock(),
+        findMany: vi.fn(),
+        findFirst: vi.fn(),
       },
       solution: {
-        findFirst: mock(),
-        findMany: mock(),
+        findFirst: vi.fn(),
+        findMany: vi.fn(),
       },
       solutionVote: {
-        findFirst: mock(),
+        findFirst: vi.fn(),
       },
     },
-    select: mock(() => {
+    select: vi.fn(() => {
       const chain: any = {};
       const mockResult = [{ upvotes: 0, downvotes: 0 }];
-      chain.from = mock(() => chain);
-      chain.where = mock(() => chain);
-      chain.orderBy = mock(() => chain);
-      chain.limit = mock(() => chain.__result ?? mockResult);
+      chain.from = vi.fn(() => chain);
+      chain.where = vi.fn(() => chain);
+      chain.orderBy = vi.fn(() => chain);
+      chain.limit = vi.fn(() => chain.__result ?? mockResult);
       chain.then = (resolve: (value: unknown) => unknown) => resolve(chain.__result ?? mockResult);
       chain.__result = mockResult;
       return chain;
     }),
-    insert: mock(() => ({
-      values: mock(() => ({
-        returning: mock(() => Promise.resolve([])),
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        returning: vi.fn(() => Promise.resolve([])),
         then: (resolve: (value: unknown) => unknown) => resolve(undefined),
       })),
     })),
-    execute: mock(),
-    update: mock(() => ({
-      set: mock(() => ({
-        where: mock(),
-      })),
-    })),
-    delete: mock(() => ({
-      where: mock(),
-    })),
+    execute: vi.fn(),
+    update: vi.fn(() => {
+      const chain: any = {};
+      chain.set = vi.fn(() => chain);
+      chain.where = vi.fn(() => chain);
+      chain.returning = vi.fn(() => Promise.resolve([{}]));
+      chain.then = (resolve: (value: unknown) => unknown) => resolve([{}]);
+      return chain;
+    }),
+    delete: vi.fn(() => {
+      const chain: any = {};
+      chain.where = vi.fn(() => chain);
+      chain.returning = vi.fn(() => Promise.resolve([{}]));
+      chain.then = (resolve: (value: unknown) => unknown) => resolve([{}]);
+      return chain;
+    }),
   };
 
   return {

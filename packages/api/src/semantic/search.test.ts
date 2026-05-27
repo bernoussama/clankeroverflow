@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test, vi } from "vitest";
 import { searchSolutionsHybrid, searchSolutionsSemantic } from "./search";
 
 function createRow(id: string) {
@@ -22,13 +22,13 @@ function createDb(params: {
   const keywordRows = params.keywordRows ?? [];
 
   const selectChain = {
-    from: mock(() => selectChain),
-    where: mock(() => Promise.resolve(semanticRows)),
+    from: vi.fn(() => selectChain),
+    where: vi.fn(() => Promise.resolve(semanticRows)),
   };
 
   return {
-    select: mock(() => selectChain),
-    execute: mock(async () => ({ rows: keywordRows })),
+    select: vi.fn(() => selectChain),
+    execute: vi.fn(async () => ({ rows: keywordRows })),
   };
 }
 
@@ -39,14 +39,14 @@ describe("searchSolutionsSemantic", () => {
     });
 
     const ai = {
-      run: mock(async () => ({ data: [[0.1]] })),
+      run: vi.fn(async () => ({ data: [[0.1]] })),
     };
 
     const vectorize = {
-      query: mock(async () => ({
+      query: vi.fn(async () => ({
         matches: [{ id: "a", score: 0.9 }, { id: "b", score: 0.5 }],
       })),
-      upsert: mock(async () => {}),
+      upsert: vi.fn(async () => {}),
     };
 
     const out = await searchSolutionsSemantic({
@@ -63,11 +63,11 @@ describe("searchSolutionsSemantic", () => {
   test("returns early for blank queries without calling AI or Vectorize", async () => {
     const db = createDb({});
     const ai = {
-      run: mock(async () => ({ data: [[0.1]] })),
+      run: vi.fn(async () => ({ data: [[0.1]] })),
     };
     const vectorize = {
-      query: mock(async () => ({ matches: [{ id: "a", score: 0.9 }] })),
-      upsert: mock(async () => {}),
+      query: vi.fn(async () => ({ matches: [{ id: "a", score: 0.9 }] })),
+      upsert: vi.fn(async () => {}),
     };
 
     const out = await searchSolutionsSemantic({
@@ -92,16 +92,16 @@ describe("searchSolutionsHybrid", () => {
       keywordRows: [createRow("c"), createRow("a"), createRow("d")],
     });
     const ai = {
-      run: mock(async () => ({ data: [[0.1]] })),
+      run: vi.fn(async () => ({ data: [[0.1]] })),
     };
     const vectorize = {
-      query: mock(async () => ({
+      query: vi.fn(async () => ({
         matches: [
           { id: "b", score: 0.95 },
           { id: "a", score: 0.8 },
         ],
       })),
-      upsert: mock(async () => {}),
+      upsert: vi.fn(async () => {}),
     };
 
     const out = await searchSolutionsHybrid({

@@ -2,6 +2,7 @@ name = "clankeroverflow-server"
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
+upload_source_maps = true
 
 [dev]
 port = 3000
@@ -10,7 +11,7 @@ port = 3000
 # (GITHUB_CLIENT_SECRET, BETTER_AUTH_SECRET) or use `wrangler secret put`.
 #
 # Semantic search: create a Vectorize index (768 dimensions, cosine) and set its name below:
-#   bunx wrangler vectorize create clankeroverflow-solutions-dev --dimensions=768 --metric=cosine
+#   pnpm dlx wrangler vectorize create clankeroverflow-solutions-dev --dimensions=768 --metric=cosine
 
 [ai]
 binding = "AI"

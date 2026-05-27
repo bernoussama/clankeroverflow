@@ -1,10 +1,25 @@
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
-const alchemyRunSource = readFileSync(new URL("../alchemy.run.ts", import.meta.url), "utf8");
+const alchemyRunSource = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), "../alchemy.run.ts"),
+  "utf8",
+);
+const serverWranglerSource = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), "../../../apps/server/wrangler.toml"),
+  "utf8",
+);
 
 describe("infra worker config", () => {
+  it("loads local TypeScript helpers without static .ts imports", () => {
+    expect(alchemyRunSource).toContain('new URL("./src/env.ts", import.meta.url).href');
+    expect(alchemyRunSource).not.toContain('from "./src/env"');
+    expect(alchemyRunSource).not.toContain('from "./src/env.ts"');
+  });
+
   it("adopts the existing web worker during deploys", () => {
     expect(alchemyRunSource).toContain('Nextjs("web", {');
     expect(alchemyRunSource).toContain("adopt: true");
@@ -20,5 +35,10 @@ describe("infra worker config", () => {
   it("passes GitHub OAuth credentials to the auth worker", () => {
     expect(alchemyRunSource).toContain("GITHUB_CLIENT_ID");
     expect(alchemyRunSource).toContain("GITHUB_CLIENT_SECRET");
+  });
+
+  it("enables production source maps for Sentry readable stack traces", () => {
+    expect(alchemyRunSource).toContain("sourceMap: true");
+    expect(serverWranglerSource).toContain("upload_source_maps = true");
   });
 });

@@ -1,4 +1,5 @@
 import { PostHog } from "posthog-node";
+import { errorFields, logError } from "./logger";
 
 export type PostHogEnv = {
   POSTHOG_API_KEY?: string;
@@ -21,7 +22,7 @@ export function createPostHog(bindings?: PostHogEnv): PostHogClient | null {
     host,
     flushAt: 1,
     flushInterval: 0,
-    enableExceptionAutocapture: false,
+    enableExceptionAutocapture: true,
   });
 }
 
@@ -32,7 +33,10 @@ export async function shutdownPostHog(
   if (!posthog) return;
 
   const shutdown = Promise.resolve(posthog.shutdown(5_000) as unknown).catch((err) => {
-    console.error("PostHog shutdown failed:", err);
+    logError({
+      event: "posthog_shutdown_failed",
+      ...errorFields(err),
+    });
   });
 
   if (waitUntil) {

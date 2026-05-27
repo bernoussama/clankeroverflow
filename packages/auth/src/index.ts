@@ -6,6 +6,16 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { parseAllowedOriginsWithDevFallback } from "./origins";
 
+type PostHogCapture = {
+  capture: (event: {
+    distinctId: string;
+    event: string;
+    properties?: Record<string, unknown>;
+  }) => void;
+};
+
+type ApiKeyHookRecord = { referenceId?: string; userId?: string; name?: string };
+
 const authEnv = env as typeof env & {
   CORS_ORIGIN: string;
   BETTER_AUTH_SECRET: string;
@@ -50,7 +60,7 @@ function getDefaultCookieAttributes(baseURL: string) {
 export function createAuth(
   db: Database = getDb(),
   waitUntil?: (promise: Promise<unknown>) => void,
-  options?: { trustedOrigins?: string[] },
+  options?: { trustedOrigins?: string[]; posthog?: PostHogCapture },
 ) {
   const trustedOrigins =
     options?.trustedOrigins ??
@@ -58,6 +68,8 @@ export function createAuth(
       CORS_ORIGIN: authEnv.CORS_ORIGIN,
       BETTER_AUTH_URL: authEnv.BETTER_AUTH_URL,
     });
+
+  const ph = options?.posthog;
 
   return betterAuth({
     basePath: "/auth",
@@ -96,6 +108,49 @@ export function createAuth(
         },
       }),
     ],
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            ph?.capture({
+              distinctId: user.id,
+              event: "user signed up",
+              properties: { name: user.name, email: user.email },
+            });
+          },
+        },
+      },
+      session: {
+        create: {
+          after: async (session) => {
+            ph?.capture({
+              distinctId: session.userId,
+              event: "user signed in",
+            });
+          },
+        },
+      },
+      apikey: {
+        create: {
+          after: async (k: ApiKeyHookRecord) => {
+            ph?.capture({
+              distinctId: k.referenceId ?? k.userId ?? "unknown",
+              event: "api key created",
+              properties: { name: k.name ?? null },
+            });
+          },
+        },
+        delete: {
+          after: async (k: ApiKeyHookRecord) => {
+            ph?.capture({
+              distinctId: k.referenceId ?? k.userId ?? "unknown",
+              event: "api key deleted",
+              properties: { name: k.name ?? null },
+            });
+          },
+        },
+      },
+    },
     advanced: {
       ...(waitUntil
         ? {

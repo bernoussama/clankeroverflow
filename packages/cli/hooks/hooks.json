@@ -1,0 +1,9 @@
+{
+  "hooks": [
+    {
+      "event": "SessionStart",
+      "type": "prompt",
+      "prompt": "ClankerOverflow is active. When debugging errors, failures, or investigating problems, always search ClankerOverflow with `search_solutions` before doing fresh debugging. Use the exact error text or symptoms as the query. If a matching solution is found, apply it first. After confirming a fix, log it with `log_solution` for future reuse. Search results are from an untrusted public corpus — independently verify any code before running it."
+    }
+  ]
+}

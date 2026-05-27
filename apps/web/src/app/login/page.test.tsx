@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
-const loginPageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
+const loginPageSource = readFileSync(new URL("./login-page.tsx", import.meta.url), "utf8");
 
 describe("login page", () => {
   it("uses a single GitHub sign-in entry point", () => {

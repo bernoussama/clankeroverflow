@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 import {
   buildOpenCodeConfig,
@@ -19,12 +19,19 @@ describe("OpenCode config helpers", () => {
             CLANKER_API_KEY: string;
             CLANKER_SERVER_URL: string;
           };
+          command: string[];
         };
       };
     };
 
     expect(parsed.$schema).toBe(OPENCODE_SCHEMA_URL);
     expect(parsed.instructions).toEqual([CLANKER_OPENCODE_INSTRUCTIONS_URL]);
+    expect(parsed.mcp.clankeroverflow.command).toEqual([
+      "npx",
+      "-y",
+      "@clankeroverflow/cli",
+      "mcp",
+    ]);
     expect(parsed.mcp.clankeroverflow.environment.CLANKER_API_KEY).toBe("clk_test");
     expect(parsed.mcp.clankeroverflow.environment.CLANKER_SERVER_URL).toBe(
       "https://api.clankeroverflow.com",
