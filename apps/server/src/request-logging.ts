@@ -15,6 +15,7 @@ export const REQUEST_ID_HEADER = "x-request-id";
 
 export type RequestLogEvent = Record<string, unknown> & {
   event: "api_request";
+  message: string;
   service: "server";
   timestamp: string;
   request_id: string;
@@ -55,6 +56,10 @@ function getRouteFamily(path: string) {
   return "public";
 }
 
+function getRequestLogMessage(event: RequestLogEvent) {
+  return `${event.method} ${event.path} completed with ${event.status_code} (${event.outcome})`;
+}
+
 function getDeploymentMetadata(c: Context<RequestLogEnv>) {
   return {
     runtime: "cloudflare-workers",
@@ -73,6 +78,7 @@ export const withRequestLogging: MiddlewareHandler<RequestLogEnv> = async (c, ne
   const path = new URL(c.req.url).pathname;
   const requestLog: RequestLogEvent = {
     event: "api_request",
+    message: "",
     service: "server",
     ...getDeploymentMetadata(c),
     timestamp: new Date(startedAt).toISOString(),
@@ -104,6 +110,7 @@ export const withRequestLogging: MiddlewareHandler<RequestLogEnv> = async (c, ne
     throw error;
   } finally {
     requestLog.duration_ms = Date.now() - startedAt;
+    requestLog.message = getRequestLogMessage(requestLog);
     c.header(REQUEST_ID_HEADER, requestLog.request_id);
     const event = omitUndefined(requestLog) as RequestLogEvent;
     if (event.outcome === "error") {

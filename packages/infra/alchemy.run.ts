@@ -1,5 +1,11 @@
 import alchemy from "alchemy";
-import { Ai, Hyperdrive, Nextjs, VectorizeIndex, Worker } from "alchemy/cloudflare";
+import {
+  Ai,
+  Hyperdrive,
+  Nextjs,
+  VectorizeIndex,
+  Worker,
+} from "alchemy/cloudflare";
 
 const { getDatabaseUrlErrorMessage, loadInfraEnv } = await import(
   new URL("./src/env.ts", import.meta.url).href
@@ -15,7 +21,8 @@ const LOCAL_DEFAULT_CORS_ORIGIN =
   "http://localhost:3001,http://127.0.0.1:3001,http://[::1]:3001";
 
 /** Prefer `process.env` so values from `loadInfraEnv` win over any Alchemy snapshot. */
-const rawCorsOrigin = (process.env.CORS_ORIGIN ?? alchemy.env.CORS_ORIGIN)?.trim() ?? "";
+const rawCorsOrigin =
+  (process.env.CORS_ORIGIN ?? alchemy.env.CORS_ORIGIN)?.trim() ?? "";
 const corsOrigin = rawCorsOrigin
   ? rawCorsOrigin
   : isLocal
@@ -47,6 +54,14 @@ const solutionVectorIndex = await VectorizeIndex("solution-vectors", {
 });
 
 const workersAi = Ai();
+const sentryDsn = process.env.SENTRY_DSN?.trim();
+const sentryTestToken = process.env.SENTRY_TEST_TOKEN?.trim();
+const deploymentEnvironment = isLocal ? "development" : "production";
+const serviceVersion =
+  process.env.SERVICE_VERSION?.trim() ||
+  process.env.COMMIT_SHA?.trim() ||
+  "unknown";
+const commitSha = process.env.COMMIT_SHA?.trim() || "unknown";
 
 export const web = await Nextjs("web", {
   cwd: "../../apps/web",
@@ -98,6 +113,33 @@ export const server = await Worker("server", {
     SOLUTION_VECTORS: solutionVectorIndex,
     POSTHOG_API_KEY: alchemy.env.POSTHOG_API_KEY!,
     POSTHOG_HOST: alchemy.env.POSTHOG_HOST!,
+    ...(sentryDsn ? { SENTRY_DSN: sentryDsn } : {}),
+    ...(sentryTestToken
+      ? {
+          SENTRY_TEST_TOKEN: alchemy.secret.env(
+            "SENTRY_TEST_TOKEN",
+            sentryTestToken,
+          ),
+        }
+      : {}),
+    ENVIRONMENT: deploymentEnvironment,
+    SERVICE_VERSION: serviceVersion,
+    COMMIT_SHA: commitSha,
+  },
+  observability: {
+    enabled: true,
+    headSamplingRate: 1,
+    logs: {
+      enabled: true,
+      headSamplingRate: 1,
+      persist: true,
+      invocationLogs: true,
+    },
+    traces: {
+      enabled: true,
+      headSamplingRate: 1,
+      persist: true,
+    },
   },
   dev: {
     port: 3000,

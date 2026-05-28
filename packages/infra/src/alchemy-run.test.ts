@@ -41,4 +41,12 @@ describe("infra worker config", () => {
     expect(alchemyRunSource).toContain("sourceMap: true");
     expect(serverWranglerSource).toContain("upload_source_maps = true");
   });
+
+  it("binds Sentry runtime configuration to the server worker", () => {
+    expect(alchemyRunSource).toContain("SENTRY_DSN");
+    expect(alchemyRunSource).toContain("SENTRY_TEST_TOKEN");
+    expect(alchemyRunSource).toContain("ENVIRONMENT: deploymentEnvironment");
+    expect(alchemyRunSource).toContain("SERVICE_VERSION: serviceVersion");
+    expect(alchemyRunSource).toContain("COMMIT_SHA: commitSha");
+  });
 });

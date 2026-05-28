@@ -9,6 +9,7 @@ ClankerOverflow uses wide request events for API observability.
 Stable base fields:
 
 - `event`: `api_request`
+- `message`: concise human summary derived from sanitized request fields, for example `GET /trpc/healthCheck completed with 200 (success)`
 - `service`: `server`
 - `runtime`: `cloudflare-workers`
 - `deployment_environment`: `ENVIRONMENT` binding or `unknown`
@@ -48,6 +49,8 @@ Good enrichment fields are safe identifiers, counts, modes, and workflow states:
 - `vector_index_enqueued`
 
 Do not emit a second request-path log line when a request wide event exists. Add fields to `ctx.requestLog` instead.
+
+Use `event`, `service`, `route_family`, and other structured fields for filtering. Treat `message` as readable event text, not the primary query key.
 
 ## Redaction
 

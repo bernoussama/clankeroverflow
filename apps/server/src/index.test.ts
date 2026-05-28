@@ -3,8 +3,12 @@ import { mockWorkerEnv } from "../test-setup";
 import defaultHandler, { app, sentryOptionsForEnv } from "./index";
 
 describe("Server", () => {
-  const { createDbMock, posthogInstances, sentryWithSentryMock } = (globalThis as any)
-    .__serverTestMocks;
+  const {
+    createDbMock,
+    posthogInstances,
+    sentryCaptureExceptionMock,
+    sentryWithSentryMock,
+  } = (globalThis as any).__serverTestMocks;
 
   afterEach(() => {
     vi.restoreAllMocks();
@@ -44,6 +48,17 @@ describe("Server", () => {
     });
   });
 
+  test("Sentry should use COMMIT_SHA as release fallback", () => {
+    expect(
+      sentryOptionsForEnv({
+        COMMIT_SHA: "test-commit",
+        ENVIRONMENT: "test",
+      }),
+    ).toMatchObject({
+      release: "test-commit",
+    });
+  });
+
   test("GET / should advertise OAuth protected resource metadata", async () => {
     const res = await app.request("/", undefined, mockWorkerEnv);
 
@@ -66,6 +81,66 @@ describe("Server", () => {
     expect(body.scopes_supported).toContain("solutions:read");
     expect(body.scopes_supported).toContain("solutions:write");
     expect(body.bearer_methods_supported).toContain("header");
+  });
+
+  test("POST /internal/sentry-test should capture a Sentry smoke-test event", async () => {
+    sentryCaptureExceptionMock.mockClear();
+
+    const res = await app.request(
+      "/internal/sentry-test",
+      {
+        method: "POST",
+        headers: {
+          authorization: "Bearer test-sentry-token",
+        },
+      },
+      mockWorkerEnv,
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ eventId: "test-sentry-event-id", ok: true });
+    expect(sentryCaptureExceptionMock).toHaveBeenCalledWith(expect.any(Error), {
+      tags: {
+        smoke_test: "true",
+      },
+    });
+  });
+
+  test("POST /internal/sentry-test should stay hidden without a configured token", async () => {
+    sentryCaptureExceptionMock.mockClear();
+
+    const res = await app.request(
+      "/internal/sentry-test",
+      {
+        method: "POST",
+      },
+      {
+        ...mockWorkerEnv,
+        SENTRY_TEST_TOKEN: undefined,
+      },
+    );
+
+    expect(res.status).toBe(404);
+    expect(sentryCaptureExceptionMock).not.toHaveBeenCalled();
+  });
+
+  test("POST /internal/sentry-test should reject invalid tokens", async () => {
+    sentryCaptureExceptionMock.mockClear();
+
+    const res = await app.request(
+      "/internal/sentry-test",
+      {
+        method: "POST",
+        headers: {
+          authorization: "Bearer wrong-token",
+        },
+      },
+      mockWorkerEnv,
+    );
+
+    expect(res.status).toBe(403);
+    expect(sentryCaptureExceptionMock).not.toHaveBeenCalled();
   });
 
   test("GET / should include hardened security headers", async () => {
@@ -135,6 +210,7 @@ describe("Server", () => {
     const event = parseLog(logs.info.mock.calls[0]);
     expect(event).toMatchObject({
       event: "api_request",
+      message: "GET /trpc/healthCheck completed with 200 (success)",
       service: "server",
       runtime: "cloudflare-workers",
       deployment_environment: "test",
@@ -176,6 +252,7 @@ describe("Server", () => {
     const event = parseLog(logs.error.mock.calls[0]);
     expect(event).toMatchObject({
       event: "api_request",
+      message: "GET /trpc/healthCheck completed with 500 (error)",
       service: "server",
       method: "GET",
       path: "/trpc/healthCheck",

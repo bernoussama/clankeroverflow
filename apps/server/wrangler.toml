@@ -19,3 +19,18 @@ binding = "AI"
 [[vectorize]]
 binding = "SOLUTION_VECTORS"
 index_name = "clankeroverflow-solutions-dev"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1

@@ -23,6 +23,7 @@ import { createRequestResourceLifecycle } from "./request-lifecycle";
 import { withRequestLogging, type RequestLogEvent } from "./request-logging";
 
 type AppEnv = {
+  Bindings: SentryBindings;
   Variables: {
     auth: Auth;
     db: Database;
@@ -77,7 +78,7 @@ const nonCacheableHeaders = {
 } as const;
 const apiOrigin = "https://api.clankeroverflow.com";
 const authIssuer = `${apiOrigin}/auth`;
-const sentryDsn =
+const defaultSentryDsn =
   "https://2c5a2f26e1dabc117e673996410d02cb@o4511458204319744.ingest.de.sentry.io/4511458219458640";
 const oauthProtectedResourceMetadata = {
   resource: apiOrigin,
@@ -91,16 +92,19 @@ const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 export const app = new Hono<AppEnv>();
 
 type SentryBindings = {
+  SENTRY_DSN?: string;
+  SENTRY_TEST_TOKEN?: string;
   ENVIRONMENT?: string;
   SERVICE_VERSION?: string;
+  COMMIT_SHA?: string;
 };
 
 export function sentryOptionsForEnv(env: SentryBindings): Sentry.CloudflareOptions {
   return {
-    dsn: sentryDsn,
+    dsn: env.SENTRY_DSN?.trim() || defaultSentryDsn,
     enableLogs: true,
     environment: env.ENVIRONMENT,
-    release: env.SERVICE_VERSION,
+    release: env.SERVICE_VERSION || env.COMMIT_SHA,
     sendDefaultPii: true,
     tracesSampleRate: 1.0,
   };
@@ -213,6 +217,27 @@ app.use("/trpc/*", withRequestServices);
 
 app.get("/.well-known/oauth-protected-resource", (c) => {
   return c.json(oauthProtectedResourceMetadata);
+});
+
+app.post("/internal/sentry-test", (c) => {
+  const token = c.env?.SENTRY_TEST_TOKEN?.trim();
+  if (!token) {
+    return c.notFound();
+  }
+
+  const authorization = c.req.header("authorization");
+  if (authorization !== `Bearer ${token}`) {
+    return c.text("Forbidden", 403);
+  }
+
+  const error = new Error("Sentry integration test event");
+  const eventId = Sentry.captureException(error, {
+    tags: {
+      smoke_test: "true",
+    },
+  });
+
+  return c.json({ eventId, ok: true });
 });
 
 app.use(

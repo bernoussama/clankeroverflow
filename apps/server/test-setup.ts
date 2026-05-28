@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 
 const sentryMocks = vi.hoisted(() => ({
+  captureException: vi.fn(() => "test-sentry-event-id"),
   withSentry: vi.fn((_optionsCallback: unknown, handler: unknown) => handler),
 }));
 
@@ -76,6 +77,9 @@ export const mockWorkerEnv = {
   SOLUTION_VECTORS: undefined as unknown,
   POSTHOG_API_KEY: "test-posthog-key",
   POSTHOG_HOST: "https://eu.i.posthog.com",
+  SENTRY_DSN:
+    "https://2c5a2f26e1dabc117e673996410d02cb@o4511458204319744.ingest.de.sentry.io/4511458219458640",
+  SENTRY_TEST_TOKEN: "test-sentry-token",
 };
 
 const posthogInstances: any[] = [];
@@ -99,11 +103,13 @@ class PostHogMock {
   createAuthMock,
   createDbMock,
   posthogInstances,
+  sentryCaptureExceptionMock: sentryMocks.captureException,
   sentryWithSentryMock: sentryMocks.withSentry,
 };
 
 vi.mock("@sentry/cloudflare", () => {
   return {
+    captureException: sentryMocks.captureException,
     withSentry: sentryMocks.withSentry,
   };
 });
