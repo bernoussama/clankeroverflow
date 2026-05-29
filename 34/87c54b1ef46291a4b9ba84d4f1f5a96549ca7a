@@ -1,0 +1,26 @@
+apps/web/src/next-config.test.ts
+  s_f309e533f2d837::t_6a501541358ef9 27
+  s_f309e533f2d837::t_92ba8970be5217 26,28
+apps/web/src/components/posthog-analytics.test.ts
+  s_f309e533f2d837::t_597a11a081935a 1-15
+apps/web/next.config.ts
+  s_f309e533f2d837::t_c37726b330b427 12-18,21-27,31-37
+apps/web/src/components/posthog-analytics.tsx
+  s_f309e533f2d837::t_f5b05f482d591d 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "3487c54b1ef46291a4b9ba84d4f1f5a96549ca7a",
+  "prompts": {},
+  "sessions": {
+    "s_f309e533f2d837": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7543-e9db-7d82-971d-30959025c527",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
