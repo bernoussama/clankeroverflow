@@ -1,0 +1,25 @@
+apps/web/src/app/solution/[id]/solution-page.tsx
+  s_3cbc6e62b2585d::t_0b41bdd83e587a 45-53
+packages/infra/alchemy.run.ts
+  s_3cbc6e62b2585d::t_d89e4155f7bcb4 39-41
+apps/web/src/app/solutions/solutions-page.test.tsx
+  s_3cbc6e62b2585d::t_866a59c5faa257 28,34-35
+packages/infra/src/alchemy-run.test.ts
+  s_3cbc6e62b2585d::t_d89e4155f7bcb4 35-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "0956a791225fdb7c3e2e5d4c29b2d75aad869255",
+  "prompts": {},
+  "sessions": {
+    "s_3cbc6e62b2585d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7568-0906-78f2-83bd-48e2cb4eacad",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
