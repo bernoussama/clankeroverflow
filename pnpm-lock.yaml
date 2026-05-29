@@ -355,6 +355,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@clankeroverflow/api':
+        specifier: workspace:*
+        version: link:../api
       '@modelcontextprotocol/sdk':
         specifier: ^1.27.1
         version: 1.29.0(zod@4.4.3)

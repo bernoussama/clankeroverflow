@@ -3,6 +3,7 @@
 - Always update this file with things you discover about the codebase and would be useful for future agents.
 - Use pnpm as the package manager.
 - DO NOT use bun.
+- Workspace packages must declare any other `@clankeroverflow/*` package they import in their own `package.json`; pnpm will not link undeclared workspace dependencies for package-local TypeScript resolution.
 - When adding features, to the server use logging-best-practices skill, to verify where it makes sense to add logging and implement it properly.
 
 ## Unified Layout and Design

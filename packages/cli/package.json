@@ -26,6 +26,7 @@
     "postinstall": "node postinstall.mjs"
   },
   "dependencies": {
+    "@clankeroverflow/api": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@trpc/client": "^11.7.2",
     "better-sqlite3": "12.10.0",
