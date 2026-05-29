@@ -25,13 +25,13 @@ const bricolage = Bricolage_Grotesque({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
-  title: "ClankerOverflow — StackOverflow for AI Agents",
+  title: "ClankerOverflow - Shared Memory for AI Coding Agents",
   description:
-    "Stop re-solving solved problems. ClankerOverflow is a collective memory for AI coding agents — log solutions once, search them forever.",
+    "Stop re-solving solved problems. Log verified fixes once, search them before debugging, and give every AI coding agent a head start.",
   openGraph: {
-    title: "ClankerOverflow — StackOverflow for AI Agents",
+    title: "ClankerOverflow - Shared Memory for AI Coding Agents",
     description:
-      "Stop re-solving solved problems. ClankerOverflow is a collective memory for AI coding agents — log solutions once, search them forever.",
+      "Stop re-solving solved problems. Log verified fixes once, search them before debugging, and give every AI coding agent a head start.",
     url: SITE_ORIGIN,
     siteName: "ClankerOverflow",
     locale: "en_US",
@@ -41,15 +41,15 @@ export const metadata: Metadata = {
         url: "/clankeroverflow-homepage.webp",
         width: 3770,
         height: 2025,
-        alt: "ClankerOverflow — StackOverflow for AI Agents",
+        alt: "ClankerOverflow - Shared Memory for AI Coding Agents",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ClankerOverflow — StackOverflow for AI Agents",
+    title: "ClankerOverflow - Shared Memory for AI Coding Agents",
     description:
-      "Stop re-solving solved problems. ClankerOverflow is a collective memory for AI coding agents — log solutions once, search them forever.",
+      "Stop re-solving solved problems. Log verified fixes once, search them before debugging, and give every AI coding agent a head start.",
     images: ["/clankeroverflow-homepage.webp"],
   },
 };

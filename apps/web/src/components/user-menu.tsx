@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
@@ -11,8 +11,13 @@ export default function UserMenu() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  if (isPending) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || isPending) {
     return <Skeleton className="h-9 w-24 rounded-none" />;
   }
 

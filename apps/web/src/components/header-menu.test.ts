@@ -23,4 +23,10 @@ describe("header menus", () => {
     expect(globalStyles).toContain(".dropdown-content");
     expect(globalStyles).toContain("background: var(--header-bg)");
   });
+
+  it("keeps the account menu deterministic during hydration", () => {
+    expect(userMenuSource).toContain("useEffect");
+    expect(userMenuSource).toContain("const [mounted, setMounted] = useState(false)");
+    expect(userMenuSource).toContain("if (!mounted || isPending)");
+  });
 });
