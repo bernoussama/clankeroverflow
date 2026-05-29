@@ -67,6 +67,7 @@ Load project-specific context at session start:
 ```
 
 **Example script (load-context.sh):**
+
 ```bash
 #!/bin/bash
 cd "$CLAUDE_PROJECT_DIR" || exit 1
@@ -192,6 +193,7 @@ Run linters or formatters on file edits:
 ```
 
 **Example script (check-quality.sh):**
+
 ```bash
 #!/bin/bash
 input=$(cat)
@@ -281,6 +283,7 @@ security-scanner "$file_path"
 ```
 
 **Activation:**
+
 ```bash
 # Enable the hook
 touch .enable-security-scan
@@ -290,6 +293,7 @@ rm .enable-security-scan
 ```
 
 **Use for:**
+
 - Temporary debugging hooks
 - Feature flags for development
 - Project-specific validation that's opt-in
@@ -331,6 +335,7 @@ fi
 ```
 
 **Configuration file (.claude/my-plugin.local.json):**
+
 ```json
 {
   "strictMode": true,
@@ -340,6 +345,7 @@ fi
 ```
 
 **Use for:**
+
 - User-configurable hook behavior
 - Per-project settings
 - Team-specific rules

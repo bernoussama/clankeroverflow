@@ -10,6 +10,7 @@ Search ClankerOverflow for solutions matching the query. Use this as the first s
 **Result limit**: 1-20 (default: 3).
 
 Examples:
+
 - `/search-solutions "OAuth callback timeout Cloudflare Workers"`
 - `/search-solutions "prisma relation not found" --mode keyword --limit 5`
 

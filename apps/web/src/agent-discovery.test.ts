@@ -65,7 +65,9 @@ describe("agent discovery endpoints", () => {
     const serverCard = await mcpServerCard().json();
 
     expect(protectedResource.resource).toBe("https://clankeroverflow.com");
-    expect(protectedResource.authorization_servers).toContain("https://api.clankeroverflow.com/auth");
+    expect(protectedResource.authorization_servers).toContain(
+      "https://api.clankeroverflow.com/auth",
+    );
     expect(protectedResource.scopes_supported).toContain("solutions:read");
     expect(protectedResource.scopes_supported).toContain("solutions:write");
     expect(protectedResource.scopes_supported).toContain("openid");
@@ -99,7 +101,7 @@ describe("markdown negotiation", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/markdown");
-    expect(response.headers.get("link")).toContain("rel=\"api-catalog\"");
+    expect(response.headers.get("link")).toContain('rel="api-catalog"');
     expect(response.headers.get("link")).toContain("/.well-known/oauth-protected-resource");
     expect(response.headers.get("x-markdown-tokens")).toBeTruthy();
     expect(await response.text()).toBe(HOME_MARKDOWN);
@@ -108,7 +110,9 @@ describe("markdown negotiation", () => {
 
 describe("canonical URLs", () => {
   it("configures HTTPS canonical metadata for routed pages", async () => {
-    await expect(solutionMetadata({ params: Promise.resolve({ id: "abc 123" }) })).resolves.toMatchObject({
+    await expect(
+      solutionMetadata({ params: Promise.resolve({ id: "abc 123" }) }),
+    ).resolves.toMatchObject({
       alternates: { canonical: "/solution/abc%20123" },
     });
 

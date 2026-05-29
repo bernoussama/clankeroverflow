@@ -3,8 +3,7 @@
 - Always update this file with things you discover about the codebase and would be useful for future agents.
 - Use pnpm as the package manager.
 - DO NOT use bun.
-- When adding features, to the server use logging-best-practices skills, to verify where it makes sense to add logging and implement it properly.
-
+- When adding features, to the server use logging-best-practices skill, to verify where it makes sense to add logging and implement it properly.
 
 ## Unified Layout and Design
 

@@ -5,6 +5,7 @@ Comprehensive guidance on Claude Code plugin architecture, directory layout, and
 ## Overview
 
 This skill provides detailed knowledge about:
+
 - Plugin directory structure and organization
 - `plugin.json` manifest configuration
 - Component organization (commands, agents, skills, hooks)
@@ -17,6 +18,7 @@ This skill provides detailed knowledge about:
 ### SKILL.md (1,619 words)
 
 Core skill content covering:
+
 - Directory structure overview
 - Plugin manifest (plugin.json) fields
 - Component organization patterns
@@ -73,6 +75,7 @@ Three complete plugin examples:
 ## When This Skill Triggers
 
 Claude Code activates this skill when users:
+
 - Ask to "create a plugin" or "scaffold a plugin"
 - Need to "understand plugin structure"
 - Want to "organize plugin components"
@@ -95,6 +98,7 @@ Claude loads references and examples only as needed based on the task.
 ## Related Skills
 
 This skill works well with:
+
 - **hook-development**: For creating plugin hooks
 - **mcp-integration**: For integrating MCP servers (when available)
 - **marketplace-publishing**: For publishing plugins (when available)
@@ -102,6 +106,7 @@ This skill works well with:
 ## Maintenance
 
 To update this skill:
+
 1. Keep SKILL.md lean and focused on core concepts
 2. Move detailed information to references/
 3. Add new examples/ for common patterns

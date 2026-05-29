@@ -63,7 +63,11 @@ describe("CLI local MCP backend", () => {
 
   test("hybrid search uses keyword fallback", async () => {
     const backend = new LocalBackend(dbPath);
-    await backend.log({ problem: "CORS startup failure", solution: "Check local Postgres first", tags: "cors" });
+    await backend.log({
+      problem: "CORS startup failure",
+      solution: "Check local Postgres first",
+      tags: "cors",
+    });
 
     const results = await backend.search({ query: "startup", limit: 5, mode: "hybrid" });
 

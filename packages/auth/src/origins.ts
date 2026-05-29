@@ -58,9 +58,7 @@ export function parseAllowedOriginsWithDevFallback(
 
   const authUrl = bindings?.BETTER_AUTH_URL ?? "";
   const looksLocal =
-    authUrl.includes("localhost") ||
-    authUrl.includes("127.0.0.1") ||
-    authUrl.includes("[::1]");
+    authUrl.includes("localhost") || authUrl.includes("127.0.0.1") || authUrl.includes("[::1]");
   if (looksLocal) {
     return parseAllowedOrigins(LOCAL_SPLIT_ORIGIN_DEV_FALLBACK);
   }

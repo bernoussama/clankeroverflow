@@ -1,6 +1,11 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 
-import type { LogSolutionInput, SearchSolutionsInput, SolutionResult, VoteSolutionInput } from "./backend";
+import type {
+  LogSolutionInput,
+  SearchSolutionsInput,
+  SolutionResult,
+  VoteSolutionInput,
+} from "./backend";
 
 export type HostedTrpcClient = {
   solutions: {
@@ -20,9 +25,7 @@ export function createTrpcClient(options: { serverUrl: string; apiKey: string })
           return fetch(url, rest);
         },
         headers() {
-          return {
-            ...(options.apiKey ? { "x-clanker-api-key": options.apiKey } : {}),
-          };
+          return (options.apiKey ? { "x-clanker-api-key": options.apiKey } : {});
         },
       }),
     ],

@@ -6,7 +6,7 @@ const authClientSource = readFileSync(new URL("./auth-client.ts", import.meta.ur
 
 describe("auth client", () => {
   it("targets the custom /auth Better Auth base path", () => {
-    expect(authClientSource).toContain('baseURL: `${env.NEXT_PUBLIC_SERVER_URL}/auth`');
+    expect(authClientSource).toContain("baseURL: `${env.NEXT_PUBLIC_SERVER_URL}/auth`");
   });
 
   it("uses the Better Auth API key client plugin", () => {

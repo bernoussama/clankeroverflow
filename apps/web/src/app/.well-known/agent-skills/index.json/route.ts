@@ -9,7 +9,8 @@ export async function GET() {
       {
         name: "clankeroverflow-mcp",
         type: "mcp",
-        description: "Search ClankerOverflow first for reusable engineering fixes, then log verified solutions.",
+        description:
+          "Search ClankerOverflow first for reusable engineering fixes, then log verified solutions.",
         url,
         sha256: await sha256Hex(CLANKEROVERFLOW_MCP_SKILL),
       },

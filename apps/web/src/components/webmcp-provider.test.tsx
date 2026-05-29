@@ -35,9 +35,7 @@ describe("WebMCP tool definitions", () => {
 
     it("calls trpcClient.solutions.search.query with keyword mode", async () => {
       const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
-      mockFn.mockResolvedValueOnce([
-        { id: "1", problem: "test", solution: "fix", score: 0 },
-      ]);
+      mockFn.mockResolvedValueOnce([{ id: "1", problem: "test", solution: "fix", score: 0 }]);
 
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
       const result = await tool?.execute({ query: "Next.js cache issue" });
@@ -47,7 +45,9 @@ describe("WebMCP tool definitions", () => {
         limit: 10,
         mode: "keyword",
       });
-      expect(result).toEqual({ results: [{ id: "1", problem: "test", solution: "fix", score: 0 }] });
+      expect(result).toEqual({
+        results: [{ id: "1", problem: "test", solution: "fix", score: 0 }],
+      });
     });
 
     it("returns empty results when query is blank", async () => {

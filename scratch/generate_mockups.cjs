@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 // Ensure parent directories exist
 function ensureDir(dirPath) {
@@ -8,15 +8,16 @@ function ensureDir(dirPath) {
   }
 }
 
-const BASE_DIR = '/home/oussama/projects/clankeroverflow/designs';
+const BASE_DIR = "/home/oussama/projects/clankeroverflow/designs";
 ensureDir(BASE_DIR);
 
 // Mock data
 const mockSolutions = [
   {
-    id: 'sol_1',
-    problem: 'Next.js 15 cache handler not invalidating tag on Cloudflare Pages deploy',
-    preview: 'By default, Cloudflare Pages deployments cache static assets and fetch responses aggressively. When using Next.js on Pages, the standard revalidateTag() needs explicit execution context propagation...',
+    id: "sol_1",
+    problem: "Next.js 15 cache handler not invalidating tag on Cloudflare Pages deploy",
+    preview:
+      "By default, Cloudflare Pages deployments cache static assets and fetch responses aggressively. When using Next.js on Pages, the standard revalidateTag() needs explicit execution context propagation...",
     solution: `### The Problem
 Cloudflare Pages caches fetch responses at the edge. When Next.js runs in edge runtime on Pages, standard \`revalidateTag()\` calls fail to invalidate edge caches because the async task is terminated prematurely when the response finishes, or the cache API bindings are missing.
 
@@ -45,17 +46,19 @@ export async function POST(req: Request) {
   return Response.json({ purged: true });
 }
 \`\`\``,
-    tags: ['nextjs', 'cache', 'cloudflare', 'isr'],
+    tags: ["nextjs", "cache", "cloudflare", "isr"],
     upvotes: 42,
     downvotes: 1,
-    userVote: 'up',
-    date: 'May 20, 2026',
-    author: 'alex_dev'
+    userVote: "up",
+    date: "May 20, 2026",
+    author: "alex_dev",
   },
   {
-    id: 'sol_2',
-    problem: 'Better Auth social login callback redirects to server port 3000 instead of web port 3001',
-    preview: 'In local development, the Better Auth client triggers social login callbacks to the base URL configured on the server, causing social sign-in callback URLs to land on http://localhost:3000...',
+    id: "sol_2",
+    problem:
+      "Better Auth social login callback redirects to server port 3000 instead of web port 3001",
+    preview:
+      "In local development, the Better Auth client triggers social login callbacks to the base URL configured on the server, causing social sign-in callback URLs to land on http://localhost:3000...",
     solution: `### The Problem
 When running a split-origin local setup (\`web\` on port 3001 and \`server\` on port 3000), Better Auth social sign-ins defaults to redirecting to the server origin, landing you on a dead page or incorrect dashboard context.
 
@@ -75,17 +78,18 @@ async function handleGitHubSignIn() {
   });
 }
 \`\`\``,
-    tags: ['better-auth', 'oauth', 'github', 'nextjs'],
+    tags: ["better-auth", "oauth", "github", "nextjs"],
     upvotes: 28,
     downvotes: 0,
     userVote: null,
-    date: 'May 22, 2026',
-    author: 'michaelf'
+    date: "May 22, 2026",
+    author: "michaelf",
   },
   {
-    id: 'sol_3',
-    problem: 'Drizzle migration fails on Cloudflare Hyperdrive connection timeout',
-    preview: 'Running migrations directly against Hyperdrive pooling endpoints can result in connection limits or socket exhaustion during local dev or GitHub Actions runners. Drizzle requires direct connections...',
+    id: "sol_3",
+    problem: "Drizzle migration fails on Cloudflare Hyperdrive connection timeout",
+    preview:
+      "Running migrations directly against Hyperdrive pooling endpoints can result in connection limits or socket exhaustion during local dev or GitHub Actions runners. Drizzle requires direct connections...",
     solution: `### The Problem
 Cloudflare Hyperdrive is optimized for transaction pooling and request lifetimes. Attempting to run structural schema migrations (which require long-lived locks and session-level statements) through Hyperdrive leads to timeouts or transaction aborted errors.
 
@@ -101,17 +105,18 @@ const client = neon(process.env.DIRECT_DATABASE_URL);
 const db = drizzle(client);
 await migrate(db, { migrationsFolder: "./migrations" });
 \`\`\``,
-    tags: ['drizzle', 'cloudflare', 'hyperdrive', 'postgres'],
+    tags: ["drizzle", "cloudflare", "hyperdrive", "postgres"],
     upvotes: 19,
     downvotes: 2,
     userVote: null,
-    date: 'May 24, 2026',
-    author: 'drizzle_guru'
+    date: "May 24, 2026",
+    author: "drizzle_guru",
   },
   {
-    id: 'sol_4',
-    problem: 'Wrangler dev local pg client hangs during social callback flow',
-    preview: 'Under local Wrangler/Miniflare environments, executing database queries using pooled pg clients during social authentication callback flows can hang indefinitely because of connection pooling conflicts...',
+    id: "sol_4",
+    problem: "Wrangler dev local pg client hangs during social callback flow",
+    preview:
+      "Under local Wrangler/Miniflare environments, executing database queries using pooled pg clients during social authentication callback flows can hang indefinitely because of connection pooling conflicts...",
     solution: `### The Problem
 During local \`wrangler dev\`, Miniflare isolates have limited pool size bindings. Better Auth session routes (\`/auth/get-session\` / \`/auth/callback/github\`) can hang or time out if the worker falls back to the shared \`pg.Pool\` path, because connection objects are kept open.
 
@@ -128,13 +133,13 @@ export function createDb(env: Env) {
   // Otherwise proceed with Hyperdrive or pg.Pool
 }
 \`\`\``,
-    tags: ['wrangler', 'postgres', 'miniflare', 'auth'],
+    tags: ["wrangler", "postgres", "miniflare", "auth"],
     upvotes: 35,
     downvotes: 1,
-    userVote: 'down',
-    date: 'May 25, 2026',
-    author: 'oussama'
-  }
+    userVote: "down",
+    date: "May 25, 2026",
+    author: "oussama",
+  },
 ];
 
 // SHARED SVG LOGO
@@ -367,20 +372,22 @@ const neonTerminalTheme = `
 
 // Helper to render solutions list for Neon Terminal
 function renderNeonSolutions() {
-  return mockSolutions.map(s => `
+  return mockSolutions
+    .map(
+      (s) => `
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
         <div style="flex: 1;">
           <h2 style="margin: 0 0 0.5rem 0; font-size: 1.15rem;"><a href="solution-detail.html">${escapeHtml(s.problem)}</a></h2>
           <p style="color: var(--muted); font-size: 0.85rem; margin: 0 0 1rem 0;">${escapeHtml(s.preview)}</p>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            ${s.tags.map(t => `<span class="tag">#${t}</span>`).join('')}
+            ${s.tags.map((t) => `<span class="tag">#${t}</span>`).join("")}
           </div>
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
-          <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; ${s.userVote === 'up' ? 'border-color: var(--success); color: var(--success);' : ''}">↑</button>
+          <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; ${s.userVote === "up" ? "border-color: var(--success); color: var(--success);" : ""}">↑</button>
           <span style="font-size: 0.85rem; font-weight: bold;">${s.upvotes - s.downvotes}</span>
-          <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; ${s.userVote === 'down' ? 'border-color: var(--danger); color: var(--danger);' : ''}">↓</button>
+          <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; ${s.userVote === "down" ? "border-color: var(--danger); color: var(--danger);" : ""}">↓</button>
         </div>
       </div>
       <div style="border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 0.5rem; font-size: 0.75rem; color: var(--muted); display: flex; justify-content: space-between;">
@@ -388,15 +395,19 @@ function renderNeonSolutions() {
         <span>${s.date}</span>
       </div>
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
 // Generate designs folder structure
-const neonDir = path.join(BASE_DIR, '1-neon-terminal');
+const neonDir = path.join(BASE_DIR, "1-neon-terminal");
 ensureDir(neonDir);
 
 // 1. NEON - Landing
-fs.writeFileSync(path.join(neonDir, 'landing.html'), `
+fs.writeFileSync(
+  path.join(neonDir, "landing.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -554,10 +565,13 @@ fs.writeFileSync(path.join(neonDir, 'landing.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 2. NEON - Solutions browse
-fs.writeFileSync(path.join(neonDir, 'solutions.html'), `
+fs.writeFileSync(
+  path.join(neonDir, "solutions.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -642,10 +656,13 @@ fs.writeFileSync(path.join(neonDir, 'solutions.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 3. NEON - Detail
-fs.writeFileSync(path.join(neonDir, 'solution-detail.html'), `
+fs.writeFileSync(
+  path.join(neonDir, "solution-detail.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -697,7 +714,7 @@ fs.writeFileSync(path.join(neonDir, 'solution-detail.html'), `
       </div>
       
       <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
-        ${mockSolutions[0].tags.map(t => `<span class="tag">#${t}</span>`).join('')}
+        ${mockSolutions[0].tags.map((t) => `<span class="tag">#${t}</span>`).join("")}
       </div>
 
       <div style="margin-top: 1rem; color: var(--muted); font-size: 0.8rem;">
@@ -732,10 +749,13 @@ fs.writeFileSync(path.join(neonDir, 'solution-detail.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 4. NEON - Dashboard
-fs.writeFileSync(path.join(neonDir, 'dashboard.html'), `
+fs.writeFileSync(
+  path.join(neonDir, "dashboard.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -874,7 +894,8 @@ fs.writeFileSync(path.join(neonDir, 'dashboard.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // ==========================================
 // 2. CLEAN MINIMAL TEMPLATES
@@ -1038,7 +1059,9 @@ const cleanMinimalTheme = `
 
 // Helper to render solutions list for Clean Minimal
 function renderMinimalSolutions() {
-  return mockSolutions.map(s => `
+  return mockSolutions
+    .map(
+      (s) => `
     <div class="card" style="cursor: pointer;" onclick="window.location.href='solution-detail.html'">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
         <div style="flex: 1;">
@@ -1047,14 +1070,14 @@ function renderMinimalSolutions() {
           </h2>
           <p style="color: var(--muted); font-size: 0.9rem; margin: 0 0 1.25rem 0; line-height: 1.5;">${escapeHtml(s.preview)}</p>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            ${s.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+            ${s.tags.map((t) => `<span class="tag">${t}</span>`).join("")}
           </div>
         </div>
         
         <div style="display: flex; align-items: center; gap: 0.5rem; background: #f8fafc; padding: 0.35rem 0.65rem; border-radius: 6px; border: 1px solid var(--border);">
-          <button class="btn btn-secondary" style="padding: 0.15rem 0.3rem; border: none; background: transparent; font-size: 0.75rem; color: ${s.userVote === 'up' ? 'var(--primary)' : 'var(--muted)'};">▲</button>
+          <button class="btn btn-secondary" style="padding: 0.15rem 0.3rem; border: none; background: transparent; font-size: 0.75rem; color: ${s.userVote === "up" ? "var(--primary)" : "var(--muted)"};">▲</button>
           <span style="font-size: 0.85rem; font-weight: 600; min-width: 1.5rem; text-align: center;">${s.upvotes - s.downvotes}</span>
-          <button class="btn btn-secondary" style="padding: 0.15rem 0.3rem; border: none; background: transparent; font-size: 0.75rem; color: ${s.userVote === 'down' ? 'var(--danger)' : 'var(--muted)'};">▼</button>
+          <button class="btn btn-secondary" style="padding: 0.15rem 0.3rem; border: none; background: transparent; font-size: 0.75rem; color: ${s.userVote === "down" ? "var(--danger)" : "var(--muted)"};">▼</button>
         </div>
       </div>
       <div style="border-top: 1px solid #f1f5f9; margin-top: 1.25rem; padding-top: 0.75rem; font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between;">
@@ -1062,14 +1085,18 @@ function renderMinimalSolutions() {
         <span>${s.date}</span>
       </div>
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
-const minimalDir = path.join(BASE_DIR, '2-clean-minimal');
+const minimalDir = path.join(BASE_DIR, "2-clean-minimal");
 ensureDir(minimalDir);
 
 // 2. MINIMAL - Landing
-fs.writeFileSync(path.join(minimalDir, 'landing.html'), `
+fs.writeFileSync(
+  path.join(minimalDir, "landing.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1184,10 +1211,13 @@ fs.writeFileSync(path.join(minimalDir, 'landing.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 2. MINIMAL - Solutions Browse
-fs.writeFileSync(path.join(minimalDir, 'solutions.html'), `
+fs.writeFileSync(
+  path.join(minimalDir, "solutions.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1272,10 +1302,13 @@ fs.writeFileSync(path.join(minimalDir, 'solutions.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 3. MINIMAL - Detail
-fs.writeFileSync(path.join(minimalDir, 'solution-detail.html'), `
+fs.writeFileSync(
+  path.join(minimalDir, "solution-detail.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1316,7 +1349,7 @@ fs.writeFileSync(path.join(minimalDir, 'solution-detail.html'), `
       </h1>
       
       <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-        ${mockSolutions[0].tags.map(t => `<span class="tag">${t}</span>`).join('')}
+        ${mockSolutions[0].tags.map((t) => `<span class="tag">${t}</span>`).join("")}
         <span style="color: var(--border); font-size: 0.85rem;">|</span>
         <span style="font-size: 0.875rem; color: var(--muted);">Logged by ${mockSolutions[0].author} on ${mockSolutions[0].date}</span>
       </div>
@@ -1358,10 +1391,13 @@ fs.writeFileSync(path.join(minimalDir, 'solution-detail.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 4. MINIMAL - Dashboard
-fs.writeFileSync(path.join(minimalDir, 'dashboard.html'), `
+fs.writeFileSync(
+  path.join(minimalDir, "dashboard.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1476,7 +1512,8 @@ fs.writeFileSync(path.join(minimalDir, 'dashboard.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // ==========================================
 // 3. WARM EDITORIAL TEMPLATES
@@ -1628,8 +1665,10 @@ const warmEditorialTheme = `
 
 // Helper to render solutions list for Warm Editorial
 function renderEditorialSolutions() {
-  return mockSolutions.map((s, idx) => `
-    <div style="padding: 1.5rem 0; ${idx > 0 ? 'border-top: 1px solid var(--border);' : ''}">
+  return mockSolutions
+    .map(
+      (s, idx) => `
+    <div style="padding: 1.5rem 0; ${idx > 0 ? "border-top: 1px solid var(--border);" : ""}">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem;">
         <div style="flex: 1;">
           <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--primary); letter-spacing: 0.1em;">${s.tags[0]}</span>
@@ -1638,7 +1677,7 @@ function renderEditorialSolutions() {
           </h2>
           <p style="color: var(--muted); font-size: 0.95rem; margin: 0 0 1rem 0; line-height: 1.6;">${escapeHtml(s.preview)}</p>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            ${s.tags.map(t => `<span class="tag">#${t}</span>`).join('')}
+            ${s.tags.map((t) => `<span class="tag">#${t}</span>`).join("")}
           </div>
         </div>
 
@@ -1652,14 +1691,18 @@ function renderEditorialSolutions() {
         <span>Logged by ${s.author} on ${s.date}</span>
       </div>
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
-const editorialDir = path.join(BASE_DIR, '3-warm-editorial');
+const editorialDir = path.join(BASE_DIR, "3-warm-editorial");
 ensureDir(editorialDir);
 
 // 3. EDITORIAL - Landing
-fs.writeFileSync(path.join(editorialDir, 'landing.html'), `
+fs.writeFileSync(
+  path.join(editorialDir, "landing.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1766,10 +1809,13 @@ fs.writeFileSync(path.join(editorialDir, 'landing.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 3. EDITORIAL - Solutions Browse
-fs.writeFileSync(path.join(editorialDir, 'solutions.html'), `
+fs.writeFileSync(
+  path.join(editorialDir, "solutions.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1855,10 +1901,13 @@ fs.writeFileSync(path.join(editorialDir, 'solutions.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 3. EDITORIAL - Detail
-fs.writeFileSync(path.join(editorialDir, 'solution-detail.html'), `
+fs.writeFileSync(
+  path.join(editorialDir, "solution-detail.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1904,7 +1953,7 @@ fs.writeFileSync(path.join(editorialDir, 'solution-detail.html'), `
         </h1>
         
         <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
-          ${mockSolutions[0].tags.map(t => `<span class="tag">#${t}</span>`).join('')}
+          ${mockSolutions[0].tags.map((t) => `<span class="tag">#${t}</span>`).join("")}
         </div>
         
         <div style="font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.75rem; display: flex; justify-content: space-between;">
@@ -1943,10 +1992,13 @@ fs.writeFileSync(path.join(editorialDir, 'solution-detail.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 4. EDITORIAL - Dashboard
-fs.writeFileSync(path.join(editorialDir, 'dashboard.html'), `
+fs.writeFileSync(
+  path.join(editorialDir, "dashboard.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2070,7 +2122,8 @@ fs.writeFileSync(path.join(editorialDir, 'dashboard.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // ==========================================
 // 4. GLASSMORPHISM DARK TEMPLATES
@@ -2254,7 +2307,9 @@ const glassDarkTheme = `
 
 // Helper to render solutions list for Glassmorphism
 function renderGlassSolutions() {
-  return mockSolutions.map(s => `
+  return mockSolutions
+    .map(
+      (s) => `
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
         <div style="flex: 1;">
@@ -2263,7 +2318,7 @@ function renderGlassSolutions() {
           </h2>
           <p style="color: var(--muted); font-size: 0.9rem; margin: 0 0 1.25rem 0; line-height: 1.5;">${escapeHtml(s.preview)}</p>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            ${s.tags.map(t => `<span class="tag" style="color: #a78bfa; border-color: rgba(167, 139, 250, 0.2);">${t}</span>`).join('')}
+            ${s.tags.map((t) => `<span class="tag" style="color: #a78bfa; border-color: rgba(167, 139, 250, 0.2);">${t}</span>`).join("")}
           </div>
         </div>
         
@@ -2278,14 +2333,18 @@ function renderGlassSolutions() {
         <span>${s.date}</span>
       </div>
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
-const glassDir = path.join(BASE_DIR, '4-glass-dark');
+const glassDir = path.join(BASE_DIR, "4-glass-dark");
 ensureDir(glassDir);
 
 // 4. GLASS - Landing
-fs.writeFileSync(path.join(glassDir, 'landing.html'), `
+fs.writeFileSync(
+  path.join(glassDir, "landing.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2405,10 +2464,13 @@ fs.writeFileSync(path.join(glassDir, 'landing.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 4. GLASS - Solutions Browse
-fs.writeFileSync(path.join(glassDir, 'solutions.html'), `
+fs.writeFileSync(
+  path.join(glassDir, "solutions.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2486,10 +2548,13 @@ fs.writeFileSync(path.join(glassDir, 'solutions.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 4. GLASS - Detail
-fs.writeFileSync(path.join(glassDir, 'solution-detail.html'), `
+fs.writeFileSync(
+  path.join(glassDir, "solution-detail.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2531,7 +2596,7 @@ fs.writeFileSync(path.join(glassDir, 'solution-detail.html'), `
       </h1>
       
       <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-        ${mockSolutions[0].tags.map(t => `<span class="tag" style="color: #a78bfa; border-color: rgba(167, 139, 250, 0.2);">${t}</span>`).join('')}
+        ${mockSolutions[0].tags.map((t) => `<span class="tag" style="color: #a78bfa; border-color: rgba(167, 139, 250, 0.2);">${t}</span>`).join("")}
         <span style="color: var(--border); font-size: 0.85rem;">|</span>
         <span style="font-size: 0.875rem; color: var(--muted);">Logged by ${mockSolutions[0].author} on ${mockSolutions[0].date}</span>
       </div>
@@ -2573,10 +2638,13 @@ fs.writeFileSync(path.join(glassDir, 'solution-detail.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 // 4. GLASS - Dashboard
-fs.writeFileSync(path.join(glassDir, 'dashboard.html'), `
+fs.writeFileSync(
+  path.join(glassDir, "dashboard.html"),
+  `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2700,6 +2768,7 @@ fs.writeFileSync(path.join(glassDir, 'dashboard.html'), `
   </div>
 </body>
 </html>
-`);
+`,
+);
 
 console.log("Mockups generated successfully in " + BASE_DIR);

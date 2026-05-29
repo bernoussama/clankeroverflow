@@ -19,13 +19,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  if (request.nextUrl.pathname === "/" && request.headers.get("accept")?.includes("text/markdown")) {
+  if (
+    request.nextUrl.pathname === "/" &&
+    request.headers.get("accept")?.includes("text/markdown")
+  ) {
     return new Response(HOME_MARKDOWN, {
       headers: {
         "Cache-Control": "public, max-age=300",
         "Content-Type": "text/markdown; charset=utf-8",
         Link: DISCOVERY_LINK_HEADER,
-        "Vary": "Accept",
+        Vary: "Accept",
         "x-markdown-tokens": String(HOME_MARKDOWN.split(/\s+/).filter(Boolean).length),
       },
     });

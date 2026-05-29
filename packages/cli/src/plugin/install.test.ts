@@ -32,11 +32,7 @@ async function createPackageRoot() {
   }
 
   await import("node:fs/promises").then((fs) =>
-    fs.writeFile(
-      path.join(pkgRoot, ".mcp.json"),
-      JSON.stringify({ mcpServers: {} }),
-      "utf-8",
-    ),
+    fs.writeFile(path.join(pkgRoot, ".mcp.json"), JSON.stringify({ mcpServers: {} }), "utf-8"),
   );
 
   await import("node:fs/promises").then((fs) =>
@@ -65,10 +61,7 @@ async function createPackageRoot() {
 
 describe("installPlugin", () => {
   it("resolves the package root from the source module location", async () => {
-    const packageRoot = path.resolve(
-      path.dirname(fileURLToPath(import.meta.url)),
-      "../..",
-    );
+    const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
     await expect(resolvePackageRoot()).resolves.toBe(packageRoot);
   });
@@ -80,9 +73,7 @@ describe("installPlugin", () => {
       envHome: fakeHome,
     });
 
-    expect(installDir).toBe(
-      path.join(fakeHome, ".claude", "plugins", "clankeroverflow"),
-    );
+    expect(installDir).toBe(path.join(fakeHome, ".claude", "plugins", "clankeroverflow"));
 
     await expect(
       readFile(path.join(installDir, "skills", "clankeroverflow-mcp", "SKILL.md"), "utf-8"),
@@ -111,9 +102,7 @@ describe("installPlugin", () => {
     const settingsDir = path.join(fakeHome, ".claude");
     const settingsPath = path.join(settingsDir, "clankeroverflow.local.md");
 
-    await import("node:fs/promises").then((fs) =>
-      fs.mkdir(settingsDir, { recursive: true }),
-    );
+    await import("node:fs/promises").then((fs) => fs.mkdir(settingsDir, { recursive: true }));
     await import("node:fs/promises").then((fs) =>
       fs.writeFile(settingsPath, "---\ncustom: true\n---\n\nCustom content", "utf-8"),
     );
@@ -137,9 +126,7 @@ describe("uninstallPlugin", () => {
     await installPlugin({ packageRoot: pkgRoot, envHome: fakeHome });
     await uninstallPlugin(fakeHome);
 
-    await expect(
-      import("node:fs/promises").then((fs) => fs.readdir(installDir)),
-    ).rejects.toThrow();
+    await expect(import("node:fs/promises").then((fs) => fs.readdir(installDir))).rejects.toThrow();
   });
 
   it("no-ops when not installed", async () => {
@@ -147,9 +134,7 @@ describe("uninstallPlugin", () => {
     await rm(fakeHome, { recursive: true, force: true });
 
     await uninstallPlugin(fakeHome);
-    await expect(
-      import("node:fs/promises").then((fs) => fs.access(installDir)),
-    ).rejects.toThrow();
+    await expect(import("node:fs/promises").then((fs) => fs.access(installDir))).rejects.toThrow();
   });
 });
 

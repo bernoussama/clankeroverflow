@@ -7,7 +7,9 @@ export function GET() {
         {
           anchor: API_ORIGIN,
           "service-desc": [{ href: `${API_ORIGIN}/trpc`, type: "application/json" }],
-          "service-doc": [{ href: canonicalUrl("/opencode/clankeroverflow.md"), type: "text/markdown" }],
+          "service-doc": [
+            { href: canonicalUrl("/opencode/clankeroverflow.md"), type: "text/markdown" },
+          ],
           status: [{ href: `${API_ORIGIN}/trpc/healthCheck` }],
         },
       ],

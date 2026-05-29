@@ -86,15 +86,15 @@
   --theme-surface-card: #ffffff;
   --theme-code-comment: #8d7166;
   --theme-border-muted: #e5e2e1;
-  --theme-text-on-dark: #F9F9F9;
+  --theme-text-on-dark: #f9f9f9;
 }
 
 .dark {
   --background: #131313;
   --foreground: #e5e2e1;
-  --card: #1E1E1E;
+  --card: #1e1e1e;
   --card-foreground: #e5e2e1;
-  --popover: #1E1E1E;
+  --popover: #1e1e1e;
   --popover-foreground: #e5e2e1;
   --primary: #ffb598;
   --primary-foreground: #591d00;
@@ -105,7 +105,7 @@
   --accent: #ffb598;
   --accent-foreground: #591d00;
   --destructive: #ffb4ab;
-  --border: #2A2A2A;
+  --border: #2a2a2a;
   --input: #201f1f;
   --ring: #ffb598;
 
@@ -113,9 +113,9 @@
   --landing-accent: #f2641d;
   --landing-accent-subtle: rgba(242, 100, 29, 0.1);
   --landing-surface: #1c1b1b;
-  --landing-border: #2A2A2A;
+  --landing-border: #2a2a2a;
   --landing-muted: #e1bfb3;
-  --landing-code-bg: #0A0A0A;
+  --landing-code-bg: #0a0a0a;
   --landing-code-fg: #e5e2e1;
   --header-bg: rgba(30, 30, 30, 0.9);
 
@@ -163,11 +163,11 @@
   --theme-on-tertiary-fixed: #001f25;
   --theme-on-tertiary-fixed-variant: #004e5a;
   --theme-surface-variant: #353534;
-  --theme-surface-terminal: #0A0A0A;
-  --theme-surface-card: #1E1E1E;
-  --theme-code-comment: #6E6E6E;
-  --theme-border-muted: #2A2A2A;
-  --theme-text-on-dark: #F9F9F9;
+  --theme-surface-terminal: #0a0a0a;
+  --theme-surface-card: #1e1e1e;
+  --theme-code-comment: #6e6e6e;
+  --theme-border-muted: #2a2a2a;
+  --theme-text-on-dark: #f9f9f9;
 }
 
 @theme inline {
@@ -205,7 +205,7 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  
+
   --radius-sm: 0px;
   --radius-md: 0px;
   --radius-lg: 0px;
@@ -215,7 +215,7 @@
   --radius-4xl: 0px;
 
   --color-landing-accent: var(--landing-accent);
-  
+
   /* Additional tokens from DESIGN.md — referencing theme-cascading variables */
   --color-surface: var(--theme-surface);
   --color-surface-dim: var(--theme-surface-dim);
@@ -368,8 +368,9 @@
 /* Grid Pattern */
 .bg-grid-pattern {
   background-size: 40px 40px;
-  background-image: linear-gradient(to right, var(--landing-border) 1px, transparent 1px),
-                    linear-gradient(to bottom, var(--landing-border) 1px, transparent 1px);
+  background-image:
+    linear-gradient(to right, var(--landing-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--landing-border) 1px, transparent 1px);
   opacity: 0.15;
 }
 

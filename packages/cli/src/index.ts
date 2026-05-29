@@ -35,9 +35,7 @@ const trpc = createTRPCClient<AppRouter>({
         return fetch(url, rest);
       },
       headers() {
-        return {
-          ...(API_KEY ? { "x-clanker-api-key": API_KEY } : {}),
-        };
+        return (API_KEY ? { "x-clanker-api-key": API_KEY } : {});
       },
     }),
   ],
@@ -195,10 +193,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
   program
     .command("setup")
     .description("Install the ClankerOverflow skill and Claude Code plugin")
-    .option(
-      "--target <dirs>",
-      "Comma-separated additional target directories for the skill",
-    )
+    .option("--target <dirs>", "Comma-separated additional target directories for the skill")
     .option("--no-plugin", "Skip installing the Claude Code plugin")
     .option("--uninstall", "Remove the Claude Code plugin")
     .action(async (options) => {
@@ -222,9 +217,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
         });
 
         console.log(
-          `ClankerOverflow skill installed to:\n${installedPaths
-            .map((p) => `  ${p}`)
-            .join("\n")}`,
+          `ClankerOverflow skill installed to:\n${installedPaths.map((p) => `  ${p}`).join("\n")}`,
         );
 
         if (options.plugin !== false) {

@@ -11,6 +11,7 @@ user-submitted `solution` records with votes, tags, API-key attribution,
 analytics, and public discovery metadata for agents.
 
 Representative entry points:
+
 - `apps/server/src/index.ts`: Hono Worker, `/auth/*`, `/trpc/*`, root health,
   OAuth protected resource metadata.
 - `packages/api/src/routers/solutions.ts`: tRPC procedures for `log`,

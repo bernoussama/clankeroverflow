@@ -20,9 +20,7 @@ describe("PostHog web analytics", () => {
     expect(analyticsSource).toContain("NEXT_PUBLIC_POSTHOG_HOST");
     expect(analyticsSource).toContain("defaults:'2026-01-30'");
     expect(analyticsSource).toContain("posthog.init");
-    expect(wranglerSource).toContain(
-      '"NEXT_PUBLIC_POSTHOG_HOST": "https://n.clankeroverflow.com"',
-    );
+    expect(wranglerSource).toContain('"NEXT_PUBLIC_POSTHOG_HOST": "https://n.clankeroverflow.com"');
   });
 
   test("identifies and resets users from Better Auth session state", () => {

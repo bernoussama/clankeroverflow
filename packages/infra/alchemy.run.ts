@@ -1,11 +1,5 @@
 import alchemy from "alchemy";
-import {
-  Ai,
-  Hyperdrive,
-  Nextjs,
-  VectorizeIndex,
-  Worker,
-} from "alchemy/cloudflare";
+import { Ai, Hyperdrive, Nextjs, VectorizeIndex, Worker } from "alchemy/cloudflare";
 
 const { getDatabaseUrlErrorMessage, loadInfraEnv } = await import(
   new URL("./src/env.ts", import.meta.url).href
@@ -17,12 +11,10 @@ const isLocal = app.local;
 loadInfraEnv(isLocal);
 
 /** Local split-origin dev (web :3001 → API :3000) if env files omit CORS_ORIGIN. */
-const LOCAL_DEFAULT_CORS_ORIGIN =
-  "http://localhost:3001,http://127.0.0.1:3001,http://[::1]:3001";
+const LOCAL_DEFAULT_CORS_ORIGIN = "http://localhost:3001,http://127.0.0.1:3001,http://[::1]:3001";
 
 /** Prefer `process.env` so values from `loadInfraEnv` win over any Alchemy snapshot. */
-const rawCorsOrigin =
-  (process.env.CORS_ORIGIN ?? alchemy.env.CORS_ORIGIN)?.trim() ?? "";
+const rawCorsOrigin = (process.env.CORS_ORIGIN ?? alchemy.env.CORS_ORIGIN)?.trim() ?? "";
 const corsOrigin = rawCorsOrigin
   ? rawCorsOrigin
   : isLocal
@@ -58,9 +50,7 @@ const sentryDsn = process.env.SENTRY_DSN?.trim();
 const sentryTestToken = process.env.SENTRY_TEST_TOKEN?.trim();
 const deploymentEnvironment = isLocal ? "development" : "production";
 const serviceVersion =
-  process.env.SERVICE_VERSION?.trim() ||
-  process.env.COMMIT_SHA?.trim() ||
-  "unknown";
+  process.env.SERVICE_VERSION?.trim() || process.env.COMMIT_SHA?.trim() || "unknown";
 const commitSha = process.env.COMMIT_SHA?.trim() || "unknown";
 
 export const web = await Nextjs("web", {
@@ -116,10 +106,7 @@ export const server = await Worker("server", {
     ...(sentryDsn ? { SENTRY_DSN: sentryDsn } : {}),
     ...(sentryTestToken
       ? {
-          SENTRY_TEST_TOKEN: alchemy.secret.env(
-            "SENTRY_TEST_TOKEN",
-            sentryTestToken,
-          ),
+          SENTRY_TEST_TOKEN: alchemy.secret.env("SENTRY_TEST_TOKEN", sentryTestToken),
         }
       : {}),
     ENVIRONMENT: deploymentEnvironment,

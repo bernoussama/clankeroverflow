@@ -8,7 +8,11 @@ export type DatabaseEnv = {
 export type DatabaseExecutionRuntime = "node" | "worker";
 
 export function resolveDatabaseEnv(databaseEnv: DatabaseEnv, fallbackDatabaseUrl?: string) {
-  if (databaseEnv.DATABASE_URL || databaseEnv.HYPERDRIVE?.connectionString || !fallbackDatabaseUrl) {
+  if (
+    databaseEnv.DATABASE_URL ||
+    databaseEnv.HYPERDRIVE?.connectionString ||
+    !fallbackDatabaseUrl
+  ) {
     return databaseEnv;
   }
 
@@ -32,6 +36,6 @@ export function getDatabaseRuntime(
   return databaseEnv.HYPERDRIVE?.connectionString && !databaseEnv.DATABASE_URL
     ? "request"
     : executionRuntime === "worker" && databaseEnv.DATABASE_URL
-    ? "request"
-    : "pooled";
+      ? "request"
+      : "pooled";
 }

@@ -10,8 +10,8 @@ describe("solutions page performance defaults", () => {
   });
 
   it("does not prefetch every visible solution detail route", () => {
-    expect(solutionsPageSource).toContain('prefetch={false}');
-    expect(solutionsPageSource).toContain('href={`/solution/${solution.id}`}');
+    expect(solutionsPageSource).toContain("prefetch={false}");
+    expect(solutionsPageSource).toContain("href={`/solution/${solution.id}`}");
   });
 
   it("hydrates search from the query string", () => {

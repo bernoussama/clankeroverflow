@@ -5,12 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const PLUGIN_NAME = "clankeroverflow";
 
-const PLUGIN_SOURCE_DIRS = [
-  ".claude-plugin",
-  "commands",
-  "hooks",
-  "skills",
-] as const;
+const PLUGIN_SOURCE_DIRS = [".claude-plugin", "commands", "hooks", "skills"] as const;
 
 const PLUGIN_CONFIG_FILES = [".mcp.json"] as const;
 
@@ -74,9 +69,7 @@ export type PluginInstallOptions = {
   envHome?: string;
 };
 
-export async function installPlugin(
-  options: PluginInstallOptions = {},
-): Promise<string> {
+export async function installPlugin(options: PluginInstallOptions = {}): Promise<string> {
   const packageRoot = options.packageRoot ?? (await resolvePackageRoot());
   const installDir = resolvePluginInstallDir(options.envHome);
 

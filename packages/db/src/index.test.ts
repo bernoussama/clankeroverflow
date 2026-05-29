@@ -18,9 +18,7 @@ describe("Database Integration", () => {
     const adminUrl = new URL(baseUrl);
     adminUrl.pathname = "/postgres";
 
-    testDatabaseName = `clankeroverflow_db_${Date.now()}_${Math.random()
-      .toString(36)
-      .slice(2, 8)}`;
+    testDatabaseName = `clankeroverflow_db_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     adminPool = new Pool({ connectionString: adminUrl.toString() });
     await adminPool.query(`CREATE DATABASE "${testDatabaseName}"`);

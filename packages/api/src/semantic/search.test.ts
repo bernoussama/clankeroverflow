@@ -44,7 +44,10 @@ describe("searchSolutionsSemantic", () => {
 
     const vectorize = {
       query: vi.fn(async () => ({
-        matches: [{ id: "a", score: 0.9 }, { id: "b", score: 0.5 }],
+        matches: [
+          { id: "a", score: 0.9 },
+          { id: "b", score: 0.5 },
+        ],
       })),
       upsert: vi.fn(async () => {}),
     };

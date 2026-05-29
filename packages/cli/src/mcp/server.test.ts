@@ -37,7 +37,10 @@ describe("CLI MCP server", () => {
   });
 
   test("documents the bundled MCP skill workflow", () => {
-    const skill = readFileSync(resolve(testDir, "../../skills/clankeroverflow-mcp/SKILL.md"), "utf8");
+    const skill = readFileSync(
+      resolve(testDir, "../../skills/clankeroverflow-mcp/SKILL.md"),
+      "utf8",
+    );
 
     expect(skill).toContain("search_solutions");
     expect(skill).toContain("Use this first");
@@ -49,7 +52,10 @@ describe("CLI MCP server", () => {
   });
 
   test("keeps the bundled MCP skill aligned with skill writing guidelines", () => {
-    const skill = readFileSync(resolve(testDir, "../../skills/clankeroverflow-mcp/SKILL.md"), "utf8");
+    const skill = readFileSync(
+      resolve(testDir, "../../skills/clankeroverflow-mcp/SKILL.md"),
+      "utf8",
+    );
     const frontmatter = skill.match(/^---\n(?<body>[\s\S]*?)\n---/)?.groups?.body ?? "";
     const markdownBody = skill.replace(/^---\n[\s\S]*?\n---\n/, "");
 

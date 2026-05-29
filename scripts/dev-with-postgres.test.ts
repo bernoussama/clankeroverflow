@@ -36,7 +36,9 @@ const turboConfig = JSON.parse(
 describe("root dev workflow", () => {
   it("routes pnpm dev through the postgres wrapper and keeps the schema sync and migrate tasks available", () => {
     expect(packageJson.scripts?.dev).toBe("tsx scripts/dev-with-postgres.ts");
-    expect(packageJson.scripts?.["db:migrate"]).toBe("turbo run db:migrate --filter=@clankeroverflow/db");
+    expect(packageJson.scripts?.["db:migrate"]).toBe(
+      "turbo run db:migrate --filter=@clankeroverflow/db",
+    );
     expect(packageJson.scripts?.["db:push"]).toBe("turbo run db:push --filter=@clankeroverflow/db");
     expect(packageJson.scripts?.["dev:bare"]).toBe("turbo run dev --filter=web --filter=server");
     expect(turboConfig.tasks?.["db:migrate"]).toBeDefined();

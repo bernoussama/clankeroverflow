@@ -69,34 +69,28 @@ export default function SolutionsPage() {
     enabled: isSearching,
   });
 
-  const {
-    data,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery<
-    SolutionList,
-    Error,
-    InfiniteData<SolutionList>,
-    [string, string, SortOption],
-    SolutionListCursor | undefined
-  >({
-    queryKey: ["solutions", "list", sort],
-    queryFn: async ({ pageParam }) => {
-      const result = await trpcClient.solutions.list.query({
-        limit: PAGE_SIZE,
-        cursor: pageParam ?? undefined,
-        sort,
-      });
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery<
+      SolutionList,
+      Error,
+      InfiniteData<SolutionList>,
+      [string, string, SortOption],
+      SolutionListCursor | undefined
+    >({
+      queryKey: ["solutions", "list", sort],
+      queryFn: async ({ pageParam }) => {
+        const result = await trpcClient.solutions.list.query({
+          limit: PAGE_SIZE,
+          cursor: pageParam ?? undefined,
+          sort,
+        });
 
-      return solutionListSchema.parse(result);
-    },
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: undefined as SolutionListCursor | undefined,
-    enabled: !isSearching,
-  });
+        return solutionListSchema.parse(result);
+      },
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: undefined as SolutionListCursor | undefined,
+      enabled: !isSearching,
+    });
 
   const solutions = data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -182,7 +176,9 @@ export default function SolutionsPage() {
               {isSearching ? "Search Results" : "All Solutions"}
             </h2>
             <p className="text-xs font-mono text-muted-landing mt-1">
-              {isSearching ? `${searchResults.data?.length ?? 0} matches` : `${solutions.length} loaded`}
+              {isSearching
+                ? `${searchResults.data?.length ?? 0} matches`
+                : `${solutions.length} loaded`}
             </p>
           </div>
 

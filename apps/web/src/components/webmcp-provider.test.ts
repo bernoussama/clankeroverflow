@@ -44,8 +44,14 @@ describe("WebMCP tool definitions", () => {
 
       const result = await tool?.execute({ query: "Next.js cache issue" });
 
-      expect(mocked).toHaveBeenCalledWith({ query: "Next.js cache issue", limit: 10, mode: "keyword" });
-      expect(result).toEqual({ results: [{ id: "1", problem: "test", solution: "fix", score: 0 }] });
+      expect(mocked).toHaveBeenCalledWith({
+        query: "Next.js cache issue",
+        limit: 10,
+        mode: "keyword",
+      });
+      expect(result).toEqual({
+        results: [{ id: "1", problem: "test", solution: "fix", score: 0 }],
+      });
     });
 
     it("returns error message on empty query", async () => {

@@ -33,27 +33,27 @@ Each SDK skill contains its own detection logic, prerequisites, and step-by-step
 
 ## SDK Skills
 
-| Platform | Skill | Path |
-|---|---|---|
-| Android | [`sentry-android-sdk`](../sentry-android-sdk/SKILL.md) | `sentry-android-sdk/SKILL.md` |
-| browser JavaScript | [`sentry-browser-sdk`](../sentry-browser-sdk/SKILL.md) | `sentry-browser-sdk/SKILL.md` |
-| Cloudflare Workers and Pages | [`sentry-cloudflare-sdk`](../sentry-cloudflare-sdk/SKILL.md) | `sentry-cloudflare-sdk/SKILL.md` |
-| Apple platforms (iOS, macOS, tvOS, watchOS, visionOS) | [`sentry-cocoa-sdk`](../sentry-cocoa-sdk/SKILL.md) | `sentry-cocoa-sdk/SKILL.md` |
-| .NET | [`sentry-dotnet-sdk`](../sentry-dotnet-sdk/SKILL.md) | `sentry-dotnet-sdk/SKILL.md` |
-| Elixir | [`sentry-elixir-sdk`](../sentry-elixir-sdk/SKILL.md) | `sentry-elixir-sdk/SKILL.md` |
-| Go | [`sentry-go-sdk`](../sentry-go-sdk/SKILL.md) | `sentry-go-sdk/SKILL.md` |
-| NestJS | [`sentry-nestjs-sdk`](../sentry-nestjs-sdk/SKILL.md) | `sentry-nestjs-sdk/SKILL.md` |
-| Next.js | [`sentry-nextjs-sdk`](../sentry-nextjs-sdk/SKILL.md) | `sentry-nextjs-sdk/SKILL.md` |
-| Node.js, Bun, and Deno | [`sentry-node-sdk`](../sentry-node-sdk/SKILL.md) | `sentry-node-sdk/SKILL.md` |
-| PHP | [`sentry-php-sdk`](../sentry-php-sdk/SKILL.md) | `sentry-php-sdk/SKILL.md` |
-| Python | [`sentry-python-sdk`](../sentry-python-sdk/SKILL.md) | `sentry-python-sdk/SKILL.md` |
-| Flutter and Dart | [`sentry-flutter-sdk`](../sentry-flutter-sdk/SKILL.md) | `sentry-flutter-sdk/SKILL.md` |
-| React Native and Expo | [`sentry-react-native-sdk`](../sentry-react-native-sdk/SKILL.md) | `sentry-react-native-sdk/SKILL.md` |
-| React | [`sentry-react-sdk`](../sentry-react-sdk/SKILL.md) | `sentry-react-sdk/SKILL.md` |
-| React Router Framework | [`sentry-react-router-framework-sdk`](../sentry-react-router-framework-sdk/SKILL.md) | `sentry-react-router-framework-sdk/SKILL.md` |
-| TanStack Start React | [`sentry-tanstack-start-sdk`](../sentry-tanstack-start-sdk/SKILL.md) | `sentry-tanstack-start-sdk/SKILL.md` |
-| Ruby | [`sentry-ruby-sdk`](../sentry-ruby-sdk/SKILL.md) | `sentry-ruby-sdk/SKILL.md` |
-| Svelte and SvelteKit | [`sentry-svelte-sdk`](../sentry-svelte-sdk/SKILL.md) | `sentry-svelte-sdk/SKILL.md` |
+| Platform                                              | Skill                                                                                | Path                                         |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------- |
+| Android                                               | [`sentry-android-sdk`](../sentry-android-sdk/SKILL.md)                               | `sentry-android-sdk/SKILL.md`                |
+| browser JavaScript                                    | [`sentry-browser-sdk`](../sentry-browser-sdk/SKILL.md)                               | `sentry-browser-sdk/SKILL.md`                |
+| Cloudflare Workers and Pages                          | [`sentry-cloudflare-sdk`](../sentry-cloudflare-sdk/SKILL.md)                         | `sentry-cloudflare-sdk/SKILL.md`             |
+| Apple platforms (iOS, macOS, tvOS, watchOS, visionOS) | [`sentry-cocoa-sdk`](../sentry-cocoa-sdk/SKILL.md)                                   | `sentry-cocoa-sdk/SKILL.md`                  |
+| .NET                                                  | [`sentry-dotnet-sdk`](../sentry-dotnet-sdk/SKILL.md)                                 | `sentry-dotnet-sdk/SKILL.md`                 |
+| Elixir                                                | [`sentry-elixir-sdk`](../sentry-elixir-sdk/SKILL.md)                                 | `sentry-elixir-sdk/SKILL.md`                 |
+| Go                                                    | [`sentry-go-sdk`](../sentry-go-sdk/SKILL.md)                                         | `sentry-go-sdk/SKILL.md`                     |
+| NestJS                                                | [`sentry-nestjs-sdk`](../sentry-nestjs-sdk/SKILL.md)                                 | `sentry-nestjs-sdk/SKILL.md`                 |
+| Next.js                                               | [`sentry-nextjs-sdk`](../sentry-nextjs-sdk/SKILL.md)                                 | `sentry-nextjs-sdk/SKILL.md`                 |
+| Node.js, Bun, and Deno                                | [`sentry-node-sdk`](../sentry-node-sdk/SKILL.md)                                     | `sentry-node-sdk/SKILL.md`                   |
+| PHP                                                   | [`sentry-php-sdk`](../sentry-php-sdk/SKILL.md)                                       | `sentry-php-sdk/SKILL.md`                    |
+| Python                                                | [`sentry-python-sdk`](../sentry-python-sdk/SKILL.md)                                 | `sentry-python-sdk/SKILL.md`                 |
+| Flutter and Dart                                      | [`sentry-flutter-sdk`](../sentry-flutter-sdk/SKILL.md)                               | `sentry-flutter-sdk/SKILL.md`                |
+| React Native and Expo                                 | [`sentry-react-native-sdk`](../sentry-react-native-sdk/SKILL.md)                     | `sentry-react-native-sdk/SKILL.md`           |
+| React                                                 | [`sentry-react-sdk`](../sentry-react-sdk/SKILL.md)                                   | `sentry-react-sdk/SKILL.md`                  |
+| React Router Framework                                | [`sentry-react-router-framework-sdk`](../sentry-react-router-framework-sdk/SKILL.md) | `sentry-react-router-framework-sdk/SKILL.md` |
+| TanStack Start React                                  | [`sentry-tanstack-start-sdk`](../sentry-tanstack-start-sdk/SKILL.md)                 | `sentry-tanstack-start-sdk/SKILL.md`         |
+| Ruby                                                  | [`sentry-ruby-sdk`](../sentry-ruby-sdk/SKILL.md)                                     | `sentry-ruby-sdk/SKILL.md`                   |
+| Svelte and SvelteKit                                  | [`sentry-svelte-sdk`](../sentry-svelte-sdk/SKILL.md)                                 | `sentry-svelte-sdk/SKILL.md`                 |
 
 ### Platform Detection Priority
 
@@ -77,27 +77,27 @@ When multiple SDKs could match, prefer the more specific one:
 
 Match your project to a skill by keywords. Append the path to `https://skills.sentry.dev/` to fetch.
 
-| Keywords | Path |
-|---|---|
-| android, kotlin, java, jetpack compose | `sentry-android-sdk/SKILL.md` |
-| browser, vanilla js, javascript, jquery, cdn, wordpress, static site | `sentry-browser-sdk/SKILL.md` |
-| cloudflare, cloudflare workers, cloudflare pages, wrangler, durable objects, d1 | `sentry-cloudflare-sdk/SKILL.md` |
-| ios, macos, swift, cocoa, tvos, watchos, visionos, swiftui, uikit | `sentry-cocoa-sdk/SKILL.md` |
-| .net, csharp, c#, asp.net, maui, wpf, winforms, blazor, azure functions | `sentry-dotnet-sdk/SKILL.md` |
-| go, golang, gin, echo, fiber | `sentry-go-sdk/SKILL.md` |
-| elixir, phoenix, plug, oban | `sentry-elixir-sdk/SKILL.md` |
-| nestjs, nest | `sentry-nestjs-sdk/SKILL.md` |
-| nextjs, next.js, next | `sentry-nextjs-sdk/SKILL.md` |
-| node, nodejs, node.js, bun, deno, express, fastify, koa, hapi | `sentry-node-sdk/SKILL.md` |
-| php, laravel, symfony | `sentry-php-sdk/SKILL.md` |
-| python, django, flask, fastapi, celery, starlette | `sentry-python-sdk/SKILL.md` |
-| flutter, dart, pubspec | `sentry-flutter-sdk/SKILL.md` |
-| react native, expo | `sentry-react-native-sdk/SKILL.md` |
-| react, react router, tanstack, redux, vite | `sentry-react-sdk/SKILL.md` |
+| Keywords                                                                             | Path                                         |
+| ------------------------------------------------------------------------------------ | -------------------------------------------- |
+| android, kotlin, java, jetpack compose                                               | `sentry-android-sdk/SKILL.md`                |
+| browser, vanilla js, javascript, jquery, cdn, wordpress, static site                 | `sentry-browser-sdk/SKILL.md`                |
+| cloudflare, cloudflare workers, cloudflare pages, wrangler, durable objects, d1      | `sentry-cloudflare-sdk/SKILL.md`             |
+| ios, macos, swift, cocoa, tvos, watchos, visionos, swiftui, uikit                    | `sentry-cocoa-sdk/SKILL.md`                  |
+| .net, csharp, c#, asp.net, maui, wpf, winforms, blazor, azure functions              | `sentry-dotnet-sdk/SKILL.md`                 |
+| go, golang, gin, echo, fiber                                                         | `sentry-go-sdk/SKILL.md`                     |
+| elixir, phoenix, plug, oban                                                          | `sentry-elixir-sdk/SKILL.md`                 |
+| nestjs, nest                                                                         | `sentry-nestjs-sdk/SKILL.md`                 |
+| nextjs, next.js, next                                                                | `sentry-nextjs-sdk/SKILL.md`                 |
+| node, nodejs, node.js, bun, deno, express, fastify, koa, hapi                        | `sentry-node-sdk/SKILL.md`                   |
+| php, laravel, symfony                                                                | `sentry-php-sdk/SKILL.md`                    |
+| python, django, flask, fastapi, celery, starlette                                    | `sentry-python-sdk/SKILL.md`                 |
+| flutter, dart, pubspec                                                               | `sentry-flutter-sdk/SKILL.md`                |
+| react native, expo                                                                   | `sentry-react-native-sdk/SKILL.md`           |
+| react, react router, tanstack, redux, vite                                           | `sentry-react-sdk/SKILL.md`                  |
 | react-router framework, @sentry/react-router, @react-router/dev, react-router reveal | `sentry-react-router-framework-sdk/SKILL.md` |
-| tanstack start, tanstack react start, @tanstack/react-start, tanstackstart-react | `sentry-tanstack-start-sdk/SKILL.md` |
-| ruby, rails, sinatra, sidekiq, rack | `sentry-ruby-sdk/SKILL.md` |
-| svelte, sveltekit | `sentry-svelte-sdk/SKILL.md` |
+| tanstack start, tanstack react start, @tanstack/react-start, tanstackstart-react     | `sentry-tanstack-start-sdk/SKILL.md`         |
+| ruby, rails, sinatra, sidekiq, rack                                                  | `sentry-ruby-sdk/SKILL.md`                   |
+| svelte, sveltekit                                                                    | `sentry-svelte-sdk/SKILL.md`                 |
 
 ---
 
@@ -111,6 +111,7 @@ If the user doesn't have their DSN, guide them to find it:
 4. Copy the DSN
 
 You can help the user open the page directly:
+
 ```bash
 open https://sentry.io/settings/projects/        # macOS
 xdg-open https://sentry.io/settings/projects/    # Linux

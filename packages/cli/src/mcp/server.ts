@@ -6,10 +6,7 @@ import { z } from "zod";
 import packageJson from "../../package.json";
 import { resolveConfig } from "./config.js";
 import { formatSearchResults } from "./format.js";
-import {
-  LocalBackend,
-  LocalSemanticSearchNotConfiguredError,
-} from "./local-backend.js";
+import { LocalBackend, LocalSemanticSearchNotConfiguredError } from "./local-backend.js";
 import { RemoteBackend } from "./remote-backend.js";
 
 const logger = new McpLogger({ name: packageJson.name });
@@ -53,10 +50,7 @@ export function createMcpServer() {
       inputSchema: z.object({
         problem: z.string().describe("The problem description"),
         solution: z.string().describe("The solution details"),
-        tags: z
-          .string()
-          .optional()
-          .describe("Comma-separated tags (e.g., react,nextjs)"),
+        tags: z.string().optional().describe("Comma-separated tags (e.g., react,nextjs)"),
       }),
     },
     async ({ problem, solution, tags }) => {
@@ -117,9 +111,7 @@ export function createMcpServer() {
       try {
         const results = await backend.search({ query, limit, mode });
         return {
-          content: [
-            { type: "text" as const, text: formatSearchResults(results) },
-          ],
+          content: [{ type: "text" as const, text: formatSearchResults(results) }],
         };
       } catch (error) {
         if (error instanceof LocalSemanticSearchNotConfiguredError) {

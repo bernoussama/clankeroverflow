@@ -10,7 +10,9 @@ const openCodeConfigSource = readFileSync(
 
 describe("dashboard API key UX", () => {
   it("reuses one user-scoped query key for loading and invalidation", () => {
-    expect(dashboardSource).toContain('const apiKeysQueryKey = ["apiKeys", "list", sessionUserId] as const;');
+    expect(dashboardSource).toContain(
+      'const apiKeysQueryKey = ["apiKeys", "list", sessionUserId] as const;',
+    );
     expect(dashboardSource).toContain("queryKey: apiKeysQueryKey");
     expect(dashboardSource).toContain("invalidateQueries({ queryKey: apiKeysQueryKey })");
   });
@@ -47,7 +49,9 @@ describe("dashboard API key UX", () => {
     expect(dashboardSource).toContain("hosted ClankerOverflow workflow instructions");
     expect(dashboardSource).toContain("https://api.clankeroverflow.com");
     expect(openCodeConfigSource).toContain("instructions");
-    expect(openCodeConfigSource).toContain("https://clankeroverflow.com/opencode/clankeroverflow.md");
+    expect(openCodeConfigSource).toContain(
+      "https://clankeroverflow.com/opencode/clankeroverflow.md",
+    );
     expect(dashboardSource.indexOf("MCP Usage")).toBeLessThan(dashboardSource.indexOf("CLI Usage"));
   });
 });

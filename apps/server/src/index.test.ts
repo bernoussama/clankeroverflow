@@ -3,12 +3,9 @@ import { mockWorkerEnv } from "../test-setup";
 import defaultHandler, { app, sentryOptionsForEnv } from "./index";
 
 describe("Server", () => {
-  const {
-    createDbMock,
-    posthogInstances,
-    sentryCaptureExceptionMock,
-    sentryWithSentryMock,
-  } = (globalThis as any).__serverTestMocks;
+  const { createDbMock, posthogInstances, sentryCaptureExceptionMock, sentryWithSentryMock } = (
+    globalThis as any
+  ).__serverTestMocks;
 
   afterEach(() => {
     vi.restoreAllMocks();

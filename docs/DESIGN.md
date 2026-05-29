@@ -3,149 +3,149 @@ name: Technical Precision
 themes:
   dark:
     colors:
-      surface: '#131313'
-      surface-dim: '#131313'
-      surface-bright: '#393939'
-      surface-container-lowest: '#0e0e0e'
-      surface-container-low: '#1c1b1b'
-      surface-container: '#201f1f'
-      surface-container-high: '#2a2a2a'
-      surface-container-highest: '#353534'
-      on-surface: '#e5e2e1'
-      on-surface-variant: '#e1bfb3'
-      inverse-surface: '#e5e2e1'
-      inverse-on-surface: '#313030'
-      outline: '#a88a7f'
-      outline-variant: '#594138'
-      surface-tint: '#ffb598'
-      primary: '#ffb598'
-      on-primary: '#591d00'
-      primary-container: '#f2641d'
-      on-primary-container: '#4e1800'
-      inverse-primary: '#a53c00'
-      secondary: '#ecffe3'
-      on-secondary: '#003907'
-      secondary-container: '#13ff43'
-      on-secondary-container: '#007117'
-      tertiary: '#00daf8'
-      on-tertiary: '#00363f'
-      tertiary-container: '#009fb5'
-      on-tertiary-container: '#002f37'
-      error: '#ffb4ab'
-      on-error: '#690005'
-      error-container: '#93000a'
-      on-error-container: '#ffdad6'
-      primary-fixed: '#ffdbce'
-      primary-fixed-dim: '#ffb598'
-      on-primary-fixed: '#370e00'
-      on-primary-fixed-variant: '#7e2c00'
-      secondary-fixed: '#72ff70'
-      secondary-fixed-dim: '#00e639'
-      on-secondary-fixed: '#002203'
-      on-secondary-fixed-variant: '#00530e'
-      tertiary-fixed: '#a5eeff'
-      tertiary-fixed-dim: '#00daf8'
-      on-tertiary-fixed: '#001f25'
-      on-tertiary-fixed-variant: '#004e5a'
-      background: '#131313'
-      on-background: '#e5e2e1'
-      surface-variant: '#353534'
-      surface-terminal: '#0A0A0A'
-      surface-card: '#1E1E1E'
-      code-comment: '#6E6E6E'
-      border-muted: '#2A2A2A'
-      text-on-dark: '#F9F9F9'
+      surface: "#131313"
+      surface-dim: "#131313"
+      surface-bright: "#393939"
+      surface-container-lowest: "#0e0e0e"
+      surface-container-low: "#1c1b1b"
+      surface-container: "#201f1f"
+      surface-container-high: "#2a2a2a"
+      surface-container-highest: "#353534"
+      on-surface: "#e5e2e1"
+      on-surface-variant: "#e1bfb3"
+      inverse-surface: "#e5e2e1"
+      inverse-on-surface: "#313030"
+      outline: "#a88a7f"
+      outline-variant: "#594138"
+      surface-tint: "#ffb598"
+      primary: "#ffb598"
+      on-primary: "#591d00"
+      primary-container: "#f2641d"
+      on-primary-container: "#4e1800"
+      inverse-primary: "#a53c00"
+      secondary: "#ecffe3"
+      on-secondary: "#003907"
+      secondary-container: "#13ff43"
+      on-secondary-container: "#007117"
+      tertiary: "#00daf8"
+      on-tertiary: "#00363f"
+      tertiary-container: "#009fb5"
+      on-tertiary-container: "#002f37"
+      error: "#ffb4ab"
+      on-error: "#690005"
+      error-container: "#93000a"
+      on-error-container: "#ffdad6"
+      primary-fixed: "#ffdbce"
+      primary-fixed-dim: "#ffb598"
+      on-primary-fixed: "#370e00"
+      on-primary-fixed-variant: "#7e2c00"
+      secondary-fixed: "#72ff70"
+      secondary-fixed-dim: "#00e639"
+      on-secondary-fixed: "#002203"
+      on-secondary-fixed-variant: "#00530e"
+      tertiary-fixed: "#a5eeff"
+      tertiary-fixed-dim: "#00daf8"
+      on-tertiary-fixed: "#001f25"
+      on-tertiary-fixed-variant: "#004e5a"
+      background: "#131313"
+      on-background: "#e5e2e1"
+      surface-variant: "#353534"
+      surface-terminal: "#0A0A0A"
+      surface-card: "#1E1E1E"
+      code-comment: "#6E6E6E"
+      border-muted: "#2A2A2A"
+      text-on-dark: "#F9F9F9"
   light:
     colors:
-      surface: '#fcf9f8'
-      surface-dim: '#dcd9d9'
-      surface-bright: '#fcf9f8'
-      surface-container-lowest: '#ffffff'
-      surface-container-low: '#f6f3f2'
-      surface-container: '#f0edec'
-      surface-container-high: '#ebe7e7'
-      surface-container-highest: '#e5e2e1'
-      on-surface: '#1c1b1b'
-      on-surface-variant: '#594138'
-      inverse-surface: '#313030'
-      inverse-on-surface: '#f3f0ef'
-      outline: '#8d7166'
-      outline-variant: '#e1bfb3'
-      surface-tint: '#a53c00'
-      primary: '#a13a00'
-      on-primary: '#ffffff'
-      primary-container: '#ca4b00'
-      on-primary-container: '#fffbff'
-      inverse-primary: '#ffb598'
-      secondary: '#006e16'
-      on-secondary: '#ffffff'
-      secondary-container: '#00f93f'
-      on-secondary-container: '#006d16'
-      tertiary: '#006574'
-      on-tertiary: '#ffffff'
-      tertiary-container: '#008093'
-      on-tertiary-container: '#f8fdff'
-      error: '#ba1a1a'
-      on-error: '#ffffff'
-      error-container: '#ffdad6'
-      on-error-container: '#93000a'
-      primary-fixed: '#ffdbce'
-      primary-fixed-dim: '#ffb598'
-      on-primary-fixed: '#370e00'
-      on-primary-fixed-variant: '#7e2c00'
-      secondary-fixed: '#72ff70'
-      secondary-fixed-dim: '#00e639'
-      on-secondary-fixed: '#002203'
-      on-secondary-fixed-variant: '#00530e'
-      tertiary-fixed: '#a5eeff'
-      tertiary-fixed-dim: '#00daf8'
-      on-tertiary-fixed: '#001f25'
-      on-tertiary-fixed-variant: '#004e5a'
-      background: '#fcf9f8'
-      on-background: '#1c1b1b'
-      surface-variant: '#e5e2e1'
-      surface-terminal: '#1c1b1b'
-      surface-card: '#ffffff'
-      code-comment: '#8d7166'
-      border-muted: '#e5e2e1'
+      surface: "#fcf9f8"
+      surface-dim: "#dcd9d9"
+      surface-bright: "#fcf9f8"
+      surface-container-lowest: "#ffffff"
+      surface-container-low: "#f6f3f2"
+      surface-container: "#f0edec"
+      surface-container-high: "#ebe7e7"
+      surface-container-highest: "#e5e2e1"
+      on-surface: "#1c1b1b"
+      on-surface-variant: "#594138"
+      inverse-surface: "#313030"
+      inverse-on-surface: "#f3f0ef"
+      outline: "#8d7166"
+      outline-variant: "#e1bfb3"
+      surface-tint: "#a53c00"
+      primary: "#a13a00"
+      on-primary: "#ffffff"
+      primary-container: "#ca4b00"
+      on-primary-container: "#fffbff"
+      inverse-primary: "#ffb598"
+      secondary: "#006e16"
+      on-secondary: "#ffffff"
+      secondary-container: "#00f93f"
+      on-secondary-container: "#006d16"
+      tertiary: "#006574"
+      on-tertiary: "#ffffff"
+      tertiary-container: "#008093"
+      on-tertiary-container: "#f8fdff"
+      error: "#ba1a1a"
+      on-error: "#ffffff"
+      error-container: "#ffdad6"
+      on-error-container: "#93000a"
+      primary-fixed: "#ffdbce"
+      primary-fixed-dim: "#ffb598"
+      on-primary-fixed: "#370e00"
+      on-primary-fixed-variant: "#7e2c00"
+      secondary-fixed: "#72ff70"
+      secondary-fixed-dim: "#00e639"
+      on-secondary-fixed: "#002203"
+      on-secondary-fixed-variant: "#00530e"
+      tertiary-fixed: "#a5eeff"
+      tertiary-fixed-dim: "#00daf8"
+      on-tertiary-fixed: "#001f25"
+      on-tertiary-fixed-variant: "#004e5a"
+      background: "#fcf9f8"
+      on-background: "#1c1b1b"
+      surface-variant: "#e5e2e1"
+      surface-terminal: "#1c1b1b"
+      surface-card: "#ffffff"
+      code-comment: "#8d7166"
+      border-muted: "#e5e2e1"
 typography:
   display-xl:
     fontFamily: Bricolage Grotesque
     fontSize: 72px
-    fontWeight: '800'
+    fontWeight: "800"
     lineHeight: 80px
     letterSpacing: -0.04em
   headline-lg:
     fontFamily: Bricolage Grotesque
     fontSize: 48px
-    fontWeight: '700'
+    fontWeight: "700"
     lineHeight: 56px
     letterSpacing: -0.02em
   headline-lg-mobile:
     fontFamily: Bricolage Grotesque
     fontSize: 32px
-    fontWeight: '700'
+    fontWeight: "700"
     lineHeight: 40px
   body-md:
     fontFamily: Inter
     fontSize: 16px
-    fontWeight: '400'
+    fontWeight: "400"
     lineHeight: 24px
   code-sm:
     fontFamily: JetBrains Mono
     fontSize: 14px
-    fontWeight: '450'
+    fontWeight: "450"
     lineHeight: 20px
   label-caps:
     fontFamily: JetBrains Mono
     fontSize: 12px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 16px
     letterSpacing: 0.1em
   stat-lg:
     fontFamily: Inter
     fontSize: 24px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 32px
 spacing:
   margin-page: 4rem
@@ -194,9 +194,9 @@ Contrast ratios must strictly exceed WCAG AAA for all code blocks and technical 
 
 This system employs a three-tier typographic strategy:
 
-1. **The Character:** *Bricolage Grotesque* is used for high-impact display text and headings, providing a unique, slightly mechanical personality.
-2. **The Utility:** *Inter* serves as the workhorse for body copy and descriptions, ensuring perfect clarity at all sizes.
-3. **The Technical:** *JetBrains Mono* is used for all code, labels, metadata, and status indicators.
+1. **The Character:** _Bricolage Grotesque_ is used for high-impact display text and headings, providing a unique, slightly mechanical personality.
+2. **The Utility:** _Inter_ serves as the workhorse for body copy and descriptions, ensuring perfect clarity at all sizes.
+3. **The Technical:** _JetBrains Mono_ is used for all code, labels, metadata, and status indicators.
 
 Headlines should use tight letter spacing to appear dense and impactful. Body text uses standard spacing for maximum readability. Labels should always be uppercase when used as section overlines.
 

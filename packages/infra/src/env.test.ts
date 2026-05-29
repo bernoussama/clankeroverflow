@@ -49,9 +49,7 @@ describe("loadInfraEnv", () => {
       return {};
     });
 
-    expect(loadedPaths).toEqual([
-      "./.env.production",
-    ]);
+    expect(loadedPaths).toEqual(["./.env.production"]);
   });
 
   it("does not inherit local app env files during deploys", () => {
@@ -80,9 +78,11 @@ describe("loadInfraEnv", () => {
   it("replaces a preloaded local database url during deploys", () => {
     const files: Record<string, string> = {
       "./.env": "DATABASE_URL=postgresql://localhost:5432/localdb\nALCHEMY_PASSWORD=local",
-      "./.env.production": "DATABASE_URL=postgresql://public.example.com:5432/proddb\nNEXT_PUBLIC_SERVER_URL=https://api.clankeroverflow.com",
+      "./.env.production":
+        "DATABASE_URL=postgresql://public.example.com:5432/proddb\nNEXT_PUBLIC_SERVER_URL=https://api.clankeroverflow.com",
       "../../apps/web/.env": "NEXT_PUBLIC_SERVER_URL=http://localhost:3000",
-      "../../apps/server/.env": "DATABASE_URL=postgresql://localhost:5432/localdb\nBETTER_AUTH_SECRET=dev-secret",
+      "../../apps/server/.env":
+        "DATABASE_URL=postgresql://localhost:5432/localdb\nBETTER_AUTH_SECRET=dev-secret",
     };
 
     const env = createEnv({

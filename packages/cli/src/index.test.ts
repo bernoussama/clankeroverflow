@@ -72,7 +72,9 @@ describe("CLI", () => {
       expect(fetchCallUrl).toMatch(/^https:\/\/api\.clankeroverflow\.com\/trpc/);
       expect(fetchCallUrl).toContain("solutions.log");
       expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("Success! Solution logged: https://clankeroverflow.com/solution/123"),
+        expect.stringContaining(
+          "Success! Solution logged: https://clankeroverflow.com/solution/123",
+        ),
       );
     });
   });
@@ -193,12 +195,16 @@ describe("CLI", () => {
 
     beforeEach(async () => {
       const mod = await import("./postinstall");
-      installMock = vi.spyOn(mod, "installBundledSkill").mockResolvedValue([
-        "/tmp/xdg-config/opencode/skills/clankeroverflow-mcp",
-        "/tmp/home/.agents/skills/clankeroverflow-mcp",
-      ]);
+      installMock = vi
+        .spyOn(mod, "installBundledSkill")
+        .mockResolvedValue([
+          "/tmp/xdg-config/opencode/skills/clankeroverflow-mcp",
+          "/tmp/home/.agents/skills/clankeroverflow-mcp",
+        ]);
       const pluginMod = await import("./plugin/install");
-      pluginInstallMock = vi.spyOn(pluginMod, "installPlugin").mockResolvedValue("/tmp/home/.claude/plugins/clankeroverflow");
+      pluginInstallMock = vi
+        .spyOn(pluginMod, "installPlugin")
+        .mockResolvedValue("/tmp/home/.claude/plugins/clankeroverflow");
     });
 
     afterEach(() => {
@@ -224,13 +230,7 @@ describe("CLI", () => {
 
     test("passes --target as CLANKER_SKILLS_DIRS to installBundledSkill", async () => {
       const program = createProgram();
-      await program.parseAsync([
-        "node",
-        "test",
-        "setup",
-        "--target",
-        "/tmp/custom/skills",
-      ]);
+      await program.parseAsync(["node", "test", "setup", "--target", "/tmp/custom/skills"]);
 
       expect(installMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -247,13 +247,7 @@ describe("CLI", () => {
 
       try {
         const program = createProgram();
-        await program.parseAsync([
-          "node",
-          "test",
-          "setup",
-          "--target",
-          "/tmp/extra",
-        ]);
+        await program.parseAsync(["node", "test", "setup", "--target", "/tmp/extra"]);
 
         expect(installMock).toHaveBeenCalledWith(
           expect.objectContaining({

@@ -128,15 +128,8 @@ enterprise-devops/
     "deployment",
     "monitoring"
   ],
-  "commands": [
-    "./commands/ci",
-    "./commands/monitoring",
-    "./commands/admin"
-  ],
-  "agents": [
-    "./agents/orchestration",
-    "./agents/specialized"
-  ],
+  "commands": ["./commands/ci", "./commands/monitoring", "./commands/admin"],
+  "agents": ["./agents/orchestration", "./agents/specialized"],
   "hooks": "./hooks/hooks.json",
   "mcpServers": "./.mcp.json"
 }
@@ -198,8 +191,8 @@ Trigger CI/CD build pipeline and monitor progress in real-time.
    \`\`\`javascript
    // Uses github-actions MCP server
    const build = await tools.github_actions_trigger_workflow({
-     workflow: 'build.yml',
-     ref: currentBranch
+   workflow: 'build.yml',
+   ref: currentBranch
    })
    \`\`\`
 
@@ -217,6 +210,7 @@ Trigger CI/CD build pipeline and monitor progress in real-time.
 ## Integration
 
 After successful build:
+
 - Offer to deploy to staging
 - Suggest performance optimizations
 - Generate deployment checklist
@@ -282,6 +276,7 @@ Specialized agent for orchestrating complex deployments across multiple environm
 ## MCP Integration
 
 Uses multiple MCP servers:
+
 - `kubernetes`: Deploy and manage containers
 - `terraform`: Provision infrastructure
 - `github-actions`: Trigger deployment pipelines
@@ -300,9 +295,9 @@ Sends updates via Slack and PagerDuty:
 \`\`\`javascript
 const { SlackClient } = require('${CLAUDE_PLUGIN_ROOT}/lib/integrations/slack')
 await SlackClient.notify({
-  channel: '#deployments',
-  message: 'Deployment started',
-  metadata: deploymentPlan
+channel: '#deployments',
+message: 'Deployment started',
+metadata: deploymentPlan
 })
 \`\`\`
 ```
@@ -323,6 +318,7 @@ Comprehensive operational knowledge for managing Kubernetes clusters and workloa
 ## Overview
 
 Manage Kubernetes infrastructure effectively through:
+
 - Deployment strategies and patterns
 - Resource configuration and optimization
 - Troubleshooting and debugging
@@ -334,16 +330,19 @@ Manage Kubernetes infrastructure effectively through:
 ### Resource Management
 
 **Deployments**: Use for stateless applications
+
 - Rolling updates for zero-downtime deployments
 - Rollback capabilities for failed deployments
 - Replica management for scaling
 
 **StatefulSets**: Use for stateful applications
+
 - Stable network identities
 - Persistent storage
 - Ordered deployment and scaling
 
 **DaemonSets**: Use for node-level services
+
 - Log collectors
 - Monitoring agents
 - Network plugins
@@ -351,11 +350,13 @@ Manage Kubernetes infrastructure effectively through:
 ### Configuration
 
 **ConfigMaps**: Store non-sensitive configuration
+
 - Environment-specific settings
 - Application configuration files
 - Feature flags
 
 **Secrets**: Store sensitive data
+
 - API keys and tokens
 - Database credentials
 - TLS certificates
@@ -365,11 +366,13 @@ Use external secret management (Vault, AWS Secrets Manager) for production.
 ### Networking
 
 **Services**: Expose applications internally
+
 - ClusterIP for internal communication
 - NodePort for external access (non-production)
 - LoadBalancer for external access (production)
 
 **Ingress**: HTTP/HTTPS routing
+
 - Path-based routing
 - Host-based routing
 - TLS termination
@@ -382,10 +385,10 @@ Use external secret management (Vault, AWS Secrets Manager) for production.
 Default strategy, gradual replacement:
 \`\`\`yaml
 strategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxSurge: 1
-    maxUnavailable: 0
+type: RollingUpdate
+rollingUpdate:
+maxSurge: 1
+maxUnavailable: 0
 \`\`\`
 
 **When to use**: Standard deployments, minor updates
@@ -395,7 +398,7 @@ strategy:
 Stop all pods, then create new ones:
 \`\`\`yaml
 strategy:
-  type: Recreate
+type: Recreate
 \`\`\`
 
 **When to use**: Stateful apps that can't run multiple versions
@@ -403,6 +406,7 @@ strategy:
 ### Blue-Green
 
 Run two complete environments, switch traffic:
+
 1. Deploy new version (green)
 2. Test green environment
 3. Switch traffic to green
@@ -413,6 +417,7 @@ Run two complete environments, switch traffic:
 ### Canary
 
 Gradually roll out to subset of users:
+
 1. Deploy canary version (10% traffic)
 2. Monitor metrics and errors
 3. Increase traffic gradually
@@ -427,12 +432,12 @@ Gradually roll out to subset of users:
 Always set for production workloads:
 \`\`\`yaml
 resources:
-  requests:
-    memory: "256Mi"
-    cpu: "250m"
-  limits:
-    memory: "512Mi"
-    cpu: "500m"
+requests:
+memory: "256Mi"
+cpu: "250m"
+limits:
+memory: "512Mi"
+cpu: "500m"
 \`\`\`
 
 **Requests**: Guaranteed resources
@@ -443,18 +448,18 @@ resources:
 Essential for reliability:
 \`\`\`yaml
 livenessProbe:
-  httpGet:
-    path: /health
-    port: 8080
-  initialDelaySeconds: 30
-  periodSeconds: 10
+httpGet:
+path: /health
+port: 8080
+initialDelaySeconds: 30
+periodSeconds: 10
 
 readinessProbe:
-  httpGet:
-    path: /ready
-    port: 8080
-  initialDelaySeconds: 5
-  periodSeconds: 5
+httpGet:
+path: /ready
+port: 8080
+initialDelaySeconds: 5
+periodSeconds: 5
 \`\`\`
 
 **Liveness**: Restart unhealthy pods
@@ -490,7 +495,7 @@ Get pod details:
 \`\`\`bash
 kubectl describe pod <name>
 kubectl logs <name>
-kubectl logs <name> --previous  # logs from crashed container
+kubectl logs <name> --previous # logs from crashed container
 \`\`\`
 
 Execute commands in pod:
@@ -517,12 +522,11 @@ kubectl top pods
 Example:
 \`\`\`yaml
 securityContext:
-  runAsNonRoot: true
-  runAsUser: 1000
-  readOnlyRootFilesystem: true
-  capabilities:
-    drop:
-      - ALL
+runAsNonRoot: true
+runAsUser: 1000
+readOnlyRootFilesystem: true
+capabilities:
+drop: - ALL
 \`\`\`
 
 ### Network Policies
@@ -532,16 +536,14 @@ Restrict pod communication:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: api-allow
+name: api-allow
 spec:
-  podSelector:
-    matchLabels:
-      app: api
-  ingress:
-    - from:
-      - podSelector:
-          matchLabels:
-            app: frontend
+podSelector:
+matchLabels:
+app: api
+ingress: - from: - podSelector:
+matchLabels:
+app: frontend
 \`\`\`
 
 ### Secrets Management
@@ -568,21 +570,20 @@ Automatically scale based on metrics:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: api-hpa
+name: api-hpa
 spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: api
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
+scaleTargetRef:
+apiVersion: apps/v1
+kind: Deployment
+name: api
+minReplicas: 2
+maxReplicas: 10
+metrics: - type: Resource
+resource:
+name: cpu
+target:
+type: Utilization
+averageUtilization: 70
 \`\`\`
 
 ## MCP Server Integration
@@ -607,6 +608,7 @@ const result = await tools.k8s_apply_manifest({ file: 'deployment.yaml' })
 ## Detailed References
 
 For in-depth information:
+
 - **Deployment patterns**: `references/deployment-patterns.md`
 - **Troubleshooting guide**: `references/troubleshooting.md`
 - **Security hardening**: `references/security.md`
@@ -614,6 +616,7 @@ For in-depth information:
 ## Example Manifests
 
 For copy-paste examples:
+
 - **Basic deployment**: `examples/basic-deployment.yaml`
 - **StatefulSet**: `examples/stateful-set.yaml`
 - **Ingress config**: `examples/ingress-config.yaml`
@@ -707,6 +710,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/skills/kubernetes-ops/scripts/validate-manifest.sh de
 ### MCP Integration
 
 Three custom MCP servers:
+
 - **Kubernetes**: Cluster operations
 - **Terraform**: Infrastructure provisioning
 - **GitHub Actions**: CI/CD automation
@@ -714,6 +718,7 @@ Three custom MCP servers:
 ### Shared Libraries
 
 Reusable code in `lib/`:
+
 - **Core**: Common utilities (logging, config, auth)
 - **Integrations**: External services (Slack, Datadog)
 - **Utils**: Helper functions (retry, validation)
@@ -721,12 +726,14 @@ Reusable code in `lib/`:
 ### Configuration Management
 
 Environment-specific configs in `config/`:
+
 - **Environments**: Per-environment settings
 - **Templates**: Reusable deployment templates
 
 ### Security Automation
 
 Multiple security hooks:
+
 - Secret scanning before writes
 - Permission validation on session start
 - Configuration auditing on completion
@@ -734,6 +741,7 @@ Multiple security hooks:
 ### Monitoring Integration
 
 Built-in monitoring via lib integrations:
+
 - Datadog for metrics
 - PagerDuty for alerts
 - Slack for notifications

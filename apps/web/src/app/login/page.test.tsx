@@ -7,7 +7,7 @@ const loginPageSource = readFileSync(new URL("./login-page.tsx", import.meta.url
 describe("login page", () => {
   it("uses a single GitHub sign-in entry point", () => {
     expect(loginPageSource).toContain("Continue with GitHub");
-    expect(loginPageSource).toContain('signIn.social({');
+    expect(loginPageSource).toContain("signIn.social({");
     expect(loginPageSource).toContain('provider: "github"');
     expect(loginPageSource).toContain("window.location.origin");
     expect(loginPageSource).toContain("window.location.search");

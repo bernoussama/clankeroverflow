@@ -6,13 +6,13 @@
     "clanker": "dist/index.mjs"
   },
   "files": [
-    "dist",
-    "skills",
-    "postinstall.mjs",
     ".claude-plugin",
+    ".mcp.json",
     "commands",
+    "dist",
     "hooks",
-    ".mcp.json"
+    "postinstall.mjs",
+    "skills"
   ],
   "type": "module",
   "publishConfig": {

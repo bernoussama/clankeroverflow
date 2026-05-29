@@ -11,7 +11,9 @@ import { openLocalDb, type LocalDb } from "./local-db";
 
 export class LocalSemanticSearchNotConfiguredError extends Error {
   constructor() {
-    super("Local semantic search is not configured yet. Use keyword or hybrid mode for local SQLite search.");
+    super(
+      "Local semantic search is not configured yet. Use keyword or hybrid mode for local SQLite search.",
+    );
   }
 }
 
@@ -89,9 +91,9 @@ export class LocalBackend implements SolutionBackend {
         throw new Error(`Local solution not found: ${input.id}`);
       }
 
-      const previous = this.db.prepare("SELECT vote FROM solution_vote WHERE solution_id = ?").get(input.id) as
-        | { vote: "up" | "down" }
-        | undefined;
+      const previous = this.db
+        .prepare("SELECT vote FROM solution_vote WHERE solution_id = ?")
+        .get(input.id) as { vote: "up" | "down" } | undefined;
       if (previous?.vote === nextVote) {
         return;
       }

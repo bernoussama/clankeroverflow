@@ -17,7 +17,10 @@
     "db:migrate": "turbo run db:migrate --filter=@clankeroverflow/db",
     "deploy": "turbo run deploy --filter=@clankeroverflow/infra",
     "destroy": "turbo run destroy --filter=@clankeroverflow/infra",
-    "check": "oxlint && oxfmt --write"
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --write",
+    "check": "pnpm run lint && pnpm run format"
   },
   "dependencies": {
     "@clankeroverflow/env": "workspace:*",

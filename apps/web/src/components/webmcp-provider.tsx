@@ -136,11 +136,9 @@ export default function WebMCPProvider({ children }: { children: React.ReactNode
       return;
     }
 
-    navigator.modelContext
-      .provideContext(WEBMCP_TOOLS)
-      .catch((err: unknown) => {
-        console.error("[WebMCP] Failed to provide context:", err);
-      });
+    navigator.modelContext.provideContext(WEBMCP_TOOLS).catch((err: unknown) => {
+      console.error("[WebMCP] Failed to provide context:", err);
+    });
   }, []);
 
   return <>{children}</>;
