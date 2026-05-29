@@ -46,6 +46,8 @@ jobs:
         run: pnpm run check-types
 
       - name: Build
+        env:
+          NEXT_PUBLIC_SERVER_URL: http://localhost:3000
         run: pnpm run build
 
       - name: Test
