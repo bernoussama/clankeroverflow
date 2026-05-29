@@ -1,0 +1,19 @@
+apps/web/src/app/dashboard/dashboard.test.ts
+  s_c97c7ff5922112::t_06981e8b17982a 49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "e5920d7419b39a4de35e30b57f34a22792a02f89",
+  "prompts": {},
+  "sessions": {
+    "s_c97c7ff5922112": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7161-aca4-7252-8a3b-3ae2db105c81",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
