@@ -1,0 +1,23 @@
+packages/cli/package.json
+  s_1951343b959a2a::t_4a6a865be8973c 29
+AGENTS.md
+  s_1951343b959a2a::t_db6d6304c40956 6
+pnpm-lock.yaml
+  ai_agent 358-360
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "58c4d900e72eeaef7cfff42bd9c87594664977ad",
+  "prompts": {},
+  "sessions": {
+    "s_1951343b959a2a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7153-5e53-7082-9020-ed8e1ceebffe",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
