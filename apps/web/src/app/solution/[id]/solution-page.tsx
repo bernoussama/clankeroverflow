@@ -42,19 +42,15 @@ export default function SolutionPage() {
       setVoteError(null);
       try {
         const result = await trpcClient.solutions.vote.mutate({ id, isUpvote });
-        queryClient.setQueryData(
-          solutionQueryKey,
-          (old: SolutionDetails | undefined) => {
-            if (!old) return old;
-            return {
-              ...old,
-              upvotes: result.upvotes,
-              downvotes: result.downvotes,
-              userVote: result.userVote,
-            };
-          },
-        );
-        await queryClient.invalidateQueries({ queryKey: solutionQueryKey });
+        queryClient.setQueryData(solutionQueryKey, (old: SolutionDetails | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            upvotes: result.upvotes,
+            downvotes: result.downvotes,
+            userVote: result.userVote,
+          };
+        });
       } catch {
         setVoteError("Failed to record vote. Please try again.");
       } finally {

@@ -36,6 +36,9 @@ const hyperdrive = isLocal
   : await Hyperdrive("hyperdrive", {
       origin: databaseUrl,
       adopt: true,
+      caching: {
+        disabled: true,
+      },
     });
 
 /** 768 dims + cosine for `@cf/baai/bge-base-en-v1.5` (Workers AI). */

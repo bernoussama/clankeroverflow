@@ -32,6 +32,12 @@ describe("infra worker config", () => {
     expect(alchemyRunSource).toContain("domains:");
   });
 
+  it("disables Hyperdrive query caching for transactional API reads", () => {
+    expect(alchemyRunSource).toContain('Hyperdrive("hyperdrive", {');
+    expect(alchemyRunSource).toContain("caching: {");
+    expect(alchemyRunSource).toContain("disabled: true");
+  });
+
   it("passes GitHub OAuth credentials to the auth worker", () => {
     expect(alchemyRunSource).toContain("GITHUB_CLIENT_ID");
     expect(alchemyRunSource).toContain("GITHUB_CLIENT_SECRET");

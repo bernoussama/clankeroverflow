@@ -25,14 +25,13 @@ describe("solutions page performance defaults", () => {
 });
 
 describe("solution page vote state", () => {
-  it("scopes solution details to the resolved session and revalidates after voting", () => {
+  it("scopes solution details to the resolved session and preserves the mutation response", () => {
     expect(solutionPageSource).toContain("isPending: isSessionPending");
     expect(solutionPageSource).toContain(
       'const solutionQueryKey = ["solutions", "getById", id, sessionUserId] as const;',
     );
     expect(solutionPageSource).toContain("enabled: !isSessionPending");
-    expect(solutionPageSource).toContain(
-      "await queryClient.invalidateQueries({ queryKey: solutionQueryKey });",
-    );
+    expect(solutionPageSource).toContain("queryClient.setQueryData(");
+    expect(solutionPageSource).not.toContain("queryClient.invalidateQueries");
   });
 });
