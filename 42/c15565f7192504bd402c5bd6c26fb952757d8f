@@ -1,0 +1,21 @@
+packages/api/src/routers/solutions.ts
+  s_98177a7538120f::t_30d9dc05e05e3d 293-328
+packages/api/src/routers/solutions.test.ts
+  s_98177a7538120f::t_0028f0b4dab3b7 454-491
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "42c15565f7192504bd402c5bd6c26fb952757d8f",
+  "prompts": {},
+  "sessions": {
+    "s_98177a7538120f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7551-a980-7c02-b9f1-07ed19febf48",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
