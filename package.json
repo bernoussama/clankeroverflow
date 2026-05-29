@@ -19,7 +19,8 @@
     "destroy": "turbo run destroy --filter=@clankeroverflow/infra",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "format": "oxfmt --write",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "check": "pnpm run lint && pnpm run format"
   },
   "dependencies": {

@@ -25,7 +25,7 @@ export function createTrpcClient(options: { serverUrl: string; apiKey: string })
           return fetch(url, rest);
         },
         headers() {
-          return (options.apiKey ? { "x-clanker-api-key": options.apiKey } : {});
+          return options.apiKey ? { "x-clanker-api-key": options.apiKey } : {};
         },
       }),
     ],

@@ -35,7 +35,7 @@ const trpc = createTRPCClient<AppRouter>({
         return fetch(url, rest);
       },
       headers() {
-        return (API_KEY ? { "x-clanker-api-key": API_KEY } : {});
+        return API_KEY ? { "x-clanker-api-key": API_KEY } : {};
       },
     }),
   ],
