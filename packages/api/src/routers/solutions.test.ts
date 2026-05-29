@@ -350,6 +350,26 @@ describe("solutionsRouter", () => {
     expect(result.userVote).toBe(true);
   });
 
+  test("getById should return userVote when api key authentication is present", async () => {
+    (db.select as any)
+      .mockReturnValueOnce(
+        createSelectChain([
+          { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 },
+        ]),
+      )
+      .mockReturnValueOnce(createSelectChain([{ upvotes: 5, downvotes: 2 }]))
+      .mockReturnValueOnce(createSelectChain([{ isUpvote: true }]));
+
+    const caller = createCaller({
+      db,
+      session: null,
+      apiKey: { referenceId: "user_1" },
+    } as any);
+
+    const result = await caller.solutions.getById({ id: "sol_1" });
+    expect(result.userVote).toBe(true);
+  });
+
   test("getById should throw NOT_FOUND if not found", async () => {
     (db.select as any).mockReturnValueOnce(createSelectChain([]));
 
@@ -498,7 +518,8 @@ describe("solutionsRouter", () => {
         createSelectChain([{ userId: "user_1", solutionId: "sol_1", isUpvote: true }]),
       )
       .mockReturnValueOnce(createSelectChain([{ score: 0 }]))
-      .mockReturnValueOnce(createSelectChain([{ upvotes: 0, downvotes: 0 }]));
+      .mockReturnValueOnce(createSelectChain([{ upvotes: 0, downvotes: 0 }]))
+      .mockReturnValueOnce(createSelectChain([]));
 
     const requestLog: Record<string, unknown> = {};
     const caller = createCaller({
@@ -510,6 +531,7 @@ describe("solutionsRouter", () => {
 
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
     expect(result.success).toBe(true);
+    expect(result.userVote).toBeNull();
     expect(db.delete as any).toHaveBeenCalled();
   });
 

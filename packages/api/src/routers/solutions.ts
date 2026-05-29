@@ -583,10 +583,7 @@ export const solutionsRouter = router({
       });
     }
 
-    let userId: string | null = null;
-    if (ctx.session?.user) {
-      userId = ctx.session.user.id;
-    }
+    const userId = getAuthenticatedUserId(ctx);
 
     const voteCounts = await withTimeout(
       getVoteCounts(db, input.id, userId),

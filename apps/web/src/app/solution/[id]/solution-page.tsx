@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Terminal, Hash, Calendar, User, ThumbsUp, ThumbsDown } from "lucide-react";
 
-import { trpcClient, queryClient } from "@/utils/trpc";
+import { trpcClient } from "@/utils/trpc";
 import { solutionDetailsSchema, type SolutionDetails } from "@/utils/trpc-output-types";
 import { authClient } from "@/lib/auth-client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,17 +16,21 @@ export default function SolutionPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [isVoting, setIsVoting] = useState(false);
+  const queryClient = useQueryClient();
+  const sessionUserId = session?.user.id ?? null;
+  const solutionQueryKey = ["solutions", "getById", id, sessionUserId] as const;
 
   const {
     data: solution,
     isLoading,
     isError,
   } = useQuery<SolutionDetails>({
-    queryKey: ["solutions", "getById", id],
+    queryKey: solutionQueryKey,
     queryFn: async () =>
       solutionDetailsSchema.parse(await trpcClient.solutions.getById.query({ id })),
+    enabled: !isSessionPending,
   });
 
   const [voteError, setVoteError] = useState<string | null>(null);
@@ -39,7 +43,7 @@ export default function SolutionPage() {
       try {
         const result = await trpcClient.solutions.vote.mutate({ id, isUpvote });
         queryClient.setQueryData(
-          ["solutions", "getById", id],
+          solutionQueryKey,
           (old: SolutionDetails | undefined) => {
             if (!old) return old;
             return {
@@ -50,13 +54,14 @@ export default function SolutionPage() {
             };
           },
         );
+        await queryClient.invalidateQueries({ queryKey: solutionQueryKey });
       } catch {
         setVoteError("Failed to record vote. Please try again.");
       } finally {
         setIsVoting(false);
       }
     },
-    [id, isVoting, session],
+    [id, isVoting, queryClient, session, solutionQueryKey],
   );
 
   if (isLoading) {

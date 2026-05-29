@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const solutionsPageSource = readFileSync(new URL("./solutions-page.tsx", import.meta.url), "utf8");
+const solutionPageSource = readFileSync(
+  new URL("../solution/[id]/solution-page.tsx", import.meta.url),
+  "utf8",
+);
 
 describe("solutions page performance defaults", () => {
   it("defaults search to keyword mode to avoid implicit semantic latency", () => {
@@ -17,5 +21,18 @@ describe("solutions page performance defaults", () => {
   it("hydrates search from the query string", () => {
     expect(solutionsPageSource).toContain("useSearchParams");
     expect(solutionsPageSource).toContain('searchParams.get("query")');
+  });
+});
+
+describe("solution page vote state", () => {
+  it("scopes solution details to the resolved session and revalidates after voting", () => {
+    expect(solutionPageSource).toContain("isPending: isSessionPending");
+    expect(solutionPageSource).toContain(
+      'const solutionQueryKey = ["solutions", "getById", id, sessionUserId] as const;',
+    );
+    expect(solutionPageSource).toContain("enabled: !isSessionPending");
+    expect(solutionPageSource).toContain(
+      "await queryClient.invalidateQueries({ queryKey: solutionQueryKey });",
+    );
   });
 });
