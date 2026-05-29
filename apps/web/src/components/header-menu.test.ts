@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const modeToggleSource = readFileSync(new URL("./mode-toggle.tsx", import.meta.url), "utf8");
 const userMenuSource = readFileSync(new URL("./user-menu.tsx", import.meta.url), "utf8");
+const globalStyles = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 
 describe("header menus", () => {
   it("do not bundle Base UI floating menus", () => {
@@ -16,5 +17,10 @@ describe("header menus", () => {
     expect(modeToggleSource).toContain('chooseTheme("dark")');
     expect(modeToggleSource).toContain('chooseTheme("system")');
     expect(userMenuSource).toContain("authClient.signOut");
+  });
+
+  it("renders header dropdowns on an opaque theme surface", () => {
+    expect(globalStyles).toContain(".dropdown-content");
+    expect(globalStyles).toContain("background: var(--header-bg)");
   });
 });

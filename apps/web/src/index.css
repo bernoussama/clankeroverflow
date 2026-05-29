@@ -510,11 +510,59 @@
   color: var(--landing-accent);
 }
 
+/* ─── Install Tabs ─── */
+
+.install-tab-list {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--landing-border);
+  padding: 0.5rem;
+}
+
+.install-tab {
+  display: inline-flex;
+  min-height: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--landing-border);
+  border-radius: 0px;
+  background: transparent;
+  color: var(--landing-muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  padding: 0.5rem 0.75rem;
+  text-transform: uppercase;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+  white-space: nowrap;
+}
+
+.install-tab:hover {
+  border-color: var(--landing-accent);
+  color: var(--landing-accent);
+}
+
+.install-tab[aria-selected="true"] {
+  border-color: var(--landing-accent);
+  color: var(--landing-accent);
+  background: var(--landing-accent-subtle);
+}
+
 /* ─── Dropdown (unified) ─── */
 
 .dropdown-content {
   border-radius: 0px;
   border: 1px solid var(--landing-border);
+  background: var(--header-bg);
+  color: var(--theme-on-surface);
 }
 
 /* ─── Dashboard Card ─── */

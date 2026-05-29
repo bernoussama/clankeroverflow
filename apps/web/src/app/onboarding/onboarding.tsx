@@ -261,7 +261,7 @@ export default function Onboarding() {
           </div>
           <div className="dashboard-card__body p-0">
             <div
-              className="flex gap-1 overflow-x-auto border-b border-landing p-2"
+              className="install-tab-list hide-scrollbar"
               role="tablist"
               aria-label="Install target"
             >
@@ -271,11 +271,7 @@ export default function Onboarding() {
                   type="button"
                   role="tab"
                   aria-selected={activeInstallTab === tab.id}
-                  className={`mode-toggle-btn h-8 shrink-0 px-3 text-xs font-mono uppercase tracking-wider ${
-                    activeInstallTab === tab.id
-                      ? "border-[var(--landing-accent)] text-accent-landing"
-                      : ""
-                  }`}
+                  className="install-tab"
                   onClick={() => setActiveInstallTab(tab.id)}
                 >
                   {tab.label}

@@ -31,6 +31,9 @@ describe("onboarding API key setup", () => {
     expect(onboardingSource).toContain("Codex");
     expect(onboardingSource).toContain("Claude Code");
     expect(onboardingSource).toContain("OpenCode / Cursor");
+    expect(onboardingSource).toContain("install-tab-list");
+    expect(onboardingSource).toContain('className="install-tab"');
+    expect(onboardingSource).not.toContain("mode-toggle-btn h-8");
     expect(onboardingSource).toContain("codex mcp add clankeroverflow");
     expect(onboardingSource).toContain("[mcp_servers.clankeroverflow]");
     expect(onboardingSource).toContain("npx -y @clankeroverflow/cli setup");
