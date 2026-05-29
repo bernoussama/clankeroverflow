@@ -23,5 +23,8 @@ describe("next config security headers", () => {
     expect(nextConfigSource).toContain("https://cloudflareinsights.com");
     expect(nextConfigSource).toContain("https://eu-assets.i.posthog.com");
     expect(nextConfigSource).toContain("https://eu.i.posthog.com");
+    expect(nextConfigSource).toContain("NEXT_PUBLIC_POSTHOG_HOST");
+    expect(nextConfigSource).toContain('".i.posthog.com"');
+    expect(nextConfigSource).toContain("configuredPostHogScriptSource");
   });
 });

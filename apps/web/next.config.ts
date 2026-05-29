@@ -9,13 +9,32 @@ const analyticsConnectSource = "https://cloudflareinsights.com";
 const analyticsScriptSource = "https://static.cloudflareinsights.com";
 const postHogConnectSource = "https://eu.i.posthog.com";
 const postHogScriptSource = "https://eu-assets.i.posthog.com";
+const configuredPostHogHost = env.NEXT_PUBLIC_POSTHOG_HOST
+  ? new URL(env.NEXT_PUBLIC_POSTHOG_HOST).origin
+  : undefined;
+const configuredPostHogScriptSource = configuredPostHogHost?.replace(
+  ".i.posthog.com",
+  "-assets.i.posthog.com",
+);
 const connectSources = isDev
   ? ["'self'", serverOrigin, "http://localhost:*", "ws://localhost:*", "ws:", "wss:"]
-  : ["'self'", serverOrigin, analyticsConnectSource, postHogConnectSource];
+  : [
+      "'self'",
+      serverOrigin,
+      analyticsConnectSource,
+      postHogConnectSource,
+      ...(configuredPostHogHost ? [configuredPostHogHost] : []),
+    ];
 const scriptSources = [
   "'self'",
   "'unsafe-inline'",
-  ...(isDev ? ["'unsafe-eval'"] : [analyticsScriptSource, postHogScriptSource]),
+  ...(isDev
+    ? ["'unsafe-eval'"]
+    : [
+        analyticsScriptSource,
+        postHogScriptSource,
+        ...(configuredPostHogScriptSource ? [configuredPostHogScriptSource] : []),
+      ]),
 ];
 
 const contentSecurityPolicy = [
