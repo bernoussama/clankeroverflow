@@ -6,6 +6,7 @@ allowBuilds:
   better-sqlite3: true
   workerd: true
   esbuild: true
+  sharp: true
   msw: false
 
 catalog:
