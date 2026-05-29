@@ -1,0 +1,59 @@
+apps/web/src/lib/agent-discovery.ts
+  s_0014504c7a3c34::t_1f862251b935ab 19,21
+apps/web/src/app/layout.tsx
+  s_0014504c7a3c34::t_c173d7b6c617e3 28,30,32,34,44,50,52
+apps/web/src/components/user-menu.tsx
+  s_0a2a85685712a3::t_1527694a47fa00 3,14,16-20
+apps/web/src/app/page.test.tsx
+  s_0014504c7a3c34::t_e6a54e3eb5b6c9 7,39-53
+  s_0f0e0baa271b97::t_c8882177c186f7 19-24
+  s_9d02c74aed7ec4::t_2f694803dfa135 25-31,33-34
+  s_9d02c74aed7ec4::t_7714e50e4c8751 35-38,54
+apps/web/src/app/home.tsx
+  s_0014504c7a3c34::t_782db62ad3ee04 24,31-32,88,90,101,103-104,115,117-118,136,147,170,173,182-183,189,191-192,198,200,206,208,219,234-235,251-252,269-270,282,295,300,304,308
+  s_0f0e0baa271b97::t_c8882177c186f7 36,39
+  s_9d02c74aed7ec4::t_7714e50e4c8751 180
+  s_9d02c74aed7ec4::t_2f694803dfa135 92,106,135,153
+apps/web/src/components/header-menu.test.ts
+  s_0a2a85685712a3::t_79b9208b7958d6 26-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "263afc06d08c20d50d9add22fad0c9a320f1e4ee",
+  "prompts": {},
+  "sessions": {
+    "s_0014504c7a3c34": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e75ec-b5be-7062-9ed8-1e418ed58fdb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    },
+    "s_0a2a85685712a3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e75f3-ea14-7aa1-a2fb-03ff8be4f35e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    },
+    "s_0f0e0baa271b97": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e75c0-d5a2-77e3-940b-df5619227b8b",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    },
+    "s_9d02c74aed7ec4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e75d4-1ced-7873-ad0d-bdbad055d09a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
