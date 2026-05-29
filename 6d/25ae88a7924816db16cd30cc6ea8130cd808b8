@@ -1,0 +1,36 @@
+apps/web/src/app/onboarding/onboarding.test.tsx
+  s_3286ca8f0646cf::t_ee0041dbd5f96d 34-36
+apps/web/src/index.css
+  s_3286ca8f0646cf::t_ee0041dbd5f96d 513-558
+  s_bcb749cf95a3aa::t_8578d218d064c9 564
+  s_bcb749cf95a3aa::t_16bfd77f34714f 565
+apps/web/src/components/header-menu.test.ts
+  s_bcb749cf95a3aa::t_8578d218d064c9 24
+  s_bcb749cf95a3aa::t_16bfd77f34714f 7,21-23
+apps/web/src/app/onboarding/onboarding.tsx
+  s_3286ca8f0646cf::t_ee0041dbd5f96d 264,274
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "6d25ae88a7924816db16cd30cc6ea8130cd808b8",
+  "prompts": {},
+  "sessions": {
+    "s_3286ca8f0646cf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7184-f28e-7160-8e9c-fcf56e958224",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    },
+    "s_bcb749cf95a3aa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7352-cfb5-7573-aa7d-2756e1461f59",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
