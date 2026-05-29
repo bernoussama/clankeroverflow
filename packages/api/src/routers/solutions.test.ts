@@ -451,6 +451,44 @@ describe("solutionsRouter", () => {
     consoleError.mockRestore();
   });
 
+  test("vote should recover when insert reports failure after the vote was committed", async () => {
+    (db.select as any)
+      .mockReturnValueOnce(
+        createSelectChain([{ id: "sol_1", problem: "Test", solution: "Test", score: 0 }]),
+      )
+      .mockReturnValueOnce(createSelectChain([]))
+      .mockReturnValueOnce(createSelectChain([{ isUpvote: true }]))
+      .mockReturnValueOnce(createSelectChain([{ score: 1 }]))
+      .mockReturnValueOnce(createSelectChain([{ upvotes: 1, downvotes: 0 }]))
+      .mockReturnValueOnce(createSelectChain([{ isUpvote: true }]));
+    (db.insert as any).mockReturnValueOnce({
+      values: vi.fn(() => Promise.reject(new Error("connection closed after commit"))),
+    });
+    const requestLog: Record<string, unknown> = {};
+
+    const caller = createCaller({
+      db,
+      session: mockSession,
+      apiKey: null,
+      requestLog,
+    } as any);
+
+    const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
+
+    expect(result).toMatchObject({
+      success: true,
+      upvotes: 1,
+      downvotes: 0,
+      userVote: true,
+    });
+    expect(db.update as any).toHaveBeenCalled();
+    expect(requestLog).toMatchObject({
+      vote_insert_recovered: true,
+      error_type: "Error",
+      error_message: "connection closed after commit",
+    });
+  });
+
   test("vote should toggle off existing same-direction vote", async () => {
     (db.select as any)
       .mockReturnValueOnce(

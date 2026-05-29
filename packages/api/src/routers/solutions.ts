@@ -290,16 +290,42 @@ export const solutionsRouter = router({
           }
         } else {
           voteStep = "vote-insert";
-          await withTimeout(
-            db.insert(schema.solutionVote).values({
-              userId,
-              solutionId: input.id,
-              isUpvote: input.isUpvote,
-              createdAt: new Date(),
-            }),
-            DB_TIMEOUT_MS,
-            "Vote insert timed out",
-          );
+          try {
+            await withTimeout(
+              db.insert(schema.solutionVote).values({
+                userId,
+                solutionId: input.id,
+                isUpvote: input.isUpvote,
+                createdAt: new Date(),
+              }),
+              DB_TIMEOUT_MS,
+              "Vote insert timed out",
+            );
+          } catch (insertError) {
+            const [committedVote] = await withTimeout(
+              db
+                .select({ isUpvote: schema.solutionVote.isUpvote })
+                .from(schema.solutionVote)
+                .where(
+                  and(
+                    eq(schema.solutionVote.userId, userId),
+                    eq(schema.solutionVote.solutionId, input.id),
+                  ),
+                )
+                .limit(1),
+              DB_TIMEOUT_MS,
+              "Vote insert verification timed out",
+            );
+
+            if (committedVote?.isUpvote !== input.isUpvote) {
+              throw insertError;
+            }
+
+            addRequestLogFields(ctx, {
+              vote_insert_recovered: true,
+              ...errorFields(insertError),
+            });
+          }
           voteAction = "added";
         }
 
