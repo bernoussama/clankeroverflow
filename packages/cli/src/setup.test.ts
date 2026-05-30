@@ -163,6 +163,31 @@ describe("smart setup", () => {
     ).rejects.toThrow("Non-interactive setup requires --api-key <key> or --no-api-key.");
   });
 
+  test("prints the API key login hint before the plaintext storage warning", async () => {
+    const output: string[] = [];
+    const log = vi.spyOn(console, "log").mockImplementation((message) => output.push(message));
+    const warn = vi.spyOn(console, "warn").mockImplementation((message) => output.push(message));
+
+    try {
+      await setupAgents(
+        { agents: ["cursor"], env: {}, home: tempDir, packageRoot },
+        {
+          commandExists: noCommands,
+          stdinIsTTY: true,
+          promptSecret: async () => "",
+        },
+      );
+    } finally {
+      log.mockRestore();
+      warn.mockRestore();
+    }
+
+    expect(output).toEqual([
+      "Get your API key: https://clankeroverflow.com/login",
+      "Warning: the API key will be stored as plaintext in configured agent MCP files.",
+    ]);
+  });
+
   test("refuses to overwrite invalid OpenCode JSON", async () => {
     const opencodePath = getOpenCodeConfigPath(tempDir, {});
     await mkdir(path.dirname(opencodePath), { recursive: true });
