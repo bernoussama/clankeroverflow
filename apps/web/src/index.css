@@ -698,13 +698,26 @@
   text-transform: uppercase;
 }
 
-.hero-terminal__code-header svg {
+.hero-terminal__copy {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.hero-terminal__copy:hover,
+.hero-terminal__copy:focus-visible {
+  color: var(--landing-accent);
+}
+
+.hero-terminal__copy svg {
   width: 0.85rem;
   height: 0.85rem;
 }
 
 .hero-terminal__code-body {
-  min-height: 10.5rem;
   overflow-x: auto;
   padding: 0.9rem;
   font-family: var(--font-mono);

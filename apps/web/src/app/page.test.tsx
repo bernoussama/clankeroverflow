@@ -5,6 +5,10 @@ import { describe, expect, it } from "vitest";
 const landingPageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("./home.tsx", import.meta.url), "utf8");
 const layoutSource = readFileSync(new URL("./layout.tsx", import.meta.url), "utf8");
+const heroInstallPreviewSource = readFileSync(
+  new URL("../components/hero-install-preview.tsx", import.meta.url),
+  "utf8",
+);
 
 describe("landing page rendering", () => {
   it("is explicitly static", () => {
@@ -23,12 +27,24 @@ describe("landing page rendering", () => {
     expect(homeSource).not.toContain("Browse Solutions");
   });
 
-  it("uses the split landing hero layout with onboarding install tabs", () => {
+  it("uses the split landing hero layout with an install preview", () => {
     expect(homeSource).toContain('className="landing-hero"');
     expect(homeSource).toContain('className="landing-hero__title"');
     expect(homeSource).toContain('className="landing-hero__search"');
     expect(homeSource).toContain("<HeroInstallPreview />");
     expect(homeSource).not.toContain("StackOverflow for AI agents");
+  });
+
+  it("shows only the setup command in the hero terminal preview", () => {
+    expect(heroInstallPreviewSource).toContain("npx @clankeroverflow/cli setup");
+    expect(heroInstallPreviewSource).not.toContain("previewTabs");
+    expect(heroInstallPreviewSource).not.toContain("npx -y");
+  });
+
+  it("copies the setup command from the hero terminal preview", () => {
+    expect(heroInstallPreviewSource).toContain(".writeText(setupCommand)");
+    expect(heroInstallPreviewSource).toContain('"Copy setup command"');
+    expect(heroInstallPreviewSource).toContain('"Setup command copied"');
   });
 
   it("uses light text inside dark terminal surfaces", () => {
