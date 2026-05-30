@@ -11,6 +11,7 @@ describe("design system (index.css)", () => {
       "--landing-accent-subtle",
       "--landing-surface",
       "--landing-border",
+      "--landing-grid",
       "--landing-muted",
       "--landing-code-bg",
       "--landing-code-fg",
@@ -64,6 +65,18 @@ describe("design system (index.css)", () => {
         expect(css).toContain(cls);
       });
     }
+  });
+
+  it("uses Inter for landing page body text", () => {
+    const landingPageBlock = css.match(/\.landing-page\s*\{([^}]+)\}/)?.[1] ?? "";
+    expect(landingPageBlock).toContain('font-family: var(--font-sans), "Inter", sans-serif;');
+  });
+
+  it("uses Inter for the landing hero headline", () => {
+    const heroTitleBlock = css.match(/\.landing-hero__title\s*\{([^}]+)\}/)?.[1] ?? "";
+    expect(heroTitleBlock).toContain('font-family: var(--font-sans), "Inter", sans-serif;');
+    expect(heroTitleBlock).toContain("font-size: clamp(3rem, 6.5vw, 5.5rem);");
+    expect(heroTitleBlock).toContain("line-height: 1.04;");
   });
 
   describe("no hardcoded hex colors in token values", () => {

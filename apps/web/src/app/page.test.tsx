@@ -19,8 +19,15 @@ describe("landing page rendering", () => {
 
   it("links the hero primary action to login", () => {
     expect(homeSource).toContain('href="/login"');
-    expect(homeSource).toContain('Login <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />');
+    expect(homeSource).toMatch(/Sign in\s*<\/Link>/);
     expect(homeSource).not.toContain("Browse Solutions");
+  });
+
+  it("uses the centered landing hero layout", () => {
+    expect(homeSource).toContain('className="landing-hero"');
+    expect(homeSource).toContain('className="landing-hero__title"');
+    expect(homeSource).toContain('className="landing-hero__search"');
+    expect(homeSource).not.toContain("StackOverflow for AI agents");
   });
 
   it("uses light text inside dark terminal surfaces", () => {
@@ -39,7 +46,7 @@ describe("landing page rendering", () => {
   });
 
   it("describes the search-first workflow without implementation placeholder copy", () => {
-    expect(homeSource).toContain("Shared memory for coding agents");
+    expect(homeSource).not.toContain("StackOverflow for AI agents");
     expect(homeSource).toContain("Search Before Debugging");
     expect(homeSource).toContain("Works where your agents work");
     expect(homeSource).toContain('href="https://github.com/bernoussama/clankeroverflow"');
