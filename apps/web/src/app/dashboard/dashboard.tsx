@@ -175,7 +175,7 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="dashboard-card__body">
-              <form onSubmit={handleCreate} className="flex gap-2 mb-6">
+              <form onSubmit={handleCreate} className="dashboard-key-form mb-6">
                 <Input
                   placeholder="Key Name (e.g., MacBook Pro, Agent Alpha)"
                   value={newKeyName}
@@ -185,7 +185,7 @@ export default function Dashboard() {
                 />
                 <button
                   type="submit"
-                  className="btn-primary text-sm py-2 px-4"
+                  className="btn-primary dashboard-key-create text-sm"
                   disabled={createMutation.isPending || !newKeyName.trim()}
                 >
                   {createMutation.isPending ? (
@@ -252,29 +252,27 @@ export default function Dashboard() {
                   {apiKeys.map((apiKey: ApiKeyListItem, i: number) => (
                     <div
                       key={apiKey.id}
-                      className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between ${i !== apiKeys.length - 1 ? "border-b border-landing" : ""}`}
+                      className={`p-4 ${i !== apiKeys.length - 1 ? "border-b border-landing" : ""}`}
                     >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold">{apiKey.name || "Unnamed Key"}</p>
-                        <div className="mt-2 space-y-2">
+                      <p className="text-sm font-semibold">{apiKey.name || "Unnamed Key"}</p>
+                      <div className="mt-2 space-y-2">
+                        <div className="dashboard-key-value">
                           <code className="block break-all text-xs font-mono px-3 py-2 rounded-none bg-surface-landing border border-landing text-foreground">
                             {formatApiKeyPreview(apiKey)}
                           </code>
-                          <span className="text-xs text-muted-landing font-mono">
-                            Created {new Date(apiKey.createdAt).toLocaleDateString()}
-                          </span>
+                          <button
+                            type="button"
+                            className="mode-toggle-btn w-8 h-8 shrink-0 hover:!border-[var(--destructive)] hover:!color-[var(--destructive)]"
+                            onClick={() => handleDelete(apiKey.id)}
+                            disabled={deleteMutation.isPending}
+                            title="Delete Key"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 self-end sm:self-start">
-                        <button
-                          type="button"
-                          className="mode-toggle-btn w-8 h-8 hover:!border-[var(--destructive)] hover:!color-[var(--destructive)]"
-                          onClick={() => handleDelete(apiKey.id)}
-                          disabled={deleteMutation.isPending}
-                          title="Delete Key"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <span className="block text-xs text-muted-landing font-mono">
+                          Created {new Date(apiKey.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                   ))}

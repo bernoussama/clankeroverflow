@@ -945,6 +945,33 @@
   padding: 1.5rem;
 }
 
+.dashboard-key-form {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.dashboard-key-form .input-landing,
+.dashboard-key-create {
+  height: 2.5rem;
+}
+
+.dashboard-key-create {
+  flex: 0 0 auto;
+  padding: 0 1rem;
+}
+
+.dashboard-key-value {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dashboard-key-value code {
+  min-width: 0;
+  flex: 1;
+}
+
 /* ─── Form Input (unified) ─── */
 
 .input-landing {
