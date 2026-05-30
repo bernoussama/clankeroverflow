@@ -10,15 +10,9 @@ port = 3000
 # Non-secret bindings for local `wrangler dev`. Copy apps/server/.env to .dev.vars for secrets
 # (GITHUB_CLIENT_SECRET, BETTER_AUTH_SECRET) or use `wrangler secret put`.
 #
-# Semantic search: create a Vectorize index (768 dimensions, cosine) and set its name below:
-#   pnpm dlx wrangler vectorize create clankeroverflow-solutions-dev --dimensions=768 --metric=cosine
-
-[ai]
-binding = "AI"
-
-[[vectorize]]
-binding = "SOLUTION_VECTORS"
-index_name = "clankeroverflow-solutions-dev"
+# Keep basic `wrangler dev` local-only so auth and keyword search work without
+# waiting for Cloudflare's remote binding proxy. Production Alchemy deploys
+# still attach Workers AI and Vectorize for semantic and hybrid search.
 
 [observability]
 enabled = false

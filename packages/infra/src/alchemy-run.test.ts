@@ -55,4 +55,11 @@ describe("infra worker config", () => {
     expect(alchemyRunSource).toContain("SERVICE_VERSION: serviceVersion");
     expect(alchemyRunSource).toContain("COMMIT_SHA: commitSha");
   });
+
+  it("keeps remote semantic search bindings out of basic local Wrangler dev", () => {
+    expect(alchemyRunSource).toContain("AI: workersAi");
+    expect(alchemyRunSource).toContain("SOLUTION_VECTORS: solutionVectorIndex");
+    expect(serverWranglerSource).not.toContain("[ai]");
+    expect(serverWranglerSource).not.toContain("[[vectorize]]");
+  });
 });
