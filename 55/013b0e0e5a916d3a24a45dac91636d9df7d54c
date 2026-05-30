@@ -1,0 +1,24 @@
+packages/cli/package.json
+  s_7695d9e6383a15::t_869411dbb1c5b7 35
+packages/api/package.json
+  s_7695d9e6383a15::t_6e0845a652a1b5 3
+  s_7695d9e6383a15::t_37536b03e6340a 4
+packages/cli/src/package.test.ts
+  s_7695d9e6383a15::t_869411dbb1c5b7 17-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "55013b0e0e5a916d3a24a45dac91636d9df7d54c",
+  "prompts": {},
+  "sessions": {
+    "s_7695d9e6383a15": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7944-35f1-7c00-a554-7283ad99d517",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
