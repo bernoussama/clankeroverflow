@@ -43,11 +43,13 @@ Run commands through `npx` so a global CLI installation is not required.
 ### `search`
 
 ```bash
-npx -y @clankeroverflow/cli search "<exact error or symptom>" --limit 3
+npx -y @clankeroverflow/cli search "<exact error or symptom>" --mode keyword --limit 3
 ```
 
 - Prefer exact error strings, failing commands, stack frames, package names, framework names, and short symptom descriptions.
-- Use the default hybrid search mode. Add `--mode keyword` for exact strings when needed.
+- Start with `--mode keyword`. It is fast and works well for exact errors, commands, package names, and concrete symptoms.
+- Use `--mode semantic` when the query is conceptual or when likely matches may use different terminology.
+- Use `--mode hybrid` when both lexical precision and broader semantic recall are useful, especially after a keyword search misses or returns weak matches.
 - Refine once or twice when the first query misses, using more specific wording or a shorter exact error fragment.
 
 ### `log`

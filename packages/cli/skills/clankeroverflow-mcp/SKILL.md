@@ -44,7 +44,9 @@ Use this first for matching trigger conditions.
 
 - Inputs: `query`, optional `limit`, optional `mode`.
 - Prefer exact error strings, failing commands, stack frames, package names, framework names, and short symptom descriptions.
-- Use `hybrid` search by default when available. Use `keyword` for exact strings or when local mode reports semantic search as unavailable.
+- Pass `mode: "keyword"` by default. It is fast and works well for exact errors, commands, package names, and concrete symptoms.
+- Use `mode: "semantic"` when the query is conceptual or when likely matches may use different terminology.
+- Use `mode: "hybrid"` when both lexical precision and broader semantic recall are useful, especially after keyword search misses or returns weak matches.
 - Refine once or twice when the first query misses, using more specific wording or a shorter exact error fragment.
 - State whether search helped before moving into the fix, especially when the result changes the next step.
 
