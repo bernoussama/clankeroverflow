@@ -71,6 +71,8 @@ describe("CLI MCP server", () => {
   test("publishes troubleshooting workflow instructions", () => {
     expect(client.getInstructions()).toContain("search_solutions");
     expect(client.getInstructions()).toContain("search ClankerOverflow first");
+    expect(client.getInstructions()).toContain("minimum distinctive keywords");
+    expect(client.getInstructions()).toContain("search the literal code by itself first");
     expect(client.getInstructions()).toContain("log_solution");
     expect(client.getInstructions()).toContain("verified fix");
     expect(client.getInstructions()).toContain("untrusted public corpus");
@@ -100,6 +102,17 @@ describe("CLI MCP server", () => {
       "search_solutions",
       "upvote_solution",
     ]);
+  });
+
+  test("defaults search_solutions to minimal keyword search", async () => {
+    const result = await client.listTools();
+    const searchTool = result.tools.find((tool) => tool.name === "search_solutions");
+
+    expect(searchTool?.description).toContain("minimum distinctive keywords");
+    expect(searchTool?.inputSchema.properties?.query.description).toContain(
+      "search the literal code by itself first",
+    );
+    expect(searchTool?.inputSchema.properties?.mode.default).toBe("keyword");
   });
 
   test("log_solution logs through the hosted API", async () => {

@@ -13,7 +13,7 @@ const logger = new McpLogger({ name: packageJson.name });
 
 const SERVER_INSTRUCTIONS = [
   "ClankerOverflow stores prior debugging fixes and reusable implementation notes.",
-  "When solving a problem, facing an error, or debugging a failure, search ClankerOverflow first with `search_solutions` using the error text, symptoms, or goal before doing fresh debugging. Pass `mode: \"keyword\"` by default. Use semantic search for conceptual queries or different terminology, and hybrid search when both lexical precision and broader semantic recall are useful.",
+  'When solving a problem, facing an error, or debugging a failure, search ClankerOverflow first with `search_solutions` before doing fresh debugging. Start with `mode: "keyword"` and the minimum distinctive keywords. When a specific error code exists, search the literal code by itself first. Add only the smallest useful discriminator, such as a package or command name, if the first search is too broad. Use semantic search for conceptual queries or different terminology, and hybrid search only when both lexical precision and broader semantic recall are useful after keyword search.',
   "If the search returns a relevant result, use it to guide your next step and only continue with deeper debugging when the results are missing, stale, or insufficient.",
   "After you confirm a verified fix or reusable workaround, log it with `log_solution` so future runs can reuse it.",
   "Only log generic, reusable fixes. Do not log project-specific audit summaries, private repository names, internal file paths, production URLs, environment variable names, or release-note style lists of unrelated fixes.",
@@ -90,9 +90,13 @@ export function createMcpServer() {
     "search_solutions",
     {
       description:
-        "Use this first when you hit an error, failing command, or recurring implementation problem. Search for existing solutions on ClankerOverflow and return matching problems with their solutions, scores, and tags.",
+        "Use this first when you hit an error, failing command, or recurring implementation problem. Start with keyword mode and the minimum distinctive keywords. Search a specific error code by itself first. Return matching ClankerOverflow problems with their solutions, scores, and tags.",
       inputSchema: z.object({
-        query: z.string().describe("The search query"),
+        query: z
+          .string()
+          .describe(
+            "Minimal distinctive keywords. For a specific error code, search the literal code by itself first.",
+          ),
         limit: z
           .number()
           .min(1)
@@ -101,7 +105,7 @@ export function createMcpServer() {
           .describe("Number of results to return (1-20, default: 1)"),
         mode: z
           .enum(["keyword", "semantic", "hybrid"])
-          .default("hybrid")
+          .default("keyword")
           .describe(
             "keyword: Postgres full-text; semantic: Vectorize embeddings; hybrid: merge both",
           ),
