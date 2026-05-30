@@ -355,9 +355,6 @@ importers:
 
   packages/cli:
     dependencies:
-      '@clankeroverflow/api':
-        specifier: workspace:*
-        version: link:../api
       '@modelcontextprotocol/sdk':
         specifier: ^1.27.1
         version: 1.29.0(zod@4.4.3)
@@ -377,6 +374,9 @@ importers:
         specifier: ^4.1.13
         version: 4.4.3
     devDependencies:
+      '@clankeroverflow/api':
+        specifier: workspace:*
+        version: link:../api
       '@types/better-sqlite3':
         specifier: 7.6.13
         version: 7.6.13

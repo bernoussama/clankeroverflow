@@ -24,7 +24,6 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@clankeroverflow/api": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@trpc/client": "^11.7.2",
     "better-sqlite3": "12.10.0",
@@ -33,6 +32,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@clankeroverflow/api": "workspace:*",
     "@types/better-sqlite3": "7.6.13",
     "@types/node": "^22.13.14",
     "tsdown": "^0.16.5",

@@ -14,6 +14,8 @@ describe("packages/cli package metadata", () => {
   test("publishes the CLI as the MCP runtime", () => {
     expect(packageJson.bin).toEqual({ clanker: "dist/index.mjs" });
     expect(packageJson.dependencies?.["@modelcontextprotocol/sdk"]).toBe("^1.27.1");
+    expect(packageJson.dependencies?.["@clankeroverflow/api"]).toBeUndefined();
+    expect(packageJson.devDependencies?.["@clankeroverflow/api"]).toBe("workspace:*");
     expect(packageJson.dependencies?.["better-sqlite3"]).toBe("12.10.0");
     expect(packageJson.dependencies?.mcplog).toBe("^0.0.5");
     expect(packageJson.dependencies?.zod).toBe("^4.1.13");
