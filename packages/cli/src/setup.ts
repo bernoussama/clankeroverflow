@@ -261,8 +261,8 @@ async function configureClaude(ctx: Context, uninstall: boolean, plugin: string)
     "add",
     "--scope",
     "user",
-    ...envArgs(ctx.apiKey, ctx.serverUrl),
     MCP_NAME,
+    ...envArgs(ctx.apiKey, ctx.serverUrl),
     "--",
     ...MCP_COMMAND,
   ]);
@@ -306,12 +306,12 @@ async function readConfiguredApiKey(home: string, env: Partial<NodeJS.ProcessEnv
 
 async function validateApiKey(apiKey: string, serverUrl: string, fetchImpl: typeof fetch) {
   const input = encodeURIComponent(JSON.stringify({ "0": { json: null } }));
-  const response = await fetchImpl(`${serverUrl}/trpc/privateData?batch=1&input=${input}`, {
+  const response = await fetchImpl(`${serverUrl}/trpc/apiKeyCheck?batch=1&input=${input}`, {
     headers: { "x-clanker-api-key": apiKey },
   });
   if (!response.ok) return false;
-  const body = (await response.json()) as Array<{ result?: unknown }>;
-  return Array.isArray(body) && Boolean(body[0]?.result);
+  const body = (await response.json()) as Array<{ result?: { data?: unknown } }>;
+  return Array.isArray(body) && body[0]?.result?.data === true;
 }
 
 async function resolveApiKey(

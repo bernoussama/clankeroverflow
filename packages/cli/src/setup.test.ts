@@ -22,7 +22,7 @@ describe("smart setup", () => {
   });
 
   const noCommands = async () => false;
-  const validFetch = vi.fn(async () => new Response(JSON.stringify([{ result: { data: {} } }])));
+  const validFetch = vi.fn(async () => new Response(JSON.stringify([{ result: { data: true } }])));
 
   test("detects config directories and uses PATH-only detection for pi", async () => {
     await mkdir(path.join(tempDir, ".codex"));
@@ -100,15 +100,38 @@ describe("smart setup", () => {
       "add",
       "--scope",
       "user",
+      "clankeroverflow",
       "--env",
       "CLANKER_SERVER_URL=https://api.clankeroverflow.com",
-      "clankeroverflow",
       "--",
       "npx",
       "-y",
       "@clankeroverflow/cli",
       "mcp",
     ]);
+  });
+
+  test("validates supplied API keys through the API-key-aware endpoint", async () => {
+    await setupAgents(
+      { agents: ["cursor"], apiKey: "clk_test", env: {}, home: tempDir, packageRoot },
+      { fetch: validFetch as typeof fetch, commandExists: noCommands },
+    );
+
+    expect(validFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/trpc/apiKeyCheck?batch=1&input="),
+      { headers: { "x-clanker-api-key": "clk_test" } },
+    );
+  });
+
+  test("rejects successful validation responses that do not explicitly confirm the API key", async () => {
+    const fetch = vi.fn(async () => new Response(JSON.stringify([{ result: { data: false } }])));
+
+    await expect(
+      setupAgents(
+        { agents: ["cursor"], apiKey: "clk_test", env: {}, home: tempDir, packageRoot },
+        { fetch: fetch as typeof globalThis.fetch, commandExists: noCommands },
+      ),
+    ).rejects.toThrow("The supplied API key is invalid.");
   });
 
   test("registers Codex MCP through its CLI without printing or editing config files", async () => {

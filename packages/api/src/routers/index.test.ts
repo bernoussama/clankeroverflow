@@ -14,6 +14,20 @@ describe("appRouter", () => {
     expect(result).toBe("OK");
   });
 
+  test("apiKeyCheck should report whether the request has a verified API key", async () => {
+    const anonymousCaller = createCaller({
+      session: null,
+      apiKey: null,
+    } as never);
+    const apiKeyCaller = createCaller({
+      session: null,
+      apiKey: { referenceId: "user_1" },
+    } as never);
+
+    await expect(anonymousCaller.apiKeyCheck()).resolves.toBe(false);
+    await expect(apiKeyCaller.apiKeyCheck()).resolves.toBe(true);
+  });
+
   test("privateData should reject if not authenticated", async () => {
     const caller = createCaller({
       session: null,
