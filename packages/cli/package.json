@@ -1,6 +1,6 @@
 {
   "name": "@clankeroverflow/cli",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "ClankerOverflow CLI for logging and searching AI agent solutions",
   "bin": {
     "clanker": "dist/index.mjs"
@@ -11,7 +11,6 @@
     "commands",
     "dist",
     "hooks",
-    "postinstall.mjs",
     "skills"
   ],
   "type": "module",
@@ -22,11 +21,9 @@
     "test": "vitest run",
     "build": "tsdown && node dist/plugin/generate-plugin-json.mjs",
     "check-types": "tsc -b",
-    "prepack": "pnpm run build",
-    "postinstall": "node postinstall.mjs"
+    "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@clankeroverflow/api": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@trpc/client": "^11.7.2",
     "better-sqlite3": "12.10.0",
@@ -35,6 +32,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@clankeroverflow/api": "workspace:*",
     "@types/better-sqlite3": "7.6.13",
     "@types/node": "^22.13.14",
     "tsdown": "^0.16.5",

@@ -190,83 +190,60 @@ describe("CLI", () => {
   });
 
   describe("setup command", () => {
-    let installMock: MockInstance<typeof import("./postinstall").installBundledSkill>;
-    let pluginInstallMock: MockInstance<typeof import("./plugin/install").installPlugin>;
+    let setupMock: MockInstance<typeof import("./setup").setupAgents>;
 
     beforeEach(async () => {
-      const mod = await import("./postinstall");
-      installMock = vi
-        .spyOn(mod, "installBundledSkill")
-        .mockResolvedValue([
-          "/tmp/xdg-config/opencode/skills/clankeroverflow-mcp",
-          "/tmp/home/.agents/skills/clankeroverflow-mcp",
-        ]);
-      const pluginMod = await import("./plugin/install");
-      pluginInstallMock = vi
-        .spyOn(pluginMod, "installPlugin")
-        .mockResolvedValue("/tmp/home/.claude/plugins/clankeroverflow");
+      const mod = await import("./setup");
+      setupMock = vi.spyOn(mod, "setupAgents").mockResolvedValue([
+        { agent: "shared skills", status: "configured", detail: "/tmp/home/.agents/skills" },
+        { agent: "codex", status: "configured", detail: "MCP configuration updated" },
+      ]);
     });
 
     afterEach(() => {
-      installMock.mockRestore();
-      pluginInstallMock.mockRestore();
+      setupMock.mockRestore();
     });
 
-    test("installs the skill and reports paths", async () => {
+    test("configures detected agents and reports results", async () => {
       const program = createProgram();
-      await program.parseAsync(["node", "test", "setup"]);
+      await program.parseAsync(["node", "test", "setup", "--no-api-key"]);
 
-      expect(installMock).toHaveBeenCalledOnce();
+      expect(setupMock).toHaveBeenCalledOnce();
+      expect(consoleLogMock).toHaveBeenCalledWith("ClankerOverflow setup results:");
       expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("ClankerOverflow skill installed to:"),
-      );
-      expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("/tmp/xdg-config/opencode/skills/clankeroverflow-mcp"),
-      );
-      expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("/tmp/home/.agents/skills/clankeroverflow-mcp"),
+        "  codex: configured - MCP configuration updated",
       );
     });
 
-    test("passes --target as CLANKER_SKILLS_DIRS to installBundledSkill", async () => {
+    test("passes setup overrides to the orchestrator", async () => {
       const program = createProgram();
-      await program.parseAsync(["node", "test", "setup", "--target", "/tmp/custom/skills"]);
+      await program.parseAsync([
+        "node",
+        "test",
+        "setup",
+        "--agent",
+        "pi,cursor",
+        "--target",
+        "/tmp/custom/skills",
+        "--skill",
+        "both",
+        "--no-api-key",
+        "--dry-run",
+      ]);
 
-      expect(installMock).toHaveBeenCalledWith(
+      expect(setupMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          env: expect.objectContaining({
-            CLANKER_SKILLS_DIRS: "/tmp/custom/skills",
-          }),
+          agents: ["pi", "cursor"],
+          targets: ["/tmp/custom/skills"],
+          skill: "both",
+          noApiKey: true,
+          dryRun: true,
         }),
       );
     });
 
-    test("merges --target with existing CLANKER_SKILLS_DIRS env var", async () => {
-      const original = process.env.CLANKER_SKILLS_DIRS;
-      process.env.CLANKER_SKILLS_DIRS = "/tmp/existing";
-
-      try {
-        const program = createProgram();
-        await program.parseAsync(["node", "test", "setup", "--target", "/tmp/extra"]);
-
-        expect(installMock).toHaveBeenCalledWith(
-          expect.objectContaining({
-            env: expect.objectContaining({
-              CLANKER_SKILLS_DIRS: "/tmp/existing,/tmp/extra",
-            }),
-          }),
-        );
-      } finally {
-        if (original === undefined) {
-          delete process.env.CLANKER_SKILLS_DIRS;
-        } else {
-          process.env.CLANKER_SKILLS_DIRS = original;
-        }
-      }
-    });
-
     test("handles install failure gracefully", async () => {
-      installMock.mockRejectedValue(new Error("No home directory"));
+      setupMock.mockRejectedValue(new Error("No home directory"));
 
       const program = createProgram();
       try {
