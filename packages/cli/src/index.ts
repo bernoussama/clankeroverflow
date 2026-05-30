@@ -7,8 +7,7 @@ import fs from "fs/promises";
 import path from "path";
 import packageJson from "../package.json";
 import { startMcpServer } from "./mcp/server.js";
-import { installBundledSkill } from "./postinstall.js";
-import { installPlugin, uninstallPlugin } from "./plugin/install.js";
+import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
 
 type CreateProgramOptions = {
   startMcpServer?: () => Promise<void>;
@@ -192,39 +191,38 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   program
     .command("setup")
-    .description("Install the ClankerOverflow skill and Claude Code plugin")
+    .description("Detect installed coding agents and configure ClankerOverflow")
+    .option(
+      "--agent <agents>",
+      "Comma-separated agents to configure: codex,claude,opencode,pi,cursor",
+    )
+    .option("--api-key <key>", "API key for non-interactive setup")
+    .option("--no-api-key", "Skip or remove stored MCP API keys")
+    .option("--server-url <url>", "ClankerOverflow API server URL")
     .option("--target <dirs>", "Comma-separated additional target directories for the skill")
-    .option("--no-plugin", "Skip installing the Claude Code plugin")
-    .option("--uninstall", "Remove the Claude Code plugin")
+    .option("--skill <skill>", "Skill for --target: mcp, cli, or both", "mcp")
+    .option("--claude-plugin <identifier>", "Claude marketplace plugin identifier")
+    .option("--dry-run", "Show planned changes without modifying configuration")
+    .option("--uninstall", "Remove ClankerOverflow integrations")
     .action(async (options) => {
       try {
-        if (options.uninstall) {
-          await uninstallPlugin();
-          console.log("ClankerOverflow Claude Code plugin uninstalled.");
-          return;
-        }
-
-        const customEnv: Partial<NodeJS.ProcessEnv> = { ...process.env };
-        if (options.target) {
-          const existing = process.env.CLANKER_SKILLS_DIRS
-            ? process.env.CLANKER_SKILLS_DIRS + "," + options.target
-            : options.target;
-          customEnv.CLANKER_SKILLS_DIRS = existing;
-        }
-
-        const installedPaths = await installBundledSkill({
-          env: customEnv,
+        const results = await setupAgents({
+          agents: options.agent?.split(",").map((agent: string) => agent.trim()) as
+            | Agent[]
+            | undefined,
+          apiKey: options.apiKey,
+          noApiKey: options.apiKey === false,
+          serverUrl: options.serverUrl,
+          targets: options.target?.split(",").map((target: string) => target.trim()),
+          skill: options.skill as SkillSelection,
+          claudePlugin: options.claudePlugin,
+          dryRun: options.dryRun,
+          uninstall: options.uninstall,
         });
-
-        console.log(
-          `ClankerOverflow skill installed to:\n${installedPaths.map((p) => `  ${p}`).join("\n")}`,
-        );
-
-        if (options.plugin !== false) {
-          const pluginDir = await installPlugin();
-          console.log(`\nClankerOverflow Claude Code plugin installed to:\n  ${pluginDir}`);
-          console.log("Restart Claude Code or start a new session to activate.");
-        }
+        console.log(`${options.dryRun ? "Planned" : "ClankerOverflow setup"} results:`);
+        for (const result of results)
+          console.log(`  ${result.agent}: ${result.status} - ${result.detail}`);
+        if (hasSetupFailures(results)) process.exit(1);
       } catch (error: any) {
         console.error("Error installing ClankerOverflow:");
         console.error(error.message || error);

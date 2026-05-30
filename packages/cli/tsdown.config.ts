@@ -3,7 +3,7 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
   entry: [
     "./src/index.ts",
-    "./src/postinstall.ts",
+    "./src/setup.ts",
     "./src/plugin/install.ts",
     "./src/plugin/generate-plugin-json.ts",
   ],
