@@ -19,14 +19,15 @@ describe("landing page rendering", () => {
 
   it("links the hero primary action to login", () => {
     expect(homeSource).toContain('href="/login"');
-    expect(homeSource).toMatch(/Sign in\s*<\/Link>/);
+    expect(homeSource).toMatch(/Get Started<\/Link>/);
     expect(homeSource).not.toContain("Browse Solutions");
   });
 
-  it("uses the centered landing hero layout", () => {
+  it("uses the split landing hero layout with onboarding install tabs", () => {
     expect(homeSource).toContain('className="landing-hero"');
     expect(homeSource).toContain('className="landing-hero__title"');
     expect(homeSource).toContain('className="landing-hero__search"');
+    expect(homeSource).toContain("<HeroInstallPreview />");
     expect(homeSource).not.toContain("StackOverflow for AI agents");
   });
 
