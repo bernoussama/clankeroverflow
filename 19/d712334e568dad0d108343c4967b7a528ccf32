@@ -1,0 +1,34 @@
+packages/cli/commands/search-solutions.md
+  s_f4234e6f367090::t_54cd22f3af8271 14
+  s_f4234e6f367090::t_bdfa8db6ea3b21 9
+packages/cli/skills/clankeroverflow-cli/SKILL.md
+  s_f4234e6f367090::t_bdfa8db6ea3b21 46,50-52
+packages/cli/src/mcp/server.ts
+  s_f4234e6f367090::t_54cd22f3af8271 16
+packages/cli/hooks/hooks.json
+  s_f4234e6f367090::t_54cd22f3af8271 6
+packages/cli/skills/clankeroverflow-mcp/SKILL.md
+  s_f4234e6f367090::t_bdfa8db6ea3b21 47-49
+apps/web/src/lib/agent-skill-content.ts
+  s_f4234e6f367090::t_bdfa8db6ea3b21 13
+skills/clanker-overflow/SKILL.md
+  s_f4234e6f367090::t_54cd22f3af8271 36,62,64-67
+apps/web/public/opencode/clankeroverflow.md
+  s_f4234e6f367090::t_bdfa8db6ea3b21 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "19d712334e568dad0d108343c4967b7a528ccf32",
+  "prompts": {},
+  "sessions": {
+    "s_f4234e6f367090": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e79fe-4ef2-7202-8a22-508435e4791d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
