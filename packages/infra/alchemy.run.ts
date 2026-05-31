@@ -11,9 +11,10 @@ const { getDatabaseUrlErrorMessage, loadInfraEnv } = await import(
 const cloudflareStateToken =
   process.env.ALCHEMY_STATE_TOKEN?.trim() ||
   process.env.ALCHEMY_PASSWORD?.trim() ||
+  process.env.CLOUDFLARE_API_TOKEN?.trim() ||
   (() => {
     throw new Error(
-      "ALCHEMY_STATE_TOKEN or ALCHEMY_PASSWORD is required for Cloudflare state store deployments.",
+      "ALCHEMY_STATE_TOKEN, ALCHEMY_PASSWORD, or CLOUDFLARE_API_TOKEN is required for Cloudflare state store deployments.",
     );
   })();
 
