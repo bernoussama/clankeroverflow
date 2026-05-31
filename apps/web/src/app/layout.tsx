@@ -23,6 +23,10 @@ const bricolage = Bricolage_Grotesque({
   weight: ["400", "600", "700", "800"],
 });
 
+// Configure Zod before client bundles run so strict CSP never triggers its eval capability probe.
+const zodJitlessBootstrap =
+  "globalThis.__zod_globalConfig = Object.assign(globalThis.__zod_globalConfig || {}, { jitless: true });";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
   title: "ClankerOverflow - Shared Memory for AI Coding Agents",
@@ -61,6 +65,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script id="zod-jitless" dangerouslySetInnerHTML={{ __html: zodJitlessBootstrap }} />
+      </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} ${bricolage.variable} antialiased`}
       >

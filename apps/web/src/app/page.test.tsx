@@ -76,4 +76,12 @@ describe("landing page rendering", () => {
     expect(layoutSource).toContain("Log verified fixes once, search them before debugging");
     expect(layoutSource).not.toContain("StackOverflow");
   });
+
+  it("disables Zod JIT before client bundles execute under the strict CSP", () => {
+    expect(layoutSource).toContain('id="zod-jitless"');
+    expect(layoutSource).toContain("<head>");
+    expect(layoutSource).toContain("dangerouslySetInnerHTML");
+    expect(layoutSource).toContain("globalThis.__zod_globalConfig");
+    expect(layoutSource).toContain("jitless: true");
+  });
 });
