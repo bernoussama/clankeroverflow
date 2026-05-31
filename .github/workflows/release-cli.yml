@@ -1,0 +1,101 @@
+name: Release CLI
+
+on:
+  pull_request:
+    paths:
+      - "packages/cli/**"
+      - ".github/workflows/release-cli.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "packages/cli/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-cli-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Validate CLI release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test CLI
+        run: pnpm --filter @clankeroverflow/cli test
+
+      - name: Check CLI types
+        run: pnpm --filter @clankeroverflow/cli check-types
+
+      - name: Build CLI and plugin manifests
+        run: pnpm --filter @clankeroverflow/cli build
+
+      - name: Check package contents
+        run: pnpm --filter @clankeroverflow/cli pack --pack-destination /tmp
+
+      - name: Preview ClawHub bundle
+        run: pnpm dlx clawhub@0.18.0 package publish ./packages/cli --family bundle-plugin --dry-run
+
+  publish:
+    name: Publish CLI and plugins
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish CLI package
+        working-directory: packages/cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public --provenance --no-git-checks
+
+      - name: Configure ClawHub token fallback
+        if: env.CLAWHUB_TOKEN != ''
+        run: pnpm dlx clawhub@0.18.0 login --token "$CLAWHUB_TOKEN" --no-browser
+
+      - name: Publish ClawHub bundle
+        run: pnpm dlx clawhub@0.18.0 package publish ./packages/cli --family bundle-plugin --owner clankeroverflow
