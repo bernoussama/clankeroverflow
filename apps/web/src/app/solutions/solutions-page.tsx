@@ -170,80 +170,82 @@ export default function SolutionsPage() {
           </div>
         </form>
 
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-          <div>
-            <h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight">
-              {isSearching ? "Search Results" : "All Solutions"}
-            </h2>
-            <p className="text-xs font-mono text-muted-landing mt-1">
-              {isSearching
-                ? `${searchResults.data?.length ?? 0} matches`
-                : `${solutions.length} loaded`}
-            </p>
-          </div>
-
-          {isSearching ? (
-            <button type="button" onClick={clearSearch} className="btn-secondary">
-              Clear Search
-            </button>
-          ) : (
-            <div className="flex items-center gap-1">
-              <ArrowUpDown className="w-3.5 h-3.5 text-muted-landing" aria-hidden="true" />
-              {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setSort(key)}
-                  className={`px-3 py-1.5 text-xs font-mono tracking-wide uppercase rounded-none transition-colors ${
-                    sort === key
-                      ? "text-accent-landing border border-[var(--landing-accent)]"
-                      : "text-muted-landing hover:text-accent-landing border border-transparent"
-                  }`}
-                >
-                  {SORT_LABELS[key]}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="section-rule mb-6" aria-hidden="true" />
-
-        {isSearching ? (
-          <SearchResultsPanel
-            query={activeQuery}
-            results={searchResults.data ?? []}
-            isLoading={searchResults.isLoading}
-            isError={searchResults.isError}
-          />
-        ) : isLoading ? (
-          <LoadingList />
-        ) : isError ? (
-          <ErrorState />
-        ) : solutions.length === 0 ? (
-          <EmptyBrowseState />
-        ) : (
-          <>
+        <section className="solutions-section">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
-              {solutions.map((solution) => (
-                <SolutionListItem key={solution.id} solution={solution} />
-              ))}
+              <h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight">
+                {isSearching ? "Search Results" : "All Solutions"}
+              </h2>
+              <p className="text-xs font-mono text-muted-landing mt-1">
+                {isSearching
+                  ? `${searchResults.data?.length ?? 0} matches`
+                  : `${solutions.length} loaded`}
+              </p>
             </div>
 
-            {hasNextPage && (
-              <div className="mt-8 text-center">
-                <button
-                  type="button"
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                  className="btn-secondary"
-                >
-                  {isFetchingNextPage ? "Loading..." : "Load More"}
-                </button>
+            {isSearching ? (
+              <button type="button" onClick={clearSearch} className="btn-secondary">
+                Clear Search
+              </button>
+            ) : (
+              <div className="flex items-center gap-1">
+                <ArrowUpDown className="w-3.5 h-3.5 text-muted-landing" aria-hidden="true" />
+                {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSort(key)}
+                    className={`px-3 py-1.5 text-xs font-mono tracking-wide uppercase rounded-none transition-colors ${
+                      sort === key
+                        ? "text-accent-landing border border-[var(--landing-accent)]"
+                        : "text-muted-landing hover:text-accent-landing border border-transparent"
+                    }`}
+                  >
+                    {SORT_LABELS[key]}
+                  </button>
+                ))}
               </div>
             )}
-          </>
-        )}
+          </div>
+
+          <div className="section-rule mb-6" aria-hidden="true" />
+
+          {isSearching ? (
+            <SearchResultsPanel
+              query={activeQuery}
+              results={searchResults.data ?? []}
+              isLoading={searchResults.isLoading}
+              isError={searchResults.isError}
+            />
+          ) : isLoading ? (
+            <LoadingList />
+          ) : isError ? (
+            <ErrorState />
+          ) : solutions.length === 0 ? (
+            <EmptyBrowseState />
+          ) : (
+            <>
+              <div>
+                {solutions.map((solution) => (
+                  <SolutionListItem key={solution.id} solution={solution} />
+                ))}
+              </div>
+
+              {hasNextPage && (
+                <div className="mt-8 text-center">
+                  <button
+                    type="button"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className="btn-secondary"
+                  >
+                    {isFetchingNextPage ? "Loading..." : "Load More"}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </section>
       </div>
     </div>
   );

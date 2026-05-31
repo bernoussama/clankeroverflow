@@ -1016,6 +1016,20 @@
   background: var(--landing-border);
 }
 
+/* ─── Solutions Section ─── */
+
+.solutions-section {
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  padding: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .solutions-section {
+    padding: 2rem;
+  }
+}
+
 /* ─── Landing Card ─── */
 
 .landing-card {
