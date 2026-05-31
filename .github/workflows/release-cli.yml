@@ -1,14 +1,6 @@
 name: Release CLI
 
 on:
-  pull_request:
-    branches:
-      - master
-    types:
-      - closed
-    paths:
-      - "packages/cli/**"
-      - ".github/workflows/release-cli.yml"
   push:
     branches:
       - master
@@ -20,12 +12,11 @@ permissions:
 
 concurrency:
   group: release-cli-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  queue: max
 
 jobs:
   validate:
     name: Validate CLI release
-    if: github.event_name == 'push' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -63,7 +54,6 @@ jobs:
 
   publish:
     name: Publish CLI and plugins
-    if: github.event_name == 'push' || github.event.pull_request.merged == true
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
