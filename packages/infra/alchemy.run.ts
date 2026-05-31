@@ -86,10 +86,10 @@ export const web = await Nextjs("web", {
       domainName: "clankeroverflow.com",
       adopt: true,
     },
-    {
-      domainName: "www.clankeroverflow.com",
-      adopt: true,
-    },
+    // {
+    //   domainName: "www.clankeroverflow.com",
+    //   adopt: true,
+    // },
   ],
   bindings: {
     NEXT_PUBLIC_SERVER_URL: alchemy.env.NEXT_PUBLIC_SERVER_URL!,
