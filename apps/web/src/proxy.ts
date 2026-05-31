@@ -8,7 +8,7 @@ export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"],
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const forwardedProto = request.headers.get("x-forwarded-proto");
   const isCanonicalHost = request.nextUrl.hostname === canonicalHostname;
   const isHttp = forwardedProto === "http" || request.nextUrl.protocol === "http:";

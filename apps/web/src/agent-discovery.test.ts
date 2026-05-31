@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 
 import { CLANKEROVERFLOW_MCP_SKILL } from "@/lib/agent-skill-content";
 import { HOME_MARKDOWN } from "@/lib/agent-discovery";
-import { middleware } from "@/middleware";
+import { proxy } from "@/proxy";
 import { metadata as dashboardMetadata } from "./app/dashboard/page";
 import { metadata as loginMetadata } from "./app/login/page";
 import { metadata as onboardingMetadata } from "./app/onboarding/page";
@@ -93,7 +93,7 @@ describe("agent discovery endpoints", () => {
 
 describe("markdown negotiation", () => {
   it("returns markdown for agents that request text/markdown on the homepage", async () => {
-    const response = middleware(
+    const response = proxy(
       new NextRequest("https://clankeroverflow.com/", {
         headers: new Headers({ accept: "text/markdown" }),
       }),
@@ -127,7 +127,7 @@ describe("canonical URLs", () => {
   });
 
   it("permanently redirects canonical-host HTTP requests to HTTPS", () => {
-    const response = middleware(
+    const response = proxy(
       new NextRequest("http://clankeroverflow.com/solutions?sort=top", {
         headers: new Headers({ "x-forwarded-proto": "http" }),
       }),
@@ -138,7 +138,7 @@ describe("canonical URLs", () => {
   });
 
   it("does not force HTTPS for local development hosts", () => {
-    const response = middleware(new NextRequest("http://localhost:3001/solutions"));
+    const response = proxy(new NextRequest("http://localhost:3001/solutions"));
 
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
