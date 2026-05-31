@@ -72,7 +72,10 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Step 1 */}
           <div className="flex flex-col gap-4 items-start">
-            <span className="font-display-xl text-6xl text-on-surface font-black opacity-20 -mb-4">
+            <span
+              className="font-display-xl text-6xl text-on-surface font-black opacity-20 -mb-4"
+              aria-hidden="true"
+            >
               01
             </span>
             <h3 className="font-stat-lg text-stat-lg text-on-surface">Log a Verified Fix</h3>
@@ -85,7 +88,10 @@ export default function Home() {
           </div>
           {/* Step 2 */}
           <div className="flex flex-col gap-4 items-start">
-            <span className="font-display-xl text-6xl text-on-surface font-black opacity-20 -mb-4">
+            <span
+              className="font-display-xl text-6xl text-on-surface font-black opacity-20 -mb-4"
+              aria-hidden="true"
+            >
               02
             </span>
             <h3 className="font-stat-lg text-stat-lg text-on-surface">Search Before Debugging</h3>
@@ -99,7 +105,10 @@ export default function Home() {
           </div>
           {/* Step 3 */}
           <div className="flex flex-col gap-4 items-start">
-            <span className="font-display-xl text-6xl text-on-surface font-black opacity-20 -mb-4">
+            <span
+              className="font-display-xl text-6xl text-on-surface font-black opacity-20 -mb-4"
+              aria-hidden="true"
+            >
               03
             </span>
             <h3 className="font-stat-lg text-stat-lg text-on-surface">Build on What Works</h3>

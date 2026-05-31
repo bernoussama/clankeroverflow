@@ -29,8 +29,12 @@
   --radius: 0px;
 
   /* Landing-specific tokens */
-  --landing-accent: #ca4b00;
+  --landing-accent: #c44700;
   --landing-accent-subtle: rgba(202, 75, 0, 0.08);
+  --landing-terminal-accent: #ff8a55;
+  --landing-terminal-muted: #b59c92;
+  --landing-terminal-secondary: #72ff70;
+  --landing-terminal-tertiary: #a5eeff;
   --landing-surface: #f6f3f2;
   --landing-border: #e5e2e1;
   --landing-grid: #d2c7c3;
@@ -113,6 +117,10 @@
   /* Landing-specific tokens */
   --landing-accent: #f2641d;
   --landing-accent-subtle: rgba(242, 100, 29, 0.1);
+  --landing-terminal-accent: #ff8a55;
+  --landing-terminal-muted: #b59c92;
+  --landing-terminal-secondary: #72ff70;
+  --landing-terminal-tertiary: #a5eeff;
   --landing-surface: #1c1b1b;
   --landing-border: #2a2a2a;
   --landing-grid: #2a2a2a;
@@ -547,7 +555,7 @@
   height: 3.5rem;
   border: 1px solid var(--landing-accent);
   background: var(--landing-accent);
-  color: #131313;
+  color: var(--theme-surface-bright);
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -632,7 +640,7 @@
 .hero-terminal__lights span:first-child,
 .hero-terminal__status,
 .hero-terminal__footer svg {
-  color: var(--landing-accent);
+  color: var(--landing-terminal-accent);
 }
 
 .hero-terminal__lights span:first-child {
@@ -692,7 +700,7 @@
   justify-content: space-between;
   padding: 0.65rem 0.8rem;
   border-bottom: 1px solid var(--landing-border);
-  color: var(--theme-code-comment);
+  color: var(--landing-terminal-muted);
   font-family: var(--font-mono);
   font-size: 0.625rem;
   letter-spacing: 0.08em;
@@ -710,7 +718,7 @@
 
 .hero-terminal__copy:hover,
 .hero-terminal__copy:focus-visible {
-  color: var(--landing-accent);
+  color: var(--landing-terminal-accent);
 }
 
 .hero-terminal__copy svg {
@@ -728,13 +736,13 @@
 }
 
 .hero-terminal__comment {
-  color: var(--theme-code-comment);
+  color: var(--landing-terminal-muted);
 }
 
 .hero-terminal__footer {
   gap: 0.45rem;
   padding: 0 1rem 1rem;
-  color: var(--theme-code-comment);
+  color: var(--landing-terminal-muted);
   font-family: var(--font-mono);
   font-size: 0.65rem;
 }
@@ -800,6 +808,22 @@
 
 .text-muted-landing {
   color: var(--landing-muted);
+}
+
+.bg-surface-terminal .text-landing-accent {
+  color: var(--landing-terminal-accent);
+}
+
+.bg-surface-terminal .text-code-comment {
+  color: var(--landing-terminal-muted);
+}
+
+.bg-surface-terminal .text-secondary {
+  color: var(--landing-terminal-secondary);
+}
+
+.bg-surface-terminal .text-tertiary {
+  color: var(--landing-terminal-tertiary);
 }
 
 .bg-surface-landing {

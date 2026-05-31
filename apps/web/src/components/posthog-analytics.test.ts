@@ -12,4 +12,11 @@ describe("PostHog browser analytics", () => {
     expect(postHogAnalyticsSource).toContain('+"/static/array.js"');
     expect(postHogAnalyticsSource).not.toContain('crossOrigin="anonymous"');
   });
+
+  it("defers analytics and disables optional heavy browser extensions", () => {
+    expect(postHogAnalyticsSource).toContain('strategy="lazyOnload"');
+    expect(postHogAnalyticsSource).toContain("autocapture:false");
+    expect(postHogAnalyticsSource).toContain("disable_session_recording:true");
+    expect(postHogAnalyticsSource).toContain("disable_surveys:true");
+  });
 });
