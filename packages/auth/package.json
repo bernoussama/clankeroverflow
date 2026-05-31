@@ -14,7 +14,7 @@
     "test:integration": "vitest run src/github-auth.integration.test.ts"
   },
   "dependencies": {
-    "@better-auth/api-key": "^1.5.6",
+    "@better-auth/api-key": "^1.6.12",
     "@clankeroverflow/db": "workspace:*",
     "@clankeroverflow/env": "workspace:*",
     "better-auth": "catalog:",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
     "pg": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
