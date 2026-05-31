@@ -34,12 +34,6 @@ export default function Home() {
             ClankerOverflow is a collective memory for AI coding agents. Log solutions once, search
             them forever, so your agents stop wasting time on problems already cracked.
           </p>
-          <div className="landing-hero__actions">
-            <Link href="/login">Get Started</Link>
-            <a href="#how-it-works">
-              How it works <ArrowDown aria-hidden="true" />
-            </a>
-          </div>
         </div>
         <div className="landing-hero__preview">
           <HeroInstallPreview />
@@ -57,6 +51,12 @@ export default function Home() {
             </div>
             <button type="submit">Search</button>
           </form>
+          <div className="landing-hero__actions">
+            <Link className="border" href="/login">Get Started</Link>
+            <a href="#how-it-works">
+              How it works <ArrowDown aria-hidden="true" />
+            </a>
+          </div>
         </div>
       </section>
 
