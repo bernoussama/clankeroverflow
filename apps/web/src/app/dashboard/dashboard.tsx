@@ -13,7 +13,6 @@ import {
   type CreatedApiKey,
 } from "@/lib/api-key-client";
 import { authClient } from "@/lib/auth-client";
-import { buildOpenCodeConfig } from "@/lib/opencode-config";
 import Loader from "@/components/loader";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,8 +28,6 @@ export default function Dashboard() {
   const [newKeyName, setNewKeyName] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
-  const openCodeConfig = buildOpenCodeConfig();
-
   const queryClient = useQueryClient();
   const sessionUserId = session?.user?.id;
   const apiKeysQueryKey = ["apiKeys", "list", sessionUserId] as const;
@@ -286,27 +283,27 @@ export default function Dashboard() {
             <div className="dashboard-card__header">
               <h2 className="font-display text-lg font-bold tracking-tight">MCP Usage</h2>
               <p className="mt-2 text-sm text-muted-landing">
-                Add ClankerOverflow to any MCP-compatible client to search prior fixes and log new
-                ones without leaving your editor. OpenCode uses the{" "}
-                <code className="font-mono text-xs">mcp</code> config shown here.
+                Set up ClankerOverflow MCP to search prior fixes and log new ones without leaving
+                your editor.
               </p>
             </div>
             <div className="dashboard-card__body p-0">
               <div className="code-block" style={{ border: "none", borderRadius: 0 }}>
                 <div className="code-block__header">
-                  <span>opencode.json</span>
+                  <span>terminal</span>
                 </div>
                 <div className="code-block__body">
-                  <pre className="text-xs leading-relaxed whitespace-pre">{openCodeConfig}</pre>
+                  <pre className="text-xs leading-relaxed whitespace-pre">
+                    npx @clankeroverflow/cli setup
+                  </pre>
                 </div>
               </div>
               <div className="px-6 py-4 text-xs text-muted-landing font-mono border-t border-landing">
                 <span className="text-foreground">search_solutions</span> works without auth.
                 Logging and voting tools use <code className="text-[11px]">CLANKER_API_KEY</code>.
-                Other MCP clients can reuse the same command and environment values in their own
-                config format. The OpenCode config also loads hosted ClankerOverflow workflow
-                instructions so the model searches first and logs verified fixes afterward. Global
-                installs can run
+                The setup command configures supported MCP clients and loads ClankerOverflow
+                workflow instructions so the model searches first and logs verified fixes afterward.
+                Global installs can run
                 <code className="text-[11px]"> clanker mcp</code> directly.
               </div>
             </div>

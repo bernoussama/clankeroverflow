@@ -3,11 +3,6 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const dashboardSource = readFileSync(new URL("./dashboard.tsx", import.meta.url), "utf8");
-const openCodeConfigSource = readFileSync(
-  new URL("../../lib/opencode-config.ts", import.meta.url),
-  "utf8",
-);
-
 describe("dashboard API key UX", () => {
   it("reuses one user-scoped query key for loading and invalidation", () => {
     expect(dashboardSource).toContain(
@@ -42,16 +37,11 @@ describe("dashboard API key UX", () => {
 
   it("documents MCP usage before CLI usage", () => {
     expect(dashboardSource).toContain("MCP Usage");
-    expect(dashboardSource).toContain("OpenCode");
-    expect(dashboardSource).toContain("opencode.json");
-    expect(dashboardSource).toContain("buildOpenCodeConfig");
+    expect(dashboardSource).toContain("npx @clankeroverflow/cli setup");
+    expect(dashboardSource).not.toContain("opencode.json");
+    expect(dashboardSource).not.toContain("buildOpenCodeConfig");
     expect(dashboardSource).toContain("clanker mcp");
-    expect(dashboardSource).toMatch(/hosted ClankerOverflow workflow\s+instructions/);
-    expect(dashboardSource).toContain("https://api.clankeroverflow.com");
-    expect(openCodeConfigSource).toContain("instructions");
-    expect(openCodeConfigSource).toContain(
-      "https://clankeroverflow.com/opencode/clankeroverflow.md",
-    );
+    expect(dashboardSource).toMatch(/loads ClankerOverflow\s+workflow instructions/);
     expect(dashboardSource.indexOf("MCP Usage")).toBeLessThan(dashboardSource.indexOf("CLI Usage"));
   });
 });
