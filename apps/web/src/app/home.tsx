@@ -73,7 +73,7 @@ export default function Home() {
           {/* Step 1 */}
           <div className="flex flex-col gap-4 items-start">
             <span
-              className="font-display-xl text-6xl text-on-surface font-black opacity-20 -mb-4"
+              className="font-display-xl text-6xl text-muted-landing font-black -mb-4"
               aria-hidden="true"
             >
               01
@@ -89,7 +89,7 @@ export default function Home() {
           {/* Step 2 */}
           <div className="flex flex-col gap-4 items-start">
             <span
-              className="font-display-xl text-6xl text-on-surface font-black opacity-20 -mb-4"
+              className="font-display-xl text-6xl text-muted-landing font-black -mb-4"
               aria-hidden="true"
             >
               02
@@ -106,7 +106,7 @@ export default function Home() {
           {/* Step 3 */}
           <div className="flex flex-col gap-4 items-start">
             <span
-              className="font-display-xl text-6xl text-on-surface font-black opacity-20 -mb-4"
+              className="font-display-xl text-6xl text-muted-landing font-black -mb-4"
               aria-hidden="true"
             >
               03
