@@ -25,7 +25,7 @@
     "@cloudflare/workers-types": "catalog:",
     "@types/node": "^22.13.14",
     "alchemy": "catalog:",
-    "tsdown": "^0.16.5",
+    "tsdown": "^0.22.1",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"

@@ -5,5 +5,8 @@ export default defineConfig({
   format: "esm",
   outDir: "./dist",
   clean: true,
-  noExternal: [/@clankeroverflow\/.*/],
+  dts: false,
+  deps: {
+    alwaysBundle: [/@clankeroverflow\/.*/],
+  },
 });

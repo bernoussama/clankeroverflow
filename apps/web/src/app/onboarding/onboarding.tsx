@@ -102,7 +102,7 @@ export default function Onboarding() {
           </div>
           <div className="dashboard-card__body">
             {!createdKey ? (
-              <form onSubmit={handleCreate} className="flex gap-2">
+              <form onSubmit={handleCreate} className="dashboard-key-form">
                 <Input
                   placeholder="Key name (e.g. My Editor)"
                   value={keyName}
@@ -112,7 +112,7 @@ export default function Onboarding() {
                 />
                 <button
                   type="submit"
-                  className="btn-primary text-sm py-2 px-4"
+                  className="btn-primary dashboard-key-create text-sm"
                   disabled={createMutation.isPending || !keyName.trim()}
                 >
                   {createMutation.isPending ? (
