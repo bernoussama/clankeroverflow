@@ -29,15 +29,15 @@ jobs:
       ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
       ALCHEMY_STATE_TOKEN: ${{ secrets.ALCHEMY_STATE_TOKEN }}
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-      BETTER_AUTH_URL: ${{ vars.BETTER_AUTH_URL }}
+      BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       COMMIT_SHA: ${{ github.sha }}
-      CORS_ORIGIN: ${{ vars.CORS_ORIGIN }}
+      CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       GITHUB_CLIENT_ID: ${{ vars.GH_OAUTH_CLIENT_ID }}
       GITHUB_CLIENT_SECRET: ${{ secrets.GH_OAUTH_CLIENT_SECRET }}
-      NEXT_PUBLIC_SERVER_URL: ${{ vars.NEXT_PUBLIC_SERVER_URL }}
+      NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}
       POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
       POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
