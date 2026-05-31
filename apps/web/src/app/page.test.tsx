@@ -23,7 +23,7 @@ describe("landing page rendering", () => {
 
   it("links the hero primary action to login", () => {
     expect(homeSource).toContain('href="/login"');
-    expect(homeSource).toMatch(/Get Started<\/Link>/);
+    expect(homeSource).toMatch(/Get Started\s*<\/Link>/);
     expect(homeSource).not.toContain("Browse Solutions");
   });
 
