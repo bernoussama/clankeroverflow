@@ -53,12 +53,6 @@ importers:
       '@clankeroverflow/env':
         specifier: workspace:*
         version: link:packages/env
-      dotenv:
-        specifier: 'catalog:'
-        version: 17.4.2
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
     devDependencies:
       '@clankeroverflow/config':
         specifier: workspace:*
@@ -114,15 +108,9 @@ importers:
       better-auth:
         specifier: 'catalog:'
         version: 1.6.12(@cloudflare/workers-types@4.20260530.1)(@opentelemetry/api@1.9.1)(better-sqlite3@12.10.0)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.20.0)(better-sqlite3@12.10.0)(kysely@0.28.17)(pg@8.21.0))(next@16.2.6(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(pg@8.21.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@22.19.19)(msw@2.14.6(@types/node@22.19.19)(typescript@6.0.3))(vite@7.3.3(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.16.9)(tsx@4.22.3)(yaml@2.9.0)))
-      dotenv:
-        specifier: 'catalog:'
-        version: 17.4.2
       hono:
         specifier: 'catalog:'
         version: 4.12.23
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
     devDependencies:
       '@clankeroverflow/config':
         specifier: workspace:*
@@ -160,9 +148,6 @@ importers:
       '@clankeroverflow/api':
         specifier: workspace:*
         version: link:../../packages/api
-      '@clankeroverflow/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
       '@clankeroverflow/env':
         specifier: workspace:*
         version: link:../../packages/env
@@ -172,18 +157,12 @@ importers:
       '@tailwindcss/typography':
         specifier: ^0.5.19
         version: 0.5.19(tailwindcss@4.3.0)
-      '@tanstack/react-form':
-        specifier: ^1.33.0
-        version: 1.33.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@tanstack/react-query':
         specifier: ^5.100.14
         version: 5.100.14(react@19.2.6)
       '@trpc/client':
         specifier: 'catalog:'
         version: 11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3)
-      '@trpc/server':
-        specifier: 'catalog:'
-        version: 11.17.0(typescript@6.0.3)
       '@trpc/tanstack-react-query':
         specifier: ^11.17.0
         version: 11.17.0(@tanstack/react-query@5.100.14(react@19.2.6))(@trpc/client@11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3))(@trpc/server@11.17.0(typescript@6.0.3))(react@19.2.6)(typescript@6.0.3)
@@ -199,9 +178,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      dotenv:
-        specifier: 'catalog:'
-        version: 17.4.2
       lucide-react:
         specifier: ^0.546.0
         version: 0.546.0(react@19.2.6)
@@ -287,15 +263,9 @@ importers:
       '@clankeroverflow/env':
         specifier: workspace:*
         version: link:../env
-      '@trpc/client':
-        specifier: 'catalog:'
-        version: 11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3)
       '@trpc/server':
         specifier: 'catalog:'
         version: 11.17.0(typescript@6.0.3)
-      dotenv:
-        specifier: 'catalog:'
-        version: 17.4.2
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.20.0)(better-sqlite3@12.10.0)(kysely@0.28.17)(pg@8.21.0)
@@ -333,12 +303,6 @@ importers:
       better-auth:
         specifier: 'catalog:'
         version: 1.6.12(@cloudflare/workers-types@4.20260530.1)(@opentelemetry/api@1.9.1)(better-sqlite3@12.10.0)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.20.0)(better-sqlite3@12.10.0)(kysely@0.28.17)(pg@8.21.0))(next@16.2.6(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(pg@8.21.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@22.19.19)(msw@2.14.6(@types/node@22.19.19)(typescript@6.0.3))(vite@7.3.3(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.16.9)(tsx@4.22.3)(yaml@2.9.0)))
-      dotenv:
-        specifier: 'catalog:'
-        version: 17.4.2
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
     devDependencies:
       '@clankeroverflow/config':
         specifier: workspace:*
@@ -437,9 +401,6 @@ importers:
       '@t3-oss/env-nextjs':
         specifier: ^0.13.1
         version: 0.13.11(typescript@6.0.3)(zod@4.4.3)
-      dotenv:
-        specifier: 'catalog:'
-        version: 17.4.2
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -462,9 +423,6 @@ importers:
       dotenv:
         specifier: 'catalog:'
         version: 17.4.2
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
     devDependencies:
       '@clankeroverflow/config':
         specifier: workspace:*
@@ -3450,32 +3408,11 @@ packages:
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders || >=4.0.0-alpha.20 || >=4.0.0-beta.1'
 
-  '@tanstack/devtools-event-client@0.4.3':
-    resolution: {integrity: sha512-OZI6QyULw0FI0wjgmeYzCIfbgPsOEzwJtCpa69XrfLMtNXLGnz3d/dIabk7frg0TmHo+Ah49w5I4KC7Tufwsvw==}
-    engines: {node: '>=18'}
-    hasBin: true
-
-  '@tanstack/form-core@1.33.0':
-    resolution: {integrity: sha512-AV4Pw9Dk4orFsuPBcDssfWMJFs+yMYBae7zZ4oTqrCf4ftNGQKxvrQRZeqKHG6A4TkiLeSvf2kzIjcVkrW7E6w==}
-
-  '@tanstack/pacer-lite@0.1.1':
-    resolution: {integrity: sha512-y/xtNPNt/YeyoVxE/JCx+T7yjEzpezmbb+toK8DDD1P4m7Kzs5YR956+7OKexG3f8aXgC3rLZl7b1V+yNUSy5w==}
-    engines: {node: '>=18'}
-
   '@tanstack/query-core@5.100.14':
     resolution: {integrity: sha512-5X41dGpxgeaHISCRW2oYwcSycZeULZzAunaudXT9ov1KOTj9xwt0CH6hbwqP1/z74ZWF7rYFnDpyYH07XFcZew==}
 
   '@tanstack/query-devtools@5.100.14':
     resolution: {integrity: sha512-g96SmSSQecYTYcyuAMRXr895GplJv01UGt7qttQWPOUyZ5EGz5tbRc589bMc2m5BsPFD6O0PCEAHdbDYNP6UBw==}
-
-  '@tanstack/react-form@1.33.0':
-    resolution: {integrity: sha512-unaee+VS4MvKo+s1dmgGUXI4902VeAhuaUbKsQbhFe3MceOpB3JpAUGCDpyzjQPXVFkFY0COKfLrUNX2XZYW4g==}
-    peerDependencies:
-      '@tanstack/react-start': '*'
-      react: ^17.0.0 || ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      '@tanstack/react-start':
-        optional: true
 
   '@tanstack/react-query-devtools@5.100.14':
     resolution: {integrity: sha512-JkP5VDgKOw3t/QSA1OABRHEqx8BuNs5MfvZRooNqdvN57SzTuGq3fKR1a2IH5rqa5HDLUm+FOXUEnB9ueHiLzg==}
@@ -3487,15 +3424,6 @@ packages:
     resolution: {integrity: sha512-oOr6aRdSFEwWhzxEkD/9ZcItM3+LjBSkeVmadWKwUssAHTsqd/7bOjWrX4AbvEkoEhgAxzN0Xk6H/aYzXiYBAw==}
     peerDependencies:
       react: ^18 || ^19
-
-  '@tanstack/react-store@0.11.0':
-    resolution: {integrity: sha512-tX4YXh3PDkmpvGQWkWqKpzs/MSqbtuwY9dWdWhtV9Q50PmO+jOkUKIWIX4G85dwt7lxdHLXsiaEKPdKmC8F41w==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
-  '@tanstack/store@0.11.0':
-    resolution: {integrity: sha512-WlzzCt3xi0G6pCAJu1U+2jiECwabETDpQDi3hfkFZvJii9AuZqEKbOiVarX1/bWhTNjU486yQtJCCasi/0q+Cw==}
 
   '@trpc/client@11.17.0':
     resolution: {integrity: sha512-KpJBFrbKTDeVCFv/3ckL1XBBH5Yssn8hethI/rUy7GIpTj+VzjtPjykDqJpzobuVOz+d26cXCSu1t4I6MYI5Zg==}
@@ -9255,27 +9183,9 @@ snapshots:
       postcss-selector-parser: 6.0.10
       tailwindcss: 4.3.0
 
-  '@tanstack/devtools-event-client@0.4.3': {}
-
-  '@tanstack/form-core@1.33.0':
-    dependencies:
-      '@tanstack/devtools-event-client': 0.4.3
-      '@tanstack/pacer-lite': 0.1.1
-      '@tanstack/store': 0.11.0
-
-  '@tanstack/pacer-lite@0.1.1': {}
-
   '@tanstack/query-core@5.100.14': {}
 
   '@tanstack/query-devtools@5.100.14': {}
-
-  '@tanstack/react-form@1.33.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
-    dependencies:
-      '@tanstack/form-core': 1.33.0
-      '@tanstack/react-store': 0.11.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      react: 19.2.6
-    transitivePeerDependencies:
-      - react-dom
 
   '@tanstack/react-query-devtools@5.100.14(@tanstack/react-query@5.100.14(react@19.2.6))(react@19.2.6)':
     dependencies:
@@ -9287,15 +9197,6 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.100.14
       react: 19.2.6
-
-  '@tanstack/react-store@0.11.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
-    dependencies:
-      '@tanstack/store': 0.11.0
-      react: 19.2.6
-      react-dom: 19.2.6(react@19.2.6)
-      use-sync-external-store: 1.6.0(react@19.2.6)
-
-  '@tanstack/store@0.11.0': {}
 
   '@trpc/client@11.17.0(@trpc/server@11.17.0(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:

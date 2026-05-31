@@ -24,9 +24,7 @@
     "check": "pnpm run lint && pnpm run format"
   },
   "dependencies": {
-    "@clankeroverflow/env": "workspace:*",
-    "dotenv": "catalog:",
-    "zod": "catalog:"
+    "@clankeroverflow/env": "workspace:*"
   },
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",

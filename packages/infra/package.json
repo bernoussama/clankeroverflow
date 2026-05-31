@@ -9,8 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "dotenv": "catalog:",
-    "zod": "catalog:"
+    "dotenv": "catalog:"
   },
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",

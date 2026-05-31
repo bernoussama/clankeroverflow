@@ -17,9 +17,7 @@
     "@better-auth/api-key": "^1.6.12",
     "@clankeroverflow/db": "workspace:*",
     "@clankeroverflow/env": "workspace:*",
-    "better-auth": "catalog:",
-    "dotenv": "catalog:",
-    "zod": "catalog:"
+    "better-auth": "catalog:"
   },
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",

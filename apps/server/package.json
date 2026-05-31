@@ -18,9 +18,7 @@
     "@sentry/cloudflare": "^10.53.1",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",
-    "dotenv": "catalog:",
-    "hono": "catalog:",
-    "zod": "catalog:"
+    "hono": "catalog:"
   },
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",

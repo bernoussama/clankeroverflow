@@ -18,9 +18,7 @@
     "@clankeroverflow/auth": "workspace:*",
     "@clankeroverflow/db": "workspace:*",
     "@clankeroverflow/env": "workspace:*",
-    "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
-    "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
     "posthog-node": "^5.29.2",
     "zod": "catalog:"
