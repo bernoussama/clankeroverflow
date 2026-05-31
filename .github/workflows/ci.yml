@@ -21,8 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.base_ref }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -44,10 +44,10 @@ jobs:
         run: pnpm run lint
 
       - name: Check types (affected)
-        run: pnpm run check-types --affected
+        run: pnpm run check-types --affected --filter=...[origin/${{ github.base_ref }}]
       - name: Build (affected)
         env:
           NEXT_PUBLIC_SERVER_URL: http://localhost:3000
-        run: pnpm run build --affected
+        run: pnpm run build --affected --filter=...[origin/${{ github.base_ref }}]
       - name: Test (affected)
-        run: pnpm run test --affected
+        run: pnpm run test --affected --filter=...[origin/${{ github.base_ref }}]
