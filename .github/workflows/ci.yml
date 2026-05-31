@@ -4,11 +4,6 @@ on:
   pull_request:
     paths-ignore:
       - "**/*.md"
-  push:
-    branches:
-      - master
-    paths-ignore:
-      - "**/*.md"
 
 permissions:
   contents: read
@@ -26,6 +21,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      # - name: Fetch base branch
+      #   run: git fetch origin ${{ github.base_ref }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -46,13 +44,9 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
-      - name: Check types
-        run: pnpm run check-types
-
-      - name: Build
-        env:
-          NEXT_PUBLIC_SERVER_URL: http://localhost:3000
-        run: pnpm run build
-
-      - name: Test
-        run: pnpm run test
+      - name: Check types (affected)
+        run: pnpm run check-types --affected
+      - name: Build (affected)
+        run: pnpm run build --affected
+      - name: Test (affected)
+        run: pnpm run test --affected
