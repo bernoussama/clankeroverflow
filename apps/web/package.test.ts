@@ -11,7 +11,7 @@ const packageJson = JSON.parse(
 ) as PackageJson;
 
 describe("apps/web package scripts", () => {
-  it("forces webpack for production builds consumed by OpenNext", () => {
-    expect(packageJson.scripts?.build).toBe("next build --webpack");
+  it("defines the production build script", () => {
+    expect(packageJson.scripts?.build).toBe("next build");
   });
 });
