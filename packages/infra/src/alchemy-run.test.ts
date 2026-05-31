@@ -24,9 +24,11 @@ describe("infra worker config", () => {
     expect(alchemyRunSource).toContain(
       'import { CloudflareStateStore, FileSystemStateStore } from "alchemy/state"',
     );
-    expect(alchemyRunSource).toContain(
-      "scope.local ? new FileSystemStateStore(scope) : new CloudflareStateStore(scope)",
-    );
+    expect(alchemyRunSource).toContain("scope.local");
+    expect(alchemyRunSource).toContain("new FileSystemStateStore(scope)");
+    expect(alchemyRunSource).toContain("new CloudflareStateStore(scope, {");
+    expect(alchemyRunSource).toContain('createHash("sha256")');
+    expect(alchemyRunSource).toContain("ALCHEMY_STATE_TOKEN or ALCHEMY_PASSWORD");
   });
 
   it("adopts the existing web worker during deploys", () => {

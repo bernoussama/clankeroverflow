@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import alchemy from "alchemy";
 import { Ai, Hyperdrive, Nextjs, VectorizeIndex, Worker } from "alchemy/cloudflare";
 import { CloudflareStateStore, FileSystemStateStore } from "alchemy/state";
@@ -6,9 +8,24 @@ const { getDatabaseUrlErrorMessage, loadInfraEnv } = await import(
   new URL("./src/env.ts", import.meta.url).href
 );
 
+const cloudflareStateToken =
+  process.env.ALCHEMY_STATE_TOKEN?.trim() ||
+  process.env.ALCHEMY_PASSWORD?.trim() ||
+  (() => {
+    throw new Error(
+      "ALCHEMY_STATE_TOKEN or ALCHEMY_PASSWORD is required for Cloudflare state store deployments.",
+    );
+  })();
+
 const app = await alchemy("clankeroverflow", {
   stateStore: (scope) =>
-    scope.local ? new FileSystemStateStore(scope) : new CloudflareStateStore(scope),
+    scope.local
+      ? new FileSystemStateStore(scope)
+      : new CloudflareStateStore(scope, {
+          stateToken: alchemy.secret(
+            createHash("sha256").update(cloudflareStateToken).digest("hex"),
+          ),
+        }),
 });
 
 const isLocal = app.local;
