@@ -1,11 +1,7 @@
 name: CD
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+  push:
     branches:
       - master
   workflow_dispatch:
@@ -23,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     env:
       ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
