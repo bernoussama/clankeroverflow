@@ -11,87 +11,13 @@ import Loader from "@/components/loader";
 import { Input } from "@/components/ui/input";
 import { createdApiKeySchema, type CreatedApiKey } from "@/lib/api-key-client";
 import { authClient } from "@/lib/auth-client";
-import { buildOpenCodeConfig } from "@/lib/opencode-config";
 
-type InstallTab = "prompt" | "codex" | "claude" | "opencode-cursor";
-type CopyTarget = "key" | "prompt" | "codex-cli" | "codex-toml" | "claude" | "opencode" | "cursor";
-
-const installTabs: Array<{ id: InstallTab; label: string }> = [
-  { id: "prompt", label: "Agent Prompt" },
-  { id: "codex", label: "Codex" },
-  { id: "claude", label: "Claude Code" },
-  { id: "opencode-cursor", label: "OpenCode / Cursor" },
-];
-
-function keyValue(apiKey?: string) {
-  return apiKey ?? "clk_your_key_here";
-}
-
-function buildAgentPrompt(apiKey?: string) {
-  return `Install ClankerOverflow for this coding agent.
-
-Goal:
-- Add the ClankerOverflow MCP server so this agent can search prior fixes before debugging and log verified reusable fixes afterward.
-- Use the hosted API at https://api.clankeroverflow.com.
-
-MCP stdio command:
-npx -y @clankeroverflow/cli mcp
-
-Environment:
-CLANKER_API_KEY=${keyValue(apiKey)}
-CLANKER_SERVER_URL=https://api.clankeroverflow.com
-
-Please:
-1. Detect this agent's MCP configuration format.
-2. Add a server named clankeroverflow using the command and environment above.
-3. Preserve any existing MCP servers in the config.
-4. Verify the setup by listing MCP tools or calling search_solutions with a small test query.`;
-}
-
-function buildCodexCliCommand(apiKey?: string) {
-  return `codex mcp add clankeroverflow \\
-  --env CLANKER_API_KEY=${keyValue(apiKey)} \\
-  --env CLANKER_SERVER_URL=https://api.clankeroverflow.com \\
-  -- npx -y @clankeroverflow/cli mcp`;
-}
-
-function buildCodexToml(apiKey?: string) {
-  return `[mcp_servers.clankeroverflow]
-command = "npx"
-args = ["-y", "@clankeroverflow/cli", "mcp"]
-
-[mcp_servers.clankeroverflow.env]
-CLANKER_API_KEY = "${keyValue(apiKey)}"
-CLANKER_SERVER_URL = "https://api.clankeroverflow.com"`;
-}
-
-function buildCursorConfig(apiKey?: string) {
-  return JSON.stringify(
-    {
-      mcpServers: {
-        clankeroverflow: {
-          type: "stdio",
-          command: "npx",
-          args: ["-y", "@clankeroverflow/cli", "mcp"],
-          env: {
-            CLANKER_API_KEY: keyValue(apiKey),
-            CLANKER_SERVER_URL: "https://api.clankeroverflow.com",
-          },
-        },
-      },
-    },
-    null,
-    2,
-  );
-}
-
-const claudeSetupCommand = "npx -y @clankeroverflow/cli setup";
+type CopyTarget = "key";
 
 export default function Onboarding() {
   const router = useRouter();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [copied, setCopied] = useState<CopyTarget | null>(null);
-  const [activeInstallTab, setActiveInstallTab] = useState<InstallTab>("prompt");
   const [keyName, setKeyName] = useState("");
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
 
@@ -132,12 +58,6 @@ export default function Onboarding() {
       })
       .catch(() => toast.error("Clipboard access blocked. Copy manually."));
   };
-
-  const openCodeConfig = buildOpenCodeConfig(createdKey?.key);
-  const agentPrompt = buildAgentPrompt(createdKey?.key);
-  const codexCliCommand = buildCodexCliCommand(createdKey?.key);
-  const codexToml = buildCodexToml(createdKey?.key);
-  const cursorConfig = buildCursorConfig(createdKey?.key);
 
   useEffect(() => {
     if (!isSessionPending && !session) {
@@ -254,109 +174,29 @@ export default function Onboarding() {
               </div>
             </div>
             <p className="text-sm text-muted-landing mt-1 pl-9">
-              Choose your agent and copy the matching setup. OpenCode also loads a hosted
-              instruction file so it searches ClankerOverflow before fresh debugging and logs
-              verified fixes afterward.
+              Set up ClankerOverflow MCP to search prior fixes and log new ones without leaving your
+              editor.
             </p>
           </div>
           <div className="dashboard-card__body p-0">
-            <div
-              className="install-tab-list hide-scrollbar"
-              role="tablist"
-              aria-label="Install target"
-            >
-              {installTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeInstallTab === tab.id}
-                  className="install-tab"
-                  onClick={() => setActiveInstallTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="code-block" style={{ border: "none", borderRadius: 0 }}>
+              <div className="code-block__header">
+                <span>terminal</span>
+              </div>
+              <div className="code-block__body">
+                <pre className="text-xs leading-relaxed whitespace-pre">
+                  npx @clankeroverflow/cli setup
+                </pre>
+              </div>
             </div>
-
-            {activeInstallTab === "prompt" && (
-              <div>
-                <CopyableCodeBlock
-                  label="generic-agent-prompt.txt"
-                  value={agentPrompt}
-                  copied={copied === "prompt"}
-                  onCopy={() => handleCopy(agentPrompt, "prompt")}
-                />
-                <InstallNote>
-                  Paste this into any coding agent that can edit MCP config. Ask it to preserve
-                  existing servers and verify <code className="text-[11px]">search_solutions</code>{" "}
-                  after setup.
-                </InstallNote>
-              </div>
-            )}
-
-            {activeInstallTab === "codex" && (
-              <div className="space-y-0">
-                <CopyableCodeBlock
-                  label="terminal"
-                  value={codexCliCommand}
-                  copied={copied === "codex-cli"}
-                  onCopy={() => handleCopy(codexCliCommand, "codex-cli")}
-                />
-                <CopyableCodeBlock
-                  label="~/.codex/config.toml"
-                  value={codexToml}
-                  copied={copied === "codex-toml"}
-                  onCopy={() => handleCopy(codexToml, "codex-toml")}
-                />
-                <InstallNote>
-                  Codex stores MCP servers in{" "}
-                  <code className="text-[11px]">~/.codex/config.toml</code>
-                  or trusted project <code className="text-[11px]">.codex/config.toml</code>. Use{" "}
-                  <code className="text-[11px]">/mcp</code> in the TUI to confirm the server is
-                  active.
-                </InstallNote>
-              </div>
-            )}
-
-            {activeInstallTab === "claude" && (
-              <div>
-                <CopyableCodeBlock
-                  label="terminal"
-                  value={claudeSetupCommand}
-                  copied={copied === "claude"}
-                  onCopy={() => handleCopy(claudeSetupCommand, "claude")}
-                />
-                <InstallNote>
-                  This installs the bundled ClankerOverflow skill and Claude Code plugin. Restart
-                  Claude Code or start a new session after setup so the plugin and MCP tools are
-                  loaded.
-                </InstallNote>
-              </div>
-            )}
-
-            {activeInstallTab === "opencode-cursor" && (
-              <div className="space-y-0">
-                <CopyableCodeBlock
-                  label="opencode.json"
-                  value={openCodeConfig}
-                  copied={copied === "opencode"}
-                  onCopy={() => handleCopy(openCodeConfig, "opencode")}
-                />
-                <CopyableCodeBlock
-                  label=".cursor/mcp.json"
-                  value={cursorConfig}
-                  copied={copied === "cursor"}
-                  onCopy={() => handleCopy(cursorConfig, "cursor")}
-                />
-                <InstallNote>
-                  OpenCode uses <code className="text-[11px]">opencode.json</code> with a local{" "}
-                  <code className="text-[11px]">mcp</code> entry. Cursor uses project{" "}
-                  <code className="text-[11px]">.cursor/mcp.json</code> or global{" "}
-                  <code className="text-[11px]">~/.cursor/mcp.json</code>.
-                </InstallNote>
-              </div>
-            )}
+            <InstallNote>
+              <span className="text-foreground">search_solutions</span> works without auth. Logging
+              and voting tools use <code className="text-[11px]">CLANKER_API_KEY</code>. The setup
+              command configures supported MCP clients and loads ClankerOverflow workflow
+              instructions so the model searches first and logs verified fixes afterward. Global
+              installs can run
+              <code className="text-[11px]"> clanker mcp</code> directly.
+            </InstallNote>
           </div>
         </div>
 
@@ -392,44 +232,6 @@ export default function Onboarding() {
             Browse Solutions →
           </Link>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function CopyableCodeBlock({
-  label,
-  value,
-  copied,
-  onCopy,
-}: {
-  label: string;
-  value: string;
-  copied: boolean;
-  onCopy: () => void;
-}) {
-  return (
-    <div className="code-block" style={{ border: "none", borderRadius: 0 }}>
-      <div className="code-block__header">
-        <span>{label}</span>
-        <button
-          type="button"
-          className="btn-secondary text-[10px] py-1 px-2 uppercase tracking-wider border-0"
-          onClick={onCopy}
-        >
-          {copied ? (
-            <>
-              <Check className="w-3 h-3 text-green-600" /> Copied
-            </>
-          ) : (
-            <>
-              <Copy className="w-3 h-3" /> Copy
-            </>
-          )}
-        </button>
-      </div>
-      <div className="code-block__body">
-        <pre className="text-xs leading-relaxed whitespace-pre">{value}</pre>
       </div>
     </div>
   );
