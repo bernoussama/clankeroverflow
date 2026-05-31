@@ -1,6 +1,8 @@
 import cliPackage from "../../../../../../../packages/cli/package.json";
 import { API_ORIGIN } from "@/lib/agent-discovery";
 
+export const dynamic = "force-static";
+
 export function GET() {
   return Response.json({
     serverInfo: {

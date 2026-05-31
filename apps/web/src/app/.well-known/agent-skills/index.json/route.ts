@@ -1,6 +1,8 @@
 import { CLANKEROVERFLOW_MCP_SKILL } from "@/lib/agent-skill-content";
 import { canonicalUrl, sha256Hex } from "@/lib/agent-discovery";
 
+export const dynamic = "force-static";
+
 export async function GET() {
   const url = canonicalUrl("/.well-known/agent-skills/clankeroverflow-mcp");
   return Response.json({

@@ -21,6 +21,24 @@ import { GET as robots } from "./app/robots.txt/route";
 import { GET as sitemap } from "./app/sitemap.xml/route";
 
 describe("agent discovery endpoints", () => {
+  it("pre-renders constant well-known discovery routes", () => {
+    const routeFiles = [
+      "./app/.well-known/agent-skills/clankeroverflow-mcp/route.ts",
+      "./app/.well-known/agent-skills/index.json/route.ts",
+      "./app/.well-known/api-catalog/route.ts",
+      "./app/.well-known/mcp/server-card.json/route.ts",
+      "./app/.well-known/oauth-authorization-server/route.ts",
+      "./app/.well-known/oauth-protected-resource/route.ts",
+      "./app/.well-known/openid-configuration/route.ts",
+    ];
+
+    for (const routeFile of routeFiles) {
+      expect(readFileSync(new URL(routeFile, import.meta.url), "utf8")).toContain(
+        'export const dynamic = "force-static"',
+      );
+    }
+  });
+
   it("serves robots.txt with generic, AI crawler, content signal, and sitemap rules", async () => {
     const response = robots();
     const body = await response.text();
