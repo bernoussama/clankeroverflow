@@ -2,6 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
 
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+
 allowBuilds:
   better-sqlite3: true
   workerd: true
