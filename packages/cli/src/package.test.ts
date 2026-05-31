@@ -1,10 +1,14 @@
 import { describe, expect, test } from "vitest";
 import packageJson from "../package.json";
+import codexPluginJson from "../.codex-plugin/plugin.json";
+import openClawPluginJson from "../openclaw.plugin.json";
 
 describe("packages/cli package metadata", () => {
   test("publishes bundled skills without a package install hook", () => {
     expect(packageJson.files).toContain("dist");
     expect(packageJson.files).toContain("skills");
+    expect(packageJson.files).toContain(".codex-plugin");
+    expect(packageJson.files).toContain("openclaw.plugin.json");
     expect(packageJson.files).not.toContain("postinstall.mjs");
     expect(
       (packageJson.scripts as Record<string, string> | undefined)?.postinstall,
@@ -22,5 +26,19 @@ describe("packages/cli package metadata", () => {
     expect(packageJson.dependencies?.["@clankeroverflow/mcp-logger"]).toBeUndefined();
     expect(packageJson.devDependencies?.["@clankeroverflow/mcp-logger"]).toBeUndefined();
     expect(Object.values(packageJson.dependencies ?? {})).not.toContain("catalog:");
+  });
+
+  test("publishes an OpenClaw-compatible ClawHub bundle", () => {
+    expect(codexPluginJson.name).toBe("clankeroverflow");
+    expect(codexPluginJson.version).toBe(packageJson.version);
+    expect(codexPluginJson.skills).toBe("./skills/");
+    expect(codexPluginJson.mcpServers).toBe("./.mcp.json");
+    expect(openClawPluginJson.id).toBe("clankeroverflow");
+    expect(openClawPluginJson.version).toBe(packageJson.version);
+    expect(openClawPluginJson.skills).toEqual(["./skills"]);
+    expect(openClawPluginJson.configSchema).toEqual({
+      type: "object",
+      additionalProperties: false,
+    });
   });
 });
