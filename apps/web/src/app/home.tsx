@@ -52,7 +52,9 @@ export default function Home() {
             <button type="submit">Search</button>
           </form>
           <div className="landing-hero__actions">
-            <Link className="border" href="/login">Get Started</Link>
+            <Link className="border" href="/login">
+              Get Started
+            </Link>
             <a href="#how-it-works">
               How it works <ArrowDown aria-hidden="true" />
             </a>
