@@ -125,7 +125,7 @@ The bundle exposes the ClankerOverflow skills and MCP server to OpenClaw. To pre
 clawhub package publish ./packages/cli --family bundle-plugin --dry-run
 ```
 
-CLI and plugin releases are automated by `.github/workflows/release-cli.yml`. Pull requests that modify `packages/cli` validate the npm package and preview the ClawHub bundle. Pushes to `master` publish the npm package and ClawHub bundle after validation.
+CLI and plugin releases are automated by `.github/workflows/release-cli.yml`. When a pull request into `master` modifies `packages/cli` and is merged, or when a matching commit is pushed directly to `master`, the workflow validates the npm package, previews the ClawHub bundle, publishes the npm package, and publishes the ClawHub bundle. Pull request updates do not trigger this release workflow.
 
 Configure the `NPM_TOKEN` repository secret for npm publishing. ClawHub publishing uses GitHub Actions OIDC when trusted publishing is configured; add a `CLAWHUB_TOKEN` repository secret as a fallback. Bump `packages/cli/package.json` before merging a release.
 
