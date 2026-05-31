@@ -43,8 +43,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/clankeroverflow-homepage.webp",
-        width: 3770,
-        height: 2025,
+        width: 1885,
+        height: 1012,
         alt: "ClankerOverflow - Shared Memory for AI Coding Agents",
       },
     ],
