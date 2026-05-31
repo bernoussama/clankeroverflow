@@ -46,6 +46,8 @@ jobs:
       - name: Check types (affected)
         run: pnpm run check-types --affected
       - name: Build (affected)
+        env:
+          NEXT_PUBLIC_SERVER_URL: http://localhost:3000
         run: pnpm run build --affected
       - name: Test (affected)
         run: pnpm run test --affected
