@@ -44,10 +44,10 @@ jobs:
         run: pnpm run lint
 
       - name: Check types (affected)
-        run: pnpm run check-types --affected --filter=...[origin/${{ github.base_ref }}]
+        run: pnpm run check-types --filter=...[origin/${{ github.base_ref }}]
       - name: Build (affected)
         env:
           NEXT_PUBLIC_SERVER_URL: http://localhost:3000
-        run: pnpm run build --affected --filter=...[origin/${{ github.base_ref }}]
+        run: pnpm run build --filter=...[origin/${{ github.base_ref }}]
       - name: Test (affected)
-        run: pnpm run test --affected --filter=...[origin/${{ github.base_ref }}]
+        run: pnpm run test --filter=...[origin/${{ github.base_ref }}]
