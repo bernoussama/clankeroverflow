@@ -30,10 +30,48 @@
       "cache": false
     },
     "deploy": {
-      "cache": true
+      "cache": false,
+      "passThroughEnv": [
+        "ALCHEMY_PASSWORD",
+        "ALCHEMY_STATE_TOKEN",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_API_TOKEN",
+        "COMMIT_SHA",
+        "CORS_ORIGIN",
+        "DATABASE_URL",
+        "GITHUB_CLIENT_ID",
+        "GITHUB_CLIENT_SECRET",
+        "NEXT_PUBLIC_SERVER_URL",
+        "POSTHOG_API_KEY",
+        "POSTHOG_HOST",
+        "SENTRY_DSN",
+        "SENTRY_TEST_TOKEN",
+        "SERVICE_VERSION"
+      ]
     },
     "destroy": {
-      "cache": false
+      "cache": false,
+      "passThroughEnv": [
+        "ALCHEMY_PASSWORD",
+        "ALCHEMY_STATE_TOKEN",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_API_TOKEN",
+        "COMMIT_SHA",
+        "CORS_ORIGIN",
+        "DATABASE_URL",
+        "GITHUB_CLIENT_ID",
+        "GITHUB_CLIENT_SECRET",
+        "NEXT_PUBLIC_SERVER_URL",
+        "POSTHOG_API_KEY",
+        "POSTHOG_HOST",
+        "SENTRY_DSN",
+        "SENTRY_TEST_TOKEN",
+        "SERVICE_VERSION"
+      ]
     }
   }
 }
