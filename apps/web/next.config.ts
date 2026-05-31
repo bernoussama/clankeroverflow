@@ -94,6 +94,9 @@ const securityHeaders = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  experimental: {
+    inlineCss: true,
+  },
   async headers() {
     return [
       {

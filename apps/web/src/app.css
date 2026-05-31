@@ -1,0 +1,16 @@
+@reference "./index.css";
+
+@plugin "@tailwindcss/typography";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+@source "./app/dashboard";
+@source "./app/login";
+@source "./app/onboarding";
+@source "./app/solution";
+@source "./app/solutions";
+@source "./components/app-providers.tsx";
+@source "./components/loader.tsx";
+@source "./components/toast-provider.tsx";
+@source "./components/ui";

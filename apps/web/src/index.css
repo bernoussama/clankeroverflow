@@ -1,7 +1,14 @@
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+@source "./app/layout.tsx";
+@source "./components/header.tsx";
+@source "./components/mode-toggle.tsx";
+@source "./components/user-menu.tsx";
+@source "./components/ui/skeleton.tsx";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -284,24 +291,6 @@
   --spacing-stack-component: 1.5rem;
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply font-sans bg-background text-foreground;
-  }
-
-  html {
-    @apply font-sans;
-    scroll-behavior: smooth;
-  }
-}
-
-/* ═══════════════════════════════════════════════════
-   APP-WIDE DESIGN LANGUAGE — Editorial / Brutalist
-   No glass. No glow. No gradients on te/* ─── Spacing and Grid Utilities ─── */
 /* ─── Typography Classes ─── */
 .font-display-xl {
   font-family: var(--font-display), "Bricolage Grotesque", serif;

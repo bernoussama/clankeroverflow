@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 
 const nextConfigSource = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
 
-describe("next config security headers", () => {
+describe("next config", () => {
+  it("inlines production CSS to remove the render-blocking stylesheet waterfall", () => {
+    expect(nextConfigSource).toContain("inlineCss: true");
+  });
+
   it("defines global hardening headers for app routes", () => {
     expect(nextConfigSource).toContain("async headers()");
     expect(nextConfigSource).toContain("Content-Security-Policy");

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import "../../app.css";
 import ToastProvider from "@/components/toast-provider";
 
 import LoginPage from "./login-page";
