@@ -1,11 +1,15 @@
 import alchemy from "alchemy";
 import { Ai, Hyperdrive, Nextjs, VectorizeIndex, Worker } from "alchemy/cloudflare";
+import { CloudflareStateStore, FileSystemStateStore } from "alchemy/state";
 
 const { getDatabaseUrlErrorMessage, loadInfraEnv } = await import(
   new URL("./src/env.ts", import.meta.url).href
 );
 
-const app = await alchemy("clankeroverflow");
+const app = await alchemy("clankeroverflow", {
+  stateStore: (scope) =>
+    scope.local ? new FileSystemStateStore(scope) : new CloudflareStateStore(scope),
+});
 
 const isLocal = app.local;
 loadInfraEnv(isLocal);

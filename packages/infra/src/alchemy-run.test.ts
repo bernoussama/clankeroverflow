@@ -20,6 +20,15 @@ describe("infra worker config", () => {
     expect(alchemyRunSource).not.toContain('from "./src/env.ts"');
   });
 
+  it("persists deploy state in Cloudflare while keeping local dev state on disk", () => {
+    expect(alchemyRunSource).toContain(
+      'import { CloudflareStateStore, FileSystemStateStore } from "alchemy/state"',
+    );
+    expect(alchemyRunSource).toContain(
+      "scope.local ? new FileSystemStateStore(scope) : new CloudflareStateStore(scope)",
+    );
+  });
+
   it("adopts the existing web worker during deploys", () => {
     expect(alchemyRunSource).toContain('Nextjs("web", {');
     expect(alchemyRunSource).toContain("adopt: true");
