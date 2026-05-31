@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import AppProviders from "@/components/app-providers";
+
 import Dashboard from "./dashboard";
 
 export const metadata: Metadata = {
@@ -9,5 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardPage() {
-  return <Dashboard />;
+  return (
+    <AppProviders>
+      <Dashboard />
+    </AppProviders>
+  );
 }

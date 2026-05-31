@@ -9,6 +9,7 @@ describe("onboarding page rendering", () => {
     expect(onboardingPageSource).not.toContain('from "next/headers"');
     expect(onboardingPageSource).not.toContain('from "next/navigation"');
     expect(onboardingPageSource).not.toContain("authClient.getSession");
-    expect(onboardingPageSource).toContain("return <Onboarding />");
+    expect(onboardingPageSource).toContain("<AppProviders>");
+    expect(onboardingPageSource).toContain("<Onboarding />");
   });
 });

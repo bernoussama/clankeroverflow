@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import AppProviders from "@/components/app-providers";
+
 import SolutionPage from "./solution-page";
 
 type PageProps = {
@@ -17,5 +19,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default function Page() {
-  return <SolutionPage />;
+  return (
+    <AppProviders>
+      <SolutionPage />
+    </AppProviders>
+  );
 }

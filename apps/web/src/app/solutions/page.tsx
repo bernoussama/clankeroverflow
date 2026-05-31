@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import AppProviders from "@/components/app-providers";
+
 import SolutionsPage from "./solutions-page";
 
 export const metadata: Metadata = {
@@ -11,8 +13,10 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <Suspense fallback={null}>
-      <SolutionsPage />
-    </Suspense>
+    <AppProviders>
+      <Suspense fallback={null}>
+        <SolutionsPage />
+      </Suspense>
+    </AppProviders>
   );
 }

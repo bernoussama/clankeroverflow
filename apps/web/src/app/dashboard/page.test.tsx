@@ -9,6 +9,7 @@ describe("dashboard page rendering", () => {
     expect(dashboardPageSource).not.toContain('from "next/headers"');
     expect(dashboardPageSource).not.toContain('from "next/navigation"');
     expect(dashboardPageSource).not.toContain("authClient.getSession");
-    expect(dashboardPageSource).toContain("return <Dashboard />");
+    expect(dashboardPageSource).toContain("<AppProviders>");
+    expect(dashboardPageSource).toContain("<Dashboard />");
   });
 });
