@@ -7,10 +7,12 @@
   },
   "files": [
     ".claude-plugin",
+    ".codex-plugin",
     ".mcp.json",
     "commands",
     "dist",
     "hooks",
+    "openclaw.plugin.json",
     "skills"
   ],
   "type": "module",
