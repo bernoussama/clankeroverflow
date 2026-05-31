@@ -176,7 +176,7 @@ async function writeJsonObject(filePath: string, value: Record<string, any>, dry
 async function configureOpenCode(ctx: Context, uninstall: boolean) {
   const configPath = getOpenCodeConfigPath(ctx.home, ctx.env);
   const config = await readJsonObject(configPath);
-  const mcp = { ...(config.mcp ?? {}) };
+  const mcp = { ...config.mcp };
   if (uninstall) delete mcp[MCP_NAME];
   else {
     mcp[MCP_NAME] = {
@@ -194,7 +194,7 @@ async function configureOpenCode(ctx: Context, uninstall: boolean) {
 async function configureCursor(ctx: Context, uninstall: boolean) {
   const configPath = getCursorConfigPath(ctx.home);
   const config = await readJsonObject(configPath);
-  const mcpServers = { ...(config.mcpServers ?? {}) };
+  const mcpServers = { ...config.mcpServers };
   if (uninstall) delete mcpServers[MCP_NAME];
   else {
     mcpServers[MCP_NAME] = {
