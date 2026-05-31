@@ -3,7 +3,6 @@ packages:
   - "packages/*"
 
 blockExoticSubdeps: true
-trustPolicy: no-downgrade
 
 allowBuilds:
   better-sqlite3: true
