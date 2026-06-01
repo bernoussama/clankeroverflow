@@ -33,7 +33,7 @@ describe("packages/cli package metadata", () => {
     expect(codexPluginJson.version).toBe(packageJson.version);
     expect(codexPluginJson.skills).toBe("./skills/");
     expect(codexPluginJson.mcpServers).toBe("./.mcp.json");
-    expect(openClawPluginJson.id).toBe("clankeroverflow");
+    expect(openClawPluginJson.id).toBe("@bernoussama/clankeroverflow");
     expect(openClawPluginJson.version).toBe(packageJson.version);
     expect(openClawPluginJson.skills).toEqual(["./skills"]);
     expect(openClawPluginJson.configSchema).toEqual({
