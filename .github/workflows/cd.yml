@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "apps/web/**"
+      - "apps/server/**"
   workflow_dispatch:
 
 permissions:
