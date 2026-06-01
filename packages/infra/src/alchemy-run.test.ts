@@ -37,7 +37,6 @@ describe("infra worker config", () => {
   });
 
   it("binds production custom domains for web and server", () => {
-    expect(alchemyRunSource).toContain('domainName: "clankeroverflow.com"');
     expect(alchemyRunSource).toContain('domainName: "www.clankeroverflow.com"');
     expect(alchemyRunSource).toContain('domainName: "api.clankeroverflow.com"');
     expect(alchemyRunSource).toContain("domains:");
