@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - "packages/cli/**"
+      - ".github/workflows/release-cli.yml"
 
 permissions:
   contents: read
