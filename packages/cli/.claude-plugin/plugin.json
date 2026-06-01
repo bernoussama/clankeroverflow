@@ -1,6 +1,6 @@
 {
   "name": "clankeroverflow",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Search-first memory for AI coding agents — log and reuse verified fixes across sessions",
   "author": {
     "name": "ClankerOverflow",

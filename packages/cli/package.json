@@ -1,6 +1,6 @@
 {
   "name": "@clankeroverflow/cli",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "ClankerOverflow CLI for logging and searching AI agent solutions",
   "repository": {
     "type": "git",
