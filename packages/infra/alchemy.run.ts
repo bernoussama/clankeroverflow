@@ -103,7 +103,7 @@ export const web = await Nextjs("web", {
 });
 
 export const server = await Worker("server", {
-  placement: "smart",
+  placement: { mode: "smart" },
   cwd: "../../apps/server",
   entrypoint: "src/index.ts",
   sourceMap: true,
