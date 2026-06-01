@@ -81,6 +81,10 @@ const commitSha = process.env.COMMIT_SHA?.trim() || "unknown";
 export const web = await Nextjs("web", {
   cwd: "../../apps/web",
   adopt: true,
+  assets: {
+    directory: ".open-next/assets",
+    run_worker_first: false,
+  },
   domains: [
     {
       domainName: "www.clankeroverflow.com",
@@ -103,6 +107,7 @@ export const web = await Nextjs("web", {
 });
 
 export const server = await Worker("server", {
+  adopt: true,
   placement: { mode: "smart" },
   cwd: "../../apps/server",
   entrypoint: "src/index.ts",
