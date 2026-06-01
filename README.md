@@ -133,9 +133,16 @@ On npmjs.com, configure `@clankeroverflow/cli` with a GitHub Actions trusted pub
 
 Keep the npm CLI package and bundled plugin manifests on the same version:
 
+Run `pnpm run release:cli:patch` to prepare a patch release without committing it.
+The script performs the following steps:
+
 1. Bump the version in `packages/cli/package.json`.
 2. Run `pnpm --filter @clankeroverflow/cli build`.
-3. Commit the generated updates to `packages/cli/.claude-plugin/plugin.json`, `packages/cli/.codex-plugin/plugin.json`, and `packages/cli/openclaw.plugin.json` with the package version bump.
+3. Run lint fixes and formatting.
+
+Commit the generated updates to `packages/cli/.claude-plugin/plugin.json`,
+`packages/cli/.codex-plugin/plugin.json`, and `packages/cli/openclaw.plugin.json`
+with the package version bump after reviewing them.
 
 The build runs `src/plugin/generate-plugin-json.ts`, which stamps each plugin manifest with the CLI package version. `pnpm --filter @clankeroverflow/cli test` fails when checked-in plugin metadata is stale, so run it before merging a release.
 

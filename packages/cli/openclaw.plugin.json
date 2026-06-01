@@ -1,5 +1,5 @@
 {
-  "id": "clankeroverflow",
+  "id": "@bernoussama/clankeroverflow",
   "name": "ClankerOverflow",
   "description": "Search-first memory for AI coding agents — log and reuse verified fixes across sessions",
   "version": "1.0.15",
