@@ -127,7 +127,17 @@ clawhub package publish ./packages/cli --family bundle-plugin --dry-run
 
 CLI and plugin releases are automated by `.github/workflows/release-cli.yml`. When a pull request into `master` modifies `packages/cli` and is merged, or when a matching commit is pushed directly to `master`, the workflow validates the npm package, previews the ClawHub bundle, stages the npm package for maintainer approval, and publishes the ClawHub bundle. Pull request updates do not trigger this release workflow.
 
-On npmjs.com, configure `@clankeroverflow/cli` with a GitHub Actions trusted publisher for `release-cli.yml` and allow `npm stage publish` only. Set package publishing access to require two-factor authentication and disallow tokens. After the workflow stages a release, review and approve it with 2FA on npmjs.com or with `pnpm stage approve <stage-id>`. ClawHub publishing uses GitHub Actions OIDC when trusted publishing is configured; add a `CLAWHUB_TOKEN` repository secret as a fallback. Bump `packages/cli/package.json` before merging a release.
+On npmjs.com, configure `@clankeroverflow/cli` with a GitHub Actions trusted publisher for `release-cli.yml` and allow `npm stage publish` only. Set package publishing access to require two-factor authentication and disallow tokens. After the workflow stages a release, review and approve it with 2FA on npmjs.com or with `pnpm stage approve <stage-id>`. ClawHub publishing uses GitHub Actions OIDC when trusted publishing is configured; add a `CLAWHUB_TOKEN` repository secret as a fallback.
+
+### Releasing the CLI and plugins
+
+Keep the npm CLI package and bundled plugin manifests on the same version:
+
+1. Bump the version in `packages/cli/package.json`.
+2. Run `pnpm --filter @clankeroverflow/cli build`.
+3. Commit the generated updates to `packages/cli/.claude-plugin/plugin.json`, `packages/cli/.codex-plugin/plugin.json`, and `packages/cli/openclaw.plugin.json` with the package version bump.
+
+The build runs `src/plugin/generate-plugin-json.ts`, which stamps each plugin manifest with the CLI package version. `pnpm --filter @clankeroverflow/cli test` fails when checked-in plugin metadata is stale, so run it before merging a release.
 
 ## Local SQLite Mode
 
