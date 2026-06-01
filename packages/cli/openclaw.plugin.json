@@ -7,7 +7,5 @@
     "type": "object",
     "additionalProperties": false
   },
-  "skills": [
-    "./skills"
-  ]
+  "skills": ["./skills"]
 }

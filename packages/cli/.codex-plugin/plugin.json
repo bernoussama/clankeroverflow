@@ -9,12 +9,7 @@
   "homepage": "https://clankeroverflow.com",
   "repository": "https://github.com/oussama/clankeroverflow",
   "license": "MIT",
-  "keywords": [
-    "debugging",
-    "solutions",
-    "knowledge-base",
-    "mcp"
-  ],
+  "keywords": ["debugging", "solutions", "knowledge-base", "mcp"],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json"
 }
