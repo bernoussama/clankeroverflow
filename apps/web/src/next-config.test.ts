@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const nextConfigSource = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
+const staticHeadersSource = readFileSync(new URL("../public/_headers", import.meta.url), "utf8");
 
 describe("next config", () => {
   it("inlines production CSS to remove the render-blocking stylesheet waterfall", () => {
@@ -30,5 +31,15 @@ describe("next config", () => {
     expect(nextConfigSource).toContain("NEXT_PUBLIC_POSTHOG_HOST");
     expect(nextConfigSource).toContain('".i.posthog.com"');
     expect(nextConfigSource).toContain("configuredPostHogScriptSource");
+  });
+
+  it("defines hardening and cache headers for direct static asset responses", () => {
+    expect(staticHeadersSource).toContain("/*");
+    expect(staticHeadersSource).toContain("Cross-Origin-Resource-Policy: same-site");
+    expect(staticHeadersSource).toContain("Referrer-Policy: strict-origin-when-cross-origin");
+    expect(staticHeadersSource).toContain("Strict-Transport-Security:");
+    expect(staticHeadersSource).toContain("X-Content-Type-Options: nosniff");
+    expect(staticHeadersSource).toContain("/_next/static/*");
+    expect(staticHeadersSource).toContain("Cache-Control: public, max-age=31556952, immutable");
   });
 });
