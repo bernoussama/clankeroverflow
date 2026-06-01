@@ -92,4 +92,7 @@ jobs:
         run: pnpm dlx clawhub@0.18.0 login --token "$CLAWHUB_TOKEN" --no-browser
 
       - name: Publish ClawHub bundle
+        with:
+          owner: bernoussama
+          dry_run: true
         run: pnpm dlx clawhub@0.18.0 package publish ./packages/cli --family bundle-plugin --owner bernoussama
