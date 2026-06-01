@@ -17,6 +17,7 @@
     "db:migrate": "turbo run db:migrate --filter=@clankeroverflow/db",
     "deploy": "turbo run deploy --filter=@clankeroverflow/infra",
     "destroy": "turbo run destroy --filter=@clankeroverflow/infra",
+    "release:cli:patch": "pnpm --filter @clankeroverflow/cli version patch --no-git-tag-version --no-git-checks && pnpm --filter @clankeroverflow/cli run build && pnpm run lint:fix && pnpm run format",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
