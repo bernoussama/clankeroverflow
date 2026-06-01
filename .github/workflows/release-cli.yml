@@ -92,4 +92,4 @@ jobs:
         run: pnpm dlx clawhub@0.18.0 login --token "$CLAWHUB_TOKEN" --no-browser
 
       - name: Publish ClawHub bundle
-        run: pnpm dlx clawhub@0.18.0 package publish ./packages/cli --family bundle-plugin --owner clankeroverflow
+        run: pnpm dlx clawhub@0.18.0 package publish ./packages/cli --family bundle-plugin --owner bernoussama
