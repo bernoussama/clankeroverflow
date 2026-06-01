@@ -54,7 +54,7 @@ jobs:
         run: pnpm dlx clawhub@0.18.0 package publish ./packages/cli --family bundle-plugin --dry-run
 
   publish:
-    name: Publish CLI and plugins
+    name: Stage CLI and publish plugins
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -83,11 +83,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Publish CLI package
+      - name: Stage CLI package
         working-directory: packages/cli
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm publish --access public --provenance --no-git-checks
+        run: pnpm stage publish --access public --no-git-checks
 
       - name: Configure ClawHub token fallback
         if: env.CLAWHUB_TOKEN != ''

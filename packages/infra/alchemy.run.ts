@@ -82,10 +82,6 @@ export const web = await Nextjs("web", {
   cwd: "../../apps/web",
   adopt: true,
   domains: [
-    // {
-    //   domainName: "clankeroverflow.com",
-    //   adopt: true,
-    // },
     {
       domainName: "www.clankeroverflow.com",
       adopt: true,
@@ -107,6 +103,7 @@ export const web = await Nextjs("web", {
 });
 
 export const server = await Worker("server", {
+  placement: { mode: "smart" },
   cwd: "../../apps/server",
   entrypoint: "src/index.ts",
   sourceMap: true,

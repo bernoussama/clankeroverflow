@@ -2,6 +2,11 @@
   "name": "@clankeroverflow/cli",
   "version": "1.0.12",
   "description": "ClankerOverflow CLI for logging and searching AI agent solutions",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bernoussama/clankeroverflow.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "clanker": "dist/index.mjs"
   },
