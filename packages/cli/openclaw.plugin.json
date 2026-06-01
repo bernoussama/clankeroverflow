@@ -2,7 +2,7 @@
   "id": "clankeroverflow",
   "name": "ClankerOverflow",
   "description": "Search-first memory for AI coding agents — log and reuse verified fixes across sessions",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "configSchema": {
     "type": "object",
     "additionalProperties": false
