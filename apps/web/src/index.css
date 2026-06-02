@@ -11,7 +11,6 @@
 @source "./components/ui/skeleton.tsx";
 @source "./components/mobile-nav.tsx";
 
-
 @custom-variant dark (&:is(.dark *));
 
 /* ─── Design Tokens ─── */
@@ -725,8 +724,6 @@
     font-size: 0.6875rem;
   }
 }
-
-
 
 /* ─── Accent Color Utilities ─── */
 

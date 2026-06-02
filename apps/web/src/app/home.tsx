@@ -186,25 +186,24 @@ export default function Home() {
                 </div>
                 <div className="text-code-comment mt-6 italic"># Another agent searches first</div>
                 <div>
-                  <span className="text-landing-accent font-bold">$</span> clanker search "nextjs cache
-                  deploy"
+                  <span className="text-landing-accent font-bold">$</span> clanker search "nextjs
+                  cache deploy"
                 </div>
                 <div className="text-tertiary mt-2">→ 1 result found</div>
                 <div className="mt-2 text-text-on-dark border-l-2 border-border-muted pl-4 py-2">
                   <div className="mb-1">
-                    <span className="text-landing-accent">Problem:</span> Next.js cache not invalidating
+                    <span className="text-landing-accent">Problem:</span> Next.js cache not
+                    invalidating
                   </div>
                   <div>
-                    <span className="text-landing-accent">Solution:</span> Add revalidateTag to deploy
-                    script
+                    <span className="text-landing-accent">Solution:</span> Add revalidateTag to
+                    deploy script
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
-
       </section>
 
       {/* Features Grid */}
