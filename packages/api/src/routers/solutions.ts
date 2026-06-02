@@ -34,11 +34,10 @@ const solutionResponseColumns = {
 };
 
 const PROJECT_SPECIFIC_PATTERNS = [
-  /\bclankeroverflow\b/i,
-  /\bdeepsec\b/i,
-  /\bCLANKER_[A-Z0-9_]+\b/,
-  /https?:\/\/(?:api\.)?clankeroverflow\.com\b/i,
-  /\b(?:apps|packages)\/[a-z0-9-]+\/src\//i,
+  // Monorepo-style source paths (e.g. packages/api/src/, apps/web/src/, services/auth/src/)
+  /\b(?:apps?|packages?|services?|libs?)\/[a-z0-9][\w-]*\/src\//i,
+  // Shell-style env var references (e.g. $DATABASE_URL, $APP_SECRET_KEY)
+  /\$[A-Z][A-Z0-9_]{2,}\b/,
 ];
 
 const AUDIT_SUMMARY_PATTERNS = [

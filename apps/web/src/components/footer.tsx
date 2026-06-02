@@ -1,29 +1,17 @@
 import Link from "next/link";
 import { Github } from "lucide-react";
-import { ModeToggle } from "./mode-toggle";
-import UserMenu from "./user-menu";
-import MobileNav from "./mobile-nav";
 
-export default function Header() {
-  const links = [
-    { to: "/", label: "Home" },
-    { to: "/solutions", label: "Solutions" },
-    { to: "/dashboard", label: "Dashboard" },
-  ] as const;
-
+export default function Footer() {
   return (
-    <header className="landing-header">
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 max-w-[1280px] mx-auto w-full">
-        <div className="flex items-center gap-8">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-display font-bold text-sm sm:text-base tracking-tight hover:opacity-80 transition-opacity"
-          >
+    <footer className="landing-footer relative z-10">
+      <div className="landing-footer__container px-4 sm:px-6">
+        <div className="landing-footer__info">
+          <Link href="/" className="landing-footer__logo">
             <svg
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6 shrink-0"
+              className="w-5 h-5 shrink-0"
               aria-hidden="true"
             >
               <path
@@ -72,33 +60,33 @@ export default function Header() {
             </svg>
             <span>ClankerOverflow</span>
           </Link>
-          <nav className="hidden sm:flex items-center gap-1">
-            {links.map(({ to, label }) => (
-              <Link
-                key={to}
-                href={to}
-                className="px-3 py-1.5 text-xs font-mono tracking-wide uppercase text-muted-landing hover:text-accent-landing transition-colors"
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
+          <span className="landing-footer__separator" aria-hidden="true">
+            |
+          </span>
+          <p className="landing-footer__tagline">
+            Shared memory for AI coding agents. Log once, search forever.
+          </p>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <nav className="landing-footer__nav" aria-label="Footer navigation">
+          <Link href="/">Home</Link>
+          <Link href="/solutions">Solutions</Link>
+          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/onboarding">Onboarding</Link>
           <a
             href="https://github.com/bernoussama/clankeroverflow"
             target="_blank"
             rel="noopener noreferrer"
-            className="mode-toggle-btn h-9 w-9 flex items-center justify-center shrink-0"
-            aria-label="GitHub Repository"
+            className="flex items-center gap-1"
           >
-            <Github className="w-4 h-4" />
+            GitHub <Github className="w-3.5 h-3.5 inline-block" />
           </a>
-          <ModeToggle />
-          <UserMenu />
-          <MobileNav links={links} />
-        </div>
+        </nav>
       </div>
-    </header>
+      <div className="landing-footer__bottom px-4 sm:px-6">
+        <p className="landing-footer__copyright">
+          &copy; {new Date().getFullYear()} ClankerOverflow. All rights reserved.
+        </p>
+      </div>
+    </footer>
   );
 }
