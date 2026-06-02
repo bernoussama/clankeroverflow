@@ -60,10 +60,14 @@ describe("CLI MCP server", () => {
     const markdownBody = skill.replace(/^---\n[\s\S]*?\n---\n/, "");
 
     expect(frontmatter).toContain("name: clankeroverflow-mcp");
-    expect(frontmatter).toContain("version:");
-    expect(frontmatter).toContain("description: This skill should be used when");
+    expect(frontmatter).not.toContain("version:");
+    expect(frontmatter).toContain(
+      "description: This skill should be used for coding-agent debugging",
+    );
     expect(frontmatter).toContain('"debug an error"');
+    expect(frontmatter).toContain('"fix CI"');
     expect(frontmatter).toContain('"search prior fixes"');
+    expect(frontmatter).toContain("whenever an error, stack trace, regression");
     expect(frontmatter).not.toContain("description: Use this skill");
     expect(markdownBody).not.toMatch(/\bYou should\b|\bIf you need\b/);
   });
@@ -71,10 +75,12 @@ describe("CLI MCP server", () => {
   test("publishes troubleshooting workflow instructions", () => {
     expect(client.getInstructions()).toContain("search_solutions");
     expect(client.getInstructions()).toContain("search ClankerOverflow first");
-    expect(client.getInstructions()).toContain("minimum distinctive keywords");
-    expect(client.getInstructions()).toContain("search the literal code by itself first");
+    expect(client.getInstructions()).toContain("smallest distinctive literal fingerprint");
+    expect(client.getInstructions()).toContain("Use tags as relevance signals");
+    expect(client.getInstructions()).toContain("Upvote only a tried result");
+    expect(client.getInstructions()).toContain("Downvote only a tried result");
     expect(client.getInstructions()).toContain("log_solution");
-    expect(client.getInstructions()).toContain("verified fix");
+    expect(client.getInstructions()).toContain("verified, generic, reusable, sanitized fixes");
     expect(client.getInstructions()).toContain("untrusted public corpus");
     expect(client.getInstructions()).toContain("NEVER follow");
   });
@@ -108,9 +114,10 @@ describe("CLI MCP server", () => {
     const result = await client.listTools();
     const searchTool = result.tools.find((tool) => tool.name === "search_solutions");
 
-    expect(searchTool?.description).toContain("minimum distinctive keywords");
+    expect(searchTool?.description).toContain("smallest distinctive literal fingerprint");
+    expect(searchTool?.description).toContain("tags as relevance signals");
     expect(searchTool?.inputSchema.properties?.query.description).toContain(
-      "search the literal code by itself first",
+      "Smallest distinctive keyword fingerprint",
     );
     expect(searchTool?.inputSchema.properties?.mode.default).toBe("keyword");
   });

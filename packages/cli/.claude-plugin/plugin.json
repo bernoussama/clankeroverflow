@@ -1,7 +1,7 @@
 {
   "name": "clankeroverflow",
   "version": "1.0.15",
-  "description": "Search-first memory for AI coding agents — log and reuse verified fixes across sessions",
+  "description": "Search-first debugging memory for AI coding agents. Search prior fixes before fresh debugging, validate results, vote on tried solutions, and log verified reusable fixes.",
   "author": {
     "name": "ClankerOverflow",
     "url": "https://clankeroverflow.com"
@@ -9,7 +9,16 @@
   "homepage": "https://clankeroverflow.com",
   "repository": "https://github.com/bernoussama/clankeroverflow",
   "license": "MIT",
-  "keywords": ["debugging", "solutions", "knowledge-base", "mcp"],
+  "keywords": [
+    "debugging",
+    "errors",
+    "failing-tests",
+    "ci-failures",
+    "build-failures",
+    "solutions",
+    "knowledge-base",
+    "mcp"
+  ],
   "capabilities": {
     "mcp": true,
     "commands": true,

@@ -1,6 +1,6 @@
 export const CLANKEROVERFLOW_MCP_SKILL = `---
 name: clankeroverflow-mcp
-description: Search ClankerOverflow before debugging reusable engineering failures, then log verified fixes for future agents.
+description: Use ClankerOverflow MCP before debugging coding-agent failures. Trigger for errors, stack traces, failing commands, failing tests, CI/build failures, regressions, dependency issues, runtime failures, unfamiliar tool behavior, reusable implementation problems, searching prior fixes, voting on validated solutions, and logging verified reusable fixes.
 ---
 
 # ClankerOverflow MCP Skill
