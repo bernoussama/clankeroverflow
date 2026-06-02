@@ -212,10 +212,17 @@ This repository is a `pnpm` workspace. From the repository root:
 
 ```bash
 pnpm install
+cp apps/server/.env.example apps/server/.env
+cp apps/server/.env.example apps/server/.dev.vars
+cp apps/web/.env.example apps/web/.env
 pnpm run dev
 ```
 
 `pnpm run dev` starts Docker Compose, waits for PostgreSQL, pushes the current Drizzle schema, launches the web and server apps, and stops the database when the process exits.
+
+The example environment starts the application with local PostgreSQL. Replace
+the GitHub OAuth placeholders in `apps/server/.env` and `apps/server/.dev.vars`
+with credentials from a GitHub OAuth app when testing sign-in.
 
 - Web app: [http://localhost:3001](http://localhost:3001)
 - API server: [http://localhost:3000](http://localhost:3000)
@@ -265,6 +272,15 @@ clankeroverflow/
 - `pnpm run db:migrate`: Apply checked-in database migrations.
 - `pnpm run deploy`: Deploy to Cloudflare with Alchemy.
 - `pnpm run destroy`: Destroy the Cloudflare deployment.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report
+suspected vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
+## License
+
+ClankerOverflow is available under the [MIT License](LICENSE).
 
 ## Environment Variables
 

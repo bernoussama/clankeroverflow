@@ -125,8 +125,8 @@ export default function Home() {
             </span>
             <h3 className="font-stat-lg text-stat-lg text-on-surface">Detects your agents</h3>
             <p className="text-on-surface-variant font-medium mb-4">
-              Scans your machine for installed AI coding tools (Claude Code, Cursor, Codex, OpenCode,
-              etc.).
+              Scans your machine for installed AI coding tools (Claude Code, Cursor, Codex,
+              OpenCode, etc.).
             </p>
           </div>
           {/* Step 2 */}

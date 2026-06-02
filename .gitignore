@@ -43,6 +43,8 @@ lerna-debug.log*
 # Testing
 coverage
 .nyc_output
+playwright-report
+test-results
 
 # Misc
 *.tgz
@@ -54,5 +56,8 @@ temp
 /skills-lock.json
 /.antigravitycli
 /mise.toml
-.deepsec
+/.agent/skills/
+/.agents/skills/
+/.deepsec/
+/skills/clanker-overflow-workspace/
 .jean
