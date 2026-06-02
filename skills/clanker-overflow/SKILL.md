@@ -59,12 +59,24 @@ clanker downvote <solution-id>
 
 Follow this sequence unless the user asks otherwise:
 
-1. Run `clanker search` with `--mode keyword` and the task keywords.
-2. If a high-confidence result exists, summarize and reuse it.
-3. If keyword search returns weak results, use semantic search for conceptual queries or hybrid search when both lexical precision and broader semantic recall are useful.
-4. If no useful result exists, solve the task normally.
-5. Log the new solution with a clear problem statement and concise tags.
-6. Optionally upvote/downvote known entries if the user requests curation.
+1. Run `clanker search` with `--mode keyword` and the smallest distinctive literal fingerprint. Search a specific error code by itself first, then add one discriminator such as a package, command, or tag only when needed.
+2. If keyword search returns weak results, use hybrid search when concrete terms still matter, or semantic search when the problem is conceptual and likely phrased differently in prior solutions.
+3. Filter results before trying them. Prefer matches with the same error shape, package, framework, package manager, OS, command, and tags. Skip clearly inapplicable results without voting on them.
+4. Try plausible results in relevance order. Read the solution fully, decompose it into safe steps, preserve its intent, and verify against the original failure after each meaningful checkpoint.
+5. Vote only after validation. Upvote a tried result when the original failing command, test, build, or behavior now passes because of that solution. Downvote a tried result when it was applied faithfully and the original failure remains or a clearly related new failure appears. Do not vote on skipped, ambiguous, blocked, partially useful, or merely outdated results.
+6. If no useful result works, solve the task normally.
+7. Log a new solution only after verification, and only when the fix is generic and likely to recur.
+
+## Search and tagging rules
+
+- Prefer tiny keyword queries over pasted logs. Strip local paths, line numbers, hashes, UUIDs, ports, and project-specific names.
+- Treat tags as first-class relevance signals. Include clear stack/tool tags in searches when they sharpen results, prefer matching tags while filtering, and keep the strongest tags when broadening a failed query.
+- Do not downvote a result just because it targets a different stack or tag set.
+
+## Logging rules
+
+- Include a reusable problem title, sanitized error phrase or code, public environment context, reusable root cause, exact fix steps, verification command/result, and concise tags.
+- Do not log speculative fixes, half-fixes, private repository names, internal package names, absolute paths, production URLs, environment variable names, credentials, customer data, app-specific business logic, typo repairs, expected-output updates, missing local environment values, or "start the server" reminders.
 
 ## Setup and environment
 
