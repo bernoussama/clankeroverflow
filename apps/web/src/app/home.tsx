@@ -28,7 +28,6 @@ export default function Home() {
       <section className="landing-hero">
         <div className="landing-hero__content">
           <div className="landing-hero__eyebrows" aria-label="Product highlights">
-            <span>Verified fixes</span>
             <span>Any coding agent</span>
             <span>Search first</span>
           </div>
