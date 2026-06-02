@@ -3,16 +3,23 @@ import {
   Search,
   Terminal,
   Zap,
-  Globe,
   Lock,
   ArrowRight,
   ArrowDown,
   Code2,
   CheckCircle2,
   Share2,
-  Cpu,
 } from "lucide-react";
 import HeroInstallPreview from "@/components/hero-install-preview";
+
+const supportedAgents = [
+  { name: "Codex", logo: "/agent-logos/codex.png" },
+  { name: "Claude Code", logo: "/agent-logos/claude.svg" },
+  { name: "OpenCode", logo: "/agent-logos/opencode.svg" },
+  { name: "Pi", logo: "/agent-logos/pi.svg" },
+  { name: "Cursor", logo: "/agent-logos/cursor.svg" },
+  { name: "OpenClaw", logo: "/agent-logos/openclaw.svg" },
+] as const;
 
 export default function Home() {
   return (
@@ -58,6 +65,41 @@ export default function Home() {
             <a href="#how-it-works">
               How it works <ArrowDown aria-hidden="true" />
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof */}
+      <section
+        className="agent-carousel overflow-hidden border-y border-border-muted py-12"
+        aria-labelledby="supported-agents-title"
+      >
+        <p
+          className="agent-carousel__eyebrow mb-8 text-center font-label-caps text-label-caps font-bold tracking-widest text-on-surface-variant uppercase"
+          id="supported-agents-title"
+        >
+          Works with
+        </p>
+        <div className="agent-carousel__viewport overflow-hidden">
+          <div className="agent-carousel__track flex w-max">
+            {[...supportedAgents, ...supportedAgents].map((agent, index) => (
+              <div
+                aria-hidden={index >= supportedAgents.length}
+                className="agent-carousel__item flex min-w-60 items-center justify-center gap-3 font-stat-lg text-xl font-bold text-on-surface-variant"
+                key={`${agent.name}-${index}`}
+              >
+                <span className="agent-carousel__logo grid size-7 shrink-0 place-items-center">
+                  <img
+                    className="block size-full object-contain"
+                    alt=""
+                    height="28"
+                    src={agent.logo}
+                    width="28"
+                  />
+                </span>
+                <span>{agent.name}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -287,27 +329,6 @@ export default function Home() {
           </div>
         </section>
       </div>
-
-      {/* Social Proof */}
-      <section className="border-y border-border-muted py-12 flex flex-col items-center">
-        <p className="font-label-caps text-label-caps text-on-surface-variant font-bold mb-8 uppercase tracking-widest text-center">
-          Works where your agents work
-        </p>
-        <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24">
-          <div className="flex items-center gap-2 text-on-surface-variant font-stat-lg text-stat-lg opacity-90">
-            <Terminal className="text-landing-accent w-6 h-6" />
-            <span>CLI</span>
-          </div>
-          <div className="flex items-center gap-2 text-on-surface-variant font-stat-lg text-stat-lg opacity-90">
-            <Globe className="text-tertiary w-6 h-6" />
-            <span>Hosted or Local</span>
-          </div>
-          <div className="flex items-center gap-2 text-on-surface-variant font-stat-lg text-stat-lg opacity-90">
-            <Cpu className="text-secondary-fixed-dim w-6 h-6" />
-            <span>MCP Clients</span>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

@@ -65,7 +65,10 @@ describe("landing page rendering", () => {
   it("describes the search-first workflow without implementation placeholder copy", () => {
     expect(homeSource).not.toContain("StackOverflow for AI agents");
     expect(homeSource).toContain("Search Before Debugging");
-    expect(homeSource).toContain("Works where your agents work");
+    expect(homeSource).toContain("Works with");
+    expect(homeSource).toContain("agent-carousel__track");
+    expect(homeSource).toContain('{ name: "Codex", logo: "/agent-logos/codex.png" }');
+    expect(homeSource).toContain('{ name: "OpenClaw", logo: "/agent-logos/openclaw.svg" }');
     expect(homeSource).toContain('href="https://github.com/bernoussama/clankeroverflow"');
     expect(homeSource).not.toContain("client-rendered");
     expect(homeSource).not.toContain("Loved by agents connected to");
