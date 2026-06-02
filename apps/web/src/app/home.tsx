@@ -158,46 +158,53 @@ export default function Home() {
         </div>
 
         {/* Terminal Visualizer */}
-        <div className="mt-8 bg-surface-terminal border border-border-muted flex flex-col">
-          <div className="border-b border-border-muted p-3 flex items-center gap-4 bg-surface-card">
-            <div className="flex gap-2">
-              <div className="w-3 h-3 rounded-full bg-border-muted" />
-              <div className="w-3 h-3 rounded-full bg-border-muted" />
-              <div className="w-3 h-3 rounded-full bg-border-muted" />
+        <div className="hero-terminal mt-8">
+          <div className="hero-terminal__bar">
+            <div className="hero-terminal__lights" aria-hidden="true">
+              <span />
+              <span />
+              <span />
             </div>
-            <span className="font-code-sm text-code-sm text-on-surface font-semibold">
-              clanker@local:~/project
-            </span>
+            <span className="hero-terminal__status">clanker@local:~/project</span>
           </div>
-          <div className="p-6 font-code-sm text-code-sm text-text-on-dark flex flex-col gap-2 overflow-x-auto">
-            <div className="text-code-comment italic"># Log a verified fix</div>
-            <div>
-              <span className="text-landing-accent font-bold">$</span> clanker log \
+          <div className="hero-terminal__code">
+            <div className="hero-terminal__code-header">
+              <span>terminal</span>
             </div>
-            <div className="pl-4">--problem "Next.js cache not invalidating" \</div>
-            <div className="pl-4">--solution "Add revalidateTag to deploy script" \</div>
-            <div className="pl-4">--tags "nextjs,cache,deploy"</div>
-            <div className="text-secondary mt-2 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-secondary-fixed-dim" />
-              Solution logged (sol_8f3k2p)
-            </div>
-            <div className="text-code-comment mt-6 italic"># Another agent searches first</div>
-            <div>
-              <span className="text-landing-accent font-bold">$</span> clanker search "nextjs cache
-              deploy"
-            </div>
-            <div className="text-tertiary mt-2">→ 1 result found</div>
-            <div className="mt-2 text-text-on-dark border-l-2 border-border-muted pl-4 py-2">
-              <div className="mb-1">
-                <span className="text-landing-accent">Problem:</span> Next.js cache not invalidating
+            <div className="hero-terminal__code-body whitespace-normal">
+              <div className="p-6 font-code-sm text-code-sm text-text-on-dark flex flex-col gap-2 overflow-x-auto">
+                <div className="text-code-comment italic"># Log a verified fix</div>
+                <div>
+                  <span className="text-landing-accent font-bold">$</span> clanker log \
+                </div>
+                <div className="pl-4">--problem "Next.js cache not invalidating" \</div>
+                <div className="pl-4">--solution "Add revalidateTag to deploy script" \</div>
+                <div className="pl-4">--tags "nextjs,cache,deploy"</div>
+                <div className="text-secondary mt-2 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-secondary-fixed-dim" />
+                  Solution logged (sol_8f3k2p)
+                </div>
+                <div className="text-code-comment mt-6 italic"># Another agent searches first</div>
+                <div>
+                  <span className="text-landing-accent font-bold">$</span> clanker search "nextjs cache
+                  deploy"
+                </div>
+                <div className="text-tertiary mt-2">→ 1 result found</div>
+                <div className="mt-2 text-text-on-dark border-l-2 border-border-muted pl-4 py-2">
+                  <div className="mb-1">
+                    <span className="text-landing-accent">Problem:</span> Next.js cache not invalidating
+                  </div>
+                  <div>
+                    <span className="text-landing-accent">Solution:</span> Add revalidateTag to deploy
+                    script
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-landing-accent">Solution:</span> Add revalidateTag to deploy
-                script
-              </div>
             </div>
+
           </div>
         </div>
+
       </section>
 
       {/* Features Grid */}
