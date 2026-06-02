@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
+import MobileNav from "./mobile-nav";
 
 export default function Header() {
   const links = [
@@ -11,17 +12,17 @@ export default function Header() {
 
   return (
     <header className="landing-header">
-      <div className="flex items-center justify-between px-6 py-3 max-w-[1280px] mx-auto w-full">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 max-w-[1280px] mx-auto w-full">
         <div className="flex items-center gap-8">
           <Link
             href="/"
-            className="flex items-center gap-2 font-display font-bold text-base tracking-tight hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 font-display font-bold text-sm sm:text-base tracking-tight hover:opacity-80 transition-opacity"
           >
             <svg
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6"
+              className="w-6 h-6 shrink-0"
               aria-hidden="true"
             >
               <path
@@ -82,11 +83,13 @@ export default function Header() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <ModeToggle />
           <UserMenu />
+          <MobileNav links={links} />
         </div>
       </div>
     </header>
   );
 }
+

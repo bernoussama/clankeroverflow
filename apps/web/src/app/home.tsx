@@ -246,7 +246,8 @@ export default function Home() {
             </p>
           </div>
           {/* Feature 5: Code-Aware & Persistent */}
-          <div className="bg-surface-card border border-border-muted p-8 flex flex-col md:flex-row items-center gap-8 hover:border-landing-accent transition-colors md:col-span-4 md:row-span-1">
+          <div className="bg-surface-card border border-border-muted p-8 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8 hover:border-landing-accent transition-colors md:col-span-4 md:row-span-1">
+
             <div className="flex-shrink-0">
               <Code2 className="text-secondary-fixed-dim w-12 h-12" />
             </div>

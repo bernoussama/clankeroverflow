@@ -28,7 +28,7 @@ export default function UserMenu() {
       <Link href="/login">
         <button
           type="button"
-          className="btn-secondary h-9 py-0 px-4 text-xs font-mono uppercase tracking-wider"
+          className="btn-secondary h-9 py-0 px-2.5 sm:px-4 text-xs font-mono uppercase tracking-wider"
         >
           Sign In
           <ArrowRight className="w-3 h-3" aria-hidden="true" />
@@ -41,13 +41,14 @@ export default function UserMenu() {
     <div className="relative">
       <button
         type="button"
-        className="btn-secondary h-9 py-0 px-4 text-xs font-mono uppercase tracking-wider"
+        className="btn-secondary h-9 py-0 px-2.5 sm:px-4 text-xs font-mono uppercase tracking-wider"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
         {session.user.name}
       </button>
+
       {open && (
         <div
           className="bg-card dropdown-content absolute right-0 top-full z-50 mt-2 min-w-48"

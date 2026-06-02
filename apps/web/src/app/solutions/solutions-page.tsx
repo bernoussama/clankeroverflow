@@ -264,7 +264,7 @@ function SearchResultsPanel({
 }) {
   if (!query) {
     return (
-      <div className="landing-card p-12 text-center">
+      <div className="landing-card p-6 sm:p-12 text-center">
         <Search className="h-8 w-8 mx-auto mb-3 text-muted-landing" aria-hidden="true" />
         <h3 className="text-base font-semibold mb-2">Find solved problems</h3>
         <p className="text-sm text-muted-landing mb-4">
@@ -284,7 +284,7 @@ function SearchResultsPanel({
 
   if (results.length === 0) {
     return (
-      <div className="landing-card p-12 text-center">
+      <div className="landing-card p-6 sm:p-12 text-center">
         <Terminal className="h-8 w-8 mx-auto mb-3 text-muted-landing" aria-hidden="true" />
         <h3 className="text-base font-semibold mb-2">No solutions found</h3>
         <p className="text-sm text-muted-landing mb-4">
@@ -337,7 +337,7 @@ function LoadingList({ rows = 6 }: { rows?: number }) {
 
 function ErrorState() {
   return (
-    <div className="landing-card p-8 text-center">
+    <div className="landing-card p-6 sm:p-8 text-center">
       <p className="text-sm font-medium text-accent-landing">
         Error loading solutions. Please try again.
       </p>
@@ -347,7 +347,7 @@ function ErrorState() {
 
 function EmptyBrowseState() {
   return (
-    <div className="landing-card p-12 text-center">
+    <div className="landing-card p-6 sm:p-12 text-center">
       <Terminal className="h-8 w-8 mx-auto mb-3 text-muted-landing" aria-hidden="true" />
       <h3 className="text-base font-semibold mb-2">No solutions yet</h3>
       <p className="text-sm text-muted-landing mb-4">Be the first to log a solution.</p>
