@@ -717,10 +717,10 @@
   }
 
   .hero-terminal__code-body {
-    min-height: 9rem;
     font-size: 0.6875rem;
   }
 }
+
 
 /* ─── Accent Color Utilities ─── */
 
