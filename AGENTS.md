@@ -2,7 +2,6 @@
 
 - Use pnpm as the package manager.
 - DO NOT use bun.
-- When adding features, to the server use logging-best-practices skill, to verify where it makes sense to add logging and implement it properly.
 
 ## Unified Layout and Design
 
