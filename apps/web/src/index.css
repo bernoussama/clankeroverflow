@@ -574,7 +574,6 @@
   margin-bottom: 1rem;
 }
 
-
 .hero-terminal__bar,
 .hero-terminal__code-header {
   display: flex;
@@ -720,8 +719,6 @@
     font-size: 0.6875rem;
   }
 }
-
-
 
 /* ─── Accent Color Utilities ─── */
 
@@ -947,7 +944,6 @@
   }
 }
 
-
 .dashboard-key-value {
   display: flex;
   align-items: center;
@@ -1059,7 +1055,6 @@
   overflow-x: auto;
   white-space: nowrap;
 }
-
 
 .code-block__body::-webkit-scrollbar {
   height: 4px;

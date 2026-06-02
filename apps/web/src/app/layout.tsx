@@ -77,7 +77,6 @@ export default function RootLayout({
             <div className="fixed inset-0 pointer-events-none z-0 bg-grid-pattern [mask-image:linear-gradient(to_bottom,white,transparent)] opacity-50" />
             <Header />
             <main className="relative z-10 min-w-0 w-full">{children}</main>
-
           </div>
         </Providers>
       </body>

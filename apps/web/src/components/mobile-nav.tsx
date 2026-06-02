@@ -33,7 +33,6 @@ export default function MobileNav({ links }: { links: readonly LinkItem[] }) {
               onClick={() => setIsOpen(false)}
               className="py-2.5 px-4 font-mono text-xs tracking-wide uppercase text-muted-landing hover:text-accent-landing transition-colors border border-landing bg-surface-landing/50 hover:bg-surface-landing"
             >
-
               {label}
             </Link>
           ))}

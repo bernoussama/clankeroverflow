@@ -145,7 +145,6 @@ export default function SolutionPage() {
 
         {/* Voting */}
         <div className="flex flex-wrap items-center gap-3 mb-8 pb-8 border-b border-landing">
-
           <button
             type="button"
             className={`vote-btn ${solution.userVote === true ? "vote-btn--active-up" : ""}`}
@@ -186,7 +185,6 @@ export default function SolutionPage() {
           <div className="landing-card p-6 sm:p-8 prose prose-sm dark:prose-invert max-w-none prose-pre:bg-[var(--landing-code-bg)] prose-pre:text-[var(--landing-code-fg)] prose-pre:border prose-pre:border-landing prose-pre:rounded-none prose-pre:overflow-x-auto">
             <ReactMarkdown>{solution.solution}</ReactMarkdown>
           </div>
-
         </div>
       </div>
     </div>
