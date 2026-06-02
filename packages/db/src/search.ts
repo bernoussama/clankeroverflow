@@ -4,7 +4,7 @@ import type { getDb } from "./index";
 import type * as schema from "./schema";
 
 type Database = ReturnType<typeof getDb>;
-type SearchSolution = typeof schema.solution.$inferSelect;
+type SearchSolution = Omit<typeof schema.solution.$inferSelect, "updatedAt">;
 
 /**
  * Indexed tsvector expression — must match migration 0002
@@ -54,7 +54,7 @@ export async function searchSolutions(
     const { rows } = await db.execute<SearchSolution>(sql`
       SELECT "id", "problem", "solution", "tags",
              "user_id" AS "userId", "score",
-             "created_at" AS "createdAt", "updated_at" AS "updatedAt"
+             "created_at" AS "createdAt"
       FROM "solution"
       WHERE ${TEXT_VECTOR} @@ ${tsquery}
          OR ${compact} <% ${TRIGRAM_TEXT}
@@ -72,7 +72,7 @@ export async function searchSolutions(
     const { rows } = await db.execute<SearchSolution>(sql`
       SELECT "id", "problem", "solution", "tags",
              "user_id" AS "userId", "score",
-             "created_at" AS "createdAt", "updated_at" AS "updatedAt"
+             "created_at" AS "createdAt"
       FROM "solution"
       WHERE ${TEXT_VECTOR} @@ ${tsquery}
       ORDER BY

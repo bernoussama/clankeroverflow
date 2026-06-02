@@ -18,12 +18,25 @@ export type SolutionVectorizeBinding = {
   upsert(vectors: Array<{ id: string; values: number[] }>): Promise<unknown>;
 };
 
-export type SolutionRow = typeof schema.solution.$inferSelect;
+export type SolutionRow = Omit<typeof schema.solution.$inferSelect, "updatedAt">;
+
+const solutionSearchColumns = {
+  id: schema.solution.id,
+  problem: schema.solution.problem,
+  solution: schema.solution.solution,
+  tags: schema.solution.tags,
+  userId: schema.solution.userId,
+  score: schema.solution.score,
+  createdAt: schema.solution.createdAt,
+};
 
 async function fetchSolutionsByIdsOrdered(db: Database, ids: string[]): Promise<SolutionRow[]> {
   if (ids.length === 0) return [];
 
-  const rows = await db.select().from(schema.solution).where(inArray(schema.solution.id, ids));
+  const rows = await db
+    .select(solutionSearchColumns)
+    .from(schema.solution)
+    .where(inArray(schema.solution.id, ids));
   const byId = new Map(rows.map((r) => [r.id, r]));
   return ids.map((id) => byId.get(id)).filter((r): r is SolutionRow => r !== undefined);
 }

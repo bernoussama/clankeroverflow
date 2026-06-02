@@ -61,6 +61,15 @@ describe("searchSolutionsSemantic", () => {
     });
 
     expect(out.map((r) => r.id)).toEqual(["a", "b"]);
+    expect(db.select).toHaveBeenCalledWith({
+      id: "id",
+      problem: "problem",
+      solution: "solution",
+      tags: "tags",
+      userId: "userId",
+      score: "score",
+      createdAt: "createdAt",
+    });
   });
 
   test("returns early for blank queries without calling AI or Vectorize", async () => {

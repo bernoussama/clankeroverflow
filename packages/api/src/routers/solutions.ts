@@ -23,6 +23,16 @@ const SEARCH_RATE_LIMIT = { limit: 60, windowMs: 60 * 1000 };
 const ANONYMOUS_LOG_RATE_LIMIT = { limit: 10, windowMs: 60 * 60 * 1000 };
 const AUTHENTICATED_LOG_RATE_LIMIT = { limit: 60, windowMs: 60 * 60 * 1000 };
 
+const solutionResponseColumns = {
+  id: schema.solution.id,
+  problem: schema.solution.problem,
+  solution: schema.solution.solution,
+  tags: schema.solution.tags,
+  userId: schema.solution.userId,
+  score: schema.solution.score,
+  createdAt: schema.solution.createdAt,
+};
+
 const PROJECT_SPECIFIC_PATTERNS = [
   /\bclankeroverflow\b/i,
   /\bdeepsec\b/i,
@@ -203,7 +213,11 @@ export const solutionsRouter = router({
       }
 
       const [solutionRecord] = await withTimeout(
-        db.select().from(schema.solution).where(eq(schema.solution.id, input.id)).limit(1),
+        db
+          .select({ id: schema.solution.id })
+          .from(schema.solution)
+          .where(eq(schema.solution.id, input.id))
+          .limit(1),
         DB_TIMEOUT_MS,
         "Solution lookup timed out",
       );
@@ -219,7 +233,7 @@ export const solutionsRouter = router({
       try {
         const [existingVote] = await withTimeout(
           db
-            .select()
+            .select({ isUpvote: schema.solutionVote.isUpvote })
             .from(schema.solutionVote)
             .where(
               and(
@@ -246,7 +260,7 @@ export const solutionsRouter = router({
                     eq(schema.solutionVote.solutionId, input.id),
                   ),
                 )
-                .returning(),
+                .returning({ userId: schema.solutionVote.userId }),
               DB_TIMEOUT_MS,
               "Vote delete timed out",
             );
@@ -273,7 +287,7 @@ export const solutionsRouter = router({
                     eq(schema.solutionVote.solutionId, input.id),
                   ),
                 )
-                .returning(),
+                .returning({ userId: schema.solutionVote.userId }),
               DB_TIMEOUT_MS,
               "Vote update timed out",
             );
@@ -571,7 +585,11 @@ export const solutionsRouter = router({
       user_type: getUserType(ctx),
     });
     const [result] = await withTimeout(
-      db.select().from(schema.solution).where(eq(schema.solution.id, input.id)).limit(1),
+      db
+        .select(solutionResponseColumns)
+        .from(schema.solution)
+        .where(eq(schema.solution.id, input.id))
+        .limit(1),
       DB_TIMEOUT_MS,
       "Solution lookup timed out",
     );
