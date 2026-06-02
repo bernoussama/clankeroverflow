@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono, Bricolage_Grotesque } from "next/font/google";
 
 import "../index.css";
 import Header from "@/components/header";
+import Footer from "@/components/footer";
 import Providers from "@/components/providers";
 import { SITE_ORIGIN } from "@/lib/agent-discovery";
 
@@ -72,11 +73,12 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} ${bricolage.variable} antialiased`}
       >
         <Providers>
-          <div className="landing-page grid grid-rows-[auto_1fr] min-h-svh relative overflow-x-hidden bg-background text-on-surface">
+          <div className="landing-page flex flex-col min-h-svh relative overflow-x-hidden bg-background text-on-surface">
             {/* Decorative background */}
             <div className="fixed inset-0 pointer-events-none z-0 bg-grid-pattern [mask-image:linear-gradient(to_bottom,white,transparent)] opacity-50" />
             <Header />
-            <main className="relative z-10 min-w-0 w-full">{children}</main>
+            <main className="relative z-10 min-w-0 w-full flex-grow">{children}</main>
+            <Footer />
           </div>
         </Providers>
       </body>

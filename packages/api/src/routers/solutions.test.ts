@@ -78,7 +78,14 @@ describe("solutionsRouter", () => {
 
   test("search should execute ranked search and return results", async () => {
     (db.execute as any).mockResolvedValueOnce({
-      rows: [{ id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }],
+      rows: [
+        {
+          id: "sol_1",
+          problem: "Test problem",
+          solution: "Test solution",
+          score: 0,
+        },
+      ],
     });
 
     const caller = createCaller({
@@ -88,14 +95,24 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    const result = await caller.solutions.search({ query: "Test", mode: "keyword" });
+    const result = await caller.solutions.search({
+      query: "Test",
+      mode: "keyword",
+    });
     expect(result).toHaveLength(1);
     expect(result[0]?.problem).toBe("Test problem");
   });
 
   test("search should capture analytics through the request context", async () => {
     (db.execute as any).mockResolvedValueOnce({
-      rows: [{ id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }],
+      rows: [
+        {
+          id: "sol_1",
+          problem: "Test problem",
+          solution: "Test solution",
+          score: 0,
+        },
+      ],
     });
     const capture = vi.fn();
 
@@ -122,7 +139,14 @@ describe("solutionsRouter", () => {
 
   test("search should enrich the request wide event with business context", async () => {
     (db.execute as any).mockResolvedValueOnce({
-      rows: [{ id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 }],
+      rows: [
+        {
+          id: "sol_1",
+          problem: "Test problem",
+          solution: "Test solution",
+          score: 0,
+        },
+      ],
     });
     const requestLog: Record<string, unknown> = {};
 
@@ -134,7 +158,11 @@ describe("solutionsRouter", () => {
       requestLog,
     } as any);
 
-    await caller.solutions.search({ query: " Test ", mode: "keyword", limit: 5 });
+    await caller.solutions.search({
+      query: " Test ",
+      mode: "keyword",
+      limit: 5,
+    });
 
     expect(requestLog).toMatchObject({
       trpc_procedure: "solutions.search",
@@ -226,7 +254,11 @@ describe("solutionsRouter", () => {
       solutionVectors,
     } as any);
 
-    const result = await caller.solutions.search({ query: "Test", mode: "semantic", limit: 2 });
+    const result = await caller.solutions.search({
+      query: "Test",
+      mode: "semantic",
+      limit: 2,
+    });
 
     expect(result.map((row) => row.id)).toEqual(["sol_a", "sol_b"]);
     expect(ai.run).toHaveBeenCalledTimes(1);
@@ -268,7 +300,11 @@ describe("solutionsRouter", () => {
       solutionVectors,
     } as any);
 
-    const result = await caller.solutions.search({ query: "Test", mode: "hybrid", limit: 3 });
+    const result = await caller.solutions.search({
+      query: "Test",
+      mode: "hybrid",
+      limit: 3,
+    });
 
     expect(result.map((row) => row.id)).toEqual(["sol_b", "sol_a", "sol_c"]);
     expect(db.execute as any).toHaveBeenCalledTimes(1);
@@ -309,7 +345,12 @@ describe("solutionsRouter", () => {
     (db.select as any)
       .mockReturnValueOnce(
         createSelectChain([
-          { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 },
+          {
+            id: "sol_1",
+            problem: "Test problem",
+            solution: "Test solution",
+            score: 0,
+          },
         ]),
       )
       .mockReturnValueOnce(createSelectChain([{ upvotes: 3, downvotes: 1 }]));
@@ -341,7 +382,12 @@ describe("solutionsRouter", () => {
     (db.select as any)
       .mockReturnValueOnce(
         createSelectChain([
-          { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 },
+          {
+            id: "sol_1",
+            problem: "Test problem",
+            solution: "Test solution",
+            score: 0,
+          },
         ]),
       )
       .mockReturnValueOnce(createSelectChain([{ upvotes: 5, downvotes: 2 }]))
@@ -363,7 +409,12 @@ describe("solutionsRouter", () => {
     (db.select as any)
       .mockReturnValueOnce(
         createSelectChain([
-          { id: "sol_1", problem: "Test problem", solution: "Test solution", score: 0 },
+          {
+            id: "sol_1",
+            problem: "Test problem",
+            solution: "Test solution",
+            score: 0,
+          },
         ]),
       )
       .mockReturnValueOnce(createSelectChain([{ upvotes: 5, downvotes: 2 }]))
@@ -441,7 +492,9 @@ describe("solutionsRouter", () => {
 
     expect(db.insert as any).toHaveBeenCalled();
     expect(db.select as any).toHaveBeenNthCalledWith(1, { id: "id" });
-    expect(db.select as any).toHaveBeenNthCalledWith(2, { isUpvote: "isUpvote" });
+    expect(db.select as any).toHaveBeenNthCalledWith(2, {
+      isUpvote: "isUpvote",
+    });
   });
 
   test("vote should still succeed if analytics capture fails after the write", async () => {
@@ -569,7 +622,9 @@ describe("solutionsRouter", () => {
     expect(result.success).toBe(true);
     expect(db.update as any).toHaveBeenCalled();
     const voteUpdateChain = (db.update as any).mock.results[0]?.value;
-    expect(voteUpdateChain.returning).toHaveBeenCalledWith({ userId: "userId" });
+    expect(voteUpdateChain.returning).toHaveBeenCalledWith({
+      userId: "userId",
+    });
   });
 
   test("vote should wrap DB errors as INTERNAL_SERVER_ERROR", async () => {
@@ -632,7 +687,7 @@ describe("solutionsRouter", () => {
     ).rejects.toThrow();
   });
 
-  test("log should reject project-specific audit summaries", async () => {
+  test("log should reject solutions containing monorepo-style source paths", async () => {
     const caller = createCaller({
       auth: null as any,
       db,
@@ -642,10 +697,30 @@ describe("solutionsRouter", () => {
 
     await expect(
       caller.solutions.log({
-        problem: "DeepSec security audit: 10 findings across CLI, API, MCP, web, and DB layers",
+        problem: "Auth middleware not applied to all routes",
         solution:
-          "Fixed all 10 findings. BUG FIXES: changed packages/api/src/routers/solutions.ts and updated CLANKER_WEB_URL. SECURITY FIXES: scoped the API key cache leak.",
-        tags: "security,deepsec,clankeroverflow",
+          "Added the middleware in packages/api/src/routers/index.ts and services/auth/src/middleware.ts",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+
+    expect(db.insert as any).not.toHaveBeenCalled();
+  });
+
+  test("log should reject solutions containing shell env var references", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: mockSession,
+      apiKey: null,
+    });
+
+    await expect(
+      caller.solutions.log({
+        problem: "Service crashes on startup when secret is missing",
+        solution:
+          "Make sure $DATABASE_URL and $APP_SECRET_KEY are set in your environment before starting.",
       }),
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
@@ -708,8 +783,20 @@ describe("solutionsRouter", () => {
 
   test("list should return items and no nextCursor when fewer than limit", async () => {
     const items = [
-      { id: "sol_1", problem: "P1", solution: "S1", score: 5, createdAt: new Date() },
-      { id: "sol_2", problem: "P2", solution: "S2", score: 3, createdAt: new Date() },
+      {
+        id: "sol_1",
+        problem: "P1",
+        solution: "S1",
+        score: 5,
+        createdAt: new Date(),
+      },
+      {
+        id: "sol_2",
+        problem: "P2",
+        solution: "S2",
+        score: 3,
+        createdAt: new Date(),
+      },
     ];
     (db.select as any).mockReturnValueOnce(createSelectChain(items));
 
@@ -736,8 +823,20 @@ describe("solutionsRouter", () => {
 
   test("list should capture analytics with the returned item count", async () => {
     const items = [
-      { id: "sol_1", problem: "P1", solution: "S1", score: 5, createdAt: new Date() },
-      { id: "sol_2", problem: "P2", solution: "S2", score: 3, createdAt: new Date() },
+      {
+        id: "sol_1",
+        problem: "P1",
+        solution: "S1",
+        score: 5,
+        createdAt: new Date(),
+      },
+      {
+        id: "sol_2",
+        problem: "P2",
+        solution: "S2",
+        score: 3,
+        createdAt: new Date(),
+      },
     ];
     (db.select as any).mockReturnValueOnce(createSelectChain(items));
     const capture = vi.fn();

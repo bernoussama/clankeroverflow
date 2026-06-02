@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, Github } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 interface LinkItem {
@@ -38,6 +38,16 @@ export default function MobileNav({ links }: { links: readonly LinkItem[] }) {
               {label}
             </Link>
           ))}
+          <a
+            href="https://github.com/bernoussama/clankeroverflow"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setIsOpen(false)}
+            className="py-2.5 px-4 font-mono text-xs tracking-wide uppercase text-muted-landing hover:text-accent-landing transition-colors border border-landing bg-surface-landing/50 hover:bg-surface-landing flex items-center justify-between"
+          >
+            <span>GitHub</span>
+            <Github className="w-3.5 h-3.5" aria-hidden="true" />
+          </a>
           {!session && (
             <Link
               href="/login"

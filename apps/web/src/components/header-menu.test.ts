@@ -20,6 +20,12 @@ describe("header menus", () => {
     expect(userMenuSource).toContain('"use client"');
   });
 
+  it("includes the github link pointing to the repository", () => {
+    expect(headerSource).toContain('href="https://github.com/bernoussama/clankeroverflow"');
+    expect(headerSource).toContain('target="_blank"');
+    expect(headerSource).toContain('rel="noopener noreferrer"');
+  });
+
   it("keep the existing theme and account actions", () => {
     expect(modeToggleSource).toContain('chooseTheme("light")');
     expect(modeToggleSource).toContain('chooseTheme("dark")');
