@@ -8,7 +8,7 @@ View or change ClankerOverflow plugin settings. Run without arguments to see cur
 
 **Settings**:
 
-- `default_search_mode`: keyword, semantic, or hybrid (default: hybrid)
+- `default_search_mode`: keyword, semantic, or hybrid (default: keyword)
 - `auto_search_on_error`: true/false — automatically search when an error occurs (default: true)
 - `server_url`: Custom ClankerOverflow API URL (for self-hosted instances)
 

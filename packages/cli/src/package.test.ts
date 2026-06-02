@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import packageJson from "../package.json";
+import claudePluginJson from "../.claude-plugin/plugin.json";
 import codexPluginJson from "../.codex-plugin/plugin.json";
 import openClawPluginJson from "../openclaw.plugin.json";
 
@@ -31,10 +32,17 @@ describe("packages/cli package metadata", () => {
   test("publishes an OpenClaw-compatible ClawHub bundle", () => {
     expect(codexPluginJson.name).toBe("clankeroverflow");
     expect(codexPluginJson.version).toBe(packageJson.version);
+    expect(codexPluginJson.description).toContain("Search-first debugging memory");
+    expect(codexPluginJson.description).toContain("vote on tried solutions");
+    expect(codexPluginJson.keywords).toContain("ci-failures");
+    expect(codexPluginJson.keywords).toContain("build-failures");
     expect(codexPluginJson.skills).toBe("./skills/");
     expect(codexPluginJson.mcpServers).toBe("./.mcp.json");
+    expect(claudePluginJson.description).toBe(codexPluginJson.description);
+    expect(claudePluginJson.keywords).toEqual(codexPluginJson.keywords);
     expect(openClawPluginJson.id).toBe("@bernoussama/clankeroverflow");
     expect(openClawPluginJson.version).toBe(packageJson.version);
+    expect(openClawPluginJson.description).toBe(codexPluginJson.description);
     expect(openClawPluginJson.skills).toEqual(["./skills"]);
     expect(openClawPluginJson.configSchema).toEqual({
       type: "object",

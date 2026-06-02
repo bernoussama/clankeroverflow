@@ -27,10 +27,17 @@ describe("WebMCP tool definitions", () => {
 
   describe("search_solutions tool", () => {
     it("has a valid JSON Schema input with required query field", () => {
-      const schema = WEBMCP_TOOLS.find((tool) => tool.name === "search_solutions")?.inputSchema;
+      const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
+      const schema = tool?.inputSchema;
 
+      expect(tool?.description).toContain("before fresh debugging");
+      expect(tool?.description).toContain("smallest distinctive keyword fingerprint");
+      expect(tool?.description).toContain("tags as relevance signals");
       expect(schema?.type).toBe("object");
       expect(schema?.required).toContain("query");
+      expect(schema?.properties.query.description).toContain(
+        "Smallest distinctive keyword fingerprint",
+      );
     });
 
     it("calls trpcClient.solutions.search.query with keyword mode", async () => {

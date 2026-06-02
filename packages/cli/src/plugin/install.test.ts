@@ -92,7 +92,7 @@ describe("installPlugin", () => {
     await installPlugin({ packageRoot: pkgRoot, envHome: fakeHome });
 
     const content = await readFile(settingsPath, "utf-8");
-    expect(content).toContain("default_search_mode: hybrid");
+    expect(content).toContain("default_search_mode: keyword");
     expect(content).toContain("auto_search_on_error: true");
     expect(content).toContain("server_url: https://api.clankeroverflow.com");
   });
