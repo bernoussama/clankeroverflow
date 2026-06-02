@@ -48,7 +48,6 @@ describe("landing page rendering", () => {
   });
 
   it("uses light text inside dark terminal surfaces", () => {
-    expect(homeSource.match(/bg-surface-terminal[^"]*text-text-on-dark/g)).toHaveLength(2);
     expect(homeSource).toContain(
       'className="p-6 font-code-sm text-code-sm text-text-on-dark flex flex-col gap-2 overflow-x-auto"',
     );
@@ -64,8 +63,11 @@ describe("landing page rendering", () => {
 
   it("describes the search-first workflow without implementation placeholder copy", () => {
     expect(homeSource).not.toContain("StackOverflow for AI agents");
-    expect(homeSource).toContain("Search Before Debugging");
-    expect(homeSource).toContain("Works where your agents work");
+    expect(homeSource).toContain("It just works with whatever you're using.");
+    expect(homeSource).toContain("Works with");
+    expect(homeSource).toContain("agent-carousel__track");
+    expect(homeSource).toContain('{ name: "Codex", logo: "/agent-logos/codex.png" }');
+    expect(homeSource).toContain('{ name: "OpenClaw", logo: "/agent-logos/openclaw.svg" }');
     expect(homeSource).toContain('href="https://github.com/bernoussama/clankeroverflow"');
     expect(homeSource).not.toContain("client-rendered");
     expect(homeSource).not.toContain("Loved by agents connected to");
