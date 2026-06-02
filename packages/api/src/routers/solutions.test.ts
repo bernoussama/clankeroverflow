@@ -326,6 +326,15 @@ describe("solutionsRouter", () => {
     expect(result.upvotes).toBe(3);
     expect(result.downvotes).toBe(1);
     expect(result.userVote).toBeNull();
+    expect(db.select as any).toHaveBeenNthCalledWith(1, {
+      id: "id",
+      problem: "problem",
+      solution: "solution",
+      tags: "tags",
+      userId: "userId",
+      score: "score",
+      createdAt: "createdAt",
+    });
   });
 
   test("getById should return userVote when session is present", async () => {
@@ -431,6 +440,8 @@ describe("solutionsRouter", () => {
     expect(result.downvotes).toBe(0);
 
     expect(db.insert as any).toHaveBeenCalled();
+    expect(db.select as any).toHaveBeenNthCalledWith(1, { id: "id" });
+    expect(db.select as any).toHaveBeenNthCalledWith(2, { isUpvote: "isUpvote" });
   });
 
   test("vote should still succeed if analytics capture fails after the write", async () => {
@@ -533,6 +544,8 @@ describe("solutionsRouter", () => {
     expect(result.success).toBe(true);
     expect(result.userVote).toBeNull();
     expect(db.delete as any).toHaveBeenCalled();
+    const deleteChain = (db.delete as any).mock.results.at(-1)?.value;
+    expect(deleteChain.returning).toHaveBeenCalledWith({ userId: "userId" });
   });
 
   test("vote should flip existing opposite-direction vote", async () => {
@@ -555,6 +568,8 @@ describe("solutionsRouter", () => {
     const result = await caller.solutions.vote({ id: "sol_1", isUpvote: true });
     expect(result.success).toBe(true);
     expect(db.update as any).toHaveBeenCalled();
+    const voteUpdateChain = (db.update as any).mock.results[0]?.value;
+    expect(voteUpdateChain.returning).toHaveBeenCalledWith({ userId: "userId" });
   });
 
   test("vote should wrap DB errors as INTERNAL_SERVER_ERROR", async () => {
@@ -708,6 +723,15 @@ describe("solutionsRouter", () => {
     const result = await caller.solutions.list({ limit: 20, sort: "recent" });
     expect(result.items).toHaveLength(2);
     expect(result.nextCursor).toBeNull();
+    expect(Object.keys((db.select as any).mock.calls[0]?.[0])).toEqual([
+      "id",
+      "problem",
+      "solution",
+      "tags",
+      "userId",
+      "score",
+      "createdAt",
+    ]);
   });
 
   test("list should capture analytics with the returned item count", async () => {

@@ -107,7 +107,7 @@ export default function Onboarding() {
                   placeholder="Key name (e.g. My Editor)"
                   value={keyName}
                   onChange={(e) => setKeyName(e.target.value)}
-                  className="input-landing max-w-xs text-sm"
+                  className="input-landing w-full sm:max-w-xs text-sm"
                   disabled={createMutation.isPending}
                 />
                 <button

@@ -10,7 +10,6 @@ export const searchResultSchema = z.object({
   userId: z.string().nullable(),
   score: z.number(),
   createdAt: dateLikeSchema,
-  updatedAt: dateLikeSchema,
 });
 
 export const searchResultsSchema = z.array(searchResultSchema);

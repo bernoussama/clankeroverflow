@@ -177,9 +177,10 @@ export default function Dashboard() {
                   placeholder="Key Name (e.g., MacBook Pro, Agent Alpha)"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
-                  className="input-landing max-w-xs text-sm"
+                  className="input-landing w-full sm:max-w-xs text-sm"
                   disabled={createMutation.isPending}
                 />
+
                 <button
                   type="submit"
                   className="btn-primary dashboard-key-create text-sm"

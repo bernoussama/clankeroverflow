@@ -14,3 +14,5 @@
 @source "./components/loader.tsx";
 @source "./components/toast-provider.tsx";
 @source "./components/ui";
+@source "./components/header.tsx";
+@source "./components/mobile-nav.tsx";

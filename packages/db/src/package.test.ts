@@ -12,6 +12,8 @@ const packageJson = JSON.parse(
 ) as PackageJson;
 
 const authSchemaSource = readFileSync(new URL("./schema/auth.ts", import.meta.url), "utf8");
+const listSource = readFileSync(new URL("./list.ts", import.meta.url), "utf8");
+const searchSource = readFileSync(new URL("./search.ts", import.meta.url), "utf8");
 
 describe("packages/db package metadata", () => {
   it("ships pg runtime and types as dependencies for source consumers", () => {
@@ -25,5 +27,11 @@ describe("packages/db package metadata", () => {
     expect(authSchemaSource).toContain("account: many(account)");
     expect(authSchemaSource).not.toContain("sessions: many(session)");
     expect(authSchemaSource).not.toContain("accounts: many(account)");
+  });
+
+  it("keeps solution list and keyword search projections targeted", () => {
+    expect(listSource).toContain(".select(solutionListColumns)");
+    expect(searchSource).not.toMatch(/SELECT\s+\*/);
+    expect(searchSource).not.toContain('"updated_at" AS "updatedAt"');
   });
 });

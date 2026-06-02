@@ -4,7 +4,17 @@ import type { getDb } from "./index";
 import * as schema from "./schema";
 
 type Database = ReturnType<typeof getDb>;
-type SolutionRow = typeof schema.solution.$inferSelect;
+type SolutionRow = Omit<typeof schema.solution.$inferSelect, "updatedAt">;
+
+const solutionListColumns = {
+  id: schema.solution.id,
+  problem: schema.solution.problem,
+  solution: schema.solution.solution,
+  tags: schema.solution.tags,
+  userId: schema.solution.userId,
+  score: schema.solution.score,
+  createdAt: schema.solution.createdAt,
+};
 
 export type SolutionListCursor = {
   createdAt: string;
@@ -54,7 +64,7 @@ export async function listSolutions(
       : [desc(schema.solution.createdAt), desc(schema.solution.id)];
 
   const rows = await db
-    .select()
+    .select(solutionListColumns)
     .from(schema.solution)
     .where(where)
     .orderBy(...orderBy)
