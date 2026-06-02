@@ -9,6 +9,8 @@
 @source "./components/mode-toggle.tsx";
 @source "./components/user-menu.tsx";
 @source "./components/ui/skeleton.tsx";
+@source "./components/mobile-nav.tsx";
+
 
 @custom-variant dark (&:is(.dark *));
 

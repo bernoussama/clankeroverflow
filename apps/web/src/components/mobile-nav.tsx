@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 interface LinkItem {
   to: string;
@@ -11,13 +12,14 @@ interface LinkItem {
 
 export default function MobileNav({ links }: { links: readonly LinkItem[] }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = authClient.useSession();
 
   return (
-    <>
+    <div className="sm:hidden">
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="sm:hidden mode-toggle-btn h-9 w-9 flex items-center justify-center shrink-0"
+        className="mode-toggle-btn h-9 w-9 flex items-center justify-center shrink-0"
         aria-label="Toggle navigation menu"
         aria-expanded={isOpen}
       >
@@ -25,7 +27,7 @@ export default function MobileNav({ links }: { links: readonly LinkItem[] }) {
       </button>
 
       {isOpen && (
-        <div className="sm:hidden border-b border-landing bg-background absolute top-full left-0 right-0 py-4 px-6 flex flex-col gap-3 shadow-lg z-40 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="border-b border-landing bg-background absolute top-full left-0 right-0 py-4 px-6 flex flex-col gap-3 shadow-lg z-40 animate-in fade-in slide-in-from-top-2 duration-150">
           {links.map(({ to, label }) => (
             <Link
               key={to}
@@ -36,8 +38,18 @@ export default function MobileNav({ links }: { links: readonly LinkItem[] }) {
               {label}
             </Link>
           ))}
+          {!session && (
+            <Link
+              href="/login"
+              onClick={() => setIsOpen(false)}
+              className="py-2.5 px-4 font-mono text-xs tracking-wide uppercase text-accent-landing border border-landing-accent/30 bg-landing-accent-subtle hover:bg-landing-accent/20 transition-colors flex items-center justify-between"
+            >
+              <span>Sign In</span>
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+            </Link>
+          )}
         </div>
       )}
-    </>
+    </div>
   );
 }

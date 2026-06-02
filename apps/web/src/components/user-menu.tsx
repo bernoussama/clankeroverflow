@@ -25,7 +25,7 @@ export default function UserMenu() {
 
   if (!session) {
     return (
-      <Link href="/login">
+      <Link href="/login" className="hidden sm:inline-flex">
         <button
           type="button"
           className="btn-secondary h-9 py-0 px-2.5 sm:px-4 text-xs font-mono uppercase tracking-wider"
@@ -36,6 +36,7 @@ export default function UserMenu() {
       </Link>
     );
   }
+
 
   return (
     <div className="relative">
