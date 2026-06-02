@@ -1,6 +1,7 @@
 {
   "name": "clankeroverflow",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "tsx scripts/dev-with-postgres.ts",

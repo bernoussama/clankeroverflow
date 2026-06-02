@@ -13,11 +13,20 @@ const pluginJsonPaths = [
 ];
 
 for (const pluginJsonPath of pluginJsonPaths) {
-  const pluginJson = JSON.parse(await readFile(pluginJsonPath, "utf-8"));
+  const pluginJsonSource = await readFile(pluginJsonPath, "utf-8");
+  const pluginJson = JSON.parse(pluginJsonSource);
 
   pluginJson.version = pkg.version;
 
-  await writeFile(pluginJsonPath, JSON.stringify(pluginJson, null, 2) + "\n");
+  const versionLinePattern = /^  "version": ".*",$/m;
+  if (!versionLinePattern.test(pluginJsonSource)) {
+    throw new Error(`Missing version field in ${pluginJsonPath}`);
+  }
+
+  await writeFile(
+    pluginJsonPath,
+    pluginJsonSource.replace(versionLinePattern, `  "version": ${JSON.stringify(pkg.version)},`),
+  );
   console.log(
     `Stamped ${path.relative(packageRoot, pluginJsonPath)} version: ${pluginJson.version}`,
   );
