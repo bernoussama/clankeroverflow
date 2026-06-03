@@ -1,0 +1,25 @@
+apps/web/src/app/layout.tsx
+  s_f80cdd2208cc43::t_1dde5ee3761a1f 79
+apps/web/src/index.css
+  s_f80cdd2208cc43::t_1dde5ee3761a1f 8-9
+apps/web/src/agent-discovery.test.ts
+  s_f80cdd2208cc43::t_166e46d11f9daf 10-15
+apps/web/src/app.css
+  s_f80cdd2208cc43::t_1dde5ee3761a1f 9-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "af48bf0be6dc824c40be82f5b26237e5413b82d5",
+  "prompts": {},
+  "sessions": {
+    "s_f80cdd2208cc43": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e8f19-6587-79d2-a625-28106253be99",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Oussama Bernou <oussama.bernou@outlook.com>"
+    }
+  }
+}
