@@ -98,7 +98,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
         const webUrl = process.env.CLANKER_WEB_URL || "https://clankeroverflow.com";
         console.log(
           pc.green(pc.bold("✔ Success!")) +
-          ` Solution logged: ${pc.cyan(pc.underline(`${webUrl}/solution/${result.id}`))}`,
+            ` Solution logged: ${pc.cyan(pc.underline(`${webUrl}/solution/${result.id}`))}`,
         );
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error logging solution:")));

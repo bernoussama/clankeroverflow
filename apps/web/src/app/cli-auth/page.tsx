@@ -151,12 +151,8 @@ export default function CliAuthPage() {
             </div>
           ) : (
             <div className="verification-code">
-              <p className="verification-code__label">
-                Verification code
-              </p>
-              <code className="verification-code__display">
-                {userCode || "Missing code"}
-              </code>
+              <p className="verification-code__label">Verification code</p>
+              <code className="verification-code__display">{userCode || "Missing code"}</code>
 
               <div className="auth-actions" style={{ marginTop: "0.75rem" }}>
                 <button
