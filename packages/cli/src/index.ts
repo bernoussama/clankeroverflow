@@ -242,6 +242,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
         console.log();
         if (hasSetupFailures(results)) process.exit(1);
       } catch (error: any) {
+        console.error("");
         console.error(pc.red(pc.bold("✖ Error installing ClankerOverflow:")));
         console.error(pc.red(error.message || error));
         process.exit(1);

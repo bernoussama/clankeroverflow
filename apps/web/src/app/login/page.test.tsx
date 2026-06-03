@@ -11,9 +11,13 @@ describe("login page", () => {
     expect(loginPageSource).toContain('provider: "github"');
     expect(loginPageSource).toContain("window.location.origin");
     expect(loginPageSource).toContain("window.location.search");
+    expect(loginPageSource).toContain('params.get("callbackUrl")');
+    expect(loginPageSource).toContain('params.get("redirectTo")');
     expect(loginPageSource).toContain("try {");
     expect(loginPageSource).toContain("catch (error)");
     expect(loginPageSource).toContain('!requested.startsWith("//")');
+    expect(loginPageSource).toContain("newUserCallbackURL: callbackTarget");
+    expect(loginPageSource).toContain("errorCallbackURL: loginErrorTarget");
     expect(loginPageSource).not.toContain("useSearchParams");
     expect(loginPageSource).not.toContain("const { error }");
     expect(loginPageSource).not.toContain("signIn.email");

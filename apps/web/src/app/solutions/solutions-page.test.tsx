@@ -26,12 +26,15 @@ describe("solutions page performance defaults", () => {
 
 describe("solution page vote state", () => {
   it("scopes solution details to the resolved session and preserves the mutation response", () => {
-    expect(solutionPageSource).toContain("isPending: isSessionPending");
     expect(solutionPageSource).toContain(
       'const solutionQueryKey = ["solutions", "getById", id, sessionUserId] as const;',
     );
-    expect(solutionPageSource).toContain("enabled: !isSessionPending");
+    expect(solutionPageSource).toContain("enabled: session !== undefined");
     expect(solutionPageSource).toContain("queryClient.setQueryData(");
     expect(solutionPageSource).not.toContain("queryClient.invalidateQueries");
+  });
+
+  it("avoids showing Solution Not Found when the session is loading", () => {
+    expect(solutionPageSource).toContain("session === undefined || isLoading");
   });
 });

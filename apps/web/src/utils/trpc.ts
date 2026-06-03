@@ -9,6 +9,16 @@ import { toast } from "sonner";
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
+      const err = error as any;
+      const isNotFound =
+        err?.shape?.data?.code === "NOT_FOUND" ||
+        err?.data?.code === "NOT_FOUND" ||
+        err?.message?.toLowerCase().includes("not found");
+
+      if (isNotFound) {
+        return;
+      }
+
       toast.error(error.message, {
         action: {
           label: "retry",

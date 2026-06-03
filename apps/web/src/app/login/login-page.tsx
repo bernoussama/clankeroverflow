@@ -11,21 +11,23 @@ import { authClient } from "@/lib/auth-client";
 
 function getSafeCallbackURL() {
   if (typeof window === "undefined") return "/dashboard";
-  const requested = new URLSearchParams(window.location.search).get("callbackURL");
+  const params = new URLSearchParams(window.location.search);
+  const requested =
+    params.get("callbackURL") ?? params.get("callbackUrl") ?? params.get("redirectTo");
   return requested?.startsWith("/") && !requested.startsWith("//") ? requested : "/dashboard";
 }
 
 export default function LoginPage() {
   const router = useRouter();
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [callbackURL] = useState(getSafeCallbackURL);
   const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
     if (session) {
+      const callbackURL = getSafeCallbackURL();
       router.replace(callbackURL as Route);
     }
-  }, [callbackURL, router, session]);
+  }, [router, session]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -45,12 +47,16 @@ export default function LoginPage() {
   async function handleGitHubSignIn() {
     setIsSigningIn(true);
     const appOrigin = window.location.origin;
+    const callbackURL = getSafeCallbackURL();
+    const callbackTarget = `${appOrigin}${callbackURL}`;
+    const loginErrorTarget = `${appOrigin}/login?callbackURL=${encodeURIComponent(callbackURL)}`;
 
     try {
       await authClient.signIn.social({
         provider: "github",
-        callbackURL: `${appOrigin}${callbackURL}`,
-        errorCallbackURL: `${appOrigin}/login`,
+        callbackURL: callbackTarget,
+        newUserCallbackURL: callbackTarget,
+        errorCallbackURL: loginErrorTarget,
       });
     } catch (error) {
       setIsSigningIn(false);

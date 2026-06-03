@@ -16,7 +16,7 @@ export default function SolutionPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const [isVoting, setIsVoting] = useState(false);
   const queryClient = useQueryClient();
   const sessionUserId = session?.user.id ?? null;
@@ -30,7 +30,15 @@ export default function SolutionPage() {
     queryKey: solutionQueryKey,
     queryFn: async () =>
       solutionDetailsSchema.parse(await trpcClient.solutions.getById.query({ id })),
-    enabled: !isSessionPending,
+    enabled: session !== undefined,
+    retry: (failureCount, error: any) => {
+      const isNotFound =
+        error?.shape?.data?.code === "NOT_FOUND" ||
+        error?.data?.code === "NOT_FOUND" ||
+        error?.message?.toLowerCase().includes("not found");
+      if (isNotFound) return false;
+      return failureCount < 3;
+    },
   });
 
   const [voteError, setVoteError] = useState<string | null>(null);
@@ -60,7 +68,7 @@ export default function SolutionPage() {
     [id, isVoting, queryClient, session, solutionQueryKey],
   );
 
-  if (isLoading) {
+  if (session === undefined || isLoading) {
     return (
       <div className="page-shell">
         <div className="page-container max-w-4xl">

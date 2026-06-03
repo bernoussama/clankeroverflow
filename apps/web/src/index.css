@@ -814,6 +814,111 @@
   }
 }
 
+/* Centered Auth Card variations */
+.auth-card--centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+}
+
+.auth-card--centered h1 {
+  text-align: center !important;
+}
+
+.auth-card--centered p {
+  text-align: center !important;
+}
+
+/* Verification Code Block */
+.verification-code {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.verification-code__label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--landing-muted);
+  text-align: center !important;
+}
+
+.verification-code__display {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center !important;
+  letter-spacing: 0.25em;
+  text-indent: 0.25em; /* Counteract trailing letter spacing for perfect centering */
+  background: var(--landing-code-bg);
+  color: var(--landing-code-fg);
+  border: 1px solid var(--landing-border);
+  border-radius: 0px;
+  user-select: all;
+}
+
+/* Auth Actions / Button Group */
+.auth-actions {
+  display: flex;
+  width: 100%;
+  gap: 0.75rem;
+}
+
+.auth-actions .btn-primary,
+.auth-actions .btn-secondary {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Feedback Status Block */
+.auth-status-feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  width: 100%;
+}
+
+.auth-status-feedback__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0px;
+  background: var(--landing-accent-subtle);
+  border: 1px solid var(--landing-border);
+}
+
+.auth-status-feedback__icon--success {
+  background: rgba(0, 110, 22, 0.08);
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.auth-status-feedback__icon--error {
+  background: rgba(186, 26, 26, 0.08);
+  border-color: var(--destructive);
+  color: var(--destructive);
+}
+
+.auth-status-feedback__text {
+  font-size: 0.875rem;
+  color: var(--landing-muted);
+  font-weight: 500;
+  text-align: center !important;
+}
+
 /* ─── Mode Toggle Button ─── */
 
 .mode-toggle-btn {
