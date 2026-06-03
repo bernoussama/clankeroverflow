@@ -497,7 +497,6 @@ async function resolveApiKey(
     (await (deps.promptConfirm ?? promptConfirm)("Keep the existing configured API key?"))
   )
     return existing;
-  console.log("Get your API key: https://clankeroverflow.com/login");
   console.warn("Warning: the API key will be stored as plaintext in configured agent MCP files.");
   if (await (deps.promptConfirm ?? promptConfirm)("Open browser to sign in automatically?")) {
     try {
