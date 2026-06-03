@@ -9,6 +9,8 @@ import { Writable } from "node:stream";
 import { promisify } from "node:util";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@clankeroverflow/api/routers/index";
+import pc from "picocolors";
+import yoctoSpinner from "yocto-spinner";
 
 const execFileAsync = promisify(execFile);
 const MCP_NAME = "clankeroverflow";
@@ -435,9 +437,10 @@ async function resolveBrowserApiKey(
 ) {
   const device = await requestDeviceCode(serverUrl, fetchImpl);
   const url = device.verification_uri_complete || device.verification_uri;
-  console.log(`Opening browser for ClankerOverflow login: ${url}`);
-  console.log(`If the browser does not open, visit ${device.verification_uri}`);
-  console.log(`Enter code: ${device.user_code}`);
+  console.log(`\n${pc.cyan("ℹ")} Opening browser for ClankerOverflow login: ${pc.underline(url)}`);
+  console.log(
+    `${pc.cyan("ℹ")} If the browser does not open, visit: ${pc.cyan(pc.underline(url))}\n`,
+  );
 
   await (deps.openBrowser ?? defaultOpenBrowser)(url);
 
@@ -445,30 +448,38 @@ async function resolveBrowserApiKey(
   let pollIntervalSeconds = device.interval ?? 5;
   const expiresAt = Date.now() + device.expires_in * 1000;
 
-  while (Date.now() < expiresAt) {
-    await sleep(pollIntervalSeconds * 1000);
-    const token = await requestDeviceToken(serverUrl, device.device_code, fetchImpl);
+  const spinner = yoctoSpinner({ text: "Waiting for browser authorization..." }).start();
 
-    if (token.access_token) {
-      const clientName = `CLI setup - ${hostname()}`;
-      return exchangeDeviceToken(serverUrl, token.access_token, clientName, fetchImpl);
+  try {
+    while (Date.now() < expiresAt) {
+      await sleep(pollIntervalSeconds * 1000);
+      const token = await requestDeviceToken(serverUrl, device.device_code, fetchImpl);
+
+      if (token.access_token) {
+        spinner.success("Authorized successfully!");
+        const clientName = `CLI setup - ${hostname()}`;
+        return exchangeDeviceToken(serverUrl, token.access_token, clientName, fetchImpl);
+      }
+
+      if (token.error === "authorization_pending") continue;
+      if (token.error === "slow_down") {
+        pollIntervalSeconds += 5;
+        continue;
+      }
+      if (token.error === "access_denied") {
+        throw new Error("Browser login was denied.");
+      }
+      if (token.error === "expired_token") {
+        throw new Error("Browser login expired. Run setup again to retry.");
+      }
+      throw new Error(token.error_description || token.error || "Browser login failed.");
     }
 
-    if (token.error === "authorization_pending") continue;
-    if (token.error === "slow_down") {
-      pollIntervalSeconds += 5;
-      continue;
-    }
-    if (token.error === "access_denied") {
-      throw new Error("Browser login was denied.");
-    }
-    if (token.error === "expired_token") {
-      throw new Error("Browser login expired. Run setup again to retry.");
-    }
-    throw new Error(token.error_description || token.error || "Browser login failed.");
+    throw new Error("Browser login expired. Run setup again to retry.");
+  } catch (error) {
+    spinner.error((error as Error).message);
+    throw error;
   }
-
-  throw new Error("Browser login expired. Run setup again to retry.");
 }
 
 async function resolveApiKey(
@@ -497,7 +508,10 @@ async function resolveApiKey(
     (await (deps.promptConfirm ?? promptConfirm)("Keep the existing configured API key?"))
   )
     return existing;
-  console.warn("Warning: the API key will be stored as plaintext in configured agent MCP files.");
+  console.warn(
+    pc.yellow(pc.bold("⚠️  Warning: ")) +
+      "the API key will be stored as plaintext in configured agent MCP files.",
+  );
   if (await (deps.promptConfirm ?? promptConfirm)("Open browser to sign in automatically?")) {
     try {
       const apiKey = await resolveBrowserApiKey(
@@ -508,9 +522,14 @@ async function resolveApiKey(
       if (await validateApiKey(apiKey, options.serverUrl ?? DEFAULT_SERVER_URL, fetchImpl)) {
         return apiKey;
       }
-      console.warn("The browser login returned an invalid API key. Falling back to manual setup.");
+      console.warn(
+        pc.yellow(pc.bold("⚠️  Warning: ")) +
+          "The browser login returned an invalid API key. Falling back to manual setup.",
+      );
     } catch (error) {
-      console.warn(`Browser login failed: ${(error as Error).message}`);
+      console.warn(
+        pc.yellow(pc.bold("⚠️  Warning: ")) + `Browser login failed: ${(error as Error).message}`,
+      );
     }
   }
   while (true) {
@@ -520,7 +539,10 @@ async function resolveApiKey(
     if (!apiKey) return undefined;
     if (await validateApiKey(apiKey, options.serverUrl ?? DEFAULT_SERVER_URL, fetchImpl))
       return apiKey;
-    console.warn("That API key is invalid. Try again or press Enter to skip authentication.");
+    console.warn(
+      pc.yellow(pc.bold("⚠️  Warning: ")) +
+        "That API key is invalid. Try again or press Enter to skip authentication.",
+    );
   }
 }
 

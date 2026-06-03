@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { detectAgents, getCursorConfigPath, getOpenCodeConfigPath, setupAgents } from "./setup";
+import pc from "picocolors";
 
 const setupSource = await readFile(new URL("./setup.ts", import.meta.url), "utf8");
 
@@ -191,7 +192,8 @@ describe("smart setup", () => {
     }
 
     expect(output).toEqual([
-      "Warning: the API key will be stored as plaintext in configured agent MCP files.",
+      pc.yellow(pc.bold("⚠️  Warning: ")) +
+        "the API key will be stored as plaintext in configured agent MCP files.",
     ]);
   });
 
