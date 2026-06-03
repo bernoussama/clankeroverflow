@@ -3,6 +3,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { detectAgents, getCursorConfigPath, getOpenCodeConfigPath, setupAgents } from "./setup";
+import pc from "picocolors";
+
+const setupSource = await readFile(new URL("./setup.ts", import.meta.url), "utf8");
 
 describe("smart setup", () => {
   let tempDir = "";
@@ -23,6 +26,11 @@ describe("smart setup", () => {
 
   const noCommands = async () => false;
   const validFetch = vi.fn(async () => new Response(JSON.stringify([{ result: { data: true } }])));
+
+  test("handles browser opener spawn failures without crashing setup", () => {
+    expect(setupSource).toContain('child.on("error"');
+    expect(setupSource).toContain("Browser opening is optional");
+  });
 
   test("detects config directories and uses PATH-only detection for pi", async () => {
     await mkdir(path.join(tempDir, ".codex"));
@@ -163,7 +171,7 @@ describe("smart setup", () => {
     ).rejects.toThrow("Non-interactive setup requires --api-key <key> or --no-api-key.");
   });
 
-  test("prints the API key login hint before the plaintext storage warning", async () => {
+  test("prints the plaintext storage warning", async () => {
     const output: string[] = [];
     const log = vi.spyOn(console, "log").mockImplementation((message) => output.push(message));
     const warn = vi.spyOn(console, "warn").mockImplementation((message) => output.push(message));
@@ -174,6 +182,7 @@ describe("smart setup", () => {
         {
           commandExists: noCommands,
           stdinIsTTY: true,
+          promptConfirm: async () => false,
           promptSecret: async () => "",
         },
       );
@@ -183,9 +192,65 @@ describe("smart setup", () => {
     }
 
     expect(output).toEqual([
-      "Get your API key: https://clankeroverflow.com/login",
-      "Warning: the API key will be stored as plaintext in configured agent MCP files.",
+      pc.yellow(pc.bold("⚠️  Warning: ")) +
+        "the API key will be stored as plaintext in configured agent MCP files.",
     ]);
+  });
+
+  test("can create an API key through browser device authorization", async () => {
+    const cursorPath = getCursorConfigPath(tempDir);
+    await mkdir(path.dirname(cursorPath), { recursive: true });
+    const openBrowser = vi.fn(async () => {});
+    const fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/auth/device/code")) {
+        return new Response(
+          JSON.stringify({
+            device_code: "device-123",
+            user_code: "ABCD-EFGH",
+            verification_uri: "https://clankeroverflow.com/cli-auth",
+            verification_uri_complete: "https://clankeroverflow.com/cli-auth?user_code=ABCD-EFGH",
+            expires_in: 600,
+            interval: 5,
+          }),
+        );
+      }
+      if (url.endsWith("/auth/device/token")) {
+        return new Response(
+          JSON.stringify({
+            access_token: "device-access-token",
+            token_type: "Bearer",
+            expires_in: 3600,
+            scope: "openid profile email",
+          }),
+        );
+      }
+      if (url.includes("/trpc/cliAuth.exchangeDeviceToken")) {
+        return new Response(JSON.stringify([{ result: { data: { key: "clk_browser" } } }]));
+      }
+      if (url.includes("/trpc/apiKeyCheck")) {
+        return new Response(JSON.stringify([{ result: { data: true } }]));
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    await setupAgents(
+      { agents: ["cursor"], env: {}, home: tempDir, packageRoot },
+      {
+        commandExists: noCommands,
+        fetch: fetch as typeof globalThis.fetch,
+        openBrowser,
+        promptConfirm: async () => true,
+        sleep: async () => {},
+        stdinIsTTY: true,
+      },
+    );
+
+    expect(openBrowser).toHaveBeenCalledWith(
+      "https://clankeroverflow.com/cli-auth?user_code=ABCD-EFGH",
+    );
+    const cursor = JSON.parse(await readFile(cursorPath, "utf8"));
+    expect(cursor.mcpServers.clankeroverflow.env.CLANKER_API_KEY).toBe("clk_browser");
   });
 
   test("refuses to overwrite invalid OpenCode JSON", async () => {

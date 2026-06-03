@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 import { createProgram } from "./index";
+import pc from "picocolors";
 
 describe("CLI", () => {
   let consoleLogMock: MockInstance<typeof console.log>;
@@ -35,7 +36,9 @@ describe("CLI", () => {
       } catch (e: any) {
         expect(e.message).toBe("Process.exit(1)");
       }
-      expect(consoleErrorMock).toHaveBeenCalledWith("Error: --problem is required.");
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        pc.red(pc.bold("✖ Error: ")) + pc.red("--problem is required."),
+      );
     });
 
     test("fails if both --solution and --file are missing", async () => {
@@ -46,7 +49,7 @@ describe("CLI", () => {
         expect(e.message).toBe("Process.exit(1)");
       }
       expect(consoleErrorMock).toHaveBeenCalledWith(
-        "Error: Either --solution or --file is required.",
+        pc.red(pc.bold("✖ Error: ")) + pc.red("Either --solution or --file is required."),
       );
     });
 
@@ -72,9 +75,8 @@ describe("CLI", () => {
       expect(fetchCallUrl).toMatch(/^https:\/\/api\.clankeroverflow\.com\/trpc/);
       expect(fetchCallUrl).toContain("solutions.log");
       expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "Success! Solution logged: https://clankeroverflow.com/solution/123",
-        ),
+        pc.green(pc.bold("✔ Success!")) +
+          ` Solution logged: ${pc.cyan(pc.underline("https://clankeroverflow.com/solution/123"))}`,
       );
     });
   });
@@ -105,10 +107,12 @@ describe("CLI", () => {
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
       expect(fetchCallUrl).toContain("solutions.search");
+      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("⚠ UNTRUSTED CONTENT:"));
       expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("# Problem: test problem"),
+        expect.stringContaining(
+          "# Problem: test problem (Score: 5)\nID: 123\nTags: react\n\n## Solution:\ntest solution\n\n---",
+        ),
       );
-      expect(consoleLogMock).toHaveBeenCalledWith("ID: 123");
     });
 
     test("handles no solutions found", async () => {
@@ -161,7 +165,9 @@ describe("CLI", () => {
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
       expect(fetchCallUrl).toContain("solutions.vote");
-      expect(consoleLogMock).toHaveBeenCalledWith("Successfully upvoted solution 123");
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        pc.green(pc.bold("▲ Upvoted")) + ` solution ${pc.cyan("123")}`,
+      );
     });
 
     test("successfully downvotes", async () => {
@@ -173,7 +179,9 @@ describe("CLI", () => {
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
       expect(fetchCallUrl).toContain("solutions.vote");
-      expect(consoleLogMock).toHaveBeenCalledWith("Successfully downvoted solution 123");
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        pc.red(pc.bold("▼ Downvoted")) + ` solution ${pc.cyan("123")}`,
+      );
     });
   });
 
@@ -209,9 +217,11 @@ describe("CLI", () => {
       await program.parseAsync(["node", "test", "setup", "--no-api-key"]);
 
       expect(setupMock).toHaveBeenCalledOnce();
-      expect(consoleLogMock).toHaveBeenCalledWith("ClankerOverflow setup results:");
       expect(consoleLogMock).toHaveBeenCalledWith(
-        "  codex: configured - MCP configuration updated",
+        `\n${pc.bold(pc.magenta("=== ClankerOverflow Setup Results ==="))}`,
+      );
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        `  ${pc.bold("codex".padEnd(15))} ${pc.green("✔ configured")} - ${pc.dim("MCP configuration updated")}`,
       );
     });
 
@@ -252,8 +262,10 @@ describe("CLI", () => {
         expect(e.message).toBe("Process.exit(1)");
       }
 
-      expect(consoleErrorMock).toHaveBeenCalledWith("Error installing ClankerOverflow:");
-      expect(consoleErrorMock).toHaveBeenCalledWith("No home directory");
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        pc.red(pc.bold("✖ Error installing ClankerOverflow:")),
+      );
+      expect(consoleErrorMock).toHaveBeenCalledWith(pc.red("No home directory"));
     });
   });
 });

@@ -7,7 +7,9 @@ import fs from "fs/promises";
 import path from "path";
 import packageJson from "../package.json";
 import { startMcpServer } from "./mcp/server.js";
+import { formatSearchResults } from "./mcp/format.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
+import pc from "picocolors";
 
 type CreateProgramOptions = {
   startMcpServer?: () => Promise<void>;
@@ -62,7 +64,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .action(async (options) => {
       try {
         if (!options.problem) {
-          console.error("Error: --problem is required.");
+          console.error(pc.red(pc.bold("✖ Error: ")) + pc.red("--problem is required."));
           process.exit(1);
         }
 
@@ -73,13 +75,17 @@ export function createProgram(options: CreateProgramOptions = {}) {
           try {
             solutionText = await fs.readFile(filePath, "utf-8");
           } catch (err) {
-            console.error(`Error: Could not read file at ${filePath}`);
+            console.error(
+              pc.red(pc.bold("✖ Error: ")) + pc.red(`Could not read file at ${filePath}`),
+            );
             process.exit(1);
           }
         }
 
         if (!solutionText) {
-          console.error("Error: Either --solution or --file is required.");
+          console.error(
+            pc.red(pc.bold("✖ Error: ")) + pc.red("Either --solution or --file is required."),
+          );
           process.exit(1);
         }
 
@@ -90,10 +96,13 @@ export function createProgram(options: CreateProgramOptions = {}) {
         });
 
         const webUrl = process.env.CLANKER_WEB_URL || "https://clankeroverflow.com";
-        console.log(`Success! Solution logged: ${webUrl}/solution/${result.id}`);
+        console.log(
+          pc.green(pc.bold("✔ Success!")) +
+            ` Solution logged: ${pc.cyan(pc.underline(`${webUrl}/solution/${result.id}`))}`,
+        );
       } catch (error: any) {
-        console.error("Error logging solution:");
-        console.error(error.message || error);
+        console.error(pc.red(pc.bold("✖ Error logging solution:")));
+        console.error(pc.red(error.message || error));
         process.exit(1);
       }
     });
@@ -112,13 +121,15 @@ export function createProgram(options: CreateProgramOptions = {}) {
       try {
         const limit = parseInt(options.limit, 10);
         if (isNaN(limit)) {
-          console.error("Error: --limit must be a number");
+          console.error(pc.red(pc.bold("✖ Error: ")) + pc.red("--limit must be a number"));
           process.exit(1);
         }
 
         const mode = options.mode as "keyword" | "semantic" | "hybrid";
         if (!["keyword", "semantic", "hybrid"].includes(mode)) {
-          console.error("Error: --mode must be keyword, semantic, or hybrid");
+          console.error(
+            pc.red(pc.bold("✖ Error: ")) + pc.red("--mode must be keyword, semantic, or hybrid"),
+          );
           process.exit(1);
         }
 
@@ -128,26 +139,18 @@ export function createProgram(options: CreateProgramOptions = {}) {
           mode,
         });
 
-        if (results.length === 0) {
-          console.log("No solutions found.");
-          return;
-        }
+        const sanitized = results.map((result) => ({
+          id: result.id,
+          problem: sanitizeForTerminal(result.problem),
+          solution: sanitizeForTerminal(result.solution),
+          score: result.score,
+          tags: result.tags ? sanitizeForTerminal(result.tags) : null,
+        }));
 
-        for (const result of results) {
-          const problem = sanitizeForTerminal(result.problem);
-          const solution = sanitizeForTerminal(result.solution);
-          const tags = result.tags ? sanitizeForTerminal(result.tags) : null;
-          console.log(`\n# Problem: ${problem} (Score: ${result.score})`);
-          console.log(`ID: ${result.id}`);
-          if (tags) {
-            console.log(`Tags: ${tags}`);
-          }
-          console.log(`\n## Solution:\n${solution}`);
-          console.log(`\n---`);
-        }
+        console.log(formatSearchResults(sanitized));
       } catch (error: any) {
-        console.error("Error searching solutions:");
-        console.error(error.message || error);
+        console.error(pc.red(pc.bold("✖ Error searching solutions:")));
+        console.error(pc.red(error.message || error));
         process.exit(1);
       }
     });
@@ -159,10 +162,10 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .action(async (id) => {
       try {
         await trpc.solutions.vote.mutate({ id, isUpvote: true });
-        console.log(`Successfully upvoted solution ${id}`);
+        console.log(pc.green(pc.bold("▲ Upvoted")) + ` solution ${pc.cyan(id)}`);
       } catch (error: any) {
-        console.error("Error upvoting solution:");
-        console.error(error.message || error);
+        console.error(pc.red(pc.bold("✖ Error upvoting solution:")));
+        console.error(pc.red(error.message || error));
         process.exit(1);
       }
     });
@@ -174,10 +177,10 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .action(async (id) => {
       try {
         await trpc.solutions.vote.mutate({ id, isUpvote: false });
-        console.log(`Successfully downvoted solution ${id}`);
+        console.log(pc.red(pc.bold("▼ Downvoted")) + ` solution ${pc.cyan(id)}`);
       } catch (error: any) {
-        console.error("Error downvoting solution:");
-        console.error(error.message || error);
+        console.error(pc.red(pc.bold("✖ Error downvoting solution:")));
+        console.error(pc.red(error.message || error));
         process.exit(1);
       }
     });
@@ -219,13 +222,28 @@ export function createProgram(options: CreateProgramOptions = {}) {
           dryRun: options.dryRun,
           uninstall: options.uninstall,
         });
-        console.log(`${options.dryRun ? "Planned" : "ClankerOverflow setup"} results:`);
-        for (const result of results)
-          console.log(`  ${result.agent}: ${result.status} - ${result.detail}`);
+        const title = options.dryRun ? "Planned Setup Changes" : "ClankerOverflow Setup Results";
+        console.log(`\n${pc.bold(pc.magenta(`=== ${title} ===`))}`);
+        for (const result of results) {
+          let statusIndicator = "";
+          if (result.status === "configured") {
+            statusIndicator = pc.green("✔ configured");
+          } else if (result.status === "removed") {
+            statusIndicator = pc.red("✘ removed");
+          } else if (result.status === "skipped") {
+            statusIndicator = pc.yellow("○ skipped");
+          } else {
+            statusIndicator = pc.red(pc.bold("▲ failed"));
+          }
+          console.log(
+            `  ${pc.bold(result.agent.padEnd(15))} ${statusIndicator} - ${pc.dim(result.detail)}`,
+          );
+        }
+        console.log();
         if (hasSetupFailures(results)) process.exit(1);
       } catch (error: any) {
-        console.error("Error installing ClankerOverflow:");
-        console.error(error.message || error);
+        console.error(pc.red(pc.bold("✖ Error installing ClankerOverflow:")));
+        console.error(pc.red(error.message || error));
         process.exit(1);
       }
     });

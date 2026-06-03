@@ -36,6 +36,13 @@
       "when": 1774281600000,
       "tag": "0004_better_auth_api_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780444800000,
+      "tag": "0005_device_authorization",
+      "breakpoints": true
     }
   ]
 }
