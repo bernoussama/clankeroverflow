@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import "../../app.css";
+import "../../../app.css";
 import AppProviders from "@/components/app-providers";
 
 import Onboarding from "./onboarding";

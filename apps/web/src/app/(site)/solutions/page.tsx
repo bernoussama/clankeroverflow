@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import "../../app.css";
+import "../../../app.css";
 import AppProviders from "@/components/app-providers";
 
 import SolutionsPage from "./solutions-page";

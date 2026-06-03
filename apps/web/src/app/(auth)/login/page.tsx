@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
-import "../../app.css";
-import ToastProvider from "@/components/toast-provider";
+import "../../../app.css";
 
 import LoginPage from "./login-page";
 
@@ -12,9 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return (
-    <ToastProvider>
-      <LoginPage />
-    </ToastProvider>
-  );
+  return <LoginPage />;
 }

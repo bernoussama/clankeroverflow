@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import "../landing.css";
+import "../../landing.css";
 import Home from "./home";
 
 export const metadata: Metadata = {

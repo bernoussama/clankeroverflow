@@ -3,9 +3,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Bricolage_Grotesque } from "next/font/google";
 
 import "../index.css";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
-import Providers from "@/components/providers";
+import { ThemeProvider } from "@/components/theme-provider";
 import { SITE_ORIGIN } from "@/lib/agent-discovery";
 
 const inter = Inter({
@@ -72,15 +70,14 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} ${bricolage.variable} antialiased`}
       >
-        <Providers>
-          <div className="landing-page flex flex-col min-h-svh relative overflow-x-hidden bg-background text-on-surface">
-            {/* Decorative background */}
-            <div className="fixed inset-0 pointer-events-none z-0 bg-grid-pattern [mask-image:linear-gradient(to_bottom,white,transparent)] opacity-50" />
-            <Header />
-            <main className="relative z-10 min-w-0 w-full flex-grow">{children}</main>
-            <Footer />
-          </div>
-        </Providers>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-const landingPageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
-const homeSource = readFileSync(new URL("./home.tsx", import.meta.url), "utf8");
+const landingPageSource = readFileSync(new URL("./(site)/page.tsx", import.meta.url), "utf8");
+const homeSource = readFileSync(new URL("./(site)/home.tsx", import.meta.url), "utf8");
 const layoutSource = readFileSync(new URL("./layout.tsx", import.meta.url), "utf8");
 const heroInstallPreviewSource = readFileSync(
   new URL("../components/hero-install-preview.tsx", import.meta.url),
