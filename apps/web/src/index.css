@@ -5,6 +5,8 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @source "./app/layout.tsx";
+@source "./app/(auth)/layout.tsx";
+@source "./app/(site)/layout.tsx";
 @source "./components/header.tsx";
 @source "./components/mode-toggle.tsx";
 @source "./components/user-menu.tsx";

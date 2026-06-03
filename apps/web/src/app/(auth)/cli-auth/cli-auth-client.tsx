@@ -19,7 +19,7 @@ function getUserCodeFromLocation() {
   return new URLSearchParams(window.location.search).get("user_code") ?? "";
 }
 
-export default function CliAuthPage() {
+export default function CliAuthClient() {
   const router = useRouter();
   const [userCode, setUserCode] = useState("");
   const [hasReadUserCode, setHasReadUserCode] = useState(false);

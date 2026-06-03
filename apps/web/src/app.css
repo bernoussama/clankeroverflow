@@ -5,11 +5,12 @@
 @import "shadcn/tailwind.css";
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
-@source "./app/dashboard";
-@source "./app/login";
-@source "./app/onboarding";
-@source "./app/solution";
-@source "./app/solutions";
+@source "./app/(auth)/cli-auth";
+@source "./app/(auth)/login";
+@source "./app/(site)/dashboard";
+@source "./app/(site)/onboarding";
+@source "./app/(site)/solution";
+@source "./app/(site)/solutions";
 @source "./components/app-providers.tsx";
 @source "./components/loader.tsx";
 @source "./components/toast-provider.tsx";

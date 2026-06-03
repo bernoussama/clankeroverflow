@@ -5,7 +5,7 @@ import { DISCOVERY_LINK_HEADER, HOME_MARKDOWN, SITE_ORIGIN } from "@/lib/agent-d
 const canonicalHostname = new URL(SITE_ORIGIN).hostname;
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|login(?:/|$)|cli-auth(?:/|$)).*)"],
 };
 
 export function middleware(request: NextRequest) {
