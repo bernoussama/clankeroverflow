@@ -13,7 +13,7 @@ export const queryClient = new QueryClient({
       const isNotFound =
         err?.shape?.data?.code === "NOT_FOUND" ||
         err?.data?.code === "NOT_FOUND" ||
-        err?.message?.includes("not found");
+        err?.message?.toLowerCase().includes("not found");
 
       if (isNotFound) {
         return;
