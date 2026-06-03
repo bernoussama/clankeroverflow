@@ -31,6 +31,14 @@ export default function SolutionPage() {
     queryFn: async () =>
       solutionDetailsSchema.parse(await trpcClient.solutions.getById.query({ id })),
     enabled: !isSessionPending,
+    retry: (failureCount, error: any) => {
+      const isNotFound =
+        error?.shape?.data?.code === "NOT_FOUND" ||
+        error?.data?.code === "NOT_FOUND" ||
+        error?.message?.includes("not found");
+      if (isNotFound) return false;
+      return failureCount < 3;
+    },
   });
 
   const [voteError, setVoteError] = useState<string | null>(null);

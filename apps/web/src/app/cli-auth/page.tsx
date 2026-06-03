@@ -21,13 +21,19 @@ function getUserCodeFromLocation() {
 
 export default function CliAuthPage() {
   const router = useRouter();
-  const [userCode] = useState(getUserCodeFromLocation);
+  const [userCode, setUserCode] = useState("");
+  const [hasReadUserCode, setHasReadUserCode] = useState(false);
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [status, setStatus] = useState<DeviceStatus>("idle");
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    if (isSessionPending) return;
+    setUserCode(getUserCodeFromLocation());
+    setHasReadUserCode(true);
+  }, []);
+
+  useEffect(() => {
+    if (isSessionPending || !hasReadUserCode) return;
 
     if (!session) {
       const next = `/cli-auth${userCode ? `?user_code=${encodeURIComponent(userCode)}` : ""}`;
@@ -62,7 +68,7 @@ export default function CliAuthPage() {
     return () => {
       cancelled = true;
     };
-  }, [isSessionPending, router, session, userCode]);
+  }, [hasReadUserCode, isSessionPending, router, session, userCode]);
 
   async function approve() {
     setIsProcessing(true);
@@ -94,7 +100,7 @@ export default function CliAuthPage() {
     }
   }
 
-  if (isSessionPending || !session || status === "idle") {
+  if (!hasReadUserCode || isSessionPending || !session || status === "idle") {
     return <Loader />;
   }
 
