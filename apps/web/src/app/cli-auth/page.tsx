@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, KeyRound, X } from "lucide-react";
+import { AlertCircle, Check, KeyRound, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -108,54 +108,69 @@ export default function CliAuthPage() {
 
   return (
     <div className="page-shell">
-      <div className="page-container max-w-2xl">
-        <div className="dashboard-card fade-in-up">
-          <div className="dashboard-card__header">
-            <div className="flex items-center gap-2 mb-1">
-              <KeyRound className="w-4 h-4 text-accent-landing" aria-hidden="true" />
-              <h1 className="font-display text-xl font-bold tracking-tight">
-                Authorize ClankerOverflow CLI
-              </h1>
-            </div>
-            <p className="text-sm text-muted-landing">
-              Allow the setup command to create an API key for your local agent configuration.
-            </p>
-          </div>
-          <div className="dashboard-card__body space-y-5">
-            <div>
-              <p className="text-xs font-mono uppercase tracking-widest text-muted-landing mb-2">
-                Verification code
-              </p>
-              <code className="block break-all text-lg font-mono px-4 py-3 rounded-none bg-background border border-landing text-foreground">
-                {userCode || "Missing code"}
-              </code>
-            </div>
+      <div className="auth-card auth-card--centered fade-in-up">
+        <div>
+          <KeyRound className="w-10 h-10 text-accent-landing mx-auto mb-3" aria-hidden="true" />
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+            Authorize ClankerOverflow CLI
+          </h1>
+          <p className="text-sm text-muted-landing mt-2">
+            Allow the setup command to create an API key for your local agent configuration.
+          </p>
+        </div>
 
-            {status === "invalid" ? (
-              <p className="text-sm text-muted-landing">
+        <div className="w-full">
+          {status === "invalid" ? (
+            <div className="auth-status-feedback">
+              <AlertCircle className="w-10 h-10 text-destructive" aria-hidden="true" />
+              <p className="auth-status-feedback__text">
                 This CLI authorization request is invalid or expired. Run setup again to generate a
                 fresh link.
               </p>
-            ) : finished ? (
-              <p className="text-sm text-muted-landing">
+            </div>
+          ) : finished ? (
+            <div className="auth-status-feedback">
+              <div
+                className={`auth-status-feedback__icon ${
+                  status === "approved"
+                    ? "auth-status-feedback__icon--success"
+                    : "auth-status-feedback__icon--error"
+                }`}
+              >
+                {status === "approved" ? (
+                  <Check className="w-6 h-6" aria-hidden="true" />
+                ) : (
+                  <X className="w-6 h-6" aria-hidden="true" />
+                )}
+              </div>
+              <p className="auth-status-feedback__text">
                 {status === "approved"
                   ? "Approved. You can return to your terminal."
                   : "Denied. You can close this tab."}
               </p>
-            ) : (
-              <div className="flex flex-col gap-3 sm:flex-row">
+            </div>
+          ) : (
+            <div className="verification-code">
+              <p className="verification-code__label">
+                Verification code
+              </p>
+              <code className="verification-code__display">
+                {userCode || "Missing code"}
+              </code>
+
+              <div className="auth-actions" style={{ marginTop: "0.75rem" }}>
                 <button
                   type="button"
-                  className="btn-primary justify-center"
+                  className="btn-primary"
                   onClick={approve}
                   disabled={isProcessing}
                 >
                   <Check className="w-4 h-4" aria-hidden="true" />
-                  {isProcessing ? "Authorizing..." : "Authorize CLI"}
+                  {isProcessing ? "Authorizing..." : "Authorize"}
                 </button>
                 <button
                   type="button"
-                  className="btn-secondary justify-center"
+                  className="btn-secondary"
                   onClick={deny}
                   disabled={isProcessing}
                 >
@@ -163,8 +178,8 @@ export default function CliAuthPage() {
                   Deny
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
