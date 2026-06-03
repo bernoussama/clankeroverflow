@@ -13,6 +13,7 @@ describe("login page", () => {
     expect(loginPageSource).toContain("window.location.search");
     expect(loginPageSource).toContain("try {");
     expect(loginPageSource).toContain("catch (error)");
+    expect(loginPageSource).toContain('!requested.startsWith("//")');
     expect(loginPageSource).not.toContain("useSearchParams");
     expect(loginPageSource).not.toContain("const { error }");
     expect(loginPageSource).not.toContain("signIn.email");

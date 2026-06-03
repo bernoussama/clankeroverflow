@@ -1,17 +1,20 @@
 import { access, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, hostname } from "node:os";
 import path from "node:path";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline/promises";
 import { Writable } from "node:stream";
 import { promisify } from "node:util";
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import type { AppRouter } from "@clankeroverflow/api/routers/index";
 
 const execFileAsync = promisify(execFile);
 const MCP_NAME = "clankeroverflow";
 const CLAUDE_PLUGIN = "clankeroverflow@claude-plugin";
 const DEFAULT_SERVER_URL = "https://api.clankeroverflow.com";
+const DEVICE_CLIENT_ID = "clankeroverflow-cli";
 const MCP_COMMAND = ["npx", "-y", "@clankeroverflow/cli", "mcp"] as const;
 const AGENTS = ["codex", "claude", "opencode", "pi", "cursor"] as const;
 
@@ -43,9 +46,11 @@ export type SetupOptions = {
 export type SetupDependencies = {
   commandExists?: (command: string, env: Partial<NodeJS.ProcessEnv>) => Promise<boolean>;
   fetch?: typeof fetch;
+  openBrowser?: (url: string) => Promise<void>;
   promptConfirm?: (message: string) => Promise<boolean>;
   promptSecret?: (message: string) => Promise<string>;
   runCommand?: (command: string, args: string[]) => Promise<CommandResult>;
+  sleep?: (ms: number) => Promise<void>;
   stdinIsTTY?: boolean;
 };
 
@@ -90,6 +95,30 @@ async function defaultRunCommand(command: string, args: string[]) {
       stderr: failure.stderr ?? "",
     });
   }
+}
+
+function spawnDetached(command: string, args: string[]) {
+  const child = spawn(command, args, { detached: true, stdio: "ignore" });
+  child.on("error", () => {
+    // Browser opening is optional; the login URL is printed for manual use.
+  });
+  child.unref();
+}
+
+async function defaultOpenBrowser(url: string) {
+  if (process.platform === "darwin") {
+    spawnDetached("open", [url]);
+    return;
+  }
+  if (process.platform === "win32") {
+    spawnDetached("cmd", ["/c", "start", "", url]);
+    return;
+  }
+  spawnDetached("xdg-open", [url]);
+}
+
+function defaultSleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
 async function promptConfirm(message: string) {
@@ -314,6 +343,134 @@ async function validateApiKey(apiKey: string, serverUrl: string, fetchImpl: type
   return Array.isArray(body) && body[0]?.result?.data === true;
 }
 
+type DeviceCodeResponse = {
+  device_code: string;
+  user_code: string;
+  verification_uri: string;
+  verification_uri_complete?: string;
+  expires_in: number;
+  interval?: number;
+};
+
+type DeviceTokenResponse = {
+  access_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  scope?: string;
+  error?: string;
+  error_description?: string;
+};
+
+async function parseJsonResponse<T>(response: Response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(text || `Request failed with ${response.status}`);
+  }
+}
+
+async function requestDeviceCode(serverUrl: string, fetchImpl: typeof fetch) {
+  const response = await fetchImpl(`${serverUrl}/auth/device/code`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      client_id: DEVICE_CLIENT_ID,
+      scope: "openid profile email",
+    }),
+  });
+  const body = await parseJsonResponse<
+    DeviceCodeResponse & {
+      error?: string;
+      error_description?: string;
+    }
+  >(response);
+  if (!response.ok) {
+    throw new Error(body.error_description || body.error || "Unable to start browser login.");
+  }
+  return body;
+}
+
+async function requestDeviceToken(serverUrl: string, deviceCode: string, fetchImpl: typeof fetch) {
+  const response = await fetchImpl(`${serverUrl}/auth/device/token`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+      device_code: deviceCode,
+      client_id: DEVICE_CLIENT_ID,
+    }),
+  });
+  return parseJsonResponse<DeviceTokenResponse>(response);
+}
+
+async function exchangeDeviceToken(
+  serverUrl: string,
+  accessToken: string,
+  clientName: string,
+  fetchImpl: typeof fetch,
+) {
+  const trpc = createTRPCClient<AppRouter>({
+    links: [
+      httpBatchLink({
+        url: `${serverUrl}/trpc`,
+        fetch(url, options) {
+          const { signal: _signal, ...rest } = options ?? {};
+          return fetchImpl(url, rest);
+        },
+      }),
+    ],
+  });
+  const created = await trpc.cliAuth.exchangeDeviceToken.mutate({
+    accessToken,
+    clientName,
+  });
+  return created.key;
+}
+
+async function resolveBrowserApiKey(
+  serverUrl: string,
+  deps: SetupDependencies,
+  fetchImpl: typeof fetch,
+) {
+  const device = await requestDeviceCode(serverUrl, fetchImpl);
+  const url = device.verification_uri_complete || device.verification_uri;
+  console.log(`Opening browser for ClankerOverflow login: ${url}`);
+  console.log(`If the browser does not open, visit ${device.verification_uri}`);
+  console.log(`Enter code: ${device.user_code}`);
+
+  await (deps.openBrowser ?? defaultOpenBrowser)(url);
+
+  const sleep = deps.sleep ?? defaultSleep;
+  let pollIntervalSeconds = device.interval ?? 5;
+  const expiresAt = Date.now() + device.expires_in * 1000;
+
+  while (Date.now() < expiresAt) {
+    await sleep(pollIntervalSeconds * 1000);
+    const token = await requestDeviceToken(serverUrl, device.device_code, fetchImpl);
+
+    if (token.access_token) {
+      const clientName = `CLI setup - ${hostname()}`;
+      return exchangeDeviceToken(serverUrl, token.access_token, clientName, fetchImpl);
+    }
+
+    if (token.error === "authorization_pending") continue;
+    if (token.error === "slow_down") {
+      pollIntervalSeconds += 5;
+      continue;
+    }
+    if (token.error === "access_denied") {
+      throw new Error("Browser login was denied.");
+    }
+    if (token.error === "expired_token") {
+      throw new Error("Browser login expired. Run setup again to retry.");
+    }
+    throw new Error(token.error_description || token.error || "Browser login failed.");
+  }
+
+  throw new Error("Browser login expired. Run setup again to retry.");
+}
+
 async function resolveApiKey(
   options: SetupOptions,
   deps: SetupDependencies,
@@ -342,6 +499,21 @@ async function resolveApiKey(
     return existing;
   console.log("Get your API key: https://clankeroverflow.com/login");
   console.warn("Warning: the API key will be stored as plaintext in configured agent MCP files.");
+  if (await (deps.promptConfirm ?? promptConfirm)("Open browser to sign in automatically?")) {
+    try {
+      const apiKey = await resolveBrowserApiKey(
+        options.serverUrl ?? DEFAULT_SERVER_URL,
+        deps,
+        fetchImpl,
+      );
+      if (await validateApiKey(apiKey, options.serverUrl ?? DEFAULT_SERVER_URL, fetchImpl)) {
+        return apiKey;
+      }
+      console.warn("The browser login returned an invalid API key. Falling back to manual setup.");
+    } catch (error) {
+      console.warn(`Browser login failed: ${(error as Error).message}`);
+    }
+  }
   while (true) {
     const apiKey = await (deps.promptSecret ?? promptSecret)(
       "Paste your ClankerOverflow API key, or press Enter to skip",

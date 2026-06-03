@@ -3,6 +3,7 @@ import { getDb, schema, type Database } from "@clankeroverflow/db";
 import { env } from "@clankeroverflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { bearer, deviceAuthorization } from "better-auth/plugins";
 
 import { parseAllowedOriginsWithDevFallback } from "./origins";
 
@@ -22,6 +23,7 @@ const authEnv = env as typeof env & {
   BETTER_AUTH_URL: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  CLANKER_WEB_URL?: string;
 };
 
 function getCrossSubDomainCookieOptions(baseURL: string) {
@@ -57,6 +59,16 @@ function getDefaultCookieAttributes(baseURL: string) {
   };
 }
 
+function getCliAuthVerificationUri() {
+  const configured = authEnv.CLANKER_WEB_URL?.trim();
+  if (configured) return `${configured.replace(/\/$/, "")}/cli-auth`;
+
+  const firstCorsOrigin = authEnv.CORS_ORIGIN?.split(",")[0]?.trim();
+  if (firstCorsOrigin) return `${firstCorsOrigin.replace(/\/$/, "")}/cli-auth`;
+
+  return "https://clankeroverflow.com/cli-auth";
+}
+
 export function createAuth(
   db: Database = getDb(),
   waitUntil?: (promise: Promise<unknown>) => void,
@@ -90,6 +102,14 @@ export function createAuth(
     secret: authEnv.BETTER_AUTH_SECRET,
     baseURL: authEnv.BETTER_AUTH_URL,
     plugins: [
+      bearer(),
+      deviceAuthorization({
+        schema: {},
+        verificationUri: getCliAuthVerificationUri(),
+        expiresIn: "10m",
+        interval: "5s",
+        validateClient: (clientId) => clientId === "clankeroverflow-cli",
+      }),
       apiKey({
         apiKeyHeaders: "x-clanker-api-key",
         defaultPrefix: "clk_",

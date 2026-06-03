@@ -2,22 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { Github } from "lucide-react";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import Loader from "@/components/loader";
 import { authClient } from "@/lib/auth-client";
 
+function getSafeCallbackURL() {
+  if (typeof window === "undefined") return "/dashboard";
+  const requested = new URLSearchParams(window.location.search).get("callbackURL");
+  return requested?.startsWith("/") && !requested.startsWith("//") ? requested : "/dashboard";
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [callbackURL] = useState(getSafeCallbackURL);
   const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
     if (session) {
-      router.replace("/dashboard");
+      router.replace(callbackURL as Route);
     }
-  }, [router, session]);
+  }, [callbackURL, router, session]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -41,7 +49,7 @@ export default function LoginPage() {
     try {
       await authClient.signIn.social({
         provider: "github",
-        callbackURL: `${appOrigin}/onboarding`,
+        callbackURL: `${appOrigin}${callbackURL}`,
         errorCallbackURL: `${appOrigin}/login`,
       });
     } catch (error) {
