@@ -9,7 +9,7 @@ import { authClient } from "@/lib/auth-client";
 
 import { Skeleton } from "./ui/skeleton";
 
-export default function UserMenu() {
+export default function UserMenu({ variant }: { variant?: "default" | "landing" }) {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const [open, setOpen] = useState(false);
@@ -28,7 +28,9 @@ export default function UserMenu() {
       <Link href="/login" className="hidden sm:inline-flex">
         <button
           type="button"
-          className="btn-secondary h-9 py-0 px-2.5 sm:px-4 text-xs font-mono uppercase tracking-wider"
+          className={`${
+            variant === "landing" ? "btn-glow border-0 cursor-pointer" : "btn-secondary"
+          } h-9 py-0 px-4 text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-all`}
         >
           Sign In
           <ArrowRight className="w-3 h-3" aria-hidden="true" />
@@ -41,7 +43,11 @@ export default function UserMenu() {
     <div className="relative">
       <button
         type="button"
-        className="btn-secondary h-9 py-0 px-2.5 sm:px-4 text-xs font-mono uppercase tracking-wider"
+        className={`${
+          variant === "landing"
+            ? "border border-outline hover:bg-surface-container-low rounded-lg bg-surface-container-low text-on-surface cursor-pointer"
+            : "btn-secondary"
+        } h-9 py-0 px-4 text-xs font-mono uppercase tracking-wider transition-colors`}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}

@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Key, Plus, Trash2, Copy, Check } from "lucide-react";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+  type InfiniteData,
+} from "@tanstack/react-query";
+import Link from "next/link";
+import { Key, Plus, Trash2, Copy, Check, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -16,6 +23,13 @@ import { authClient } from "@/lib/auth-client";
 import Loader from "@/components/loader";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  solutionListSchema,
+  type SearchResult,
+  type SolutionList,
+  type SolutionListCursor,
+} from "@/utils/trpc-output-types";
+import { trpcClient } from "@/utils/trpc";
 import { toast } from "sonner";
 
 function getErrorMessage(error: unknown) {
@@ -31,6 +45,7 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const sessionUserId = session?.user?.id;
   const apiKeysQueryKey = ["apiKeys", "list", sessionUserId] as const;
+  const mySolutionsQueryKey = ["solutions", "mine", sessionUserId] as const;
 
   useEffect(() => {
     if (!isSessionPending && !session) {
@@ -61,6 +76,34 @@ export default function Dashboard() {
     },
     enabled: Boolean(session),
   });
+
+  const {
+    data: mySolutionsData,
+    isLoading: isMySolutionsLoading,
+    isFetchingNextPage: isFetchingMoreSolutions,
+    fetchNextPage: fetchMoreSolutions,
+    hasNextPage: hasMoreSolutions,
+  } = useInfiniteQuery<
+    SolutionList,
+    Error,
+    InfiniteData<SolutionList>,
+    typeof mySolutionsQueryKey,
+    SolutionListCursor | undefined
+  >({
+    queryKey: mySolutionsQueryKey,
+    queryFn: async ({ pageParam }) =>
+      solutionListSchema.parse(
+        await trpcClient.solutions.mine.query({
+          limit: 20,
+          cursor: pageParam ?? undefined,
+        }),
+      ),
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    initialPageParam: undefined as SolutionListCursor | undefined,
+    enabled: Boolean(session),
+  });
+
+  const mySolutions = mySolutionsData?.pages.flatMap((page) => page.items) ?? [];
 
   const createMutation = useMutation({
     mutationFn: async ({ name }: { name: string }) =>
@@ -121,6 +164,28 @@ export default function Dashboard() {
     },
   });
 
+  const deleteSolutionMutation = useMutation({
+    mutationFn: async ({ id }: { id: string }) => trpcClient.solutions.delete.mutate({ id }),
+    onSuccess: (_data, variables) => {
+      queryClient.setQueryData<InfiniteData<SolutionList>>(mySolutionsQueryKey, (current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          pages: current.pages.map((page) => ({
+            ...page,
+            items: page.items.filter((solution) => solution.id !== variables.id),
+          })),
+        };
+      });
+      queryClient.invalidateQueries({ queryKey: mySolutionsQueryKey });
+      queryClient.invalidateQueries({ queryKey: ["solutions"] });
+      toast.success("Solution deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete solution: ${getErrorMessage(error)}`);
+    },
+  });
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newKeyName.trim()) return;
@@ -130,6 +195,12 @@ export default function Dashboard() {
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to revoke this API key? This cannot be undone.")) {
       deleteMutation.mutate({ id });
+    }
+  };
+
+  const handleDeleteSolution = (id: string) => {
+    if (confirm("Are you sure you want to delete this solution? This cannot be undone.")) {
+      deleteSolutionMutation.mutate({ id });
     }
   };
 
@@ -166,7 +237,9 @@ export default function Dashboard() {
             <div className="dashboard-card__header bg-surface-landing/30">
               <div className="flex items-center gap-2 mb-1">
                 <Key className="w-4.5 h-4.5 text-accent-landing" />
-                <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">API Keys</h2>
+                <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">
+                  API Keys
+                </h2>
               </div>
               <p className="text-xs text-muted-landing">
                 Generate keys to use with the{" "}
@@ -257,7 +330,9 @@ export default function Dashboard() {
                       }`}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-on-surface">{apiKey.name || "Unnamed Key"}</p>
+                        <p className="text-sm font-semibold text-on-surface">
+                          {apiKey.name || "Unnamed Key"}
+                        </p>
                         <span className="block text-[10px] text-muted-landing font-mono mt-1">
                           Created {new Date(apiKey.createdAt).toLocaleDateString()}
                         </span>
@@ -280,6 +355,58 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
+
+              <div className="mt-8 border-t border-landing pt-6">
+                <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="font-display text-base font-bold tracking-tight text-on-surface">
+                      Logged Solutions
+                    </h3>
+                    <p className="text-xs text-muted-landing">
+                      Solutions logged by API keys owned by this account.
+                    </p>
+                  </div>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted-landing">
+                    {isMySolutionsLoading ? "Loading" : `${mySolutions.length} loaded`}
+                  </span>
+                </div>
+
+                {isMySolutionsLoading ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-20 w-full rounded-none" />
+                    <Skeleton className="h-20 w-full rounded-none" />
+                    <Skeleton className="h-20 w-full rounded-none" />
+                  </div>
+                ) : mySolutions.length === 0 ? (
+                  <div className="text-center py-10 border border-dashed border-landing rounded-none text-muted-landing text-xs font-mono">
+                    No logged solutions yet.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="border border-landing rounded-none overflow-hidden">
+                      {mySolutions.map((solution, i) => (
+                        <LoggedSolutionItem
+                          key={solution.id}
+                          solution={solution}
+                          isLast={i === mySolutions.length - 1}
+                          onDelete={handleDeleteSolution}
+                          isDeleting={deleteSolutionMutation.isPending}
+                        />
+                      ))}
+                    </div>
+                    {hasMoreSolutions ? (
+                      <button
+                        type="button"
+                        className="btn-secondary h-10 px-4 text-xs font-bold uppercase tracking-wider cursor-pointer"
+                        onClick={() => void fetchMoreSolutions()}
+                        disabled={isFetchingMoreSolutions}
+                      >
+                        {isFetchingMoreSolutions ? "Loading…" : "Load More"}
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -289,10 +416,12 @@ export default function Dashboard() {
             <div className="dashboard-card border-l-4 border-l-[var(--landing-accent)] flex flex-col justify-between">
               <div>
                 <div className="dashboard-card__header bg-surface-landing/30">
-                  <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">MCP Usage</h2>
+                  <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">
+                    MCP Usage
+                  </h2>
                   <p className="mt-2 text-xs text-muted-landing leading-relaxed">
-                    Set up ClankerOverflow MCP to search prior fixes and log new ones without leaving
-                    your editor.
+                    Set up ClankerOverflow MCP to search prior fixes and log new ones without
+                    leaving your editor.
                   </p>
                 </div>
                 <div className="dashboard-card__body p-0 bg-surface-card">
@@ -322,7 +451,9 @@ export default function Dashboard() {
             {/* CLI Usage Section */}
             <div className="dashboard-card border-l-4 border-l-[var(--landing-accent)]">
               <div className="dashboard-card__header bg-surface-landing/30">
-                <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">CLI Usage</h2>
+                <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">
+                  CLI Usage
+                </h2>
                 <p className="mt-2 text-xs text-muted-landing leading-relaxed">
                   Direct terminal integration via standard environment variables and arguments.
                 </p>
@@ -341,7 +472,9 @@ export default function Dashboard() {
                     <div>
                       <span className="syn-cmd">export</span>{" "}
                       <span className="syn-flag">CLANKER_SERVER_URL</span>=
-                      <span className="syn-string">&quot;https://api.clankeroverflow.com&quot;</span>
+                      <span className="syn-string">
+                        &quot;https://api.clankeroverflow.com&quot;
+                      </span>
                     </div>
                     <div className="pt-2">
                       <span className="syn-prompt">$ </span>
@@ -361,6 +494,66 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function LoggedSolutionItem({
+  solution,
+  isLast,
+  onDelete,
+  isDeleting,
+}: {
+  solution: SearchResult;
+  isLast: boolean;
+  onDelete: (id: string) => void;
+  isDeleting: boolean;
+}) {
+  const tags = solution.tags
+    ? solution.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+    : [];
+
+  return (
+    <div
+      className={`group bg-surface-landing/10 transition-colors hover:bg-surface-landing/40 ${
+        isLast ? "" : "border-b border-landing"
+      }`}
+    >
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
+        <Link href={`/solution/${solution.id}`} prefetch={false} className="min-w-0 flex-1">
+          <div className="flex items-start gap-2">
+            <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-landing transition-colors group-hover:text-accent-landing" />
+            <div className="min-w-0">
+              <p className="line-clamp-2 text-sm font-semibold text-on-surface transition-colors group-hover:text-accent-landing">
+                {solution.problem}
+              </p>
+              <p className="mt-1 line-clamp-2 text-xs text-muted-landing">{solution.solution}</p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 pl-5 text-[10px] font-mono uppercase tracking-wider text-muted-landing">
+            <span>Created {new Date(solution.createdAt).toLocaleDateString()}</span>
+            <span>Score {solution.score}</span>
+            {tags.map((tag) => (
+              <span key={tag} className="border border-landing px-1.5 py-0.5 text-[10px]">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </Link>
+        <button
+          type="button"
+          className="mode-toggle-btn h-10 w-10 shrink-0 self-end hover:!border-red-500 hover:!text-red-500 sm:self-start cursor-pointer"
+          onClick={() => onDelete(solution.id)}
+          disabled={isDeleting}
+          title="Delete Solution"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );

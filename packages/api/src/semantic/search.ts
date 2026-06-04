@@ -16,6 +16,7 @@ export type SolutionVectorizeBinding = {
     options: { topK: number; returnMetadata?: "none" | "indexed" | "all" },
   ): Promise<{ matches?: Array<{ id: string; score?: number }> }>;
   upsert(vectors: Array<{ id: string; values: number[] }>): Promise<unknown>;
+  deleteByIds?(ids: string[]): Promise<unknown>;
 };
 
 export type SolutionRow = Omit<typeof schema.solution.$inferSelect, "updatedAt">;

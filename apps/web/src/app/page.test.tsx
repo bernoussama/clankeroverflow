@@ -21,17 +21,13 @@ describe("landing page rendering", () => {
     expect(homeSource).not.toContain("trpcClient");
   });
 
-  it("links the hero primary action to login", () => {
-    expect(homeSource).toContain('href="/login"');
-    expect(homeSource).toMatch(/Get Started\s*<\/Link>/);
-    expect(homeSource).not.toContain("Browse Solutions");
+  it("renders the hero action buttons using the HeroButtons client component", () => {
+    expect(homeSource).toContain("<HeroButtons />");
   });
 
-  it("uses the split landing hero layout with an install preview", () => {
-    expect(homeSource).toContain('className="landing-hero"');
-    expect(homeSource).toContain('className="landing-hero__title"');
-    expect(homeSource).toContain('className="landing-hero__search"');
-    expect(homeSource).toContain("<HeroInstallPreview />");
+  it("uses the centered landing hero layout with a terminal preview and gradient", () => {
+    expect(homeSource).toContain('className="hero-title-gradient"');
+    expect(homeSource).toContain("bg-rays");
     expect(homeSource).not.toContain("StackOverflow for AI agents");
   });
 
@@ -47,30 +43,22 @@ describe("landing page rendering", () => {
     expect(heroInstallPreviewSource).toContain('"Setup command copied"');
   });
 
-  it("uses light text inside dark terminal surfaces", () => {
+  it("uses custom themed colors inside dark terminal surfaces", () => {
     expect(homeSource).toContain(
-      'className="p-6 font-code-sm text-code-sm text-text-on-dark flex flex-col gap-2 overflow-x-auto"',
-    );
-    expect(homeSource).not.toContain(
-      "bg-surface-terminal border border-border-muted p-4 font-code-sm text-code-sm text-on-surface",
+      'className="p-8 font-code-sm text-code-sm text-on-surface-variant leading-relaxed font-mono"',
     );
   });
 
   it("does not label semantic search as coming soon", () => {
-    expect(homeSource).toContain(">Semantic Search</h3>");
+    expect(homeSource.replace(/\s+/g, "")).toContain("SemanticSearch</h3>");
     expect(homeSource).not.toContain("COMING SOON");
   });
 
   it("describes the search-first workflow without implementation placeholder copy", () => {
     expect(homeSource).not.toContain("StackOverflow for AI agents");
-    expect(homeSource).toContain("It just works with whatever you're using.");
-    expect(homeSource).toContain("Works with");
-    expect(homeSource).toContain("agent-carousel__track");
-    expect(homeSource).toContain('{ name: "Codex", logo: "/agent-logos/codex.png" }');
-    expect(homeSource).toContain('{ name: "OpenClaw", logo: "/agent-logos/openclaw.svg" }');
-    expect(homeSource).toContain('href="https://github.com/bernoussama/clankeroverflow"');
+    expect(homeSource).toContain("Built for agentic development");
+    expect(homeSource).toContain("Shared Context Memory");
     expect(homeSource).not.toContain("client-rendered");
-    expect(homeSource).not.toContain("Loved by agents connected to");
   });
 
   it("uses the shared-memory positioning in page metadata", () => {

@@ -35,6 +35,37 @@ describe("dashboard API key UX", () => {
     );
   });
 
+  it("lists logged solutions under API key management with owner pagination", () => {
+    expect(dashboardSource).toContain(
+      'const mySolutionsQueryKey = ["solutions", "mine", sessionUserId] as const;',
+    );
+    expect(dashboardSource).toContain("trpcClient.solutions.mine.query");
+    expect(dashboardSource).toContain("solutionListSchema.parse");
+    expect(dashboardSource).toContain("getNextPageParam: (lastPage) => lastPage.nextCursor");
+    expect(dashboardSource).toContain("Logged Solutions");
+    expect(dashboardSource).toContain("Solutions logged by API keys owned by this account.");
+    expect(dashboardSource).toContain("Load More");
+  });
+
+  it("makes logged solution rows clickable and user-deletable", () => {
+    expect(dashboardSource).toContain("href={`/solution/${solution.id}`}");
+    expect(dashboardSource).toContain("trpcClient.solutions.delete.mutate");
+    expect(dashboardSource).toContain(
+      "Are you sure you want to delete this solution? This cannot be undone.",
+    );
+    expect(dashboardSource).toContain("Failed to delete solution");
+    expect(dashboardSource).toContain("Solution deleted successfully");
+    expect(dashboardSource).toContain("Delete Solution");
+  });
+
+  it("uses the centralized dashboard/design-system classes for logged solutions", () => {
+    expect(dashboardSource).toContain("border-landing");
+    expect(dashboardSource).toContain("bg-surface-landing/10");
+    expect(dashboardSource).toContain("mode-toggle-btn");
+    expect(dashboardSource).toContain("btn-secondary");
+    expect(dashboardSource).not.toContain("styled.");
+  });
+
   it("documents MCP usage before CLI usage", () => {
     expect(dashboardSource).toContain("MCP Usage");
     expect(dashboardSource).toContain("npx @clankeroverflow/cli setup");

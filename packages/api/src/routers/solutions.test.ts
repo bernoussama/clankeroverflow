@@ -63,6 +63,15 @@ describe("solutionsRouter", () => {
     expect(solutionsSource).not.toContain("schema.apiKey");
   });
 
+  test("delete scopes the hard delete to the authenticated solution owner", () => {
+    expect(solutionsSource).toContain('trpc_procedure: "solutions.delete"');
+    expect(solutionsSource).toContain("db\n          .delete(schema.solution)");
+    expect(solutionsSource).toContain(
+      "where(and(eq(schema.solution.id, input.id), eq(schema.solution.userId, userId)))",
+    );
+    expect(solutionsSource).toContain("ctx.solutionVectors?.deleteByIds");
+  });
+
   test("search should return empty array if query is empty after trim", async () => {
     const caller = createCaller({
       auth: null as any,
@@ -917,5 +926,155 @@ describe("solutionsRouter", () => {
     // This ensures sol_3 is included on the next page, not skipped
     expect(page1.nextCursor).toBeTruthy();
     expect(page1.nextCursor!.id).toBe("sol_2");
+  });
+
+  test("mine should reject unauthenticated users", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+    } as any);
+
+    await expect(caller.solutions.mine({ limit: 20 })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    expect(db.select as any).not.toHaveBeenCalled();
+  });
+
+  test("mine should return authenticated user's logged solutions", async () => {
+    const createdAt = new Date();
+    const items = [
+      {
+        id: "sol_1",
+        problem: "P1",
+        solution: "S1",
+        tags: "tsx",
+        userId: "user_1",
+        score: 2,
+        createdAt,
+      },
+    ];
+    (db.select as any).mockReturnValueOnce(createSelectChain(items));
+    const capture = vi.fn();
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: mockSession,
+      apiKey: null,
+      posthog: { capture },
+    } as any);
+
+    const result = await caller.solutions.mine({ limit: 20 });
+
+    expect(result.items).toEqual(items);
+    expect(result.nextCursor).toBeNull();
+    expect(Object.keys((db.select as any).mock.calls[0]?.[0])).toEqual([
+      "id",
+      "problem",
+      "solution",
+      "tags",
+      "userId",
+      "score",
+      "createdAt",
+    ]);
+    expect(capture).toHaveBeenCalledWith({
+      distinctId: "user_1",
+      event: "user solution list viewed",
+      properties: {
+        result_count: 1,
+        is_paginated: false,
+      },
+    });
+  });
+
+  test("mine should treat API-key-authored solutions as account-owned", async () => {
+    const items = [
+      {
+        id: "sol_1",
+        problem: "P1",
+        solution: "S1",
+        tags: null,
+        userId: "user_1",
+        score: 0,
+        createdAt: new Date(),
+      },
+    ];
+    (db.select as any).mockReturnValueOnce(createSelectChain(items));
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: { referenceId: "user_1" },
+    } as any);
+
+    const result = await caller.solutions.mine({ limit: 20 });
+    expect(result.items.map((item) => item.id)).toEqual(["sol_1"]);
+  });
+
+  test("delete should reject unauthenticated users", async () => {
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: null,
+      apiKey: null,
+    } as any);
+
+    await expect(caller.solutions.delete({ id: "sol_1" })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    expect(db.delete as any).not.toHaveBeenCalled();
+  });
+
+  test("delete should hard delete an owned solution and enqueue vector cleanup", async () => {
+    const deleteByIds = vi.fn(async () => undefined);
+    const waitUntil = vi.fn();
+    const capture = vi.fn();
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: mockSession,
+      apiKey: null,
+      solutionVectors: { deleteByIds },
+      waitUntil,
+      posthog: { capture },
+    } as any);
+
+    const result = await caller.solutions.delete({ id: "sol_1" });
+
+    expect(result).toEqual({ success: true });
+    expect(db.delete as any).toHaveBeenCalled();
+    const deleteChain = (db.delete as any).mock.results.at(-1)?.value;
+    expect(deleteChain.returning).toHaveBeenCalledWith({ id: "id" });
+    expect(waitUntil).toHaveBeenCalledTimes(1);
+    expect(deleteByIds).toHaveBeenCalledWith(["sol_1"]);
+    expect(capture).toHaveBeenCalledWith({
+      distinctId: "user_1",
+      event: "solution deleted",
+      properties: {
+        solution_id: "sol_1",
+      },
+    });
+  });
+
+  test("delete should reject non-owned or missing solutions", async () => {
+    const deleteChain: any = {};
+    deleteChain.where = vi.fn(() => deleteChain);
+    deleteChain.returning = vi.fn(() => Promise.resolve([]));
+    (db.delete as any).mockReturnValueOnce(deleteChain);
+
+    const caller = createCaller({
+      auth: null as any,
+      db,
+      session: mockSession,
+      apiKey: null,
+    } as any);
+
+    await expect(caller.solutions.delete({ id: "sol_other" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 });

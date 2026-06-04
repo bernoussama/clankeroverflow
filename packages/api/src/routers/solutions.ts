@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database } from "@clankeroverflow/db";
 import {
@@ -32,6 +32,46 @@ const solutionResponseColumns = {
   score: schema.solution.score,
   createdAt: schema.solution.createdAt,
 };
+
+async function listSolutionsForUser(
+  db: Database,
+  input: { userId: string; limit: number; cursor?: SolutionListCursor | null },
+) {
+  const limit = Math.min(Math.max(input.limit, 1), 50);
+  const cursor = input.cursor ?? null;
+  const cursorCreatedAt = cursor ? new Date(cursor.createdAt) : null;
+  const cursorWhere =
+    cursor && cursorCreatedAt
+      ? or(
+          lt(schema.solution.createdAt, cursorCreatedAt),
+          and(eq(schema.solution.createdAt, cursorCreatedAt), lt(schema.solution.id, cursor.id)),
+        )
+      : undefined;
+  const where = cursorWhere
+    ? and(eq(schema.solution.userId, input.userId), cursorWhere)
+    : eq(schema.solution.userId, input.userId);
+
+  const rows = await db
+    .select(solutionResponseColumns)
+    .from(schema.solution)
+    .where(where)
+    .orderBy(desc(schema.solution.createdAt), desc(schema.solution.id))
+    .limit(limit + 1);
+
+  let nextCursor: SolutionListCursor | null = null;
+  if (rows.length > limit) {
+    const last = rows[limit - 1];
+    if (last) {
+      nextCursor = {
+        createdAt: last.createdAt.toISOString(),
+        id: last.id,
+        score: last.score,
+      };
+    }
+  }
+
+  return { items: rows.slice(0, limit), nextCursor };
+}
 
 const PROJECT_SPECIFIC_PATTERNS = [
   // Monorepo-style source paths (e.g. packages/api/src/, apps/web/src/, services/auth/src/)
@@ -663,5 +703,114 @@ export const solutionsRouter = router({
       addRequestLogFields(ctx, { result_count: results.items.length });
 
       return results;
+    }),
+
+  mine: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(50).default(20),
+        cursor: z
+          .object({
+            createdAt: z.string(),
+            id: z.string(),
+            score: z.number(),
+          })
+          .nullish(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const userId = getAuthenticatedUserId(ctx);
+      addRequestLogFields(ctx, {
+        trpc_procedure: "solutions.mine",
+        is_paginated: Boolean(input.cursor),
+        user_type: getUserType(ctx),
+      });
+
+      if (!userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to view your solutions",
+        });
+      }
+
+      const results = await withTimeout(
+        listSolutionsForUser(ctx.db, {
+          userId,
+          limit: input.limit,
+          cursor: input.cursor ?? null,
+        }),
+        DB_TIMEOUT_MS,
+        "User solution list timed out",
+      );
+
+      captureAnalytics(ctx, {
+        distinctId: userId,
+        event: "user solution list viewed",
+        properties: {
+          result_count: results.items.length,
+          is_paginated: Boolean(input.cursor),
+        },
+      });
+      addRequestLogFields(ctx, { result_count: results.items.length });
+
+      return results;
+    }),
+
+  delete: publicProcedure
+    .input(z.object({ id: z.string().min(1, "Solution ID is required") }))
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.db;
+      const userId = getAuthenticatedUserId(ctx);
+      addRequestLogFields(ctx, {
+        trpc_procedure: "solutions.delete",
+        solution_id: input.id,
+        user_type: getUserType(ctx),
+      });
+
+      if (!userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to delete your solutions",
+        });
+      }
+
+      const deletedRows = await withTimeout(
+        db
+          .delete(schema.solution)
+          .where(and(eq(schema.solution.id, input.id), eq(schema.solution.userId, userId)))
+          .returning({ id: schema.solution.id }),
+        DB_TIMEOUT_MS,
+        "Solution delete timed out",
+      );
+
+      if (deletedRows.length === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Solution not found",
+        });
+      }
+
+      if (ctx.solutionVectors?.deleteByIds && ctx.waitUntil) {
+        addRequestLogFields(ctx, { vector_delete_enqueued: true });
+        ctx.waitUntil(
+          ctx.solutionVectors.deleteByIds([input.id]).catch((err) => {
+            logError({
+              event: "solution_vector_delete_failed",
+              solution_id: input.id,
+              ...errorFields(err),
+            });
+          }),
+        );
+      }
+
+      captureAnalytics(ctx, {
+        distinctId: userId,
+        event: "solution deleted",
+        properties: {
+          solution_id: input.id,
+        },
+      });
+
+      return { success: true };
     }),
 });

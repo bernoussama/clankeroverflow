@@ -249,7 +249,10 @@ export default function Onboarding() {
 
         {/* Navigation */}
         <div className="fade-in-up stagger-4 pt-4 flex items-center justify-between border-t border-landing">
-          <Link href="/dashboard" className="btn-primary uppercase text-xs tracking-wider font-bold py-3.5 cursor-pointer">
+          <Link
+            href="/dashboard"
+            className="btn-primary uppercase text-xs tracking-wider font-bold py-3.5 cursor-pointer"
+          >
             Go to Dashboard <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
@@ -263,7 +266,6 @@ export default function Onboarding() {
     </div>
   );
 }
-
 
 function InstallNote({ children }: { children: React.ReactNode }) {
   return (
