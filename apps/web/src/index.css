@@ -1635,10 +1635,15 @@
 
 .btn-glow {
   position: relative;
-  background: var(--theme-surface-container-low);
+  background: transparent;
   color: var(--theme-on-surface);
   border-radius: 8px;
   z-index: 1;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, color 0.2s ease;
+}
+
+.btn-glow:hover {
+  color: var(--landing-accent);
 }
 
 .btn-glow::before {
@@ -1656,10 +1661,17 @@
     var(--theme-on-primary-fixed-variant)
   );
   background-size: 200% 200%;
-  z-index: -1;
+  z-index: -2;
   border-radius: 10px;
   animation: gradient-shift 3s ease infinite;
   opacity: 0.8;
+  pointer-events: none;
+  transition: background-position 0.15s ease-out;
+}
+
+.btn-glow:hover::before {
+  animation: none;
+  background-position: calc(var(--mouse-x, 0px) * -1) calc(var(--mouse-y, 0px) * -1);
 }
 
 .btn-glow::after {
@@ -1672,6 +1684,7 @@
   background: var(--theme-surface-container-low);
   border-radius: 7px;
   z-index: -1;
+  pointer-events: none;
 }
 
 @keyframes gradient-shift {
