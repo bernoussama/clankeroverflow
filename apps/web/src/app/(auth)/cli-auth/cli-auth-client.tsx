@@ -108,22 +108,44 @@ export default function CliAuthClient() {
 
   return (
     <div className="page-shell">
-      <div className="auth-card auth-card--centered fade-in-up">
+      <div className="auth-card fade-in-up border-2 border-landing p-8 md:p-10 flex flex-col gap-6 relative overflow-hidden bg-surface-card text-center">
+        {/* Top decorative terminal header bar */}
+        <div className="flex items-center justify-between border-b border-landing pb-4 w-full">
+          <div className="flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase text-muted-landing">
+            <span
+              className={`inline-block w-1.5 h-1.5 rounded-full ${
+                status === "valid"
+                  ? "bg-amber-500 animate-pulse"
+                  : status === "approved"
+                    ? "bg-green-500"
+                    : "bg-red-500"
+              }`}
+              aria-hidden="true"
+            />
+            CLI_AUTH // {status.toUpperCase()}
+          </div>
+          <div className="flex gap-1" aria-hidden="true">
+            <span className="w-1.5 h-1.5 bg-border rounded-full" />
+            <span className="w-1.5 h-1.5 bg-border rounded-full" />
+            <span className="w-1.5 h-1.5 bg-border rounded-full" />
+          </div>
+        </div>
+
         <div>
-          <KeyRound className="w-10 h-10 text-accent-landing mx-auto mb-3" aria-hidden="true" />
-          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Authorize ClankerOverflow CLI
+          <KeyRound className="w-12 h-12 text-landing-accent mx-auto mb-3" aria-hidden="true" />
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-on-surface">
+            Authorize CLI Setup
           </h1>
-          <p className="text-sm text-muted-landing mt-2">
-            Allow the setup command to create an API key for your local agent configuration.
+          <p className="text-xs text-muted-landing font-mono mt-1 max-w-[280px] mx-auto leading-relaxed">
+            Allow the setup command to configure an API key for your local agent environment.
           </p>
         </div>
 
         <div className="w-full">
           {status === "invalid" ? (
             <div className="auth-status-feedback">
-              <AlertCircle className="w-10 h-10 text-destructive" aria-hidden="true" />
-              <p className="auth-status-feedback__text">
+              <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-2" aria-hidden="true" />
+              <p className="auth-status-feedback__text text-xs text-muted-landing font-mono leading-relaxed">
                 This CLI authorization request is invalid or expired. Run setup again to generate a
                 fresh link.
               </p>
@@ -131,7 +153,7 @@ export default function CliAuthClient() {
           ) : finished ? (
             <div className="auth-status-feedback">
               <div
-                className={`auth-status-feedback__icon ${
+                className={`auth-status-feedback__icon mx-auto mb-2 ${
                   status === "approved"
                     ? "auth-status-feedback__icon--success"
                     : "auth-status-feedback__icon--error"
@@ -143,7 +165,7 @@ export default function CliAuthClient() {
                   <X className="w-6 h-6" aria-hidden="true" />
                 )}
               </div>
-              <p className="auth-status-feedback__text">
+              <p className="auth-status-feedback__text text-xs font-semibold font-mono text-on-surface">
                 {status === "approved"
                   ? "Approved. You can return to your terminal."
                   : "Denied. You can close this tab."}
@@ -151,13 +173,21 @@ export default function CliAuthClient() {
             </div>
           ) : (
             <div className="verification-code">
-              <p className="verification-code__label">Verification code</p>
-              <code className="verification-code__display">{userCode || "Missing code"}</code>
+              <p className="verification-code__label font-mono text-[10px] text-muted-landing uppercase tracking-widest mb-2">
+                Verification code
+              </p>
+              <code className="verification-code__display block w-full py-4 text-center font-mono text-2xl font-bold tracking-[0.2em] text-indent-[0.2em] bg-[var(--landing-code-bg)] text-[var(--landing-code-fg)] border border-landing rounded-none shadow-inner">
+                {userCode || "Missing code"}
+              </code>
 
-              <div className="auth-actions" style={{ marginTop: "0.75rem" }}>
+              <p className="text-[10px] text-muted-landing font-mono text-center leading-relaxed mt-4 max-w-[260px] mx-auto">
+                Verify this matches the character sequence printed in your terminal.
+              </p>
+
+              <div className="auth-actions" style={{ marginTop: "1.25rem" }}>
                 <button
                   type="button"
-                  className="btn-primary"
+                  className="btn-primary w-full justify-center py-3 text-xs uppercase tracking-wider font-bold transition-all hover:bg-[var(--landing-accent)] flex items-center gap-1.5 cursor-pointer"
                   onClick={approve}
                   disabled={isProcessing}
                 >
@@ -166,7 +196,7 @@ export default function CliAuthClient() {
                 </button>
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn-secondary w-full justify-center py-3 text-xs uppercase tracking-wider font-medium transition-all flex items-center gap-1.5 cursor-pointer"
                   onClick={deny}
                   disabled={isProcessing}
                 >
@@ -181,3 +211,4 @@ export default function CliAuthClient() {
     </div>
   );
 }
+

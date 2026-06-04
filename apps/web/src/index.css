@@ -4,15 +4,8 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
-@source "./app/layout.tsx";
-@source "./app/(auth)/layout.tsx";
-@source "./app/(site)/layout.tsx";
-@source "./components/header.tsx";
-@source "./components/mode-toggle.tsx";
-@source "./components/user-menu.tsx";
-@source "./components/ui/skeleton.tsx";
-@source "./components/mobile-nav.tsx";
-@source "./components/footer.tsx";
+@source "./app/**/*.{ts,tsx}";
+@source "./components/**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 

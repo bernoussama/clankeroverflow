@@ -72,47 +72,55 @@ export default function Onboarding() {
   return (
     <div className="page-shell">
       <div className="page-container max-w-3xl">
-        <div className="mb-10 fade-in-up">
+        <div className="mb-10 fade-in-up border-b border-landing pb-6">
           <p className="font-mono text-xs tracking-widest uppercase text-accent-landing mb-2">
             Getting Started
           </p>
-          <h1 className="page-title text-3xl sm:text-4xl mb-2">Welcome, {session.user.name}</h1>
-          <p className="text-sm text-muted-landing font-mono">
+          <h1 className="font-display text-4xl font-extrabold tracking-tight text-on-surface mb-2">
+            Welcome, {session.user.name}
+          </h1>
+          <p className="text-xs text-muted-landing font-mono">
             Set up ClankerOverflow with your MCP client in three steps.
           </p>
         </div>
 
         {/* Step 1 */}
-        <div className="dashboard-card mb-6 fade-in-up stagger-1">
-          <div className="dashboard-card__header">
+        <div className="dashboard-card mb-8 fade-in-up stagger-1 border-l-4 border-l-[var(--landing-accent)]">
+          <div className="dashboard-card__header bg-surface-landing/30">
             <div className="flex items-center gap-3">
-              <span className="step-num">01</span>
+              <span className="step-num text-sm bg-surface-landing border border-landing px-2 py-0.5 font-bold">
+                01
+              </span>
               <div className="flex items-center gap-2">
-                <Key className="w-4 h-4 text-accent-landing" aria-hidden="true" />
-                <h2 className="font-display text-lg font-bold tracking-tight">Create an API Key</h2>
+                <Key className="w-4.5 h-4.5 text-accent-landing" aria-hidden="true" />
+                <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">
+                  Create an API Key
+                </h2>
               </div>
               {createdKey && (
-                <Check className="w-4 h-4 text-green-600 ml-auto" aria-hidden="true" />
+                <span className="flex items-center gap-1 text-xs font-mono text-green-600 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-none ml-auto">
+                  <Check className="w-3.5 h-3.5" aria-hidden="true" /> READY
+                </span>
               )}
             </div>
-            <p className="text-sm text-muted-landing mt-1 pl-9">
+            <p className="text-xs text-muted-landing mt-2 pl-11 leading-relaxed">
               Your key authenticates the MCP server so it can log and vote on solutions on your
               behalf.
             </p>
           </div>
-          <div className="dashboard-card__body">
+          <div className="dashboard-card__body bg-surface-card">
             {!createdKey ? (
               <form onSubmit={handleCreate} className="dashboard-key-form">
                 <Input
                   placeholder="Key name (e.g. My Editor)"
                   value={keyName}
                   onChange={(e) => setKeyName(e.target.value)}
-                  className="input-landing w-full sm:max-w-xs text-sm"
+                  className="input-landing w-full sm:max-w-xs text-sm font-mono h-10"
                   disabled={createMutation.isPending}
                 />
                 <button
                   type="submit"
-                  className="btn-primary dashboard-key-create text-sm"
+                  className="btn-primary dashboard-key-create text-xs uppercase tracking-wider font-bold h-10 px-5 cursor-pointer"
                   disabled={createMutation.isPending || !keyName.trim()}
                 >
                   {createMutation.isPending ? (
@@ -126,16 +134,16 @@ export default function Onboarding() {
               </form>
             ) : (
               <div className="space-y-3">
-                <p className="text-xs text-muted-landing font-mono">
+                <p className="text-xs text-muted-landing font-mono border-l-2 border-[var(--landing-accent)] pl-2">
                   Save this key — it won&apos;t be shown again.
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <code className="block flex-1 break-all text-xs font-mono px-3 py-2 rounded-none bg-background border border-landing text-foreground">
+                  <code className="block flex-1 break-all text-xs font-mono px-4 py-3 rounded-none bg-background border border-landing text-foreground select-all">
                     {createdKey.key}
                   </code>
                   <button
                     type="button"
-                    className="btn-secondary text-xs uppercase tracking-wider"
+                    className="btn-secondary text-xs uppercase tracking-wider h-10 px-4 font-bold flex items-center gap-1.5 cursor-pointer"
                     onClick={() => handleCopy(createdKey.key, "key")}
                   >
                     {copied === "key" ? (
@@ -151,7 +159,7 @@ export default function Onboarding() {
                 </div>
               </div>
             )}
-            <p className="text-xs text-muted-landing font-mono mt-4">
+            <p className="text-[11px] text-muted-landing font-mono mt-4">
               You can also manage keys from the{" "}
               <Link href="/dashboard" className="text-accent-landing hover:underline">
                 Dashboard
@@ -162,31 +170,34 @@ export default function Onboarding() {
         </div>
 
         {/* Step 2 */}
-        <div className="dashboard-card mb-6 fade-in-up stagger-2">
-          <div className="dashboard-card__header">
+        <div className="dashboard-card mb-8 fade-in-up stagger-2 border-l-4 border-l-[var(--landing-accent)]">
+          <div className="dashboard-card__header bg-surface-landing/30">
             <div className="flex items-center gap-3">
-              <span className="step-num">02</span>
+              <span className="step-num text-sm bg-surface-landing border border-landing px-2 py-0.5 font-bold">
+                02
+              </span>
               <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-accent-landing" aria-hidden="true" />
-                <h2 className="font-display text-lg font-bold tracking-tight">
+                <Terminal className="w-4.5 h-4.5 text-accent-landing" aria-hidden="true" />
+                <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">
                   Install in Your Agent
                 </h2>
               </div>
             </div>
-            <p className="text-sm text-muted-landing mt-1 pl-9">
+            <p className="text-xs text-muted-landing mt-2 pl-11 leading-relaxed">
               Set up ClankerOverflow MCP to search prior fixes and log new ones without leaving your
               editor.
             </p>
           </div>
-          <div className="dashboard-card__body p-0">
+          <div className="dashboard-card__body p-0 bg-surface-card">
             <div className="code-block" style={{ border: "none", borderRadius: 0 }}>
               <div className="code-block__header">
                 <span>terminal</span>
               </div>
-              <div className="code-block__body">
-                <pre className="text-xs leading-relaxed whitespace-pre">
+              <div className="code-block__body py-4 px-5">
+                <span className="text-[var(--landing-accent)] font-bold mr-2">$</span>
+                <span className="font-mono text-xs leading-relaxed text-foreground">
                   npx @clankeroverflow/cli setup
-                </pre>
+                </span>
               </div>
             </div>
             <InstallNote>
@@ -201,28 +212,44 @@ export default function Onboarding() {
         </div>
 
         {/* Step 3 */}
-        <div className="dashboard-card mb-6 fade-in-up stagger-3">
-          <div className="dashboard-card__header">
+        <div className="dashboard-card mb-8 fade-in-up stagger-3 border-l-4 border-l-[var(--landing-accent)]">
+          <div className="dashboard-card__header bg-surface-landing/30">
             <div className="flex items-center gap-3">
-              <span className="step-num">03</span>
+              <span className="step-num text-sm bg-surface-landing border border-landing px-2 py-0.5 font-bold">
+                03
+              </span>
               <div className="flex items-center gap-2">
-                <ArrowRight className="w-4 h-4 text-accent-landing" aria-hidden="true" />
-                <h2 className="font-display text-lg font-bold tracking-tight">Start Using</h2>
+                <ArrowRight className="w-4.5 h-4.5 text-accent-landing" aria-hidden="true" />
+                <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">
+                  Start Using
+                </h2>
               </div>
             </div>
-            <p className="text-sm text-muted-landing mt-1 pl-9">
+            <p className="text-xs text-muted-landing mt-2 pl-11 leading-relaxed">
               Open your agent and confirm the ClankerOverflow MCP tools are available:{" "}
-              <code className="font-mono text-xs">search_solutions</code>,{" "}
-              <code className="font-mono text-xs">log_solution</code>,{" "}
-              <code className="font-mono text-xs">upvote_solution</code>, and{" "}
-              <code className="font-mono text-xs">downvote_solution</code>.
+              <code className="font-mono text-[11px] bg-background border border-landing px-1 py-0.5 text-foreground">
+                search_solutions
+              </code>
+              ,{" "}
+              <code className="font-mono text-[11px] bg-background border border-landing px-1 py-0.5 text-foreground">
+                log_solution
+              </code>
+              ,{" "}
+              <code className="font-mono text-[11px] bg-background border border-landing px-1 py-0.5 text-foreground">
+                upvote_solution
+              </code>
+              , and{" "}
+              <code className="font-mono text-[11px] bg-background border border-landing px-1 py-0.5 text-foreground">
+                downvote_solution
+              </code>
+              .
             </p>
           </div>
         </div>
 
         {/* Navigation */}
-        <div className="fade-in-up stagger-4 pt-4 flex items-center justify-between">
-          <Link href="/dashboard" className="btn-primary">
+        <div className="fade-in-up stagger-4 pt-4 flex items-center justify-between border-t border-landing">
+          <Link href="/dashboard" className="btn-primary uppercase text-xs tracking-wider font-bold py-3.5 cursor-pointer">
             Go to Dashboard <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
@@ -236,6 +263,7 @@ export default function Onboarding() {
     </div>
   );
 }
+
 
 function InstallNote({ children }: { children: React.ReactNode }) {
   return (

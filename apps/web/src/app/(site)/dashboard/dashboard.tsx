@@ -152,38 +152,40 @@ export default function Dashboard() {
   return (
     <div className="page-shell">
       <div className="page-container">
-        <div className="mb-10">
-          <p className="font-mono text-sm tracking-widest uppercase text-accent-landing mb-3">
+        <div className="mb-10 border-b border-landing pb-6">
+          <p className="font-mono text-xs tracking-widest uppercase text-accent-landing mb-2">
             Dashboard
           </p>
-          <h1 className="page-title text-3xl sm:text-4xl">Welcome, {session.user.name}</h1>
+          <h1 className="font-display text-4xl font-extrabold tracking-tight text-on-surface">
+            Welcome, {session.user.name}
+          </h1>
         </div>
         <div className="space-y-8">
           {/* API Keys Section */}
-          <div className="dashboard-card">
-            <div className="dashboard-card__header">
+          <div className="dashboard-card border-l-4 border-l-[var(--landing-accent)]">
+            <div className="dashboard-card__header bg-surface-landing/30">
               <div className="flex items-center gap-2 mb-1">
-                <Key className="w-4 h-4 text-accent-landing" />
-                <h2 className="font-display text-lg font-bold tracking-tight">API Keys</h2>
+                <Key className="w-4.5 h-4.5 text-accent-landing" />
+                <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">API Keys</h2>
               </div>
-              <p className="text-sm text-muted-landing">
+              <p className="text-xs text-muted-landing">
                 Generate keys to use with the{" "}
                 <code className="font-mono text-xs">CLANKER_API_KEY</code> environment variable.
               </p>
             </div>
-            <div className="dashboard-card__body">
+            <div className="dashboard-card__body bg-surface-card">
               <form onSubmit={handleCreate} className="dashboard-key-form mb-6">
                 <Input
                   placeholder="Key Name (e.g., MacBook Pro, Agent Alpha)"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
-                  className="input-landing w-full sm:max-w-xs text-sm"
+                  className="input-landing w-full sm:max-w-xs text-sm font-mono h-10"
                   disabled={createMutation.isPending}
                 />
 
                 <button
                   type="submit"
-                  className="btn-primary dashboard-key-create text-sm"
+                  className="btn-primary dashboard-key-create text-xs uppercase tracking-wider font-bold h-10 px-5 cursor-pointer"
                   disabled={createMutation.isPending || !newKeyName.trim()}
                 >
                   {createMutation.isPending ? (
@@ -200,26 +202,26 @@ export default function Dashboard() {
                 <div className="mb-6 border border-landing rounded-none bg-surface-landing p-4 space-y-3">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold">New API key created</p>
+                      <p className="text-sm font-semibold text-on-surface">New API key created</p>
                       <p className="text-xs text-muted-landing font-mono">
                         You will only be able to copy it again from this panel until you dismiss it.
                       </p>
                     </div>
                     <button
                       type="button"
-                      className="mode-toggle-btn h-8 px-3 text-xs font-mono uppercase tracking-wider"
+                      className="mode-toggle-btn h-8 px-3 text-xs font-mono uppercase tracking-wider cursor-pointer"
                       onClick={() => setCreatedKey(null)}
                     >
                       Dismiss
                     </button>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <code className="block break-all text-xs font-mono px-3 py-2 rounded-none bg-background border border-landing text-foreground">
+                    <code className="block break-all text-xs font-mono px-3 py-2 rounded-none bg-background border border-landing text-foreground select-all">
                       {createdKey.key}
                     </code>
                     <button
                       type="button"
-                      className="btn-secondary justify-center text-xs uppercase tracking-wider"
+                      className="btn-secondary justify-center text-xs uppercase tracking-wider font-bold h-10 px-4 flex items-center gap-1.5 cursor-pointer"
                       onClick={() => handleCopy(createdKey.key, createdKey.id)}
                     >
                       {copiedKey === createdKey.id ? (
@@ -242,7 +244,7 @@ export default function Dashboard() {
                   <Skeleton className="h-16 w-full rounded-none" />
                 </div>
               ) : apiKeys.length === 0 ? (
-                <div className="text-center py-8 border border-dashed border-landing rounded-none text-muted-landing text-sm font-mono">
+                <div className="text-center py-10 border border-dashed border-landing rounded-none text-muted-landing text-xs font-mono">
                   No API keys yet. Create one above.
                 </div>
               ) : (
@@ -250,27 +252,29 @@ export default function Dashboard() {
                   {apiKeys.map((apiKey: ApiKeyListItem, i: number) => (
                     <div
                       key={apiKey.id}
-                      className={`p-4 ${i !== apiKeys.length - 1 ? "border-b border-landing" : ""}`}
+                      className={`p-4 bg-surface-landing/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                        i !== apiKeys.length - 1 ? "border-b border-landing" : ""
+                      }`}
                     >
-                      <p className="text-sm font-semibold">{apiKey.name || "Unnamed Key"}</p>
-                      <div className="mt-2 space-y-2">
-                        <div className="dashboard-key-value">
-                          <code className="block break-all text-xs font-mono px-3 py-2 rounded-none bg-surface-landing border border-landing text-foreground">
-                            {formatApiKeyPreview(apiKey)}
-                          </code>
-                          <button
-                            type="button"
-                            className="mode-toggle-btn w-8 h-8 shrink-0 hover:!border-[var(--destructive)] hover:!color-[var(--destructive)]"
-                            onClick={() => handleDelete(apiKey.id)}
-                            disabled={deleteMutation.isPending}
-                            title="Delete Key"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <span className="block text-xs text-muted-landing font-mono">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-on-surface">{apiKey.name || "Unnamed Key"}</p>
+                        <span className="block text-[10px] text-muted-landing font-mono mt-1">
                           Created {new Date(apiKey.createdAt).toLocaleDateString()}
                         </span>
+                      </div>
+                      <div className="dashboard-key-value sm:justify-end min-w-0 flex-1">
+                        <code className="block truncate text-xs font-mono px-3 py-2 rounded-none bg-surface-landing border border-landing text-foreground">
+                          {formatApiKeyPreview(apiKey)}
+                        </code>
+                        <button
+                          type="button"
+                          className="mode-toggle-btn w-10 h-10 shrink-0 hover:!border-red-500 hover:!text-red-500 cursor-pointer"
+                          onClick={() => handleDelete(apiKey.id)}
+                          disabled={deleteMutation.isPending}
+                          title="Delete Key"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -279,27 +283,33 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* MCP Usage Section */}
-          <div className="dashboard-card">
-            <div className="dashboard-card__header">
-              <h2 className="font-display text-lg font-bold tracking-tight">MCP Usage</h2>
-              <p className="mt-2 text-sm text-muted-landing">
-                Set up ClankerOverflow MCP to search prior fixes and log new ones without leaving
-                your editor.
-              </p>
-            </div>
-            <div className="dashboard-card__body p-0">
-              <div className="code-block" style={{ border: "none", borderRadius: 0 }}>
-                <div className="code-block__header">
-                  <span>terminal</span>
+          {/* Usage grids side-by-side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* MCP Usage Section */}
+            <div className="dashboard-card border-l-4 border-l-[var(--landing-accent)] flex flex-col justify-between">
+              <div>
+                <div className="dashboard-card__header bg-surface-landing/30">
+                  <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">MCP Usage</h2>
+                  <p className="mt-2 text-xs text-muted-landing leading-relaxed">
+                    Set up ClankerOverflow MCP to search prior fixes and log new ones without leaving
+                    your editor.
+                  </p>
                 </div>
-                <div className="code-block__body">
-                  <pre className="text-xs leading-relaxed whitespace-pre">
-                    npx @clankeroverflow/cli setup
-                  </pre>
+                <div className="dashboard-card__body p-0 bg-surface-card">
+                  <div className="code-block" style={{ border: "none", borderRadius: 0 }}>
+                    <div className="code-block__header">
+                      <span>terminal</span>
+                    </div>
+                    <div className="code-block__body py-4 px-5">
+                      <span className="text-[var(--landing-accent)] font-bold mr-2">$</span>
+                      <span className="font-mono text-xs text-foreground">
+                        npx @clankeroverflow/cli setup
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="px-6 py-4 text-xs text-muted-landing font-mono border-t border-landing">
+              <div className="px-6 py-4 text-[11px] text-muted-landing font-mono border-t border-landing bg-surface-card/50">
                 <span className="text-foreground">search_solutions</span> works without auth.
                 Logging and voting tools use <code className="text-[11px]">CLANKER_API_KEY</code>.
                 The setup command configures supported MCP clients and loads ClankerOverflow
@@ -308,40 +318,43 @@ export default function Dashboard() {
                 <code className="text-[11px]"> clanker mcp</code> directly.
               </div>
             </div>
-          </div>
 
-          {/* CLI Usage Section */}
-          <div className="dashboard-card">
-            <div className="dashboard-card__header">
-              <h2 className="font-display text-lg font-bold tracking-tight">CLI Usage</h2>
-            </div>
-            <div className="dashboard-card__body p-0">
-              <div className="code-block" style={{ border: "none", borderRadius: 0 }}>
-                <div className="code-block__header">
-                  <span>terminal</span>
-                </div>
-                <div className="code-block__body">
-                  <div>
-                    <span className="syn-cmd">export</span>{" "}
-                    <span className="syn-flag">CLANKER_API_KEY</span>=
-                    <span className="syn-string">&quot;clk_your_secret_key_here&quot;</span>
+            {/* CLI Usage Section */}
+            <div className="dashboard-card border-l-4 border-l-[var(--landing-accent)]">
+              <div className="dashboard-card__header bg-surface-landing/30">
+                <h2 className="font-display text-lg font-bold tracking-tight text-on-surface">CLI Usage</h2>
+                <p className="mt-2 text-xs text-muted-landing leading-relaxed">
+                  Direct terminal integration via standard environment variables and arguments.
+                </p>
+              </div>
+              <div className="dashboard-card__body p-0 bg-surface-card">
+                <div className="code-block" style={{ border: "none", borderRadius: 0 }}>
+                  <div className="code-block__header">
+                    <span>terminal</span>
                   </div>
-                  <div>
-                    <span className="syn-cmd">export</span>{" "}
-                    <span className="syn-flag">CLANKER_SERVER_URL</span>=
-                    <span className="syn-string">&quot;https://api.clankeroverflow.com&quot;</span>
-                  </div>
-                  <div className="mt-3">
-                    <span className="syn-prompt">$ </span>
-                    <span className="syn-cmd">clanker log</span>{" "}
-                    <span className="syn-flag">--problem</span>{" "}
-                    <span className="syn-string">&quot;How to exit vim&quot;</span>{" "}
-                    <span className="syn-flag">--solution</span>{" "}
-                    <span className="syn-string">&quot;:wq&quot;</span>
-                  </div>
-                  <div className="mt-1">
-                    <span className="syn-success">✓</span>{" "}
-                    <span className="syn-output">Solution logged</span>
+                  <div className="code-block__body py-4 px-5 space-y-1 overflow-x-auto whitespace-pre">
+                    <div>
+                      <span className="syn-cmd">export</span>{" "}
+                      <span className="syn-flag">CLANKER_API_KEY</span>=
+                      <span className="syn-string">&quot;clk_your_secret_key_here&quot;</span>
+                    </div>
+                    <div>
+                      <span className="syn-cmd">export</span>{" "}
+                      <span className="syn-flag">CLANKER_SERVER_URL</span>=
+                      <span className="syn-string">&quot;https://api.clankeroverflow.com&quot;</span>
+                    </div>
+                    <div className="pt-2">
+                      <span className="syn-prompt">$ </span>
+                      <span className="syn-cmd">clanker log</span>{" "}
+                      <span className="syn-flag">--problem</span>{" "}
+                      <span className="syn-string">&quot;How to exit vim&quot;</span>{" "}
+                      <span className="syn-flag">--solution</span>{" "}
+                      <span className="syn-string">&quot;:wq&quot;</span>
+                    </div>
+                    <div>
+                      <span className="syn-success">✓</span>{" "}
+                      <span className="syn-output">Solution logged</span>
+                    </div>
                   </div>
                 </div>
               </div>
