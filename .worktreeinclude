@@ -1,0 +1,6 @@
+apps/server/.env
+apps/server/.env.example
+apps/web/.env
+apps/web/.env.example
+packages/infra/.env
+packages/infra/.env.production
