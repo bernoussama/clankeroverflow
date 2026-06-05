@@ -1640,6 +1640,8 @@
   border-radius: 8px;
   z-index: 1;
   transition: transform 0.2s ease, box-shadow 0.3s ease, color 0.2s ease;
+  --mouse-pct-x: 50%;
+  --mouse-pct-y: 50%;
 }
 
 .btn-glow:hover {
@@ -1664,14 +1666,28 @@
   z-index: -2;
   border-radius: 10px;
   animation: gradient-shift 3s ease infinite;
-  opacity: 0.8;
+  opacity: 0;
   pointer-events: none;
-  transition: background-position 0.15s ease-out;
+  transition: opacity 0.4s ease;
 }
 
-.btn-glow:hover::before {
+/* Show the glow whenever the button is visible in the viewport */
+.btn-glow.in-view::before {
+  opacity: 0.5;
+}
+
+/* When mouse is moving, overlay a radial spotlight centered at the cursor */
+.btn-glow.mouse-moving::before {
   animation: none;
-  background-position: calc(var(--mouse-x, 0px) * -1) calc(var(--mouse-y, 0px) * -1);
+  background: radial-gradient(
+    300px circle at var(--mouse-pct-x) var(--mouse-pct-y),
+    var(--landing-accent) 0%,
+    var(--theme-primary-fixed-dim) 30%,
+    var(--theme-on-primary-fixed-variant) 60%,
+    var(--theme-primary-container) 100%
+  );
+  background-size: 100% 100%;
+  opacity: 1;
 }
 
 .btn-glow::after {
@@ -1687,6 +1703,27 @@
   pointer-events: none;
 }
 
+/* Terminal command text glow — same gradient as .btn-glow border */
+.terminal-cmd-glow {
+  transition: color 0.3s ease;
+}
+
+.terminal-cmd-glow.glow-active {
+  background: linear-gradient(
+    90deg,
+    var(--theme-on-primary-fixed-variant),
+    var(--theme-primary-container),
+    var(--theme-primary-fixed-dim),
+    var(--landing-accent),
+    var(--theme-on-primary-fixed-variant)
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 2s ease forwards;
+}
+
 @keyframes gradient-shift {
   0% {
     background-position: 0% 50%;
@@ -1699,19 +1736,28 @@
   }
 }
 
+
 .bg-rays {
   background:
-    radial-gradient(circle at 50% -20%, rgba(26, 17, 11, 0) 40%, rgba(26, 17, 11, 0.9) 60%),
-    conic-gradient(
-      from 180deg at 50% -10%,
-      var(--theme-surface),
-      var(--theme-surface-container),
-      var(--theme-surface-container-highest),
-      var(--theme-primary-container),
-      var(--theme-surface-container-highest),
-      var(--theme-surface-container),
-      var(--theme-surface)
-    );
+    radial-gradient(
+      ellipse 160% 120% at 50% 0%,
+      rgba(252, 249, 248, 0.55) 0%,
+      rgba(252, 249, 248, 0.35) 10%,
+      rgba(252, 249, 248, 0.18) 20%,
+      rgba(252, 249, 248, 0.06) 32%,
+      rgba(51, 40, 32, 0.03) 48%,
+      rgba(26, 17, 11, 0.01) 65%,
+      transparent 90%
+    ),
+    radial-gradient(
+      ellipse 200% 140% at 50% -5%,
+      rgba(252, 249, 248, 0.12) 0%,
+      rgba(252, 249, 248, 0.06) 18%,
+      rgba(51, 40, 32, 0.03) 40%,
+      rgba(26, 17, 11, 0.01) 65%,
+      #1a110b 100%
+    ),
+    #1a110b;
   background-size: cover;
   background-position: center;
 }

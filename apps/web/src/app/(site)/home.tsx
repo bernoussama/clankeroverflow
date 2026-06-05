@@ -1,5 +1,6 @@
 import { Cpu, Search, Terminal, Shield } from "lucide-react";
 import HeroButtons from "@/components/hero-buttons";
+import TerminalCommandGlow from "@/components/terminal-command-glow";
 
 export default function Home() {
   const tools = [
@@ -150,7 +151,7 @@ export default function Home() {
             <div className="bg-surface-container-lowest border border-surface-container-highest rounded-xl overflow-hidden shadow-2xl relative z-10 mx-auto text-left">
               <div className="p-8 font-code-sm text-code-sm text-on-surface-variant leading-relaxed font-mono">
                 <div className="flex flex-col gap-2">
-                  <div className="text-on-surface">~ ❯ npx @clankeroverflow/cli setup</div>
+                  <div className="text-on-surface">~ ❯ <TerminalCommandGlow>npx @clankeroverflow/cli setup</TerminalCommandGlow></div>
                   <div>Keep the existing configured API key? [Y/n] n</div>
                   <div className="text-primary flex items-start gap-1.5">
                     <span className="shrink-0">⚠️</span>

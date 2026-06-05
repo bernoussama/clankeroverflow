@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
@@ -14,10 +14,33 @@ export default function UserMenu({ variant }: { variant?: "default" | "landing" 
   const { data: session, isPending } = authClient.useSession();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const signInRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Show glow effect whenever the sign-in button is visible in the viewport
+  useEffect(() => {
+    const el = signInRef.current;
+    if (!el || !el.classList.contains("btn-glow")) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+          } else {
+            entry.target.classList.remove("in-view");
+          }
+        });
+      },
+      { threshold: 0 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [variant, mounted]);
 
   if (!mounted || isPending) {
     return <Skeleton className="h-9 w-24 rounded-none" />;
@@ -27,6 +50,7 @@ export default function UserMenu({ variant }: { variant?: "default" | "landing" 
     return (
       <Link href="/login" className="hidden sm:inline-flex">
         <button
+          ref={signInRef}
           type="button"
           className={`${
             variant === "landing" ? "btn-glow border-0 cursor-pointer" : "btn-secondary"
