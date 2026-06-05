@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const css = readFileSync(new URL("./index.css", import.meta.url), "utf8");
+const landingCss = readFileSync(new URL("./landing.css", import.meta.url), "utf8");
 
 describe("design system (index.css)", () => {
   describe("landing tokens are defined for both light and dark", () => {
@@ -65,6 +66,12 @@ describe("design system (index.css)", () => {
         expect(css).toContain(cls);
       });
     }
+  });
+
+  it("scans the landing page sources for route-specific utilities", () => {
+    expect(landingCss).toContain('@source "./app/(site)/home.tsx";');
+    expect(landingCss).toContain('@source "./components/hero-install-preview.tsx";');
+    expect(landingCss).not.toContain('@source "./app/home.tsx";');
   });
 
   it("uses Inter for landing page body text", () => {
