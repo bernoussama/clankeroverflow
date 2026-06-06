@@ -5,6 +5,6 @@ apps/web/.env.example
 packages/infra/.env
 packages/infra/.env.production
 
-.env
-.env.local
-.env.*
+**/.env
+**/.env.local
+**/.env.*
