@@ -424,11 +424,11 @@ export default function Home() {
                     SQLite mode when a solution should stay on your machine.
                   </p>
                 </div>
-                <div className="w-full md:w-1/2 h-32 bg-surface-container rounded-lg border border-outline shadow-sm flex items-center justify-center">
-                  <span className="text-on-surface-variant font-code-sm text-code-sm flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    Search without auth. Log and vote with an API key.
-                  </span>
+                <div className="w-full md:w-1/2 bg-surface-container rounded-lg border border-outline px-5 py-4">
+                  <p className="font-code-sm text-[11px] uppercase text-primary mb-2">Local mode</p>
+                  <p className="font-code-sm text-code-sm text-on-surface-variant leading-relaxed">
+                    Search without auth. Add an API key when you want to log or vote.
+                  </p>
                 </div>
               </div>
             </div>
