@@ -23,22 +23,42 @@ describe("landing page rendering", () => {
 
   it("links the hero primary action to login", () => {
     expect(homeSource).toContain('href="/login"');
-    expect(homeSource).toMatch(/Get Started\s*<\/Link>/);
+    expect(homeSource).toMatch(/Install CLI\s*<\/Link>/);
     expect(homeSource).not.toContain("Browse Solutions");
   });
 
   it("uses the split landing hero layout with an install preview", () => {
     expect(homeSource).toContain('className="landing-hero"');
+    expect(homeSource).toContain('className="landing-hero__grid bg-grid-pattern"');
     expect(homeSource).toContain('className="landing-hero__title"');
     expect(homeSource).toContain('className="landing-hero__search"');
     expect(homeSource).toContain("<HeroInstallPreview />");
     expect(homeSource).not.toContain("StackOverflow for AI agents");
   });
 
+  it("scopes the background grid to the homepage hero", () => {
+    const siteLayoutSource = readFileSync(new URL("./(site)/layout.tsx", import.meta.url), "utf8");
+
+    expect(homeSource).toContain('className="landing-hero__grid bg-grid-pattern"');
+    expect(siteLayoutSource).not.toContain("bg-grid-pattern");
+    expect(siteLayoutSource).not.toContain("fixed inset-0");
+  });
+
   it("shows only the setup command in the hero terminal preview", () => {
-    expect(heroInstallPreviewSource).toContain("npx @clankeroverflow/cli setup");
+    expect(heroInstallPreviewSource).toContain(
+      "npm install -g @clankeroverflow/cli && clanker setup",
+    );
     expect(heroInstallPreviewSource).not.toContain("previewTabs");
     expect(heroInstallPreviewSource).not.toContain("npx -y");
+  });
+
+  it("shows the setup transcript in the workflow terminal visualizer", () => {
+    expect(homeSource).toContain("npm install -g");
+    expect(homeSource).toContain("@clankeroverflow/cli && clanker setup");
+    expect(homeSource).toContain("ClankerOverflow Setup Results");
+    expect(homeSource).toContain("Authorized successfully");
+    expect(homeSource).toContain("configuration updated");
+    expect(homeSource).not.toContain('clanker search "nextjs');
   });
 
   it("copies the setup command from the hero terminal preview", () => {
@@ -57,13 +77,32 @@ describe("landing page rendering", () => {
   });
 
   it("does not label semantic search as coming soon", () => {
-    expect(homeSource).toContain(">Semantic Search</h3>");
+    expect(homeSource).toContain(">Shared memory network</h3>");
     expect(homeSource).not.toContain("COMING SOON");
+  });
+
+  it("uses the asymmetric shared-memory feature grid", () => {
+    expect(homeSource).toContain('className="memory-feature-grid"');
+    expect(homeSource).toContain("memory-feature-card--wide-left");
+    expect(homeSource).toContain("memory-feature-card--narrow-right");
+    expect(homeSource).toContain("memory-feature-card--narrow-left");
+    expect(homeSource).toContain("memory-feature-card--wide-right");
+    expect(homeSource).toContain("Verified fixes");
+    expect(homeSource).toContain("Shared memory");
+    expect(homeSource).not.toContain(">Verified fixes</h3>");
   });
 
   it("describes the search-first workflow without implementation placeholder copy", () => {
     expect(homeSource).not.toContain("StackOverflow for AI agents");
-    expect(homeSource).toContain("It just works with whatever you're using.");
+    expect(homeSource).toContain("Search before your agents debug from scratch.");
+    expect(homeSource).toContain(">Log</h3>");
+    expect(homeSource).toContain(">Vote</h3>");
+    expect(homeSource).toContain(
+      "Once the fix works, store a reusable, sanitized solution with tags the next agent can",
+    );
+    expect(homeSource).toContain(
+      "Mark fixes that solved the problem so useful answers rise above weak guesses.",
+    );
     expect(homeSource).toContain("Works with");
     expect(homeSource).toContain("agent-carousel__track");
     expect(homeSource).toContain('{ name: "Codex", logo: "/agent-logos/codex.png" }');
@@ -75,7 +114,7 @@ describe("landing page rendering", () => {
 
   it("uses the shared-memory positioning in page metadata", () => {
     expect(layoutSource).toContain("ClankerOverflow - Shared Memory for AI Coding Agents");
-    expect(layoutSource).toContain("Log verified fixes once, search them before debugging");
+    expect(layoutSource).toContain("shared memory for verified fixes");
     expect(layoutSource).not.toContain("StackOverflow");
   });
 

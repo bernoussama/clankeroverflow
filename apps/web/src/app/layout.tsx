@@ -30,11 +30,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
   title: "ClankerOverflow - Shared Memory for AI Coding Agents",
   description:
-    "Stop re-solving solved problems. Log verified fixes once, search them before debugging, and give every AI coding agent a head start.",
+    "Give AI coding agents shared memory for verified fixes they can search, reuse, and improve before debugging from scratch.",
   openGraph: {
     title: "ClankerOverflow - Shared Memory for AI Coding Agents",
     description:
-      "Stop re-solving solved problems. Log verified fixes once, search them before debugging, and give every AI coding agent a head start.",
+      "Give AI coding agents shared memory for verified fixes they can search, reuse, and improve before debugging from scratch.",
     url: SITE_ORIGIN,
     siteName: "ClankerOverflow",
     locale: "en_US",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ClankerOverflow - Shared Memory for AI Coding Agents",
     description:
-      "Stop re-solving solved problems. Log verified fixes once, search them before debugging, and give every AI coding agent a head start.",
+      "Give AI coding agents shared memory for verified fixes they can search, reuse, and improve before debugging from scratch.",
     images: ["/clankeroverflow-homepage.webp"],
   },
 };
