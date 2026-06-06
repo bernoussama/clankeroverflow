@@ -3,6 +3,16 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const css = readFileSync(new URL("./index.css", import.meta.url), "utf8");
+const landingSources = [
+  readFileSync(new URL("./app/(site)/home.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("./components/header.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("./components/mode-toggle.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("./components/user-menu.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("./components/mobile-nav.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("./components/footer.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("./components/hero-buttons.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("./components/terminal-command-glow.tsx", import.meta.url), "utf8"),
+].join("\n");
 
 describe("design system (index.css)", () => {
   describe("landing tokens are defined for both light and dark", () => {
@@ -30,40 +40,42 @@ describe("design system (index.css)", () => {
     }
   });
 
-  describe("app-wide utility classes exist", () => {
-    const requiredClasses = [
-      ".text-accent-landing",
-      ".text-muted-landing",
-      ".bg-surface-landing",
-      ".border-landing",
-      ".page-shell",
-      ".page-container",
-      ".page-title",
-      ".auth-card",
-      ".dashboard-card",
-      ".dashboard-card__header",
-      ".dashboard-card__body",
-      ".mode-toggle-btn",
-      ".dropdown-content",
-      ".input-landing",
-      ".text-error",
-      ".landing-card",
-      ".btn-primary",
-      ".btn-secondary",
-      ".tag-flat",
-      ".code-block",
-      ".landing-header",
-      ".landing-footer",
-      ".section-rule",
-      ".solution-item",
-      ".feature-row",
-      ".font-display",
+  describe("tokenized Tailwind aliases exist", () => {
+    const requiredAliases = [
+      "--color-surface",
+      "--color-surface-container-low",
+      "--color-surface-container",
+      "--color-surface-container-highest",
+      "--color-on-surface",
+      "--color-on-surface-variant",
+      "--color-outline",
+      "--color-outline-variant",
+      "--color-primary-container",
+      "--color-landing-accent",
+      "--spacing-gutter-grid",
     ];
 
-    for (const cls of requiredClasses) {
-      it(`defines ${cls}`, () => {
-        expect(css).toContain(cls);
+    for (const alias of requiredAliases) {
+      it(`defines ${alias}`, () => {
+        expect(css).toContain(alias);
       });
+    }
+  });
+
+  it("keeps the landing pilot off legacy component CSS recipes", () => {
+    const legacyClasses = [
+      "mode-toggle-btn",
+      "dropdown-content",
+      "btn-glow",
+      "terminal-cmd-glow",
+      "hero-title-gradient",
+      "bg-rays",
+      "bento-grid",
+      "landing-footer__",
+    ];
+
+    for (const cls of legacyClasses) {
+      expect(landingSources).not.toContain(cls);
     }
   });
 

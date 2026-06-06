@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu, X, ArrowRight, Github } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { landingIconButton, landingPrimaryButton, landingSecondaryButton } from "./landing-ui";
 
 interface LinkItem {
   to: string;
@@ -19,7 +20,7 @@ export default function MobileNav({ links }: { links: readonly LinkItem[] }) {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="mode-toggle-btn h-9 w-9 flex items-center justify-center shrink-0"
+        className={landingIconButton}
         aria-label="Toggle navigation menu"
         aria-expanded={isOpen}
       >
@@ -27,13 +28,13 @@ export default function MobileNav({ links }: { links: readonly LinkItem[] }) {
       </button>
 
       {isOpen && (
-        <div className="border-b border-landing bg-background absolute top-full left-0 right-0 py-4 px-6 flex flex-col gap-3 shadow-lg z-40 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute left-0 right-0 top-full z-40 flex flex-col gap-3 border-b border-outline-variant bg-background px-6 py-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-150">
           {links.map(({ to, label }) => (
             <Link
               key={to}
               href={to as any}
               onClick={() => setIsOpen(false)}
-              className="py-2.5 px-4 font-mono text-xs tracking-wide uppercase text-muted-landing hover:text-accent-landing transition-colors border border-landing bg-surface-landing/50 hover:bg-surface-landing"
+              className={landingSecondaryButton}
             >
               {label}
             </Link>
@@ -43,17 +44,13 @@ export default function MobileNav({ links }: { links: readonly LinkItem[] }) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setIsOpen(false)}
-            className="py-2.5 px-4 font-mono text-xs tracking-wide uppercase text-muted-landing hover:text-accent-landing transition-colors border border-landing bg-surface-landing/50 hover:bg-surface-landing flex items-center justify-between"
+            className={landingSecondaryButton}
           >
             <span>GitHub</span>
             <Github className="w-3.5 h-3.5" aria-hidden="true" />
           </a>
           {!session && (
-            <Link
-              href="/login"
-              onClick={() => setIsOpen(false)}
-              className="py-2.5 px-4 font-mono text-xs tracking-wide uppercase text-accent-landing border border-landing-accent/30 bg-landing-accent-subtle hover:bg-landing-accent/20 transition-colors flex items-center justify-between"
-            >
+            <Link href="/login" onClick={() => setIsOpen(false)} className={landingPrimaryButton}>
               <span>Sign In</span>
               <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>

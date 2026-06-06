@@ -1639,7 +1639,10 @@
   color: var(--theme-on-surface);
   border-radius: 8px;
   z-index: 1;
-  transition: transform 0.2s ease, box-shadow 0.3s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.3s ease,
+    color 0.2s ease;
   --mouse-pct-x: 50%;
   --mouse-pct-y: 50%;
 }
@@ -1735,7 +1738,6 @@
     background-position: 0% 50%;
   }
 }
-
 
 .bg-rays {
   background:

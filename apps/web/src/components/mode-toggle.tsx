@@ -3,6 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import * as React from "react";
 
+import { landingIconButton, landingMenuItem, landingMenuSurface } from "@/components/landing-ui";
 import { useTheme } from "@/components/theme-provider";
 
 export function ModeToggle() {
@@ -18,7 +19,7 @@ export function ModeToggle() {
     <div className="relative">
       <button
         type="button"
-        className="mode-toggle-btn"
+        className={landingIconButton}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
@@ -28,10 +29,10 @@ export function ModeToggle() {
         <span className="sr-only">Toggle theme</span>
       </button>
       {open && (
-        <div className="dropdown-content absolute right-0 top-full z-50 mt-2 min-w-32" role="menu">
+        <div className={landingMenuSurface} role="menu">
           <button
             type="button"
-            className="block w-full px-2 py-2 text-left font-mono text-xs"
+            className={landingMenuItem}
             onClick={() => chooseTheme("light")}
             role="menuitem"
           >
@@ -39,7 +40,7 @@ export function ModeToggle() {
           </button>
           <button
             type="button"
-            className="block w-full px-2 py-2 text-left font-mono text-xs"
+            className={landingMenuItem}
             onClick={() => chooseTheme("dark")}
             role="menuitem"
           >
@@ -47,7 +48,7 @@ export function ModeToggle() {
           </button>
           <button
             type="button"
-            className="block w-full px-2 py-2 text-left font-mono text-xs"
+            className={landingMenuItem}
             onClick={() => chooseTheme("system")}
             role="menuitem"
           >

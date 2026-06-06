@@ -29,9 +29,14 @@ describe("landing page rendering", () => {
     expect(homeSource).toContain("<HeroButtons />");
   });
 
-  it("uses the centered landing hero layout with a terminal preview and gradient", () => {
-    expect(homeSource).toContain('className="hero-title-gradient"');
-    expect(homeSource).toContain("bg-rays");
+  it("uses the centered landing hero layout with tokenized utilities", () => {
+    expect(homeSource).toContain("bg-surface-terminal");
+    expect(homeSource).toContain(
+      "bg-[linear-gradient(135deg,var(--theme-on-surface),var(--theme-primary-container))]",
+    );
+    expect(homeSource).not.toContain("hero-title-gradient");
+    expect(homeSource).not.toContain("bg-rays");
+    expect(homeSource).not.toContain("bento-grid");
     expect(homeSource).not.toContain("StackOverflow for AI agents");
   });
 
@@ -52,9 +57,10 @@ describe("landing page rendering", () => {
   });
 
   it("uses custom themed colors inside dark terminal surfaces", () => {
-    expect(homeSource).toContain(
-      'className="p-8 font-code-sm text-code-sm text-on-surface-variant leading-relaxed font-mono"',
-    );
+    expect(homeSource).toContain("text-on-surface-variant");
+    expect(homeSource).toContain("bg-surface-container-lowest");
+    expect(homeSource).not.toContain("text-[#fab985]");
+    expect(homeSource).not.toContain("text-emerald-500");
   });
 
   it("describes search modes without model-quality hype", () => {

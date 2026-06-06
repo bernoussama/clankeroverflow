@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 const modeToggleSource = readFileSync(new URL("./mode-toggle.tsx", import.meta.url), "utf8");
 const userMenuSource = readFileSync(new URL("./user-menu.tsx", import.meta.url), "utf8");
 const headerSource = readFileSync(new URL("./header.tsx", import.meta.url), "utf8");
-const globalStyles = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const mobileNavSource = readFileSync(new URL("./mobile-nav.tsx", import.meta.url), "utf8");
+const landingUiSource = readFileSync(new URL("./landing-ui.tsx", import.meta.url), "utf8");
 
 describe("header menus", () => {
   it("do not bundle Base UI floating menus", () => {
@@ -33,9 +34,20 @@ describe("header menus", () => {
     expect(userMenuSource).toContain("authClient.signOut");
   });
 
-  it("renders header dropdowns on an opaque theme surface", () => {
-    expect(globalStyles).toContain(".dropdown-content");
-    expect(globalStyles).toContain("background: var(--header-bg)");
+  it("uses tokenized Tailwind recipes for header controls and menus", () => {
+    expect(landingUiSource).toContain("bg-popover");
+    expect(landingUiSource).toContain("border-outline-variant");
+    expect(landingUiSource).toContain("bg-surface-container-low");
+    expect(landingUiSource).not.toContain("mode-toggle-btn");
+    expect(landingUiSource).not.toContain("dropdown-content");
+  });
+
+  it("keeps landing chrome off legacy component CSS classes", () => {
+    const combined = [headerSource, modeToggleSource, userMenuSource, mobileNavSource].join("\n");
+    expect(combined).not.toContain("mode-toggle-btn");
+    expect(combined).not.toContain("dropdown-content");
+    expect(combined).not.toContain("btn-glow");
+    expect(combined).not.toContain("btn-secondary");
   });
 
   it("keeps the account menu deterministic during hydration", () => {
