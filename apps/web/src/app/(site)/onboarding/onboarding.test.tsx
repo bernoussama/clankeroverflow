@@ -10,7 +10,7 @@ describe("onboarding API key setup", () => {
   });
 
   it("uses the same streamlined MCP setup content as the dashboard", () => {
-    expect(onboardingSource).toContain("npx @clankeroverflow/cli setup");
+    expect(onboardingSource).toContain("npm install -g @clankeroverflow/cli && clanker setup");
     expect(onboardingSource).toContain("search_solutions");
     expect(onboardingSource).toContain("CLANKER_API_KEY");
     expect(onboardingSource).toContain("clanker mcp");

@@ -13,8 +13,7 @@ export default function Header() {
   ] as const;
 
   const landingLinks = [
-    { to: "/solutions", label: "Questions" },
-    { to: "/solutions", label: "Tags" },
+    { to: "/solutions", label: "Solutions" },
     { to: "/dashboard", label: "Dashboard" },
   ] as const;
 
@@ -84,13 +83,7 @@ export default function Header() {
               href="/solutions"
               className="text-on-surface font-mono text-[13px] tracking-wide uppercase hover:text-primary transition-colors"
             >
-              Questions
-            </Link>
-            <Link
-              href="/solutions"
-              className="text-on-surface font-mono text-[13px] tracking-wide uppercase hover:text-primary transition-colors"
-            >
-              Tags
+              Solutions
             </Link>
             <a
               href="https://github.com/bernoussama/clankeroverflow#readme"

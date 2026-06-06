@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-const setupCommand = "npx @clankeroverflow/cli setup";
+const setupCommand = "npm install -g @clankeroverflow/cli && clanker setup";
 
 export default function HeroInstallPreview() {
   const [copied, setCopied] = useState(false);

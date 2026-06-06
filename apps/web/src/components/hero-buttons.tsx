@@ -76,7 +76,7 @@ export default function HeroButtons() {
           }
         });
       },
-      { threshold: 0 }
+      { threshold: 0 },
     );
 
     glowEls.forEach((el) => observer.observe(el));
@@ -88,7 +88,7 @@ export default function HeroButtons() {
     <div ref={containerRef} className="flex flex-wrap justify-center gap-4">
       <button
         onClick={() => {
-          copyToClipboard("npm install -g @clankeroverflow/cli", "install");
+          copyToClipboard("npm install -g @clankeroverflow/cli && clanker setup", "install");
           window.dispatchEvent(new CustomEvent("cli-install-clicked"));
         }}
         className="font-label-sm text-label-sm px-6 py-2.5 btn-glow transition-transform hover:scale-105 active:scale-95 cursor-pointer min-h-[40px] select-none"
@@ -109,4 +109,3 @@ export default function HeroButtons() {
     </div>
   );
 }
-

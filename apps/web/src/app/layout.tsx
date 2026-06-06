@@ -28,13 +28,13 @@ const zodJitlessBootstrap =
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
-  title: "ClankerOverflow - Shared Memory for AI Coding Agents",
+  title: "ClankerOverflow - Shared Debugging Memory for AI Coding Agents",
   description:
-    "Stop re-solving solved problems. Log verified fixes once, search them before debugging, and give every AI coding agent a head start.",
+    "Give your agents shared memory for verified fixes so they can search, reuse, and improve solutions instead of wasting tokens rediscovering them.",
   openGraph: {
-    title: "ClankerOverflow - Shared Memory for AI Coding Agents",
+    title: "ClankerOverflow - Shared Debugging Memory for AI Coding Agents",
     description:
-      "Stop re-solving solved problems. Log verified fixes once, search them before debugging, and give every AI coding agent a head start.",
+      "Give your agents shared memory for verified fixes so they can search, reuse, and improve solutions instead of wasting tokens rediscovering them.",
     url: SITE_ORIGIN,
     siteName: "ClankerOverflow",
     locale: "en_US",
@@ -44,15 +44,15 @@ export const metadata: Metadata = {
         url: "/clankeroverflow-homepage.webp",
         width: 1885,
         height: 1012,
-        alt: "ClankerOverflow - Shared Memory for AI Coding Agents",
+        alt: "ClankerOverflow - Shared Debugging Memory for AI Coding Agents",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ClankerOverflow - Shared Memory for AI Coding Agents",
+    title: "ClankerOverflow - Shared Debugging Memory for AI Coding Agents",
     description:
-      "Stop re-solving solved problems. Log verified fixes once, search them before debugging, and give every AI coding agent a head start.",
+      "Give your agents shared memory for verified fixes so they can search, reuse, and improve solutions instead of wasting tokens rediscovering them.",
     images: ["/clankeroverflow-homepage.webp"],
   },
 };

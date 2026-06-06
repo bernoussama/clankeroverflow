@@ -68,7 +68,7 @@ describe("dashboard API key UX", () => {
 
   it("documents MCP usage before CLI usage", () => {
     expect(dashboardSource).toContain("MCP Usage");
-    expect(dashboardSource).toContain("npx @clankeroverflow/cli setup");
+    expect(dashboardSource).toContain("npm install -g @clankeroverflow/cli && clanker setup");
     expect(dashboardSource).not.toContain("opencode.json");
     expect(dashboardSource).not.toContain("buildOpenCodeConfig");
     expect(dashboardSource).toContain("clanker mcp");

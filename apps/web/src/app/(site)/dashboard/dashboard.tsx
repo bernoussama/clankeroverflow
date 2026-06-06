@@ -432,7 +432,7 @@ export default function Dashboard() {
                     <div className="code-block__body py-4 px-5">
                       <span className="text-[var(--landing-accent)] font-bold mr-2">$</span>
                       <span className="font-mono text-xs text-foreground">
-                        npx @clankeroverflow/cli setup
+                        npm install -g @clankeroverflow/cli && clanker setup
                       </span>
                     </div>
                   </div>
