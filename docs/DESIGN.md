@@ -1,14 +1,14 @@
 ---
 name: VitePlus Overflow Redesign
 colors:
-  surface: "#1a110b"
-  surface-dim: "#1a110b"
+  surface: "hsl(0, 9%, 7%)"
+  surface-dim: "hsl(0, 9%, 7%)"
   surface-bright: "#43372f"
-  surface-container-lowest: "#150c06"
-  surface-container-low: "#231a12"
-  surface-container: "#281e16"
-  surface-container-high: "#332820"
-  surface-container-highest: "#3e322a"
+  surface-container-lowest: "hsl(0, 10%, 5%)"
+  surface-container-low: "hsl(0, 9%, 11%)"
+  surface-container: "hsl(0, 9%, 13%)"
+  surface-container-high: "hsl(0, 8%, 17%)"
+  surface-container-highest: "hsl(0, 8%, 21%)"
   on-surface: "#f2dfd3"
   on-surface-variant: "#dcc2af"
   inverse-surface: "#f2dfd3"
@@ -45,9 +45,9 @@ colors:
   tertiary-fixed-dim: "#91cdff"
   on-tertiary-fixed: "#001e31"
   on-tertiary-fixed-variant: "#004b72"
-  background: "#1a110b"
+  background: "hsl(0, 9%, 7%)"
   on-background: "#f2dfd3"
-  surface-variant: "#3e322a"
+  surface-variant: "hsl(0, 8%, 21%)"
 typography:
   display-lg:
     fontFamily: JetBrains Mono

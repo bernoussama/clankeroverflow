@@ -62,6 +62,14 @@ describe("design system (index.css)", () => {
     }
   });
 
+  it("uses the requested global dark background", () => {
+    const darkBlock = css.match(/\.dark\s*\{([^}]+)\}/)?.[1] ?? "";
+
+    expect(darkBlock).toContain("--background: hsl(0, 9%, 7%);");
+    expect(darkBlock).toContain("--theme-surface: hsl(0, 9%, 7%);");
+    expect(darkBlock).toContain("--header-bg: hsla(0, 9%, 7%, 0.9);");
+  });
+
   it("keeps the landing pilot off legacy component CSS recipes", () => {
     const legacyClasses = [
       "mode-toggle-btn",
