@@ -106,4 +106,13 @@ describe("landing page rendering", () => {
     expect(layoutSource).toContain("globalThis.__zod_globalConfig");
     expect(layoutSource).toContain("jitless: true");
   });
+
+  it("bootstraps the stored or system theme before hydration", () => {
+    expect(layoutSource).toContain("themeBootstrapScript");
+    expect(layoutSource).toContain('id="theme-bootstrap"');
+    expect(layoutSource).toContain("suppressHydrationWarning");
+    expect(layoutSource.indexOf('id="theme-bootstrap"')).toBeLessThan(
+      layoutSource.indexOf('id="zod-jitless"'),
+    );
+  });
 });

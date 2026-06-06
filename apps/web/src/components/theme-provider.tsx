@@ -2,6 +2,8 @@
 
 import * as React from "react";
 
+import { THEME_QUERY, THEME_STORAGE_KEY } from "@/lib/theme-bootstrap";
+
 type ResolvedTheme = "light" | "dark";
 type Theme = ResolvedTheme | "system";
 
@@ -25,8 +27,6 @@ type ThemeContextValue = {
 };
 
 const DEFAULT_THEMES = ["light", "dark"] as const;
-const THEME_QUERY = "(prefers-color-scheme: dark)";
-
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
 function getSystemTheme() {
@@ -115,12 +115,14 @@ export function ThemeProvider({
   defaultTheme = "system",
   disableTransitionOnChange = false,
   enableSystem = true,
-  storageKey = "theme",
+  storageKey = THEME_STORAGE_KEY,
   themes = DEFAULT_THEMES,
   value,
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = React.useState<Theme>(defaultTheme);
-  const [systemTheme, setSystemTheme] = React.useState<ResolvedTheme>("light");
+  const [theme, setThemeState] = React.useState<Theme>(() =>
+    readStoredTheme(storageKey, defaultTheme),
+  );
+  const [systemTheme, setSystemTheme] = React.useState<ResolvedTheme>(() => getSystemTheme());
 
   React.useEffect(() => {
     setThemeState(readStoredTheme(storageKey, defaultTheme));

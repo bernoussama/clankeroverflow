@@ -5,6 +5,7 @@ import { Inter, JetBrains_Mono, Bricolage_Grotesque } from "next/font/google";
 import "../index.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SITE_ORIGIN } from "@/lib/agent-discovery";
+import { themeBootstrapScript } from "@/lib/theme-bootstrap";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -63,8 +64,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
+        <script id="theme-bootstrap" dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
         <script id="zod-jitless" dangerouslySetInnerHTML={{ __html: zodJitlessBootstrap }} />
       </head>
       <body

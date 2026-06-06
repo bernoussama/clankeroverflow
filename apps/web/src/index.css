@@ -354,7 +354,7 @@
   }
 
   html {
-    @apply font-sans;
+    @apply font-sans bg-background text-foreground;
     scroll-behavior: smooth;
     min-height: 100vh;
     min-height: 100svh;

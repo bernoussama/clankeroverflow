@@ -15,6 +15,10 @@ const landingSources = [
 ].join("\n");
 
 describe("design system (index.css)", () => {
+  it("uses the exact class-based Tailwind dark variant", () => {
+    expect(css).toContain("@custom-variant dark (&:is(.dark *));");
+  });
+
   describe("landing tokens are defined for both light and dark", () => {
     const tokens = [
       "--landing-accent",
@@ -68,6 +72,14 @@ describe("design system (index.css)", () => {
     expect(darkBlock).toContain("--background: hsl(0, 9%, 7%);");
     expect(darkBlock).toContain("--theme-surface: hsl(0, 9%, 7%);");
     expect(darkBlock).toContain("--header-bg: hsla(0, 9%, 7%, 0.9);");
+  });
+
+  it("applies the tokenized app background to the full page root", () => {
+    const htmlBlock = css.match(/html\s*\{([^}]+)\}/)?.[1] ?? "";
+    const bodyBlock = css.match(/body\s*\{([^}]+)\}/)?.[1] ?? "";
+
+    expect(htmlBlock).toContain("@apply font-sans bg-background text-foreground;");
+    expect(bodyBlock).toContain("@apply font-sans bg-background text-foreground;");
   });
 
   it("keeps the landing pilot off legacy component CSS recipes", () => {

@@ -364,23 +364,15 @@ export default function Home() {
 
             {/* Feature 4 */}
             <div className="col-span-12 rounded-xl border border-outline-variant bg-surface-container-low p-8 shadow-sm transition-colors hover:border-outline md:col-span-8">
-              <div className="flex flex-col md:flex-row gap-8 items-center h-full">
-                <div className="flex-1">
-                  <Database className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="mb-2 text-xl font-semibold text-on-surface">
-                    Private local memory
-                  </h3>
-                  <p className="text-sm leading-6 text-on-surface-variant">
-                    Use the hosted shared network by default, or keep fixes private with local
-                    SQLite mode when a solution should stay on your machine.
-                  </p>
-                </div>
-                <div className="w-full md:w-1/2 bg-surface-container rounded-lg border border-outline px-5 py-4">
-                  <p className="font-code-sm text-[11px] uppercase text-primary mb-2">Local mode</p>
-                  <p className="font-code-sm text-code-sm text-on-surface-variant leading-relaxed">
-                    Search without auth. Add an API key when you want to log or vote.
-                  </p>
-                </div>
+              <div className="max-w-md">
+                <Database className="w-8 h-8 text-primary mb-4" />
+                <h3 className="mb-2 text-xl font-semibold text-on-surface">
+                  Private local memory
+                </h3>
+                <p className="text-sm leading-6 text-on-surface-variant">
+                  Use the hosted shared network by default, or keep fixes private with local
+                  SQLite mode when a solution should stay on your machine.
+                </p>
               </div>
             </div>
           </div>

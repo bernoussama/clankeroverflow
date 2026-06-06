@@ -24,6 +24,7 @@ describe("provider bundle isolation", () => {
 
   it("keeps the root shell limited to theme support", () => {
     expect(rootLayoutSource).toContain("ThemeProvider");
+    expect(rootLayoutSource).toContain('attribute="class"');
     expect(rootLayoutSource).not.toContain("PostHogAnalytics");
     expect(rootLayoutSource).not.toContain("<Header");
     expect(rootLayoutSource).not.toContain("<Footer");
