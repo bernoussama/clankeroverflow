@@ -542,18 +542,21 @@
 .landing-hero__search button {
   min-width: 7rem;
   height: 3.5rem;
-  border: 1px solid var(--landing-accent);
-  background: var(--landing-accent);
-  color: var(--theme-surface-bright);
+  border: 1px solid var(--landing-code-bg);
+  background: var(--landing-code-bg);
+  color: var(--landing-code-fg);
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.09em;
-  transition: opacity 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .landing-hero__search button:hover {
+  border-color: var(--landing-accent);
   opacity: 0.88;
 }
 
@@ -565,11 +568,14 @@
   margin-top: 1.75rem;
 }
 
-.landing-hero__actions a {
+.landing-hero__actions a,
+.landing-hero__actions button {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  background: transparent;
   color: var(--theme-on-surface);
+  cursor: pointer;
   font-family: var(--font-mono);
   font-size: 0.875rem;
   font-weight: 700;
@@ -577,14 +583,33 @@
   transition: color 0.15s ease;
 }
 
-.landing-hero__actions a:first-child {
+.landing-hero__actions a {
+  border: 1px solid var(--landing-border);
   padding: 1rem 2rem;
-  background: var(--landing-code-bg);
-  color: var(--landing-code-fg);
 }
 
-.landing-hero__actions a:hover {
+.landing-hero__actions button {
+  border: 0;
+}
+
+.landing-hero__actions button:first-child {
+  border: 1px solid var(--landing-accent);
+  padding: 1rem 2rem;
+  background: var(--landing-accent);
+  color: #131313;
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.landing-hero__actions a:hover,
+.landing-hero__actions button:hover {
   color: var(--landing-accent);
+}
+
+.landing-hero__actions button:first-child:hover {
+  color: #131313;
+  opacity: 0.9;
 }
 
 .landing-hero__actions svg {
@@ -639,11 +664,22 @@
 .hero-terminal__status {
   border: 1px solid currentColor;
   padding: 0.3rem 0.55rem;
+  background: transparent;
+  cursor: pointer;
   font-family: var(--font-mono);
   font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.hero-terminal__status:hover,
+.hero-terminal__status:focus-visible {
+  background: var(--landing-terminal-accent);
+  color: var(--landing-code-bg);
 }
 
 .hero-terminal__code {
@@ -690,6 +726,25 @@
   white-space: pre;
 }
 
+.hero-terminal__command {
+  color: var(--landing-code-fg);
+}
+
+.hero-terminal__command--copied {
+  animation: hero-command-copy-flash 0.9s steps(1, end) 2;
+}
+
+@keyframes hero-command-copy-flash {
+  0%,
+  100% {
+    color: var(--landing-code-fg);
+  }
+
+  50% {
+    color: var(--landing-terminal-accent);
+  }
+}
+
 @media (max-width: 1023px) {
   .landing-hero {
     min-height: auto;
@@ -732,7 +787,8 @@
     align-items: stretch;
   }
 
-  .landing-hero__actions a {
+  .landing-hero__actions a,
+  .landing-hero__actions button {
     width: 100%;
     justify-content: center;
   }

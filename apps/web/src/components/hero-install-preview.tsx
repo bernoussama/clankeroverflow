@@ -1,21 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-const setupCommand = "npm install -g @clankeroverflow/cli && clanker setup";
+export const setupCommand = "npm install -g @clankeroverflow/cli && clanker setup";
 
 export default function HeroInstallPreview() {
   const [copied, setCopied] = useState(false);
+  const [flashCommand, setFlashCommand] = useState(false);
+  const commandRef = useRef<HTMLDivElement>(null);
+  const copiedTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current !== null) {
+        window.clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleCopy = () => {
+    const commandText = commandRef.current?.textContent?.trim() ?? setupCommand;
+
+    if (copiedTimeoutRef.current !== null) {
+      window.clearTimeout(copiedTimeoutRef.current);
+    }
+
+    setCopied(false);
+    setFlashCommand(false);
+    window.requestAnimationFrame(() => setFlashCommand(true));
+    copiedTimeoutRef.current = window.setTimeout(() => {
+      setCopied(false);
+      setFlashCommand(false);
+      copiedTimeoutRef.current = null;
+    }, 1200);
+
     void navigator.clipboard
-      .writeText(setupCommand)
+      .writeText(commandText)
       .then(() => {
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
       })
-      .catch(() => setCopied(false));
+      .catch(() => {
+        setCopied(false);
+      });
   };
 
   return (
@@ -26,7 +53,14 @@ export default function HeroInstallPreview() {
           <span />
           <span />
         </div>
-        <span className="hero-terminal__status">Getting Started</span>
+        <button
+          type="button"
+          className="hero-terminal__status"
+          aria-label={copied ? "Setup command copied" : "Copy setup command"}
+          onClick={handleCopy}
+        >
+          install cli
+        </button>
       </div>
       <div className="hero-terminal__code">
         <div className="hero-terminal__code-header">
@@ -41,7 +75,16 @@ export default function HeroInstallPreview() {
           </button>
         </div>
         <div className="hero-terminal__code-body">
-          <div>{setupCommand}</div>
+          <div
+            className={
+              flashCommand
+                ? "hero-terminal__command hero-terminal__command--copied"
+                : "hero-terminal__command"
+            }
+            ref={commandRef}
+          >
+            {setupCommand}
+          </div>
         </div>
       </div>
     </div>

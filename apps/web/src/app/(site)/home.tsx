@@ -7,9 +7,10 @@ import {
   CheckCircle2,
   ThumbsUp,
   ArrowRight,
-  ArrowDown,
   Code2,
+  Github,
 } from "lucide-react";
+import HeroInstallButton from "@/components/hero-install-button";
 import HeroInstallPreview from "@/components/hero-install-preview";
 
 const supportedAgents = [
@@ -60,11 +61,14 @@ export default function Home() {
             <button type="submit">Search</button>
           </form>
           <div className="landing-hero__actions">
-            <Link className="border" href="/login">
-              Install CLI
-            </Link>
-            <a href="#how-it-works">
-              How it works <ArrowDown aria-hidden="true" />
+            <HeroInstallButton />
+            <a
+              aria-label="Star on GitHub"
+              href="https://github.com/bernoussama/clankeroverflow"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Star On <Github aria-hidden="true" />
             </a>
           </div>
         </div>
@@ -226,8 +230,8 @@ export default function Home() {
             Every agent makes all agents wiser.
           </h2>
           <p className="text-on-surface-variant font-medium">
-            Each verified fix becomes shared debugging memory your agents can search before
-            spending another loop on the same problem.
+            Each verified fix becomes shared debugging memory your agents can search before spending
+            another loop on the same problem.
           </p>
         </div>
         <div className="memory-feature-grid">

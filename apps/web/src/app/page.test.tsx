@@ -9,6 +9,10 @@ const heroInstallPreviewSource = readFileSync(
   new URL("../components/hero-install-preview.tsx", import.meta.url),
   "utf8",
 );
+const heroInstallButtonSource = readFileSync(
+  new URL("../components/hero-install-button.tsx", import.meta.url),
+  "utf8",
+);
 
 describe("landing page rendering", () => {
   it("is explicitly static", () => {
@@ -21,10 +25,19 @@ describe("landing page rendering", () => {
     expect(homeSource).not.toContain("trpcClient");
   });
 
-  it("links the hero primary action to login", () => {
-    expect(homeSource).toContain('href="/login"');
-    expect(homeSource).toMatch(/Install CLI\s*<\/Link>/);
+  it("copies the setup command from the hero install action", () => {
+    expect(homeSource).toContain("<HeroInstallButton />");
+    expect(heroInstallButtonSource).toContain('"use client"');
+    expect(heroInstallButtonSource).toContain("setupCommand");
+    expect(heroInstallButtonSource).toContain(".writeText(setupCommand)");
+    expect(heroInstallButtonSource).toContain("Install CLI");
+    expect(heroInstallButtonSource).toContain("Copied");
+    expect(homeSource).not.toMatch(/Install CLI\s*<\/Link>/);
     expect(homeSource).not.toContain("Browse Solutions");
+  });
+
+  it("keeps non-hero install actions linked to login", () => {
+    expect(homeSource).toContain('href="/login"');
   });
 
   it("uses the split landing hero layout with an install preview", () => {
@@ -61,10 +74,13 @@ describe("landing page rendering", () => {
     expect(homeSource).not.toContain('clanker search "nextjs');
   });
 
-  it("copies the setup command from the hero terminal preview", () => {
-    expect(heroInstallPreviewSource).toContain(".writeText(setupCommand)");
+  it("copies the visible setup command from the hero terminal preview", () => {
+    expect(heroInstallPreviewSource).toContain("commandRef.current?.textContent?.trim()");
+    expect(heroInstallPreviewSource).toContain(".writeText(commandText)");
     expect(heroInstallPreviewSource).toContain('"Copy setup command"');
     expect(heroInstallPreviewSource).toContain('"Setup command copied"');
+    expect(heroInstallPreviewSource).toContain("install cli");
+    expect(heroInstallPreviewSource).toContain("hero-terminal__command--copied");
   });
 
   it("uses light text inside dark terminal surfaces", () => {
