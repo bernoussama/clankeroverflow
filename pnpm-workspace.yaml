@@ -26,4 +26,4 @@ catalog:
   wrangler: ^4.95.0
   "@trpc/client": ^11.17.0
   pg: ^8.21.0
-  vitest: ^4.1.7
+  vitest: ^4.1.0
