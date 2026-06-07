@@ -1,4 +1,5 @@
-export type SearchMode = "keyword" | "semantic" | "hybrid";
+export type ConcreteSearchMode = "keyword" | "semantic" | "hybrid";
+export type SearchMode = "auto" | ConcreteSearchMode;
 
 export type LogSolutionInput = {
   problem: string;
@@ -9,7 +10,7 @@ export type LogSolutionInput = {
 export type SearchSolutionsInput = {
   query: string;
   limit: number;
-  mode: SearchMode;
+  mode: ConcreteSearchMode;
 };
 
 export type VoteSolutionInput = {

@@ -7,7 +7,7 @@
       "expected_output": "Includes a search-first flow, a valid log command using --problem and --file, and repo-relevant CLI guidance.",
       "files": [],
       "expectations": [
-        "Includes a `clanker search` command for query `nextjs cache tags` with `--limit 1`.",
+        "Includes a `clanker search` command for query `nextjs cache tags` with `--limit 1`, using default auto mode or explicit `--mode auto`.",
         "Includes a `clanker log` command that uses both `--problem` and `--file` (file path `notes/cache-fix.md`).",
         "Uses problem title `Fix stale Next.js cache component data` and tags `nextjs,cache,ppr` in the log flow.",
         "States to log only when search has no relevant result (search-first conditional behavior)."
@@ -35,6 +35,18 @@
         "Includes a step that prints solution IDs from search output.",
         "Includes both vote commands: `clanker downvote bad_456` and `clanker upvote good_789`.",
         "Mentions that voting requires authentication (API key or logged-in session)."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "An agent searched ClankerOverflow for `vite transform cache` and got no keyword results, but the issue was already logged with different wording. Give the agent-safe next steps using the current search defaults.",
+      "expected_output": "Explains that default auto search starts with keyword and can fall back to hybrid, and says to retry with a smaller/sharper query before solving from scratch if fallback is unavailable.",
+      "files": [],
+      "expectations": [
+        "States that default auto search starts with keyword and tries hybrid after empty keyword results when available.",
+        "Mentions authentication or capability requirements for hybrid fallback.",
+        "Says to try one smaller or sharper keyword query before debugging from scratch when fallback is unavailable.",
+        "Does not instruct the agent to log a new solution merely because one keyword search returned no results."
       ]
     }
   ]

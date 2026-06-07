@@ -6,6 +6,8 @@ import type { AppRouter } from "@clankeroverflow/api/routers/index";
 import fs from "fs/promises";
 import path from "path";
 import packageJson from "../package.json";
+import { searchWithAutoFallback } from "./mcp/auto-search.js";
+import type { ConcreteSearchMode, SearchMode } from "./mcp/backend.js";
 import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
@@ -23,7 +25,10 @@ function sanitizeForTerminal(text: string): string {
 
 // Allow overriding via environment variables
 const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://api.clankeroverflow.com";
-const API_KEY = process.env.CLANKER_API_KEY || "";
+
+function getApiKey() {
+  return process.env.CLANKER_API_KEY || "";
+}
 
 const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -36,7 +41,8 @@ const trpc = createTRPCClient<AppRouter>({
         return fetch(url, rest);
       },
       headers() {
-        return API_KEY ? { "x-clanker-api-key": API_KEY } : {};
+        const apiKey = getApiKey();
+        return apiKey ? { "x-clanker-api-key": apiKey } : {};
       },
     }),
   ],
@@ -114,8 +120,8 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("-l, --limit <number>", "Number of results to return", "1")
     .option(
       "-m, --mode <mode>",
-      "keyword (Postgres FTS), semantic (Vectorize), or hybrid",
-      "hybrid",
+      "auto (keyword first, then hybrid on empty results when available), keyword, semantic, or hybrid",
+      "auto",
     )
     .action(async (query, options) => {
       try {
@@ -125,29 +131,42 @@ export function createProgram(options: CreateProgramOptions = {}) {
           process.exit(1);
         }
 
-        const mode = options.mode as "keyword" | "semantic" | "hybrid";
-        if (!["keyword", "semantic", "hybrid"].includes(mode)) {
+        const mode = options.mode as SearchMode;
+        if (!["auto", "keyword", "semantic", "hybrid"].includes(mode)) {
           console.error(
-            pc.red(pc.bold("✖ Error: ")) + pc.red("--mode must be keyword, semantic, or hybrid"),
+            pc.red(pc.bold("✖ Error: ")) +
+              pc.red("--mode must be auto, keyword, semantic, or hybrid"),
           );
           process.exit(1);
         }
 
-        const results = await trpc.solutions.search.query({
-          query,
-          limit,
-          mode,
-        });
+        const searchResult = await searchWithAutoFallback(
+          {
+            search: (input: { query: string; limit: number; mode: ConcreteSearchMode }) =>
+              trpc.solutions.search.query(input),
+          },
+          {
+            query,
+            limit,
+            mode,
+            allowHybridFallback: Boolean(getApiKey()),
+            fallbackUnavailableReason: "CLANKER_API_KEY is required for hosted hybrid fallback",
+          },
+        );
 
-        const sanitized = results.map((result) => ({
+        const sanitized = searchResult.results.map((result) => ({
           id: result.id,
           problem: sanitizeForTerminal(result.problem),
           solution: sanitizeForTerminal(result.solution),
           score: result.score,
           tags: result.tags ? sanitizeForTerminal(result.tags) : null,
         }));
+        const sanitizedAttempts = searchResult.attempts.map((attempt) => ({
+          ...attempt,
+          error: attempt.error ? sanitizeForTerminal(attempt.error) : undefined,
+        }));
 
-        console.log(formatSearchResults(sanitized));
+        console.log(formatSearchResults(sanitized, sanitizedAttempts));
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error searching solutions:")));
         console.error(pc.red(error.message || error));

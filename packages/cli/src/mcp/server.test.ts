@@ -110,7 +110,7 @@ describe("CLI MCP server", () => {
     ]);
   });
 
-  test("defaults search_solutions to minimal keyword search", async () => {
+  test("defaults search_solutions to auto search", async () => {
     const result = await client.listTools();
     const searchTool = result.tools.find((tool) => tool.name === "search_solutions");
 
@@ -119,7 +119,7 @@ describe("CLI MCP server", () => {
     expect(searchTool?.inputSchema.properties?.query.description).toContain(
       "Smallest distinctive keyword fingerprint",
     );
-    expect(searchTool?.inputSchema.properties?.mode.default).toBe("keyword");
+    expect(searchTool?.inputSchema.properties?.mode.default).toBe("auto");
   });
 
   test("log_solution logs through the hosted API", async () => {
@@ -176,11 +176,106 @@ describe("CLI MCP server", () => {
     expect(fetchCallUrl).toContain("solutions.search");
 
     const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
+    expect(text).toContain("Search attempts: keyword returned 1.");
     expect(text).toContain("UNTRUSTED CONTENT");
     expect(text).toContain("# Problem: test problem");
     expect(text).toContain("ID: 123");
     expect(text).toContain("Tags: react");
     expect(text).toContain("## Solution:\ntest solution");
+  });
+
+  test("auto search reports unavailable hybrid fallback without an API key", async () => {
+    const previousApiKey = process.env.CLANKER_API_KEY;
+    delete process.env.CLANKER_API_KEY;
+
+    try {
+      const unauthenticatedServer = createMcpServer();
+      const [unauthenticatedClientTransport, unauthenticatedServerTransport] =
+        InMemoryTransport.createLinkedPair();
+      const unauthenticatedClient = new Client({
+        name: "unauthenticated-test-client",
+        version: "1.0.0",
+      });
+
+      await unauthenticatedServer.connect(unauthenticatedServerTransport);
+      await unauthenticatedClient.connect(unauthenticatedClientTransport);
+
+      fetchMock.mockImplementationOnce(
+        async () => new Response(JSON.stringify({ result: { data: [] } })),
+      );
+
+      const result = await unauthenticatedClient.callTool({
+        name: "search_solutions",
+        arguments: { query: "missing", limit: 1 },
+      });
+
+      const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(text).toContain("keyword returned 0");
+      expect(text).toContain("CLANKER_API_KEY is required for hosted hybrid fallback");
+      expect(text).toContain("No solutions found.");
+    } finally {
+      if (previousApiKey === undefined) {
+        delete process.env.CLANKER_API_KEY;
+      } else {
+        process.env.CLANKER_API_KEY = previousApiKey;
+      }
+    }
+  });
+
+  test("auto search falls back to hybrid after empty keyword results when authenticated", async () => {
+    const previousApiKey = process.env.CLANKER_API_KEY;
+    process.env.CLANKER_API_KEY = "test-key";
+
+    try {
+      const authenticatedServer = createMcpServer();
+      const [authenticatedClientTransport, authenticatedServerTransport] =
+        InMemoryTransport.createLinkedPair();
+      const authenticatedClient = new Client({
+        name: "authenticated-test-client",
+        version: "1.0.0",
+      });
+
+      await authenticatedServer.connect(authenticatedServerTransport);
+      await authenticatedClient.connect(authenticatedClientTransport);
+
+      fetchMock
+        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
+        .mockImplementationOnce(
+          async () =>
+            new Response(
+              JSON.stringify({
+                result: {
+                  data: [
+                    {
+                      id: "hybrid-1",
+                      problem: "hybrid problem",
+                      solution: "hybrid solution",
+                      score: 2,
+                      tags: "search",
+                    },
+                  ],
+                },
+              }),
+            ),
+        );
+
+      const result = await authenticatedClient.callTool({
+        name: "search_solutions",
+        arguments: { query: "conceptual miss", limit: 1 },
+      });
+
+      const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(text).toContain("Search attempts: keyword returned 0; hybrid returned 1.");
+      expect(text).toContain("ID: hybrid-1");
+    } finally {
+      if (previousApiKey === undefined) {
+        delete process.env.CLANKER_API_KEY;
+      } else {
+        process.env.CLANKER_API_KEY = previousApiKey;
+      }
+    }
   });
 
   test("local semantic search returns not-configured message without fetch", async () => {

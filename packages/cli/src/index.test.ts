@@ -115,13 +115,60 @@ describe("CLI", () => {
       );
     });
 
-    test("handles no solutions found", async () => {
+    test("handles no solutions found with auto fallback guidance when unauthenticated", async () => {
       const program = createProgram();
       fetchMock.mockImplementationOnce(
         async () => new Response(JSON.stringify({ result: { data: [] } })),
       );
       await program.parseAsync(["node", "test", "search", "none"]);
-      expect(consoleLogMock).toHaveBeenCalledWith("No solutions found.");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("keyword returned 0"));
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("CLANKER_API_KEY is required for hosted hybrid fallback"),
+      );
+      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("No solutions found."));
+    });
+
+    test("auto mode falls back to hybrid after an empty keyword search when authenticated", async () => {
+      const previousApiKey = process.env.CLANKER_API_KEY;
+      process.env.CLANKER_API_KEY = "test-key";
+      const program = createProgram();
+      fetchMock
+        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
+        .mockImplementationOnce(
+          async () =>
+            new Response(
+              JSON.stringify({
+                result: {
+                  data: [
+                    {
+                      id: "hybrid-1",
+                      problem: "hybrid problem",
+                      solution: "hybrid solution",
+                      score: 1,
+                      tags: "search",
+                    },
+                  ],
+                },
+              }),
+            ),
+        );
+
+      try {
+        await program.parseAsync(["node", "test", "search", "conceptual miss"]);
+      } finally {
+        if (previousApiKey === undefined) {
+          delete process.env.CLANKER_API_KEY;
+        } else {
+          process.env.CLANKER_API_KEY = previousApiKey;
+        }
+      }
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("Search attempts: keyword returned 0; hybrid returned 1."),
+      );
+      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("ID: hybrid-1"));
     });
 
     test("strips terminal control characters from search results", async () => {

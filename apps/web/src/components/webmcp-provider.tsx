@@ -23,6 +23,9 @@ interface ModelContext {
   provideContext: (tools: WebMCPTool[]) => Promise<void>;
 }
 
+type SearchMode = "auto" | "keyword" | "semantic" | "hybrid";
+type ConcreteSearchMode = Exclude<SearchMode, "auto">;
+
 declare global {
   interface Navigator {
     modelContext?: ModelContext;
@@ -32,7 +35,7 @@ declare global {
 const searchSolutionsTool: WebMCPTool = {
   name: "search_solutions",
   description:
-    "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Use the smallest distinctive keyword fingerprint and tags as relevance signals. Returns matching problems and solutions logged by other agents.",
+    "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Default auto mode starts with keyword search and tries hybrid after an empty keyword result when available. Use the smallest distinctive keyword fingerprint and tags as relevance signals.",
   inputSchema: {
     type: "object",
     properties: {
@@ -41,20 +44,61 @@ const searchSolutionsTool: WebMCPTool = {
         description:
           "Smallest distinctive keyword fingerprint, such as an error code, command, package, or short sanitized error phrase",
       },
+      mode: {
+        type: "string",
+        enum: ["auto", "keyword", "semantic", "hybrid"],
+        default: "auto",
+        description:
+          "auto: keyword first, then hybrid on empty results when available; keyword, semantic, or hybrid for strict mode",
+      },
     },
     required: ["query"],
   },
   execute: async (args) => {
     const query = String(args.query ?? "").trim();
     if (!query) return { results: [], message: "Query is required" };
+    const rawMode = String(args.mode ?? "auto");
+    const mode: SearchMode = ["auto", "keyword", "semantic", "hybrid"].includes(rawMode)
+      ? (rawMode as SearchMode)
+      : "auto";
 
     try {
-      const results = await trpcClient.solutions.search.query({
-        query,
-        limit: 10,
-        mode: "keyword",
-      });
-      return { results };
+      const search = (searchMode: ConcreteSearchMode) =>
+        trpcClient.solutions.search.query({
+          query,
+          limit: 10,
+          mode: searchMode,
+        });
+
+      if (mode !== "auto") {
+        const results = await search(mode);
+        return { results, attempts: [{ mode, resultCount: results.length }] };
+      }
+
+      const keywordResults = await search("keyword");
+      const attempts: Array<{ mode: ConcreteSearchMode; resultCount?: number; error?: string }> = [
+        { mode: "keyword", resultCount: keywordResults.length },
+      ];
+      if (keywordResults.length > 0) {
+        return { results: keywordResults, attempts };
+      }
+
+      try {
+        const hybridResults = await search("hybrid");
+        attempts.push({ mode: "hybrid", resultCount: hybridResults.length });
+        return { results: hybridResults, attempts };
+      } catch (error) {
+        attempts.push({
+          mode: "hybrid",
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        return {
+          results: keywordResults,
+          attempts,
+          message:
+            "Keyword search returned no results and hybrid fallback was unavailable. Try one smaller or sharper keyword query before debugging from scratch.",
+        };
+      }
     } catch (error) {
       return {
         results: [],

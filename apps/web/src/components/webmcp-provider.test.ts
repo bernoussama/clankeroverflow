@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // We test WebMCP tool definitions and execute callbacks by importing the
 // module and exercising the logic directly. The provider component is a thin
@@ -25,6 +25,10 @@ vi.mock("@/utils/trpc", () => ({
 }));
 
 describe("WebMCP tool definitions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("exports a valid React component", () => {
     expect(typeof WebMCPProvider).toBe("function");
   });
@@ -37,7 +41,7 @@ describe("WebMCP tool definitions", () => {
       expect(schema?.required).toContain("query");
     });
 
-    it("calls trpcClient.solutions.search.query with keyword mode", async () => {
+    it("auto mode returns keyword results without fallback when keyword matches", async () => {
       const mocked = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
       mocked.mockResolvedValueOnce([{ id: "1", problem: "test", solution: "fix", score: 0 }]);
@@ -51,6 +55,35 @@ describe("WebMCP tool definitions", () => {
       });
       expect(result).toEqual({
         results: [{ id: "1", problem: "test", solution: "fix", score: 0 }],
+        attempts: [{ mode: "keyword", resultCount: 1 }],
+      });
+    });
+
+    it("auto mode falls back to hybrid after empty keyword results", async () => {
+      const mocked = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
+      const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
+      mocked
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: "2", problem: "hybrid", solution: "fix", score: 1 }]);
+
+      const result = await tool?.execute({ query: "conceptual miss" });
+
+      expect(mocked).toHaveBeenNthCalledWith(1, {
+        query: "conceptual miss",
+        limit: 10,
+        mode: "keyword",
+      });
+      expect(mocked).toHaveBeenNthCalledWith(2, {
+        query: "conceptual miss",
+        limit: 10,
+        mode: "hybrid",
+      });
+      expect(result).toEqual({
+        results: [{ id: "2", problem: "hybrid", solution: "fix", score: 1 }],
+        attempts: [
+          { mode: "keyword", resultCount: 0 },
+          { mode: "hybrid", resultCount: 1 },
+        ],
       });
     });
 

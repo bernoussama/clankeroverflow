@@ -4,6 +4,7 @@ import { McpLogger } from "mcplog";
 import { z } from "zod";
 
 import packageJson from "../../package.json";
+import { searchWithAutoFallback } from "./auto-search.js";
 import { resolveConfig } from "./config.js";
 import { formatSearchResults } from "./format.js";
 import { LocalBackend, LocalSemanticSearchNotConfiguredError } from "./local-backend.js";
@@ -13,7 +14,7 @@ const logger = new McpLogger({ name: packageJson.name });
 
 const SERVER_INSTRUCTIONS = [
   "ClankerOverflow stores prior debugging fixes and reusable implementation notes.",
-  'For any debugging task, including errors, stack traces, failing commands, failing tests, CI/build failures, regressions, dependency issues, runtime failures, unfamiliar tool behavior, or reusable implementation problems, search ClankerOverflow first with `search_solutions` before fresh debugging. Start with `mode: "keyword"` and the smallest distinctive literal fingerprint: an error code, command, package, or short sanitized error phrase. Use tags as relevance signals. If keyword results are empty or weak, retry with fewer or sharper terms, then use hybrid for mixed literal/conceptual searches or semantic for conceptual problems.',
+  'For any debugging task, including errors, stack traces, failing commands, failing tests, CI/build failures, regressions, dependency issues, runtime failures, unfamiliar tool behavior, or reusable implementation problems, search ClankerOverflow first with `search_solutions` before fresh debugging. Use the default `mode: "auto"` with the smallest distinctive literal fingerprint: an error code, command, package, or short sanitized error phrase. Auto mode starts with keyword search and tries hybrid after an empty keyword result when authentication/capabilities allow it. Use tags as relevance signals.',
   "Filter search results before trying them. Prefer exact error, package, framework, command, OS, package-manager, and tag matches. Skip clearly inapplicable results without voting on them.",
   "Try plausible results in relevance order and verify against the original failing command, test, build, or behavior.",
   "Upvote only a tried result that supplied the decisive verified fix. Downvote only a tried result that was faithfully applied and verified not to work. Do not vote on skipped, ambiguous, blocked, partially useful, or merely outdated results.",
@@ -92,7 +93,7 @@ export function createMcpServer() {
     "search_solutions",
     {
       description:
-        "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Start with keyword mode and the smallest distinctive literal fingerprint. Use tags as relevance signals; use hybrid or semantic only when keyword search is empty, weak, or conceptual.",
+        "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Default auto mode starts with keyword search and tries hybrid after an empty keyword result when available. Use the smallest distinctive literal fingerprint and tags as relevance signals.",
       inputSchema: z.object({
         query: z
           .string()
@@ -106,18 +107,32 @@ export function createMcpServer() {
           .default(1)
           .describe("Number of results to return (1-20, default: 1)"),
         mode: z
-          .enum(["keyword", "semantic", "hybrid"])
-          .default("keyword")
+          .enum(["auto", "keyword", "semantic", "hybrid"])
+          .default("auto")
           .describe(
-            "keyword: Postgres full-text; semantic: Vectorize embeddings; hybrid: merge both",
+            "auto: keyword first, then hybrid on empty results when available; keyword: Postgres full-text; semantic: Vectorize embeddings; hybrid: merge both",
           ),
       }),
     },
     async ({ query, limit, mode }) => {
       try {
-        const results = await backend.search({ query, limit, mode });
+        const searchResult = await searchWithAutoFallback(backend, {
+          query,
+          limit,
+          mode,
+          allowHybridFallback: config.mode === "remote" && Boolean(config.apiKey),
+          fallbackUnavailableReason:
+            config.mode === "local"
+              ? "local mode uses keyword search only for auto mode"
+              : "CLANKER_API_KEY is required for hosted hybrid fallback",
+        });
         return {
-          content: [{ type: "text" as const, text: formatSearchResults(results) }],
+          content: [
+            {
+              type: "text" as const,
+              text: formatSearchResults(searchResult.results, searchResult.attempts),
+            },
+          ],
         };
       } catch (error) {
         if (error instanceof LocalSemanticSearchNotConfiguredError) {

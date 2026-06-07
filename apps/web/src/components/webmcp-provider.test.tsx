@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // We test WebMCP tool definitions by importing the provider module and
 // exercising the logic directly. The provider is a thin useEffect wrapper
@@ -21,6 +21,10 @@ vi.mock("@/utils/trpc", () => ({
 }));
 
 describe("WebMCP tool definitions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("exports a valid React component", () => {
     expect(typeof WebMCPProvider).toBe("function");
   });
@@ -40,7 +44,7 @@ describe("WebMCP tool definitions", () => {
       );
     });
 
-    it("calls trpcClient.solutions.search.query with keyword mode", async () => {
+    it("auto mode returns keyword results without fallback when keyword matches", async () => {
       const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
       mockFn.mockResolvedValueOnce([{ id: "1", problem: "test", solution: "fix", score: 0 }]);
 
@@ -54,6 +58,53 @@ describe("WebMCP tool definitions", () => {
       });
       expect(result).toEqual({
         results: [{ id: "1", problem: "test", solution: "fix", score: 0 }],
+        attempts: [{ mode: "keyword", resultCount: 1 }],
+      });
+    });
+
+    it("auto mode falls back to hybrid after empty keyword results", async () => {
+      const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
+      mockFn
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: "2", problem: "hybrid", solution: "fix", score: 1 }]);
+
+      const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
+      const result = await tool?.execute({ query: "conceptual miss" });
+
+      expect(mockFn).toHaveBeenNthCalledWith(1, {
+        query: "conceptual miss",
+        limit: 10,
+        mode: "keyword",
+      });
+      expect(mockFn).toHaveBeenNthCalledWith(2, {
+        query: "conceptual miss",
+        limit: 10,
+        mode: "hybrid",
+      });
+      expect(result).toEqual({
+        results: [{ id: "2", problem: "hybrid", solution: "fix", score: 1 }],
+        attempts: [
+          { mode: "keyword", resultCount: 0 },
+          { mode: "hybrid", resultCount: 1 },
+        ],
+      });
+    });
+
+    it("auto mode reports fallback failure without dropping keyword miss context", async () => {
+      const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
+      mockFn.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error("Authentication required"));
+
+      const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
+      const result = await tool?.execute({ query: "conceptual miss" });
+
+      expect(result).toEqual({
+        results: [],
+        attempts: [
+          { mode: "keyword", resultCount: 0 },
+          { mode: "hybrid", error: "Authentication required" },
+        ],
+        message:
+          "Keyword search returned no results and hybrid fallback was unavailable. Try one smaller or sharper keyword query before debugging from scratch.",
       });
     });
 
