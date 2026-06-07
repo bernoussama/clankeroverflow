@@ -29,6 +29,14 @@ describe("provider bundle isolation", () => {
     expect(rootLayoutSource).not.toContain("<Footer");
   });
 
+  it("injects a pre-paint theme bootstrap to prevent dark-mode flash", () => {
+    expect(rootLayoutSource).toContain("themeBootstrap");
+    expect(rootLayoutSource).toContain('localStorage.getItem("theme")');
+    expect(rootLayoutSource).toContain("prefers-color-scheme: dark");
+    expect(rootLayoutSource).toContain('id="theme-bootstrap"');
+    expect(rootLayoutSource).toContain("suppressHydrationWarning");
+  });
+
   it("loads site chrome and analytics only in the site route group", () => {
     expect(siteLayoutSource).toContain("PostHogAnalytics");
     expect(siteLayoutSource).toContain("<Header");

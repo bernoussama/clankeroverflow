@@ -26,6 +26,11 @@ const bricolage = Bricolage_Grotesque({
 const zodJitlessBootstrap =
   "globalThis.__zod_globalConfig = Object.assign(globalThis.__zod_globalConfig || {}, { jitless: true });";
 
+// Apply the persisted/system theme before first paint to avoid a white flash in dark mode.
+// Mirrors the resolution logic in ThemeProvider (storageKey "theme", attribute "class").
+const themeBootstrap =
+  '(function(){try{var s=localStorage.getItem("theme");var d=window.matchMedia("(prefers-color-scheme: dark)").matches;var r=s==="light"||s==="dark"?s:d?"dark":"light";var e=document.documentElement;e.classList.remove("light","dark");e.classList.add(r);e.style.colorScheme=r;}catch(_){}})();';
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
   title: "ClankerOverflow - Shared Memory for AI Coding Agents",
@@ -63,8 +68,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
+        <script id="theme-bootstrap" dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         <script id="zod-jitless" dangerouslySetInnerHTML={{ __html: zodJitlessBootstrap }} />
       </head>
       <body

@@ -119,8 +119,12 @@ export function ThemeProvider({
   themes = DEFAULT_THEMES,
   value,
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = React.useState<Theme>(defaultTheme);
-  const [systemTheme, setSystemTheme] = React.useState<ResolvedTheme>("light");
+  const [theme, setThemeState] = React.useState<Theme>(() =>
+    typeof window === "undefined" ? defaultTheme : readStoredTheme(storageKey, defaultTheme),
+  );
+  const [systemTheme, setSystemTheme] = React.useState<ResolvedTheme>(() =>
+    typeof window === "undefined" ? "light" : getSystemTheme(),
+  );
 
   React.useEffect(() => {
     setThemeState(readStoredTheme(storageKey, defaultTheme));
