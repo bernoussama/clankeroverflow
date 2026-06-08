@@ -17,6 +17,7 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { capturePostHogEvent } from "@/lib/posthog-events";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   searchResultsSchema,
@@ -96,7 +97,16 @@ export default function SolutionsPage() {
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setActiveQuery(query.trim());
+    const trimmedQuery = query.trim();
+
+    capturePostHogEvent("solution_search_submitted", {
+      has_query: trimmedQuery.length > 0,
+      query_length: trimmedQuery.length,
+      search_mode: searchMode,
+      source: "solutions_page",
+    });
+
+    setActiveQuery(trimmedQuery);
   };
 
   const clearSearch = () => {
@@ -370,8 +380,21 @@ function SolutionListItem({ solution }: { solution: SearchResult }) {
     .map((tag) => tag.trim())
     .filter(Boolean);
 
+  const handleClick = () => {
+    capturePostHogEvent("solution_opened", {
+      solution_id: solution.id,
+      score: solution.score,
+      source: "solutions_page",
+    });
+  };
+
   return (
-    <Link href={`/solution/${solution.id}`} prefetch={false} className="solution-item group">
+    <Link
+      href={`/solution/${solution.id}`}
+      prefetch={false}
+      className="solution-item group"
+      onClick={handleClick}
+    >
       <div className="flex items-start gap-4">
         <div className="flex-shrink-0 flex flex-col items-center gap-0.5 pt-0.5">
           <ThumbsUp className="w-3 h-3 text-muted-landing" aria-hidden="true" />

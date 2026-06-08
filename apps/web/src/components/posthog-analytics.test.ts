@@ -6,6 +6,10 @@ const postHogAnalyticsSource = readFileSync(
   new URL("./posthog-analytics.tsx", import.meta.url),
   "utf8",
 );
+const postHogEventsSource = readFileSync(
+  new URL("../lib/posthog-events.ts", import.meta.url),
+  "utf8",
+);
 
 describe("PostHog browser analytics", () => {
   it("loads the proxied classic script without forcing a CORS request", () => {
@@ -23,5 +27,13 @@ describe("PostHog browser analytics", () => {
     expect(postHogAnalyticsSource).toContain("capture_pageview:false");
     expect(postHogAnalyticsSource).toContain("disable_session_recording:true");
     expect(postHogAnalyticsSource).toContain("disable_surveys:true");
+  });
+
+  it("captures manual pageviews and flushes queued interaction events after delayed load", () => {
+    expect(postHogAnalyticsSource).toContain("capturePostHogPageview(pathname)");
+    expect(postHogAnalyticsSource).toContain("flushQueuedPostHogEvents()");
+    expect(postHogAnalyticsSource).toContain("capturedPageviewPath");
+    expect(postHogEventsSource).toContain('window.posthog?.capture?.("$pageview"');
+    expect(postHogEventsSource).toContain("clankerPostHogQueue");
   });
 });

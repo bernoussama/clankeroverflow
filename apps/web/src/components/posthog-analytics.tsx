@@ -7,15 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { env } from "@clankeroverflow/env/web";
 
 import { authClient } from "@/lib/auth-client";
-
-declare global {
-  interface Window {
-    posthog?: {
-      identify: (distinctId: string, properties?: Record<string, unknown>) => void;
-      reset: () => void;
-    };
-  }
-}
+import { capturePostHogPageview, flushQueuedPostHogEvents } from "@/lib/posthog-events";
 
 const HOME_ANALYTICS_FALLBACK_DELAY_MS = 12_000;
 const ROUTE_ANALYTICS_FALLBACK_DELAY_MS = 2_500;
@@ -31,6 +23,7 @@ export default function PostHogAnalytics() {
   const pathname = usePathname();
   const { data: session, isPending } = authClient.useSession();
   const identifiedUserId = useRef<string | null>(null);
+  const capturedPageviewPath = useRef<string | null>(null);
   const [shouldLoadAnalytics, setShouldLoadAnalytics] = useState(false);
 
   useEffect(() => {
@@ -75,12 +68,50 @@ export default function PostHogAnalytics() {
   }, [apiHost, apiKey, pathname]);
 
   useEffect(() => {
-    if (!apiKey || isPending || typeof window === "undefined" || !window.posthog) {
+    if (!apiKey || !apiHost || !shouldLoadAnalytics || typeof window === "undefined") {
+      return;
+    }
+
+    let retryTimer: number | undefined;
+    let attempts = 0;
+
+    const captureWhenReady = () => {
+      if (typeof window.posthog?.capture === "function") {
+        if (capturedPageviewPath.current !== pathname) {
+          capturePostHogPageview(pathname);
+          capturedPageviewPath.current = pathname;
+        }
+        flushQueuedPostHogEvents();
+        return;
+      }
+
+      if (attempts < 20) {
+        attempts += 1;
+        retryTimer = window.setTimeout(captureWhenReady, 100);
+      }
+    };
+
+    captureWhenReady();
+
+    return () => {
+      if (retryTimer !== undefined) {
+        window.clearTimeout(retryTimer);
+      }
+    };
+  }, [apiHost, apiKey, pathname, shouldLoadAnalytics]);
+
+  useEffect(() => {
+    if (
+      !apiKey ||
+      isPending ||
+      typeof window === "undefined" ||
+      typeof window.posthog?.identify !== "function"
+    ) {
       return;
     }
 
     if (session?.user) {
-      window.posthog.identify(session.user.id, {
+      window.posthog.identify?.(session.user.id, {
         email: session.user.email,
         name: session.user.name,
       });
@@ -89,7 +120,7 @@ export default function PostHogAnalytics() {
     }
 
     if (identifiedUserId.current) {
-      window.posthog.reset();
+      window.posthog.reset?.();
       identifiedUserId.current = null;
     }
   }, [apiKey, isPending, session?.user]);

@@ -22,6 +22,19 @@ describe("solutions page performance defaults", () => {
     expect(solutionsPageSource).toContain("useSearchParams");
     expect(solutionsPageSource).toContain('searchParams.get("query")');
   });
+
+  it("tracks manual search and result-open events without capturing raw query text", () => {
+    const analyticsEventBlock =
+      solutionsPageSource.match(
+        /capturePostHogEvent\("solution_search_submitted", \{[\s\S]+?\n    \}\);/,
+      )?.[0] ?? "";
+
+    expect(solutionsPageSource).toContain('capturePostHogEvent("solution_search_submitted"');
+    expect(solutionsPageSource).toContain('capturePostHogEvent("solution_opened"');
+    expect(analyticsEventBlock).toContain("query_length");
+    expect(analyticsEventBlock).toContain("search_mode");
+    expect(analyticsEventBlock).not.toMatch(/\n\s+query: trimmedQuery/);
+  });
 });
 
 describe("solution page vote state", () => {

@@ -9,6 +9,10 @@ const installCopyButtonSource = readFileSync(
   new URL("../components/install-copy-button.tsx", import.meta.url),
   "utf8",
 );
+const heroSearchFormSource = readFileSync(
+  new URL("../components/hero-search-form.tsx", import.meta.url),
+  "utf8",
+);
 const setupCommandSource = readFileSync(
   new URL("../components/setup-command.ts", import.meta.url),
   "utf8",
@@ -31,6 +35,7 @@ describe("landing page rendering", () => {
     expect(installCopyButtonSource).toContain("setupCommand");
     expect(installCopyButtonSource).toContain("visibleCommand || setupCommand");
     expect(installCopyButtonSource).toContain(".writeText(commandText)");
+    expect(installCopyButtonSource).toContain('capturePostHogEvent("install_cli_clicked"');
     expect(installCopyButtonSource).toContain("Install CLI");
     expect(installCopyButtonSource).toContain("Copied");
     expect(homeSource).not.toMatch(/Install CLI\s*<\/Link>/);
@@ -45,7 +50,8 @@ describe("landing page rendering", () => {
     expect(homeSource).toContain('className="landing-hero"');
     expect(homeSource).toContain('className="landing-hero__grid bg-grid-pattern"');
     expect(homeSource).toContain('className="landing-hero__title"');
-    expect(homeSource).toContain('className="landing-hero__search"');
+    expect(homeSource).toContain("<HeroSearchForm />");
+    expect(heroSearchFormSource).toContain('className="landing-hero__search"');
     expect(homeSource).toContain('aria-label="ClankerOverflow installation preview"');
     expect(homeSource).toContain('id="hero-setup-command"');
     expect(homeSource).not.toContain("StackOverflow for AI agents");
@@ -82,6 +88,15 @@ describe("landing page rendering", () => {
     expect(installCopyButtonSource).toContain('"Setup command copied"');
     expect(installCopyButtonSource).toContain("install cli");
     expect(installCopyButtonSource).toContain("hero-terminal__command--copied");
+  });
+
+  it("tracks high-signal homepage actions manually", () => {
+    expect(heroSearchFormSource).toContain('capturePostHogEvent("hero_search_submitted"');
+    expect(heroSearchFormSource).toContain("query_length");
+    expect(heroSearchFormSource).not.toContain("query,");
+    expect(homeSource).toContain('eventName="github_star_clicked"');
+    expect(homeSource).toContain('source: "home_hero"');
+    expect(homeSource).toContain('source: "home_bottom_cta"');
   });
 
   it("uses light text inside dark terminal surfaces", () => {

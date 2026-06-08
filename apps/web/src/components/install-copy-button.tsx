@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 
+import { capturePostHogEvent } from "@/lib/posthog-events";
 import { setupCommand } from "@/components/setup-command";
 
 type InstallCopyButtonProps = {
@@ -28,6 +29,11 @@ export default function InstallCopyButton({ commandTextId, variant }: InstallCop
       ? document.getElementById(commandTextId)?.textContent?.trim()
       : undefined;
     const commandText = visibleCommand || setupCommand;
+
+    capturePostHogEvent("install_cli_clicked", {
+      source: variant,
+      copied_visible_command: Boolean(commandTextId),
+    });
 
     if (copiedTimeoutRef.current !== null) {
       window.clearTimeout(copiedTimeoutRef.current);

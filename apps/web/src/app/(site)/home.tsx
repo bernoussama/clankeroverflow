@@ -10,6 +10,8 @@ import {
   Code2,
   Github,
 } from "lucide-react";
+import AnalyticsLink from "@/components/analytics-link";
+import HeroSearchForm from "@/components/hero-search-form";
 import InstallCopyButton from "@/components/install-copy-button";
 import { setupCommand } from "@/components/setup-command";
 
@@ -66,30 +68,19 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <form action="/solutions" className="landing-hero__search">
-            <div className="landing-hero__search-field">
-              <Search aria-hidden="true" />
-              <input
-                aria-label="Search solutions"
-                name="query"
-                placeholder="Search verified fixes..."
-                type="text"
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </div>
-            <button type="submit">Search</button>
-          </form>
+          <HeroSearchForm />
           <div className="landing-hero__actions">
             <InstallCopyButton variant="primary" />
-            <a
+            <AnalyticsLink
               aria-label="Star on GitHub"
+              eventName="github_star_clicked"
+              eventProperties={{ source: "home_hero" }}
               href="https://github.com/bernoussama/clankeroverflow"
               rel="noopener noreferrer"
               target="_blank"
             >
               Star On <Github aria-hidden="true" />
-            </a>
+            </AnalyticsLink>
           </div>
         </div>
       </section>
@@ -339,14 +330,16 @@ export default function Home() {
             >
               Install CLI <ArrowRight className="w-4 h-4" />
             </Link>
-            <a
+            <AnalyticsLink
               className="bg-transparent border border-surface/40 text-surface px-6 py-4 font-label-caps text-label-caps font-bold hover:bg-surface/10 transition-colors flex items-center gap-2"
+              eventName="github_star_clicked"
+              eventProperties={{ source: "home_bottom_cta" }}
               href="https://github.com/bernoussama/clankeroverflow"
               rel="noopener noreferrer"
               target="_blank"
             >
               <Code2 className="w-4 h-4" /> Star on GitHub
-            </a>
+            </AnalyticsLink>
           </div>
         </section>
       </div>
