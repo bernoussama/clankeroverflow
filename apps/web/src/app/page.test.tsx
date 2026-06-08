@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 const landingPageSource = readFileSync(new URL("./(site)/page.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("./(site)/home.tsx", import.meta.url), "utf8");
 const layoutSource = readFileSync(new URL("./layout.tsx", import.meta.url), "utf8");
-const heroInstallPreviewSource = readFileSync(
-  new URL("../components/hero-install-preview.tsx", import.meta.url),
+const installCopyButtonSource = readFileSync(
+  new URL("../components/install-copy-button.tsx", import.meta.url),
   "utf8",
 );
-const heroInstallButtonSource = readFileSync(
-  new URL("../components/hero-install-button.tsx", import.meta.url),
+const setupCommandSource = readFileSync(
+  new URL("../components/setup-command.ts", import.meta.url),
   "utf8",
 );
 
@@ -26,12 +26,13 @@ describe("landing page rendering", () => {
   });
 
   it("copies the setup command from the hero install action", () => {
-    expect(homeSource).toContain("<HeroInstallButton />");
-    expect(heroInstallButtonSource).toContain('"use client"');
-    expect(heroInstallButtonSource).toContain("setupCommand");
-    expect(heroInstallButtonSource).toContain(".writeText(setupCommand)");
-    expect(heroInstallButtonSource).toContain("Install CLI");
-    expect(heroInstallButtonSource).toContain("Copied");
+    expect(homeSource).toContain('<InstallCopyButton variant="primary" />');
+    expect(installCopyButtonSource).toContain('"use client"');
+    expect(installCopyButtonSource).toContain("setupCommand");
+    expect(installCopyButtonSource).toContain("visibleCommand || setupCommand");
+    expect(installCopyButtonSource).toContain(".writeText(commandText)");
+    expect(installCopyButtonSource).toContain("Install CLI");
+    expect(installCopyButtonSource).toContain("Copied");
     expect(homeSource).not.toMatch(/Install CLI\s*<\/Link>/);
     expect(homeSource).not.toContain("Browse Solutions");
   });
@@ -45,7 +46,8 @@ describe("landing page rendering", () => {
     expect(homeSource).toContain('className="landing-hero__grid bg-grid-pattern"');
     expect(homeSource).toContain('className="landing-hero__title"');
     expect(homeSource).toContain('className="landing-hero__search"');
-    expect(homeSource).toContain("<HeroInstallPreview />");
+    expect(homeSource).toContain('aria-label="ClankerOverflow installation preview"');
+    expect(homeSource).toContain('id="hero-setup-command"');
     expect(homeSource).not.toContain("StackOverflow for AI agents");
   });
 
@@ -58,11 +60,10 @@ describe("landing page rendering", () => {
   });
 
   it("shows only the setup command in the hero terminal preview", () => {
-    expect(heroInstallPreviewSource).toContain(
-      "npm install -g @clankeroverflow/cli && clanker setup",
-    );
-    expect(heroInstallPreviewSource).not.toContain("previewTabs");
-    expect(heroInstallPreviewSource).not.toContain("npx -y");
+    expect(setupCommandSource).toContain("npm install -g @clankeroverflow/cli && clanker setup");
+    expect(homeSource).toContain("{setupCommand}");
+    expect(homeSource).not.toContain("previewTabs");
+    expect(homeSource).not.toContain("npx -y");
   });
 
   it("shows the setup transcript in the workflow terminal visualizer", () => {
@@ -75,12 +76,12 @@ describe("landing page rendering", () => {
   });
 
   it("copies the visible setup command from the hero terminal preview", () => {
-    expect(heroInstallPreviewSource).toContain("commandRef.current?.textContent?.trim()");
-    expect(heroInstallPreviewSource).toContain(".writeText(commandText)");
-    expect(heroInstallPreviewSource).toContain('"Copy setup command"');
-    expect(heroInstallPreviewSource).toContain('"Setup command copied"');
-    expect(heroInstallPreviewSource).toContain("install cli");
-    expect(heroInstallPreviewSource).toContain("hero-terminal__command--copied");
+    expect(installCopyButtonSource).toContain("document.getElementById(commandTextId)");
+    expect(installCopyButtonSource).toContain(".writeText(commandText)");
+    expect(installCopyButtonSource).toContain('"Copy setup command"');
+    expect(installCopyButtonSource).toContain('"Setup command copied"');
+    expect(installCopyButtonSource).toContain("install cli");
+    expect(installCopyButtonSource).toContain("hero-terminal__command--copied");
   });
 
   it("uses light text inside dark terminal surfaces", () => {
@@ -121,7 +122,7 @@ describe("landing page rendering", () => {
     );
     expect(homeSource).toContain("Works with");
     expect(homeSource).toContain("agent-carousel__track");
-    expect(homeSource).toContain('{ name: "Codex", logo: "/agent-logos/codex.png" }');
+    expect(homeSource).toContain('{ name: "Codex", logo: "/agent-logos/codex.webp" }');
     expect(homeSource).toContain('{ name: "OpenClaw", logo: "/agent-logos/openclaw.svg" }');
     expect(homeSource).toContain('href="https://github.com/bernoussama/clankeroverflow"');
     expect(homeSource).not.toContain("client-rendered");

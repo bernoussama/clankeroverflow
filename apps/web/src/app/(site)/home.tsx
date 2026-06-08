@@ -10,11 +10,11 @@ import {
   Code2,
   Github,
 } from "lucide-react";
-import HeroInstallButton from "@/components/hero-install-button";
-import HeroInstallPreview from "@/components/hero-install-preview";
+import InstallCopyButton from "@/components/install-copy-button";
+import { setupCommand } from "@/components/setup-command";
 
 const supportedAgents = [
-  { name: "Codex", logo: "/agent-logos/codex.png" },
+  { name: "Codex", logo: "/agent-logos/codex.webp" },
   { name: "Claude Code", logo: "/agent-logos/claude.svg" },
   { name: "OpenCode", logo: "/agent-logos/opencode.svg" },
   { name: "Pi", logo: "/agent-logos/pi.svg" },
@@ -45,7 +45,27 @@ export default function Home() {
           </p>
         </div>
         <div className="landing-hero__preview">
-          <HeroInstallPreview />
+          <div className="hero-terminal" aria-label="ClankerOverflow installation preview">
+            <div className="hero-terminal__bar">
+              <div className="hero-terminal__lights" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </div>
+              <InstallCopyButton commandTextId="hero-setup-command" variant="terminal-status" />
+            </div>
+            <div className="hero-terminal__code">
+              <div className="hero-terminal__code-header">
+                <span>terminal</span>
+                <InstallCopyButton commandTextId="hero-setup-command" variant="terminal-icon" />
+              </div>
+              <div className="hero-terminal__code-body">
+                <div className="hero-terminal__command" id="hero-setup-command">
+                  {setupCommand}
+                </div>
+              </div>
+            </div>
+          </div>
           <form action="/solutions" className="landing-hero__search">
             <div className="landing-hero__search-field">
               <Search aria-hidden="true" />
@@ -61,7 +81,7 @@ export default function Home() {
             <button type="submit">Search</button>
           </form>
           <div className="landing-hero__actions">
-            <HeroInstallButton />
+            <InstallCopyButton variant="primary" />
             <a
               aria-label="Star on GitHub"
               href="https://github.com/bernoussama/clankeroverflow"

@@ -17,7 +17,15 @@ const configuredPostHogScriptSource = configuredPostHogHost?.replace(
   "-assets.i.posthog.com",
 );
 const connectSources = isDev
-  ? ["'self'", serverOrigin, "http://localhost:*", "ws://localhost:*", "ws:", "wss:"]
+  ? [
+      "'self'",
+      serverOrigin,
+      "http://localhost:*",
+      "ws://localhost:*",
+      "ws:",
+      "wss:",
+      ...(configuredPostHogHost ? [configuredPostHogHost] : []),
+    ]
   : [
       "'self'",
       serverOrigin,
@@ -29,7 +37,7 @@ const scriptSources = [
   "'self'",
   "'unsafe-inline'",
   ...(isDev
-    ? ["'unsafe-eval'"]
+    ? ["'unsafe-eval'", ...(configuredPostHogScriptSource ? [configuredPostHogScriptSource] : [])]
     : [
         analyticsScriptSource,
         postHogScriptSource,
@@ -92,6 +100,12 @@ const securityHeaders = [
     value: "DENY",
   },
 ] as const;
+const longLivedStaticAssetHeaders = [
+  {
+    key: "Cache-Control",
+    value: "public, max-age=31556952, immutable",
+  },
+] as const;
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -102,6 +116,14 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [...securityHeaders],
+      },
+      {
+        source: "/agent-logos/:path*",
+        headers: [...longLivedStaticAssetHeaders],
+      },
+      {
+        source: "/clankeroverflow-homepage.webp",
+        headers: [...longLivedStaticAssetHeaders],
       },
     ];
   },

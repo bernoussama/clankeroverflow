@@ -42,8 +42,8 @@
   /* Landing-specific tokens */
   --landing-accent: #c44700;
   --landing-accent-subtle: rgba(202, 75, 0, 0.08);
-  --landing-terminal-accent: #ff8a55;
-  --landing-terminal-muted: #b59c92;
+  --landing-terminal-accent: #ff9a6e;
+  --landing-terminal-muted: #cbb9b1;
   --landing-terminal-secondary: #72ff70;
   --landing-terminal-tertiary: #a5eeff;
   --landing-surface: #f6f3f2;
@@ -128,8 +128,8 @@
   /* Landing-specific tokens */
   --landing-accent: #f2641d;
   --landing-accent-subtle: rgba(242, 100, 29, 0.1);
-  --landing-terminal-accent: #ff8a55;
-  --landing-terminal-muted: #b59c92;
+  --landing-terminal-accent: #ff9a6e;
+  --landing-terminal-muted: #cbb9b1;
   --landing-terminal-secondary: #72ff70;
   --landing-terminal-tertiary: #a5eeff;
   --landing-surface: #1c1b1b;

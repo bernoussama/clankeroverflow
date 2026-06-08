@@ -6,3 +6,9 @@
 
 /_next/static/*
   Cache-Control: public, max-age=31556952, immutable
+
+/agent-logos/*
+  Cache-Control: public, max-age=31556952, immutable
+
+/clankeroverflow-homepage.webp
+  Cache-Control: public, max-age=31556952, immutable

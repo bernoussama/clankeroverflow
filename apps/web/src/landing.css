@@ -3,4 +3,4 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @source "./app/(site)/home.tsx";
-@source "./components/hero-install-preview.tsx";
+@source "./components/install-copy-button.tsx";

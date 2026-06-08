@@ -70,7 +70,7 @@ describe("design system (index.css)", () => {
 
   it("scans the landing page sources for route-specific utilities", () => {
     expect(landingCss).toContain('@source "./app/(site)/home.tsx";');
-    expect(landingCss).toContain('@source "./components/hero-install-preview.tsx";');
+    expect(landingCss).toContain('@source "./components/install-copy-button.tsx";');
     expect(landingCss).not.toContain('@source "./app/home.tsx";');
   });
 

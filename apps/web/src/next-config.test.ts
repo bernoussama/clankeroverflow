@@ -40,6 +40,10 @@ describe("next config", () => {
     expect(staticHeadersSource).toContain("Strict-Transport-Security:");
     expect(staticHeadersSource).toContain("X-Content-Type-Options: nosniff");
     expect(staticHeadersSource).toContain("/_next/static/*");
+    expect(staticHeadersSource).toContain("/agent-logos/*");
+    expect(staticHeadersSource).toContain("/clankeroverflow-homepage.webp");
+    expect(nextConfigSource).toContain("/agent-logos/:path*");
+    expect(nextConfigSource).toContain("/clankeroverflow-homepage.webp");
     expect(staticHeadersSource).toContain("Cache-Control: public, max-age=31556952, immutable");
   });
 });
