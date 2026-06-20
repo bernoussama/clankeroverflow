@@ -340,6 +340,9 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
+      sqlite-vec:
+        specifier: ^0.1.9
+        version: 0.1.9
       yocto-spinner:
         specifier: ^1.2.0
         version: 1.2.0
@@ -365,6 +368,10 @@ importers:
       vitest:
         specifier: 4.0.7
         version: 4.0.7(@types/debug@4.1.13)(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.14.6(@types/node@22.19.19)(typescript@5.9.3))(terser@5.16.9)(tsx@4.22.3)(yaml@2.9.0)
+    optionalDependencies:
+      sqlite-lembed:
+        specifier: 0.0.1-alpha.8
+        version: 0.0.1-alpha.8
 
   packages/config: {}
 
@@ -5636,6 +5643,52 @@ packages:
   split2@4.2.0:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
+
+  sqlite-lembed-darwin-arm64@0.0.1-alpha.8:
+    resolution: {integrity: sha512-Dg3nmU9stayqDNzlNRKOvhmERhpRU/uqKclf2mtRPo0hyB8uG9k4LGDgDtCoSOoPK9jMXdabI+qSUckqvn8o5w==}
+    cpu: [arm64]
+    os: [darwin]
+
+  sqlite-lembed-darwin-x64@0.0.1-alpha.8:
+    resolution: {integrity: sha512-S5Ix4/8WXBk5yHjqjugm1Xh4Uq0axU8AhH5G97Kk5PzteXlXv24QzgUu6QE0hNh8HSKuDxyga89aUwRV1MsFjQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  sqlite-lembed-linux-x64@0.0.1-alpha.8:
+    resolution: {integrity: sha512-N4Nlu0DqIDKIKgR51EBgURwwvTx8jp3NsJHm9yZBRc4OhqlG3eEaNUe5lX/MKWY31g+fO+0/Ew+gcQ2Sppk2Qw==}
+    cpu: [x64]
+    os: [linux]
+
+  sqlite-lembed@0.0.1-alpha.8:
+    resolution: {integrity: sha512-TPj4Nwh2xVTJgb29FLFb/onMQ7nIi1P5aNceGi9EHKX7VM33CKtcelnMLmsiBbAkuFFaZMDv8oxHxDhO1IqDvg==}
+
+  sqlite-vec-darwin-arm64@0.1.9:
+    resolution: {integrity: sha512-jSsZpE42OfBkGL/ItyJTVCUwl6o6Ka3U5rc4j+UBDIQzC1ulSSKMEhQLthsOnF/MdAf1MuAkYhkdKmmcjaIZQg==}
+    cpu: [arm64]
+    os: [darwin]
+
+  sqlite-vec-darwin-x64@0.1.9:
+    resolution: {integrity: sha512-KDlVyqQT7pnOhU1ymB9gs7dMbSoVmKHitT+k1/xkjarcX8bBqPxWrGlK/R+C5WmWkfvWwyq5FfXfiBYCBs6PlA==}
+    cpu: [x64]
+    os: [darwin]
+
+  sqlite-vec-linux-arm64@0.1.9:
+    resolution: {integrity: sha512-5wXVJ9c9kR4CHm/wVqXb/R+XUHTdpZ4nWbPHlS+gc9qQFVHs92Km4bPnCKX4rtcPMzvNis+SIzMJR1SCEwpuUw==}
+    cpu: [arm64]
+    os: [linux]
+
+  sqlite-vec-linux-x64@0.1.9:
+    resolution: {integrity: sha512-w3tCH8xK2finW8fQJ/m8uqKodXUZ9KAuAar2UIhz4BHILfpE0WM/MTGCRfa7RjYbrYim5Luk3guvMOGI7T7JQA==}
+    cpu: [x64]
+    os: [linux]
+
+  sqlite-vec-windows-x64@0.1.9:
+    resolution: {integrity: sha512-y3gEIyy/17bq2QFPQOWLE68TYWcRZkBQVA2XLrTPHNTOp55xJi/BBBmOm40tVMDMjtP+Elpk6UBUXdaq+46b0Q==}
+    cpu: [x64]
+    os: [win32]
+
+  sqlite-vec@0.1.9:
+    resolution: {integrity: sha512-L7XJWRIBNvR9O5+vh1FQ+IGkh/3D2AzVksW5gdtk28m78Hy8skFD0pqReKH1Yp0/BUKRGcffgKvyO/EON5JXpA==}
 
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
@@ -11621,6 +11674,45 @@ snapshots:
   space-separated-tokens@2.0.2: {}
 
   split2@4.2.0: {}
+
+  sqlite-lembed-darwin-arm64@0.0.1-alpha.8:
+    optional: true
+
+  sqlite-lembed-darwin-x64@0.0.1-alpha.8:
+    optional: true
+
+  sqlite-lembed-linux-x64@0.0.1-alpha.8:
+    optional: true
+
+  sqlite-lembed@0.0.1-alpha.8:
+    optionalDependencies:
+      sqlite-lembed-darwin-arm64: 0.0.1-alpha.8
+      sqlite-lembed-darwin-x64: 0.0.1-alpha.8
+      sqlite-lembed-linux-x64: 0.0.1-alpha.8
+    optional: true
+
+  sqlite-vec-darwin-arm64@0.1.9:
+    optional: true
+
+  sqlite-vec-darwin-x64@0.1.9:
+    optional: true
+
+  sqlite-vec-linux-arm64@0.1.9:
+    optional: true
+
+  sqlite-vec-linux-x64@0.1.9:
+    optional: true
+
+  sqlite-vec-windows-x64@0.1.9:
+    optional: true
+
+  sqlite-vec@0.1.9:
+    optionalDependencies:
+      sqlite-vec-darwin-arm64: 0.1.9
+      sqlite-vec-darwin-x64: 0.1.9
+      sqlite-vec-linux-arm64: 0.1.9
+      sqlite-vec-linux-x64: 0.1.9
+      sqlite-vec-windows-x64: 0.1.9
 
   stackback@0.0.2: {}
 

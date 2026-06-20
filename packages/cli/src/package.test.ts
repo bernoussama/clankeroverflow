@@ -23,7 +23,13 @@ describe("packages/cli package metadata", () => {
     expect(packageJson.devDependencies?.["@clankeroverflow/api"]).toBe("workspace:*");
     expect(packageJson.dependencies?.["better-sqlite3"]).toBe("12.10.0");
     expect(packageJson.dependencies?.mcplog).toBe("^0.0.5");
+    expect(packageJson.dependencies?.["sqlite-vec"]).toBe("^0.1.9");
+    expect(packageJson.optionalDependencies?.["sqlite-lembed"]).toBe("0.0.1-alpha.8");
     expect(packageJson.dependencies?.zod).toBe("^4.1.13");
+    expect(packageJson.dependencies?.["@tobilu/qmd"]).toBeUndefined();
+    expect(packageJson.dependencies?.["node-llama-cpp"]).toBeUndefined();
+    expect(packageJson.dependencies?.["@huggingface/transformers"]).toBeUndefined();
+    expect(packageJson.dependencies?.fastembed).toBeUndefined();
     expect(packageJson.dependencies?.["@clankeroverflow/mcp-logger"]).toBeUndefined();
     expect(packageJson.devDependencies?.["@clankeroverflow/mcp-logger"]).toBeUndefined();
     expect(Object.values(packageJson.dependencies ?? {})).not.toContain("catalog:");

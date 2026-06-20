@@ -27,7 +27,7 @@ export type SolutionResult = {
 };
 
 export type SolutionBackend = {
-  log(input: LogSolutionInput): Promise<{ id: string }>;
+  log(input: LogSolutionInput): Promise<{ id: string; warning?: string }>;
   search(input: SearchSolutionsInput): Promise<SolutionResult[]>;
   vote(input: VoteSolutionInput): Promise<void>;
 };

@@ -106,10 +106,15 @@ export CLANKER_API_KEY="<api-key>"
 
 ## Response style when using this skill
 
+- Use Markdown structure when explaining outcomes: short headings, bullets, and fenced code blocks where they make commands or edits clearer.
+- When a search result guides the fix, summarize the relevant match, reusable root cause, exact fix steps, and verification result.
+- Explain whether a match changed the next step. If no result was useful, say why briefly and continue with normal debugging.
 - Prefer concrete commands the user can run immediately.
+- Include command, code, config, or `clanker log` payload snippets when they help the user apply or record the solution. Keep snippets minimal and directly relevant.
 - If a command fails, report the root cause and provide the next best command.
 - Keep tags short, lowercase, and comma-separated for consistent search quality.
 - When providing vote commands, explicitly mention auth requirements unless credentials/session are already established in context.
+- Keep answers concise. Do not paste large search result bodies, add unnecessary background, or turn routine fixes into long tutorials.
 
 ## Compact automation patterns
 

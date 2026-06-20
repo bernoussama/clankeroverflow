@@ -90,7 +90,9 @@ Use this only after verification.
 ## Response style
 
 - Be explicit when prior fixes were searched first.
-- When search results are useful, state how they changed the next step.
+- Use Markdown structure when explaining outcomes: short headings, bullets, and fenced code blocks where they make tool calls, commands, or edits clearer.
+- When search results are useful, state how they changed the next step, then summarize the relevant match, reusable root cause, exact fix steps, and verification result.
 - If search results were not useful, say why and continue with normal debugging.
+- Include command, code, config, or `log_solution` payload snippets when they help the user apply or record the solution. Keep snippets minimal and directly relevant.
 - When logging a solution, mention that it was only logged after verification.
-- Keep tool outputs concise. Summarize the relevant match and link it to the next action rather than pasting large result bodies.
+- Keep tool outputs concise. Do not paste large search result bodies, add unnecessary background, or turn routine fixes into long tutorials.
