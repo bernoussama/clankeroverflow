@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "@clankeroverflow/api/routers/index";
 import fs from "fs/promises";
 import path from "path";
 import packageJson from "../package.json";
 import { searchWithAutoFallback } from "./mcp/auto-search.js";
-import type { ConcreteSearchMode, SearchMode } from "./mcp/backend.js";
+import type { SearchMode } from "./mcp/backend.js";
 import { resolveConfig } from "./mcp/config.js";
+import { createSolutionBackend } from "./mcp/create-backend.js";
 import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
 import { LocalBackend } from "./mcp/local-backend.js";
@@ -58,31 +57,6 @@ function formatDoctor(checks: Array<{ name: string; ok: boolean; detail: string 
   ].join("\n");
 }
 
-// Allow overriding via environment variables
-const SERVER_URL = process.env.CLANKER_SERVER_URL || "https://api.clankeroverflow.com";
-
-function getApiKey() {
-  return process.env.CLANKER_API_KEY || "";
-}
-
-const trpc = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: `${SERVER_URL}/trpc`,
-      fetch(url, options) {
-        // Miniflare/Workers dev can intermittently fail when Node fetch is passed an AbortSignal.
-        // tRPC always supplies a signal, so strip it for CLI stability.
-        const { signal: _signal, ...rest } = options ?? {};
-        return fetch(url, rest);
-      },
-      headers() {
-        const apiKey = getApiKey();
-        return apiKey ? { "x-clanker-api-key": apiKey } : {};
-      },
-    }),
-  ],
-});
-
 export function createProgram(options: CreateProgramOptions = {}) {
   const program = new Command();
   const runMcpServer = options.startMcpServer ?? startMcpServer;
@@ -130,17 +104,25 @@ export function createProgram(options: CreateProgramOptions = {}) {
           process.exit(1);
         }
 
-        const result = await trpc.solutions.log.mutate({
+        const config = resolveConfig();
+        const backend = createSolutionBackend(config);
+        const result = await backend.log({
           problem: options.problem,
           solution: solutionText,
           tags: options.tags,
         });
 
-        const webUrl = process.env.CLANKER_WEB_URL || "https://clankeroverflow.com";
-        console.log(
-          pc.green(pc.bold("✔ Success!")) +
-            ` Solution logged: ${pc.cyan(pc.underline(`${webUrl}/solution/${result.id}`))}`,
-        );
+        if (config.mode === "local") {
+          console.log(
+            pc.green(pc.bold("✔ Success!")) + ` Solution logged locally: ${pc.cyan(result.id)}`,
+          );
+          if (result.warning) console.log(pc.yellow(result.warning));
+        } else {
+          console.log(
+            pc.green(pc.bold("✔ Success!")) +
+              ` Solution logged: ${pc.cyan(pc.underline(`${config.webUrl}/solution/${result.id}`))}`,
+          );
+        }
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error logging solution:")));
         console.error(pc.red(error.message || error));
@@ -175,19 +157,19 @@ export function createProgram(options: CreateProgramOptions = {}) {
           process.exit(1);
         }
 
-        const searchResult = await searchWithAutoFallback(
-          {
-            search: (input: { query: string; limit: number; mode: ConcreteSearchMode }) =>
-              trpc.solutions.search.query(input),
-          },
-          {
-            query,
-            limit,
-            mode,
-            allowHybridFallback: Boolean(getApiKey()),
-            fallbackUnavailableReason: "CLANKER_API_KEY is required for hosted hybrid fallback",
-          },
-        );
+        const config = resolveConfig();
+        const backend = createSolutionBackend(config);
+        const searchResult = await searchWithAutoFallback(backend, {
+          query,
+          limit,
+          mode,
+          allowHybridFallback:
+            config.mode === "local" ? config.localSemantic.enabled : Boolean(config.apiKey),
+          fallbackUnavailableReason:
+            config.mode === "local"
+              ? "local semantic search is not configured"
+              : "CLANKER_API_KEY is required for hosted hybrid fallback",
+        });
 
         const sanitized = searchResult.results.map((result) => ({
           id: result.id,
@@ -215,7 +197,8 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .argument("<id>", "The solution ID")
     .action(async (id) => {
       try {
-        await trpc.solutions.vote.mutate({ id, isUpvote: true });
+        const backend = createSolutionBackend(resolveConfig());
+        await backend.vote({ id, isUpvote: true });
         console.log(pc.green(pc.bold("▲ Upvoted")) + ` solution ${pc.cyan(id)}`);
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error upvoting solution:")));
@@ -230,7 +213,8 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .argument("<id>", "The solution ID")
     .action(async (id) => {
       try {
-        await trpc.solutions.vote.mutate({ id, isUpvote: false });
+        const backend = createSolutionBackend(resolveConfig());
+        await backend.vote({ id, isUpvote: false });
         console.log(pc.red(pc.bold("▼ Downvoted")) + ` solution ${pc.cyan(id)}`);
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error downvoting solution:")));
@@ -299,9 +283,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
           {
             name: "local semantic enabled",
             ok: status.enabled,
-            detail: status.enabled
-              ? "enabled"
-              : "set CLANKER_LOCAL_SEMANTIC=1 or run setup --local-semantic",
+            detail: status.enabled ? "enabled" : "disabled by CLANKER_LOCAL_SEMANTIC=0/false/off",
           },
           {
             name: "sqlite-vec",

@@ -300,11 +300,11 @@ export function insertEmbedding(
 export function getSolutionsNeedingEmbedding(
   db: LocalDb,
   config: LocalSemanticConfig,
-  options: { limit?: number; fingerprint?: string } = {},
+  options: { limit?: number; fingerprint?: string; includeVectorRows?: boolean } = {},
 ) {
   ensureLocalSemanticSchema(db);
   const fingerprint = options.fingerprint ?? statusEmbeddingFingerprint(config);
-  const hasVecTable = hasSolutionVecTable(db);
+  const hasVecTable = options.includeVectorRows ?? hasSolutionVecTable(db);
   const rows = db
     .prepare(
       `SELECT solution.id, solution.problem, solution.solution, solution.tags,
@@ -346,17 +346,6 @@ export async function getLocalSemanticStatus(db: LocalDb, config: LocalSemanticC
   const totalSolutions = (
     db.prepare("SELECT COUNT(*) AS count FROM solution").get() as { count: number }
   ).count;
-  const pendingSolutions = getSolutionsNeedingEmbedding(db, config, { fingerprint });
-  const embeddedSolutions = totalSolutions - pendingSolutions.length;
-  const staleEmbeddings = (
-    db
-      .prepare(
-        `SELECT COUNT(*) AS count
-         FROM solution_embedding
-         WHERE model != ? OR embedding_fingerprint != ? OR dimensions != ?`,
-      )
-      .get(config.modelId, fingerprint, config.dimensions) as { count: number }
-  ).count;
   const hasVecTable = hasSolutionVecTable(db);
 
   let sqliteVecAvailable = true;
@@ -367,6 +356,21 @@ export async function getLocalSemanticStatus(db: LocalDb, config: LocalSemanticC
     sqliteVecAvailable = false;
     sqliteVecError = error instanceof Error ? error.message : String(error);
   }
+
+  const pendingSolutions = getSolutionsNeedingEmbedding(db, config, {
+    fingerprint,
+    includeVectorRows: hasVecTable && sqliteVecAvailable,
+  });
+  const embeddedSolutions = totalSolutions - pendingSolutions.length;
+  const staleEmbeddings = (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS count
+         FROM solution_embedding
+         WHERE model != ? OR embedding_fingerprint != ? OR dimensions != ?`,
+      )
+      .get(config.modelId, fingerprint, config.dimensions) as { count: number }
+  ).count;
 
   let embedderAvailable = true;
   let embedderError: string | undefined;

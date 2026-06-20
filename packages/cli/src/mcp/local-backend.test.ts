@@ -158,6 +158,34 @@ describe("CLI local MCP backend", () => {
     expect(results[0]!.problem).toBe("OAuth callback timeout");
   });
 
+  test("status loads sqlite-vec before inspecting vector rows from an existing database", async () => {
+    const semantic: LocalSemanticConfig = {
+      enabled: true,
+      modelId: "test-model",
+      modelPath,
+      dimensions: 4,
+    };
+    const firstBackend = new LocalBackend(dbPath, {
+      semantic,
+      embedder: { embed: () => vector([1, 0, 0, 0]) },
+    });
+    await firstBackend.log({
+      problem: "OAuth callback timeout",
+      solution: "Keep waitUntil tasks alive",
+      tags: "auth",
+    });
+
+    const freshBackend = new LocalBackend(dbPath, {
+      semantic,
+      embedder: { embed: () => vector([1, 0, 0, 0]) },
+    });
+
+    await expect(freshBackend.status()).resolves.toMatchObject({
+      embeddedSolutions: 1,
+      pendingEmbeddings: 0,
+    });
+  });
+
   test("embedding fingerprint changes when model file contents change", () => {
     const semantic: LocalSemanticConfig = {
       enabled: true,

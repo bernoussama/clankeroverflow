@@ -83,9 +83,12 @@ Use this only after verification.
 
 - Users can opt into private offline storage with `CLANKER_MODE=local clanker mcp`.
 - Local mode stores solutions in SQLite and never calls the hosted API.
+- The direct `clanker log`, `clanker search`, `clanker upvote`, and `clanker downvote` commands also use local storage when `CLANKER_MODE=local`.
 - `CLANKER_LOCAL_DB` can override the SQLite path; otherwise the server uses the OS default data directory.
 - In local mode, all four tools work without `CLANKER_API_KEY`.
-- Treat `semantic` search as unavailable in local mode unless the server reports otherwise; auto mode uses local keyword search.
+- Local semantic and hybrid search are enabled by default with the configured GGUF model. Run `clanker local embed` to download/check the default model and embed pending local solutions.
+- Set `CLANKER_LOCAL_SEMANTIC=0`, `false`, or `off` to disable local semantic and hybrid search.
+- Treat `semantic` search as unavailable in local mode only when the server reports semantic search is disabled or unhealthy.
 
 ## Response style
 

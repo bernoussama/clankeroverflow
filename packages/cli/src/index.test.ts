@@ -1,6 +1,41 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 import { createProgram } from "./index";
 import pc from "picocolors";
+
+async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
+  const previousMode = process.env.CLANKER_MODE;
+  const previousDb = process.env.CLANKER_LOCAL_DB;
+  const previousSemantic = process.env.CLANKER_LOCAL_SEMANTIC;
+  const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-"));
+
+  try {
+    process.env.CLANKER_MODE = "local";
+    process.env.CLANKER_LOCAL_DB = join(dir, "solutions.sqlite");
+    process.env.CLANKER_LOCAL_SEMANTIC = "0";
+    return await run(process.env.CLANKER_LOCAL_DB);
+  } finally {
+    if (previousMode === undefined) {
+      delete process.env.CLANKER_MODE;
+    } else {
+      process.env.CLANKER_MODE = previousMode;
+    }
+    if (previousDb === undefined) {
+      delete process.env.CLANKER_LOCAL_DB;
+    } else {
+      process.env.CLANKER_LOCAL_DB = previousDb;
+    }
+    if (previousSemantic === undefined) {
+      delete process.env.CLANKER_LOCAL_SEMANTIC;
+    } else {
+      process.env.CLANKER_LOCAL_SEMANTIC = previousSemantic;
+    }
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
 
 describe("CLI", () => {
   let consoleLogMock: MockInstance<typeof console.log>;
@@ -78,6 +113,28 @@ describe("CLI", () => {
         pc.green(pc.bold("✔ Success!")) +
           ` Solution logged: ${pc.cyan(pc.underline("https://clankeroverflow.com/solution/123"))}`,
       );
+    });
+
+    test("logs locally without calling the hosted API", async () => {
+      await withLocalCliEnv(async () => {
+        const program = createProgram();
+        await program.parseAsync([
+          "node",
+          "test",
+          "log",
+          "--problem",
+          "Local SQLite WAL busy error",
+          "--solution",
+          "Close stale readers before retrying the write transaction",
+          "--tags",
+          "sqlite,local",
+        ]);
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(consoleLogMock).toHaveBeenCalledWith(
+          expect.stringContaining("Solution logged locally:"),
+        );
+      });
     });
   });
 
@@ -200,6 +257,42 @@ describe("CLI", () => {
       expect(allOutput).not.toContain("\x07");
       expect(allOutput).toContain("Fake Error");
     });
+
+    test("searches local solutions without calling the hosted API", async () => {
+      await withLocalCliEnv(async () => {
+        const logProgram = createProgram();
+        await logProgram.parseAsync([
+          "node",
+          "test",
+          "log",
+          "--problem",
+          "Local sqlite vector extension fails to load",
+          "--solution",
+          "Install the Node native dependency inside the same runtime image",
+          "--tags",
+          "sqlite-vec,docker",
+        ]);
+        consoleLogMock.mockClear();
+
+        const searchProgram = createProgram();
+        await searchProgram.parseAsync([
+          "node",
+          "test",
+          "search",
+          "sqlite-vec",
+          "--mode",
+          "keyword",
+          "--limit",
+          "1",
+        ]);
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("sqlite vector"));
+        expect(consoleLogMock).toHaveBeenCalledWith(
+          expect.stringContaining("Tags: sqlite-vec,docker"),
+        );
+      });
+    });
   });
 
   describe("vote commands", () => {
@@ -229,6 +322,35 @@ describe("CLI", () => {
       expect(consoleLogMock).toHaveBeenCalledWith(
         pc.red(pc.bold("▼ Downvoted")) + ` solution ${pc.cyan("123")}`,
       );
+    });
+
+    test("votes locally without calling the hosted API", async () => {
+      await withLocalCliEnv(async () => {
+        const logProgram = createProgram();
+        await logProgram.parseAsync([
+          "node",
+          "test",
+          "log",
+          "--problem",
+          "Local vote target",
+          "--solution",
+          "Use the local backend",
+        ]);
+        const logged = consoleLogMock.mock.calls
+          .map((call) => call.join(""))
+          .find((line) => line.includes("Solution logged locally:"));
+        const id = logged?.match(/[0-9a-f-]{36}/)?.[0];
+        expect(id).toBeDefined();
+        consoleLogMock.mockClear();
+
+        const upvoteProgram = createProgram();
+        await upvoteProgram.parseAsync(["node", "test", "upvote", id!]);
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(consoleLogMock).toHaveBeenCalledWith(
+          pc.green(pc.bold("▲ Upvoted")) + ` solution ${pc.cyan(id!)}`,
+        );
+      });
     });
   });
 

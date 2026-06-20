@@ -13,6 +13,7 @@
     "dev:web": "turbo run dev --filter=web",
     "dev:server": "turbo run dev --filter=server",
     "test": "turbo run test",
+    "test:e2e:local": "tsx scripts/test-cli-local-e2e.ts",
     "db:push": "turbo run db:push --filter=@clankeroverflow/db",
     "db:generate": "turbo run db:generate --filter=@clankeroverflow/db",
     "db:migrate": "turbo run db:migrate --filter=@clankeroverflow/db",

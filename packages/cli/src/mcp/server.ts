@@ -7,9 +7,9 @@ import packageJson from "../../package.json";
 import { searchWithAutoFallback } from "./auto-search.js";
 import type { SolutionBackend } from "./backend.js";
 import { resolveConfig } from "./config.js";
+import { createSolutionBackend } from "./create-backend.js";
 import { formatSearchResults } from "./format.js";
 import { LocalBackend, LocalSemanticSearchNotConfiguredError } from "./local-backend.js";
-import { RemoteBackend } from "./remote-backend.js";
 
 const logger = new McpLogger({ name: packageJson.name });
 
@@ -27,13 +27,7 @@ const SERVER_INSTRUCTIONS = [
 
 export function createMcpServer() {
   const config = resolveConfig();
-  const backend: SolutionBackend =
-    config.mode === "local"
-      ? new LocalBackend(config.localDbPath, { semantic: config.localSemantic })
-      : new RemoteBackend({
-          serverUrl: config.serverUrl,
-          apiKey: config.apiKey,
-        });
+  const backend: SolutionBackend = createSolutionBackend(config);
   logger.debug("created backend", { mode: config.mode });
 
   const server = new McpServer(
