@@ -36,6 +36,12 @@ function expandHome(path: string) {
   return path;
 }
 
+function localSemanticEnabled(env: NodeJS.ProcessEnv, mode: ClankerMode) {
+  if (mode !== "local") return false;
+  const value = env.CLANKER_LOCAL_SEMANTIC?.toLowerCase();
+  return value !== "0" && value !== "false" && value !== "off";
+}
+
 export function resolveConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   const mode = env.CLANKER_MODE === "local" ? "local" : "remote";
   const localDbPath = resolve(expandHome(env.CLANKER_LOCAL_DB || defaultLocalDbPath()));
@@ -45,7 +51,7 @@ export function resolveConfig(env: NodeJS.ProcessEnv = process.env): ServerConfi
     mode,
     localDbPath,
     localSemantic: {
-      enabled: env.CLANKER_LOCAL_SEMANTIC === "1" || env.CLANKER_LOCAL_SEMANTIC === "true",
+      enabled: localSemanticEnabled(env, mode),
       modelId: env.CLANKER_LOCAL_MODEL_ID || DEFAULT_LOCAL_MODEL_ID,
       modelPath,
       dimensions: Number(env.CLANKER_LOCAL_MODEL_DIMENSIONS || DEFAULT_LOCAL_MODEL_DIMENSIONS),

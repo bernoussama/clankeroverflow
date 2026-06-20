@@ -282,11 +282,13 @@ describe("CLI MCP server", () => {
   test("local semantic search returns not-configured message without fetch", async () => {
     const previousMode = process.env.CLANKER_MODE;
     const previousDb = process.env.CLANKER_LOCAL_DB;
+    const previousSemantic = process.env.CLANKER_LOCAL_SEMANTIC;
     const dir = mkdtempSync(join(tmpdir(), "clanker-mcp-local-server-"));
 
     try {
       process.env.CLANKER_MODE = "local";
       process.env.CLANKER_LOCAL_DB = join(dir, "solutions.sqlite");
+      process.env.CLANKER_LOCAL_SEMANTIC = "0";
 
       const localServer = createMcpServer();
       const [localClientTransport, localServerTransport] = InMemoryTransport.createLinkedPair();
@@ -313,6 +315,11 @@ describe("CLI MCP server", () => {
         delete process.env.CLANKER_LOCAL_DB;
       } else {
         process.env.CLANKER_LOCAL_DB = previousDb;
+      }
+      if (previousSemantic === undefined) {
+        delete process.env.CLANKER_LOCAL_SEMANTIC;
+      } else {
+        process.env.CLANKER_LOCAL_SEMANTIC = previousSemantic;
       }
       rmSync(dir, { recursive: true, force: true });
     }
