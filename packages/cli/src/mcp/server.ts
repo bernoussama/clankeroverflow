@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import packageJson from "../../package.json";
 import { searchWithAutoFallback } from "./auto-search.js";
+import type { SolutionBackend } from "./backend.js";
 import { resolveConfig } from "./config.js";
 import { formatSearchResults } from "./format.js";
 import { LocalBackend, LocalSemanticSearchNotConfiguredError } from "./local-backend.js";
@@ -26,9 +27,9 @@ const SERVER_INSTRUCTIONS = [
 
 export function createMcpServer() {
   const config = resolveConfig();
-  const backend =
+  const backend: SolutionBackend =
     config.mode === "local"
-      ? new LocalBackend(config.localDbPath)
+      ? new LocalBackend(config.localDbPath, { semantic: config.localSemantic })
       : new RemoteBackend({
           serverUrl: config.serverUrl,
           apiKey: config.apiKey,
@@ -71,10 +72,14 @@ export function createMcpServer() {
           content: [
             {
               type: "text" as const,
-              text:
+              text: [
                 config.mode === "local"
                   ? `Success! Solution logged locally: ${result.id}`
                   : `Success! Solution logged: ${config.webUrl}/solution/${result.id}`,
+                result.warning,
+              ]
+                .filter(Boolean)
+                .join("\n"),
             },
           ],
         };
@@ -120,10 +125,12 @@ export function createMcpServer() {
           query,
           limit,
           mode,
-          allowHybridFallback: config.mode === "remote" && Boolean(config.apiKey),
+          allowHybridFallback:
+            (config.mode === "remote" && Boolean(config.apiKey)) ||
+            (config.mode === "local" && config.localSemantic.enabled),
           fallbackUnavailableReason:
             config.mode === "local"
-              ? "local mode uses keyword search only for auto mode"
+              ? "local semantic search is not configured"
               : "CLANKER_API_KEY is required for hosted hybrid fallback",
         });
         return {
@@ -148,6 +155,59 @@ export function createMcpServer() {
         });
         throw error;
       }
+    },
+  );
+
+  server.registerTool(
+    "clanker_status",
+    {
+      description:
+        "Report ClankerOverflow MCP mode, local SQLite path, and local semantic search health.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      if (config.mode !== "local" || !(backend instanceof LocalBackend)) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `ClankerOverflow mode: remote\nServer: ${config.serverUrl}`,
+            },
+          ],
+          structuredContent: {
+            mode: config.mode,
+            serverUrl: config.serverUrl,
+          },
+        };
+      }
+      const status = await backend.status();
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: [
+              "ClankerOverflow mode: local",
+              `SQLite: ${config.localDbPath}`,
+              `Semantic: ${status.enabled ? "enabled" : "disabled"}`,
+              `Solutions: ${status.totalSolutions}`,
+              `Embeddings: ${status.embeddedSolutions} current, ${status.pendingEmbeddings} pending`,
+              `Model: ${status.modelPath}`,
+              status.modelValid ? "Model file: valid GGUF" : `Model file: ${status.modelError}`,
+              status.sqliteVecAvailable
+                ? "sqlite-vec: available"
+                : `sqlite-vec: ${status.sqliteVecError}`,
+              status.embedderAvailable
+                ? "sqlite-lembed: available"
+                : `sqlite-lembed: ${status.embedderError}`,
+            ].join("\n"),
+          },
+        ],
+        structuredContent: {
+          mode: config.mode,
+          localDbPath: config.localDbPath,
+          semantic: status,
+        },
+      };
     },
   );
 

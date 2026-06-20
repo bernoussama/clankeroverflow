@@ -11,6 +11,7 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@clankeroverflow/api/routers/index";
 import pc from "picocolors";
 import yoctoSpinner from "yocto-spinner";
+import { defaultLocalModelPath } from "./mcp/local-semantic";
 
 const execFileAsync = promisify(execFile);
 const MCP_NAME = "clankeroverflow";
@@ -38,6 +39,10 @@ export type SetupOptions = {
   dryRun?: boolean;
   env?: Partial<NodeJS.ProcessEnv>;
   home?: string;
+  local?: boolean;
+  localDb?: string;
+  localModelPath?: string;
+  localSemantic?: boolean;
   packageRoot?: string;
   serverUrl?: string;
   skill?: SkillSelection;
@@ -63,6 +68,10 @@ type Context = {
   serverUrl: string;
   apiKey?: string;
   dryRun: boolean;
+  local: boolean;
+  localDb?: string;
+  localModelPath?: string;
+  localSemantic: boolean;
   runCommand: NonNullable<SetupDependencies["runCommand"]>;
 };
 
@@ -180,10 +189,18 @@ export async function detectAgents(
   return detected;
 }
 
-function createMcpEnv(apiKey: string | undefined, serverUrl: string) {
+function createMcpEnv(ctx: Context) {
+  if (ctx.local) {
+    return {
+      CLANKER_MODE: "local",
+      ...(ctx.localDb ? { CLANKER_LOCAL_DB: ctx.localDb } : {}),
+      ...(ctx.localSemantic ? { CLANKER_LOCAL_SEMANTIC: "1" } : {}),
+      ...(ctx.localModelPath ? { CLANKER_LOCAL_MODEL_PATH: ctx.localModelPath } : {}),
+    };
+  }
   return {
-    ...(apiKey ? { CLANKER_API_KEY: apiKey } : {}),
-    CLANKER_SERVER_URL: serverUrl,
+    ...(ctx.apiKey ? { CLANKER_API_KEY: ctx.apiKey } : {}),
+    CLANKER_SERVER_URL: ctx.serverUrl,
   };
 }
 
@@ -213,7 +230,7 @@ async function configureOpenCode(ctx: Context, uninstall: boolean) {
     mcp[MCP_NAME] = {
       type: "local",
       command: [...MCP_COMMAND],
-      environment: createMcpEnv(ctx.apiKey, ctx.serverUrl),
+      environment: createMcpEnv(ctx),
       enabled: true,
     };
   }
@@ -231,7 +248,7 @@ async function configureCursor(ctx: Context, uninstall: boolean) {
     mcpServers[MCP_NAME] = {
       command: MCP_COMMAND[0],
       args: MCP_COMMAND.slice(1),
-      env: createMcpEnv(ctx.apiKey, ctx.serverUrl),
+      env: createMcpEnv(ctx),
     };
   }
   if (Object.keys(mcpServers).length) config.mcpServers = mcpServers;
@@ -239,26 +256,15 @@ async function configureCursor(ctx: Context, uninstall: boolean) {
   await writeJsonObject(configPath, config, ctx.dryRun);
 }
 
-function envArgs(apiKey: string | undefined, serverUrl: string) {
-  return [
-    ...(apiKey ? ["--env", `CLANKER_API_KEY=${apiKey}`] : []),
-    "--env",
-    `CLANKER_SERVER_URL=${serverUrl}`,
-  ];
+function envArgs(ctx: Context) {
+  return Object.entries(createMcpEnv(ctx)).flatMap(([key, value]) => ["--env", `${key}=${value}`]);
 }
 
 async function configureCodex(ctx: Context, uninstall: boolean) {
   if (ctx.dryRun) return;
   await ctx.runCommand("codex", ["mcp", "remove", MCP_NAME]).catch(() => undefined);
   if (!uninstall) {
-    await ctx.runCommand("codex", [
-      "mcp",
-      "add",
-      MCP_NAME,
-      ...envArgs(ctx.apiKey, ctx.serverUrl),
-      "--",
-      ...MCP_COMMAND,
-    ]);
+    await ctx.runCommand("codex", ["mcp", "add", MCP_NAME, ...envArgs(ctx), "--", ...MCP_COMMAND]);
   }
 }
 
@@ -293,7 +299,7 @@ async function configureClaude(ctx: Context, uninstall: boolean, plugin: string)
     "--scope",
     "user",
     MCP_NAME,
-    ...envArgs(ctx.apiKey, ctx.serverUrl),
+    ...envArgs(ctx),
     "--",
     ...MCP_COMMAND,
   ]);
@@ -488,6 +494,7 @@ async function resolveApiKey(
   home: string,
   env: Partial<NodeJS.ProcessEnv>,
 ) {
+  if (options.local) return undefined;
   if (options.noApiKey) return undefined;
   const fetchImpl = deps.fetch ?? fetch;
   if (options.apiKey) {
@@ -590,6 +597,12 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
       ? undefined
       : await resolveApiKey({ ...options, serverUrl }, deps, home, env),
     dryRun: Boolean(options.dryRun),
+    local: Boolean(options.local),
+    localDb: options.localDb,
+    localModelPath:
+      options.localModelPath ??
+      (options.localSemantic ? defaultLocalModelPath(env as NodeJS.ProcessEnv) : undefined),
+    localSemantic: Boolean(options.localSemantic),
     runCommand: deps.runCommand ?? defaultRunCommand,
   };
   const results: SetupResult[] = [];

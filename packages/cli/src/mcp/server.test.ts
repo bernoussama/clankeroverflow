@@ -99,10 +99,11 @@ describe("CLI MCP server", () => {
     expect(serverSource).not.toContain("@clankeroverflow/mcp-logger");
   });
 
-  test("lists all four tools", async () => {
+  test("lists all MCP tools", async () => {
     const result = await client.listTools();
     const toolNames = result.tools.map((t) => t.name).sort();
     expect(toolNames).toEqual([
+      "clanker_status",
       "downvote_solution",
       "log_solution",
       "search_solutions",

@@ -8,8 +8,11 @@ import path from "path";
 import packageJson from "../package.json";
 import { searchWithAutoFallback } from "./mcp/auto-search.js";
 import type { ConcreteSearchMode, SearchMode } from "./mcp/backend.js";
+import { resolveConfig } from "./mcp/config.js";
 import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
+import { LocalBackend } from "./mcp/local-backend.js";
+import { downloadDefaultLocalModel } from "./mcp/local-semantic.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
 import pc from "picocolors";
 
@@ -21,6 +24,38 @@ type CreateProgramOptions = {
 function sanitizeForTerminal(text: string): string {
   // eslint-disable-next-line no-control-regex
   return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x80-\x9F]/g, "");
+}
+
+function formatLocalStatus(dbPath: string, status: Awaited<ReturnType<LocalBackend["status"]>>) {
+  return [
+    pc.bold("ClankerOverflow local status"),
+    `SQLite: ${pc.cyan(dbPath)}`,
+    `Semantic: ${status.enabled ? pc.green("enabled") : pc.yellow("disabled")}`,
+    `Solutions: ${status.totalSolutions}`,
+    `Embeddings: ${status.embeddedSolutions} current, ${status.pendingEmbeddings} pending`,
+    `Model: ${status.modelPath || "(not configured)"}`,
+    `Model file: ${status.modelValid ? pc.green("valid GGUF") : pc.yellow(status.modelError ?? "missing")}`,
+    `sqlite-vec: ${
+      status.sqliteVecAvailable
+        ? pc.green("available")
+        : pc.red(status.sqliteVecError ?? "unavailable")
+    }`,
+    `sqlite-lembed: ${
+      status.embedderAvailable
+        ? pc.green("available")
+        : pc.red(status.embedderError ?? "unavailable")
+    }`,
+  ].join("\n");
+}
+
+function formatDoctor(checks: Array<{ name: string; ok: boolean; detail: string }>) {
+  return [
+    pc.bold("ClankerOverflow local doctor"),
+    ...checks.map((check) => {
+      const mark = check.ok ? pc.green("✔") : pc.yellow("!");
+      return `${mark} ${check.name}: ${check.detail}`;
+    }),
+  ].join("\n");
 }
 
 // Allow overriding via environment variables
@@ -80,7 +115,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
           const filePath = path.resolve(process.cwd(), options.file);
           try {
             solutionText = await fs.readFile(filePath, "utf-8");
-          } catch (err) {
+          } catch {
             console.error(
               pc.red(pc.bold("✖ Error: ")) + pc.red(`Could not read file at ${filePath}`),
             );
@@ -211,6 +246,136 @@ export function createProgram(options: CreateProgramOptions = {}) {
       await runMcpServer();
     });
 
+  const local = program.command("local").description("Inspect and maintain local SQLite mode");
+
+  local
+    .command("status")
+    .description("Show local SQLite and semantic search status")
+    .option("--db <path>", "Local SQLite database path")
+    .option("--json", "Print machine-readable JSON")
+    .action(async (options) => {
+      try {
+        const config = resolveConfig({
+          ...process.env,
+          CLANKER_MODE: "local",
+          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
+        });
+        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const status = await backend.status();
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              { mode: "local", dbPath: config.localDbPath, semantic: status },
+              null,
+              2,
+            ),
+          );
+          return;
+        }
+        console.log(formatLocalStatus(config.localDbPath, status));
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error reading local status:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
+    });
+
+  local
+    .command("doctor")
+    .description("Diagnose local SQLite semantic search setup")
+    .option("--db <path>", "Local SQLite database path")
+    .option("--json", "Print machine-readable JSON")
+    .action(async (options) => {
+      try {
+        const config = resolveConfig({
+          ...process.env,
+          CLANKER_MODE: "local",
+          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
+        });
+        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const status = await backend.status();
+        const checks = [
+          { name: "sqlite database", ok: true, detail: config.localDbPath },
+          {
+            name: "local semantic enabled",
+            ok: status.enabled,
+            detail: status.enabled
+              ? "enabled"
+              : "set CLANKER_LOCAL_SEMANTIC=1 or run setup --local-semantic",
+          },
+          {
+            name: "sqlite-vec",
+            ok: status.sqliteVecAvailable,
+            detail: status.sqliteVecError ?? "available",
+          },
+          {
+            name: "sqlite-lembed",
+            ok: status.embedderAvailable,
+            detail: status.embedderError ?? "available",
+          },
+          {
+            name: "model file",
+            ok: status.modelValid,
+            detail: status.modelError ?? status.modelPath,
+          },
+          {
+            name: "embedding freshness",
+            ok: status.pendingEmbeddings === 0,
+            detail: `${status.pendingEmbeddings} pending`,
+          },
+        ];
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              { mode: "local", dbPath: config.localDbPath, checks, semantic: status },
+              null,
+              2,
+            ),
+          );
+          return;
+        }
+        console.log(formatDoctor(checks));
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error running local doctor:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
+    });
+
+  local
+    .command("embed")
+    .description("Download the local model if needed and embed pending local solutions")
+    .option("--db <path>", "Local SQLite database path")
+    .option("--force", "Rebuild all local embeddings")
+    .option("--limit <number>", "Maximum solutions to embed in this run")
+    .action(async (options) => {
+      try {
+        const config = resolveConfig({
+          ...process.env,
+          CLANKER_MODE: "local",
+          CLANKER_LOCAL_SEMANTIC: "1",
+          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
+        });
+        const limit =
+          options.limit === undefined ? undefined : Number.parseInt(String(options.limit), 10);
+        if (options.limit !== undefined && (limit === undefined || Number.isNaN(limit))) {
+          console.error(pc.red(pc.bold("✖ Error: ")) + pc.red("--limit must be a number"));
+          process.exit(1);
+        }
+        const model = await downloadDefaultLocalModel(config.localSemantic.modelPath);
+        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const result = await backend.embedPending({ force: Boolean(options.force), limit });
+        console.log(
+          pc.green(pc.bold("✔ Local embeddings ready")) +
+            ` - ${result.embedded} solution(s) embedded; model ${model.downloaded ? "downloaded to" : "checked at"} ${pc.cyan(config.localSemantic.modelPath)}`,
+        );
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error embedding local solutions:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
+    });
+
   program
     .command("setup")
     .description("Detect installed coding agents and configure ClankerOverflow")
@@ -221,6 +386,10 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--api-key <key>", "API key for non-interactive setup")
     .option("--no-api-key", "Skip or remove stored MCP API keys")
     .option("--server-url <url>", "ClankerOverflow API server URL")
+    .option("--local", "Configure MCP for private local SQLite mode")
+    .option("--local-semantic", "Enable local semantic search and write local model settings")
+    .option("--local-db <path>", "Local SQLite database path for --local setup")
+    .option("--local-model-path <path>", "GGUF embedding model path for --local-semantic")
     .option("--target <dirs>", "Comma-separated additional target directories for the skill")
     .option("--skill <skill>", "Skill for --target: mcp, cli, or both", "mcp")
     .option("--claude-plugin <identifier>", "Claude marketplace plugin identifier")
@@ -235,6 +404,10 @@ export function createProgram(options: CreateProgramOptions = {}) {
           apiKey: options.apiKey,
           noApiKey: options.apiKey === false,
           serverUrl: options.serverUrl,
+          local: options.local || options.localSemantic,
+          localDb: options.localDb,
+          localModelPath: options.localModelPath,
+          localSemantic: options.localSemantic,
           targets: options.target?.split(",").map((target: string) => target.trim()),
           skill: options.skill as SkillSelection,
           claudePlugin: options.claudePlugin,
@@ -274,6 +447,6 @@ export function createProgram(options: CreateProgramOptions = {}) {
 const program = createProgram();
 export { program };
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== "test" && !process.env.VITEST) {
   program.parse();
 }

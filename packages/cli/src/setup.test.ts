@@ -81,6 +81,30 @@ describe("smart setup", () => {
     ).resolves.toContain("clankeroverflow-mcp");
   });
 
+  test("configures local semantic MCP environment without an API key", async () => {
+    await setupAgents(
+      {
+        agents: ["cursor"],
+        env: {},
+        home: tempDir,
+        local: true,
+        localDb: "/tmp/clanker.sqlite",
+        localModelPath: "/tmp/bge.gguf",
+        localSemantic: true,
+        packageRoot,
+      },
+      { commandExists: noCommands, stdinIsTTY: false },
+    );
+
+    const cursor = JSON.parse(await readFile(getCursorConfigPath(tempDir), "utf8"));
+    expect(cursor.mcpServers.clankeroverflow.env).toEqual({
+      CLANKER_MODE: "local",
+      CLANKER_LOCAL_DB: "/tmp/clanker.sqlite",
+      CLANKER_LOCAL_SEMANTIC: "1",
+      CLANKER_LOCAL_MODEL_PATH: "/tmp/bge.gguf",
+    });
+  });
+
   test("installs only the CLI skill for a pi-only setup", async () => {
     await setupAgents(
       { agents: ["pi"], noApiKey: true, env: {}, home: tempDir, packageRoot },
