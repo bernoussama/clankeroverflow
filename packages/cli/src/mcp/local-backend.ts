@@ -9,7 +9,7 @@ import type {
 } from "./backend";
 import { openLocalDb, type LocalDb } from "./local-db";
 import {
-  createSqliteEmbedder,
+  createLocalEmbedder,
   embeddingFingerprintForConfig,
   ensureLocalSemanticSchema,
   ensureVecTable,
@@ -31,7 +31,7 @@ export class LocalSemanticSearchNotConfiguredError extends Error {
 }
 
 type SearchRow = SolutionResult & { rank: number };
-type Embedder = { embed(text: string): Buffer };
+type Embedder = { embed(text: string): Promise<Buffer> };
 
 function nowIso() {
   return new Date().toISOString();
@@ -184,7 +184,7 @@ export class LocalBackend implements SolutionBackend {
     if (!this.semantic?.enabled) throw new LocalSemanticSearchNotConfiguredError();
     await ensureVecTable(this.db, this.semantic.dimensions);
     const embedder = await this.resolveEmbedder();
-    const embedding = embedder.embed(queryEmbeddingText(queryText));
+    const embedding = await embedder.embed(queryEmbeddingText(queryText));
     const rows = this.db
       .prepare(
         `SELECT solution_id, distance
@@ -245,7 +245,7 @@ export class LocalBackend implements SolutionBackend {
     await ensureVecTable(this.db, this.semantic.dimensions);
     const embedder = await this.resolveEmbedder();
     const text = solutionEmbeddingText({ problem, solution, tags });
-    const embedding = embedder.embed(text);
+    const embedding = await embedder.embed(text);
     insertEmbedding(this.db, {
       solutionId: id,
       model: this.semantic.modelId,
@@ -260,7 +260,7 @@ export class LocalBackend implements SolutionBackend {
   private async resolveEmbedder() {
     if (this.embedder) return this.embedder;
     if (!this.semantic?.enabled) throw new LocalSemanticSearchNotConfiguredError();
-    this.embedder = await createSqliteEmbedder(this.db, this.semantic);
+    this.embedder = await createLocalEmbedder(this.semantic);
     return this.embedder;
   }
 

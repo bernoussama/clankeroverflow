@@ -51,6 +51,6 @@
     "vitest": "4.0.7"
   },
   "optionalDependencies": {
-    "sqlite-lembed": "0.0.1-alpha.8"
+    "node-llama-cpp": "3.18.1"
   }
 }

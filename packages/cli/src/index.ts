@@ -39,7 +39,7 @@ function formatLocalStatus(dbPath: string, status: Awaited<ReturnType<LocalBacke
         ? pc.green("available")
         : pc.red(status.sqliteVecError ?? "unavailable")
     }`,
-    `sqlite-lembed: ${
+    `node-llama-cpp: ${
       status.embedderAvailable
         ? pc.green("available")
         : pc.red(status.embedderError ?? "unavailable")
@@ -291,7 +291,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
             detail: status.sqliteVecError ?? "available",
           },
           {
-            name: "sqlite-lembed",
+            name: "node-llama-cpp",
             ok: status.embedderAvailable,
             detail: status.embedderError ?? "available",
           },

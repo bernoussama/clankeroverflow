@@ -22,7 +22,7 @@ export const DEFAULT_LOCAL_MODEL_FILE = "bge-small-en-v1.5-q8_0.gguf";
 export const DEFAULT_LOCAL_MODEL_DIMENSIONS = 384;
 export const DEFAULT_LOCAL_MODEL_URL =
   "https://huggingface.co/ggml-org/bge-small-en-v1.5-Q8_0-GGUF/resolve/main/bge-small-en-v1.5-q8_0.gguf";
-export const LOCAL_EMBEDDER_ID = "sqlite-lembed";
+export const LOCAL_EMBEDDER_ID = "node-llama-cpp";
 export const LOCAL_EMBEDDING_FORMAT_VERSION = "solution-v1";
 export const LOCAL_QUERY_FORMAT_VERSION = "query-v1";
 
@@ -54,7 +54,6 @@ export type LocalSemanticStatus = {
 };
 
 const sqliteVecLoaded = new WeakSet<LocalDb>();
-const lembedLoaded = new WeakSet<LocalDb>();
 
 export function defaultLocalModelPath(env: NodeJS.ProcessEnv = process.env) {
   const cacheRoot = env.XDG_CACHE_HOME || join(homedir(), ".cache");
@@ -177,40 +176,42 @@ export async function loadSqliteVec(db: LocalDb) {
   }
 }
 
-async function loadLembed(db: LocalDb) {
-  if (lembedLoaded.has(db)) return;
+export async function checkLocalEmbedderAvailable() {
   try {
-    const sqliteLembed = await import("sqlite-lembed");
-    sqliteLembed.load(db);
-    lembedLoaded.add(db);
+    await import("node-llama-cpp");
   } catch (error) {
     throw new Error(
-      `sqlite-lembed extension is unavailable: ${error instanceof Error ? error.message : String(error)}`,
+      `node-llama-cpp embedder is unavailable: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
 
-function ensureTempModelTable(db: LocalDb, config: LocalSemanticConfig) {
+export function floatVectorToBuffer(vector: ArrayLike<number>, dimensions: number) {
+  if (vector.length !== dimensions) {
+    throw new Error(
+      `node-llama-cpp returned ${vector.length} embedding dimensions, but CLANKER_LOCAL_MODEL_DIMENSIONS is ${dimensions}`,
+    );
+  }
+  const buffer = Buffer.allocUnsafe(dimensions * Float32Array.BYTES_PER_ELEMENT);
+  for (let index = 0; index < dimensions; index += 1) {
+    buffer.writeFloatLE(vector[index]!, index * Float32Array.BYTES_PER_ELEMENT);
+  }
+  return buffer;
+}
+
+export async function createLocalEmbedder(config: LocalSemanticConfig) {
   const modelValidation = validateGgufFile(config.modelPath);
   if (!modelValidation.ok) {
     throw new Error(modelValidation.error ?? "model file is not valid");
   }
-  db.prepare(
-    `INSERT OR REPLACE INTO temp.lembed_models(name, model)
-     SELECT ?, lembed_model_from_file(?)`,
-  ).run(config.modelId, config.modelPath);
-}
-
-export async function createSqliteEmbedder(db: LocalDb, config: LocalSemanticConfig) {
-  await loadLembed(db);
-  ensureTempModelTable(db, config);
+  const { getLlama } = await import("node-llama-cpp");
+  const llama = await getLlama();
+  const model = await llama.loadModel({ modelPath: config.modelPath });
+  const context = await model.createEmbeddingContext();
   return {
-    embed(text: string) {
-      const row = db.prepare("SELECT lembed(?, ?) AS embedding").get(config.modelId, text) as
-        | { embedding: Buffer | Uint8Array }
-        | undefined;
-      if (!row?.embedding) throw new Error("sqlite-lembed returned no embedding");
-      return Buffer.from(row.embedding);
+    async embed(text: string) {
+      const embedding = await context.getEmbeddingFor(text);
+      return floatVectorToBuffer(embedding.vector, config.dimensions);
     },
   };
 }
@@ -375,7 +376,7 @@ export async function getLocalSemanticStatus(db: LocalDb, config: LocalSemanticC
   let embedderAvailable = true;
   let embedderError: string | undefined;
   try {
-    await loadLembed(db);
+    await checkLocalEmbedderAvailable();
   } catch (error) {
     embedderAvailable = false;
     embedderError = error instanceof Error ? error.message : String(error);

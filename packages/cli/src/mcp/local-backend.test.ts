@@ -6,10 +6,15 @@ import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } 
 
 import { LocalBackend } from "./local-backend";
 import { openLocalDb } from "./local-db";
-import { embeddingFingerprintForConfig, type LocalSemanticConfig } from "./local-semantic";
+import {
+  embeddingFingerprintForConfig,
+  floatVectorToBuffer,
+  LOCAL_EMBEDDER_ID,
+  type LocalSemanticConfig,
+} from "./local-semantic";
 
 function vector(values: number[]) {
-  return Buffer.from(new Float32Array(values).buffer);
+  return floatVectorToBuffer(values, values.length);
 }
 
 function writeGguf(modelPath: string, contents: string) {
@@ -103,7 +108,7 @@ describe("CLI local MCP backend", () => {
       dimensions: 4,
     };
     const embedder = {
-      embed(text: string) {
+      async embed(text: string) {
         return /oauth/i.test(text) ? vector([1, 0, 0, 0]) : vector([0, 1, 0, 0]);
       },
     };
@@ -134,7 +139,7 @@ describe("CLI local MCP backend", () => {
       dimensions: 4,
     };
     const embedder = {
-      embed(text: string) {
+      async embed(text: string) {
         return /oauth/i.test(text) ? vector([1, 0, 0, 0]) : vector([0, 1, 0, 0]);
       },
     };
@@ -167,7 +172,7 @@ describe("CLI local MCP backend", () => {
     };
     const firstBackend = new LocalBackend(dbPath, {
       semantic,
-      embedder: { embed: () => vector([1, 0, 0, 0]) },
+      embedder: { embed: async () => vector([1, 0, 0, 0]) },
     });
     await firstBackend.log({
       problem: "OAuth callback timeout",
@@ -177,7 +182,7 @@ describe("CLI local MCP backend", () => {
 
     const freshBackend = new LocalBackend(dbPath, {
       semantic,
-      embedder: { embed: () => vector([1, 0, 0, 0]) },
+      embedder: { embed: async () => vector([1, 0, 0, 0]) },
     });
 
     await expect(freshBackend.status()).resolves.toMatchObject({
@@ -201,6 +206,24 @@ describe("CLI local MCP backend", () => {
     expect(second).not.toBe(first);
   });
 
+  test("local embedding metadata uses node-llama-cpp", () => {
+    expect(LOCAL_EMBEDDER_ID).toBe("node-llama-cpp");
+  });
+
+  test("converts embedding vectors to explicit float32 sqlite blobs", () => {
+    const buffer = floatVectorToBuffer([1.5, -2.25], 2);
+
+    expect(buffer).toHaveLength(8);
+    expect(buffer.readFloatLE(0)).toBe(1.5);
+    expect(buffer.readFloatLE(4)).toBe(-2.25);
+  });
+
+  test("rejects local embedding vectors with unexpected dimensions", () => {
+    expect(() => floatVectorToBuffer([1, 2, 3], 4)).toThrow(
+      "node-llama-cpp returned 3 embedding dimensions",
+    );
+  });
+
   test("replacing a model file at the same path makes existing embeddings pending", async () => {
     const semantic: LocalSemanticConfig = {
       enabled: true,
@@ -210,7 +233,7 @@ describe("CLI local MCP backend", () => {
     };
     const backend = new LocalBackend(dbPath, {
       semantic,
-      embedder: { embed: () => vector([1, 0, 0, 0]) },
+      embedder: { embed: async () => vector([1, 0, 0, 0]) },
     });
     await backend.log({
       problem: "OAuth callback timeout",
