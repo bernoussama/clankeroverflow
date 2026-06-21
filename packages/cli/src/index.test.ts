@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -168,6 +168,37 @@ describe("CLI", () => {
           expect.stringContaining("Solution logged locally:"),
         );
       });
+    });
+
+    test("fails closed without a hosted request when persisted config is invalid", async () => {
+      const previousXdg = process.env.XDG_CONFIG_HOME;
+      const dir = mkdtempSync(join(tmpdir(), "clanker-invalid-config-"));
+      process.env.XDG_CONFIG_HOME = dir;
+      mkdirSync(join(dir, "clankeroverflow"), { recursive: true });
+      writeFileSync(join(dir, "clankeroverflow", "config.json"), "{ broken");
+
+      try {
+        const program = createProgram();
+        await expect(
+          program.parseAsync([
+            "node",
+            "test",
+            "log",
+            "--problem",
+            "private",
+            "--solution",
+            "private",
+          ]),
+        ).rejects.toThrow("Process.exit(1)");
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(consoleErrorMock).toHaveBeenCalledWith(
+          expect.stringContaining("Invalid ClankerOverflow config"),
+        );
+      } finally {
+        if (previousXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+        else process.env.XDG_CONFIG_HOME = previousXdg;
+        rmSync(dir, { recursive: true, force: true });
+      }
     });
   });
 
@@ -417,6 +448,55 @@ describe("CLI", () => {
       });
     });
 
+    test("can explicitly search remote without changing local logging", async () => {
+      await withLocalCliEnv(async () => {
+        fetchMock.mockImplementationOnce(
+          async () =>
+            new Response(
+              JSON.stringify({
+                result: {
+                  data: [
+                    {
+                      id: "remote-1",
+                      problem: "remote problem",
+                      solution: "remote solution",
+                      score: 1,
+                      tags: null,
+                    },
+                  ],
+                },
+              }),
+            ),
+        );
+        const searchProgram = createProgram();
+        await searchProgram.parseAsync([
+          "node",
+          "test",
+          "search",
+          "remote",
+          "--source",
+          "remote",
+          "--mode",
+          "keyword",
+        ]);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        fetchMock.mockClear();
+        const logProgram = createProgram();
+        await logProgram.parseAsync([
+          "node",
+          "test",
+          "log",
+          "--problem",
+          "private problem",
+          "--solution",
+          "private solution",
+        ]);
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("logged locally"));
+      });
+    });
+
     test("local search reads the explicit local database without CLANKER_MODE", async () => {
       const previousMode = process.env.CLANKER_MODE;
       const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-search-"));
@@ -594,6 +674,18 @@ describe("CLI", () => {
         );
       });
     });
+
+    test("can explicitly vote remotely while configured local", async () => {
+      await withLocalCliEnv(async () => {
+        fetchMock.mockImplementationOnce(
+          async () => new Response(JSON.stringify({ result: { data: undefined } })),
+        );
+        const program = createProgram();
+        await program.parseAsync(["node", "test", "upvote", "remote-1", "--source", "remote"]);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock.mock.calls[0][0].toString()).toContain("solutions.vote");
+      });
+    });
   });
 
   describe("mcp command", () => {
@@ -605,6 +697,39 @@ describe("CLI", () => {
 
       expect(startMcpServer).toHaveBeenCalledOnce();
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("config commands", () => {
+    test("persists and displays mode without storing credentials", async () => {
+      const previousXdg = process.env.XDG_CONFIG_HOME;
+      const previousApiKey = process.env.CLANKER_API_KEY;
+      const dir = mkdtempSync(join(tmpdir(), "clanker-config-command-"));
+      process.env.XDG_CONFIG_HOME = dir;
+      process.env.CLANKER_API_KEY = "clk_secret";
+
+      try {
+        const setProgram = createProgram();
+        await setProgram.parseAsync(["node", "test", "config", "set", "mode", "local"]);
+        const stored = JSON.parse(
+          readFileSync(join(dir, "clankeroverflow", "config.json"), "utf8"),
+        );
+        expect(stored.mode).toBe("local");
+        expect(JSON.stringify(stored)).not.toContain("clk_secret");
+
+        consoleLogMock.mockClear();
+        const showProgram = createProgram();
+        await showProgram.parseAsync(["node", "test", "config", "show", "--json"]);
+        const shown = JSON.parse(String(consoleLogMock.mock.calls[0]?.[0]));
+        expect(shown.mode).toBe("local");
+        expect(shown.persisted).toBe(true);
+      } finally {
+        if (previousXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+        else process.env.XDG_CONFIG_HOME = previousXdg;
+        if (previousApiKey === undefined) delete process.env.CLANKER_API_KEY;
+        else process.env.CLANKER_API_KEY = previousApiKey;
+        rmSync(dir, { recursive: true, force: true });
+      }
     });
   });
 
@@ -649,6 +774,8 @@ describe("CLI", () => {
         "--skill",
         "both",
         "--no-api-key",
+        "--mode",
+        "remote",
         "--dry-run",
       ]);
 
@@ -658,6 +785,7 @@ describe("CLI", () => {
           targets: ["/tmp/custom/skills"],
           skill: "both",
           noApiKey: true,
+          mode: "remote",
           dryRun: true,
         }),
       );

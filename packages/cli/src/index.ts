@@ -6,7 +6,15 @@ import path from "path";
 import packageJson from "../package.json";
 import { searchWithAutoFallback } from "./mcp/auto-search.js";
 import type { SearchMode } from "./mcp/backend.js";
-import { resolveConfig } from "./mcp/config.js";
+import {
+  getConfigPath,
+  modeForSource,
+  readPersistedConfig,
+  resolveConfig,
+  toPersistedConfig,
+  writePersistedConfig,
+  type BackendSource,
+} from "./mcp/config.js";
 import { createSolutionBackend } from "./mcp/create-backend.js";
 import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
@@ -115,6 +123,61 @@ function parseSearchMode(value: string) {
   return mode;
 }
 
+function parseBackendSource(value: string): BackendSource {
+  if (!["configured", "local", "remote"].includes(value)) {
+    throw new Error("--source must be configured, local, or remote");
+  }
+  return value as BackendSource;
+}
+
+function parseBooleanSetting(value: string) {
+  if (["1", "true", "on"].includes(value.toLowerCase())) return true;
+  if (["0", "false", "off"].includes(value.toLowerCase())) return false;
+  throw new Error("value must be true or false");
+}
+
+async function setConfigValue(key: string, value: string) {
+  const resolved = resolveConfig();
+  const persisted = readPersistedConfig() ?? toPersistedConfig(resolved);
+  switch (key) {
+    case "mode":
+      if (value !== "local" && value !== "remote") throw new Error("mode must be local or remote");
+      persisted.mode = value;
+      break;
+    case "local.databasePath":
+      persisted.local.databasePath = value;
+      break;
+    case "local.semantic":
+      persisted.local.semantic = parseBooleanSetting(value);
+      break;
+    case "local.modelId":
+      persisted.local.modelId = value;
+      break;
+    case "local.modelPath":
+      persisted.local.modelPath = value;
+      break;
+    case "local.dimensions": {
+      const dimensions = Number(value);
+      if (!Number.isInteger(dimensions) || dimensions <= 0) {
+        throw new Error("local.dimensions must be a positive integer");
+      }
+      persisted.local.dimensions = dimensions;
+      break;
+    }
+    case "remote.serverUrl":
+      persisted.remote.serverUrl = value;
+      break;
+    case "remote.webUrl":
+      persisted.remote.webUrl = value;
+      break;
+    default:
+      throw new Error(
+        "unknown setting; use mode, local.databasePath, local.semantic, local.modelId, local.modelPath, local.dimensions, remote.serverUrl, or remote.webUrl",
+      );
+  }
+  return writePersistedConfig(persisted);
+}
+
 async function searchAndPrint(
   backend: Pick<ReturnType<typeof createSolutionBackend>, "search">,
   input: {
@@ -123,6 +186,7 @@ async function searchAndPrint(
     mode: SearchMode;
     allowHybridFallback: boolean;
     fallbackUnavailableReason: string;
+    source?: "local" | "remote";
   },
 ) {
   const searchResult = await searchWithAutoFallback(backend, input);
@@ -138,7 +202,8 @@ async function searchAndPrint(
     error: attempt.error ? sanitizeForTerminal(attempt.error) : undefined,
   }));
 
-  console.log(formatSearchResults(sanitized, sanitizedAttempts));
+  const formatted = formatSearchResults(sanitized, sanitizedAttempts);
+  console.log(input.source ? `Source: ${input.source}\n${formatted}` : formatted);
 }
 
 export function createProgram(options: CreateProgramOptions = {}) {
@@ -234,23 +299,27 @@ export function createProgram(options: CreateProgramOptions = {}) {
       "auto (keyword first, then hybrid on empty results when available), keyword, semantic, or hybrid",
       "auto",
     )
+    .option("--source <source>", "configured, local, or remote", "configured")
     .action(async (query, options) => {
       try {
         parseSearchQuery(query);
         const limit = parseSearchLimit(options.limit);
         const mode = parseSearchMode(options.mode);
         const config = resolveConfig();
-        const backend = createSolutionBackend(config);
+        const source = parseBackendSource(options.source);
+        const backendMode = modeForSource(config, source);
+        const backend = createSolutionBackend(config, backendMode);
         await searchAndPrint(backend, {
           query,
           limit,
           mode,
           allowHybridFallback:
-            config.mode === "local" ? config.localSemantic.enabled : Boolean(config.apiKey),
+            backendMode === "local" ? config.localSemantic.enabled : Boolean(config.apiKey),
           fallbackUnavailableReason:
-            config.mode === "local"
+            backendMode === "local"
               ? "local semantic search is not configured"
               : "CLANKER_API_KEY is required for hosted hybrid fallback",
+          source: backendMode,
         });
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error searching solutions:")));
@@ -263,9 +332,14 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .command("upvote")
     .description("Upvote a solution")
     .argument("<id>", "The solution ID")
-    .action(async (id) => {
+    .option("--source <source>", "configured, local, or remote", "configured")
+    .action(async (id, options) => {
       try {
-        const backend = createSolutionBackend(resolveConfig());
+        const config = resolveConfig();
+        const backend = createSolutionBackend(
+          config,
+          modeForSource(config, parseBackendSource(options.source)),
+        );
         await backend.vote({ id, isUpvote: true });
         console.log(pc.green(pc.bold("▲ Upvoted")) + ` solution ${pc.cyan(id)}`);
       } catch (error: any) {
@@ -279,9 +353,14 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .command("downvote")
     .description("Downvote a solution")
     .argument("<id>", "The solution ID")
-    .action(async (id) => {
+    .option("--source <source>", "configured, local, or remote", "configured")
+    .action(async (id, options) => {
       try {
-        const backend = createSolutionBackend(resolveConfig());
+        const config = resolveConfig();
+        const backend = createSolutionBackend(
+          config,
+          modeForSource(config, parseBackendSource(options.source)),
+        );
         await backend.vote({ id, isUpvote: false });
         console.log(pc.red(pc.bold("▼ Downvoted")) + ` solution ${pc.cyan(id)}`);
       } catch (error: any) {
@@ -298,6 +377,69 @@ export function createProgram(options: CreateProgramOptions = {}) {
     )
     .action(async () => {
       await runMcpServer();
+    });
+
+  const configCommand = program
+    .command("config")
+    .description("Inspect or update persisted settings");
+
+  configCommand
+    .command("show", { isDefault: true })
+    .description("Show the effective non-secret configuration")
+    .option("--json", "Print machine-readable JSON")
+    .action((options) => {
+      try {
+        const config = resolveConfig();
+        const output = {
+          configPath: config.configPath,
+          persisted: config.hasPersistedConfig,
+          mode: config.mode,
+          local: {
+            databasePath: config.localDbPath,
+            semantic: config.localSemantic.enabled,
+            modelId: config.localSemantic.modelId,
+            modelPath: config.localSemantic.modelPath,
+            dimensions: config.localSemantic.dimensions,
+          },
+          remote: { serverUrl: config.serverUrl, webUrl: config.webUrl },
+        };
+        if (options.json) console.log(JSON.stringify(output, null, 2));
+        else {
+          console.log(pc.bold("ClankerOverflow configuration"));
+          console.log(`Path: ${pc.cyan(output.configPath)}`);
+          console.log(`Persisted: ${output.persisted ? "yes" : "no (legacy/default fallback)"}`);
+          console.log(`Mode: ${pc.cyan(output.mode)}`);
+          console.log(`Local database: ${output.local.databasePath}`);
+          console.log(`Local semantic: ${output.local.semantic ? "enabled" : "disabled"}`);
+          console.log(`Remote API: ${output.remote.serverUrl}`);
+          console.log(`Remote web: ${output.remote.webUrl}`);
+        }
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error reading configuration:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
+    });
+
+  configCommand
+    .command("path")
+    .description("Print the persisted configuration path")
+    .action(() => console.log(getConfigPath()));
+
+  configCommand
+    .command("set")
+    .description("Set one persisted configuration value")
+    .argument("<key>", "Configuration key")
+    .argument("<value>", "Configuration value")
+    .action(async (key, value) => {
+      try {
+        const configPath = await setConfigValue(key, value);
+        console.log(pc.green(pc.bold("✔ Configuration updated")) + ` - ${pc.cyan(configPath)}`);
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error updating configuration:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
     });
 
   const local = program.command("local").description("Inspect and maintain local SQLite mode");
@@ -422,6 +564,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
           mode,
           allowHybridFallback: config.localSemantic.enabled,
           fallbackUnavailableReason: "local semantic search is not configured",
+          source: "local",
         });
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error searching local solutions:")));
@@ -479,6 +622,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--api-key <key>", "API key for non-interactive setup")
     .option("--no-api-key", "Skip or remove stored MCP API keys")
     .option("--server-url <url>", "ClankerOverflow API server URL")
+    .option("--mode <mode>", "Persisted backend mode: local or remote")
     .option("--local", "Configure MCP for private local SQLite mode")
     .option("--local-semantic", "Enable local semantic search and write local model settings")
     .option("--local-db <path>", "Local SQLite database path for --local setup")
@@ -497,6 +641,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
           apiKey: options.apiKey,
           noApiKey: options.apiKey === false,
           serverUrl: options.serverUrl,
+          mode: options.mode,
           local: options.local || options.localSemantic,
           localDb: options.localDb,
           localModelPath: options.localModelPath,

@@ -76,17 +76,19 @@ Use this only after verification.
 ## Authentication
 
 - `search_solutions` works without authentication.
-- `log_solution`, `upvote_solution`, and `downvote_solution` require `CLANKER_API_KEY`.
+- Remote `log_solution`, `upvote_solution`, and `downvote_solution` require `CLANKER_API_KEY`.
 - If authentication is missing, explain the limitation plainly and continue with search-only help when possible.
 
 ## Private local mode
 
-- Users can opt into private offline storage with `CLANKER_MODE=local clanker mcp`.
-- Local mode stores solutions in SQLite and never calls the hosted API.
-- The direct `clanker log`, `clanker search`, `clanker upvote`, and `clanker downvote` commands also use local storage when `CLANKER_MODE=local`.
-- Use `clanker local search "<query>"` to explicitly search the local SQLite database without setting `CLANKER_MODE=local`.
+- Users can persist private offline storage with `clanker setup --mode local` or `clanker config set mode local`.
+- The `clanker mcp` runtime reads the same persisted configuration as direct CLI commands.
+- Local mode stores solutions in SQLite and does not call the hosted API unless search or voting explicitly selects `source: "remote"`.
+- `log_solution` always uses the persisted mode and has no source override. A local configuration therefore cannot publish a solution remotely.
+- Search and voting use the configured backend by default. Their optional `source` input can explicitly target `local` or `remote` without changing the logging destination.
+- Use `clanker local search "<query>"` to explicitly search the local SQLite database.
 - `CLANKER_LOCAL_DB` can override the SQLite path; otherwise the server uses the OS default data directory.
-- In local mode, all four tools work without `CLANKER_API_KEY`.
+- All four tools work without `CLANKER_API_KEY` when they use the local source.
 - Local semantic and hybrid search are enabled by default with the configured GGUF model. Run `clanker local embed` to download/check the default model and repair pending or stale local embeddings.
 - Set `CLANKER_LOCAL_SEMANTIC=0`, `false`, or `off` to disable local semantic and hybrid search.
 - Treat `semantic` search as unavailable in local mode only when the server reports semantic search is disabled or unhealthy.

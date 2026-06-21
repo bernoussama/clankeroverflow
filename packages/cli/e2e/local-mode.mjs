@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -360,12 +360,38 @@ const tempRoot = await mkdtemp(join(tmpdir(), "clanker-local-e2e-"));
 try {
   const home = join(tempRoot, "home");
   await mkdir(home, { recursive: true });
+  const configRoot = join(tempRoot, "config");
+  const cacheRoot = process.env.XDG_CACHE_HOME || join(tempRoot, "cache");
+  const configDirectory = join(configRoot, "clankeroverflow");
+  await mkdir(configDirectory, { recursive: true });
+  await writeFile(
+    join(configDirectory, "config.json"),
+    `${JSON.stringify(
+      {
+        version: 1,
+        mode: "local",
+        local: {
+          databasePath: join(tempRoot, "solutions.sqlite"),
+          semantic: true,
+          modelId: "bge-small-en-v1.5-q8_0",
+          modelPath: join(cacheRoot, "clankeroverflow", "models", "bge-small-en-v1.5-q8_0.gguf"),
+          dimensions: 384,
+        },
+        remote: {
+          serverUrl: "http://127.0.0.1:9",
+          webUrl: "http://127.0.0.1:9",
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
   const env = {
     ...process.env,
     HOME: home,
     NO_COLOR: "1",
-    XDG_CACHE_HOME: process.env.XDG_CACHE_HOME || join(tempRoot, "cache"),
-    CLANKER_MODE: "local",
+    XDG_CONFIG_HOME: configRoot,
+    XDG_CACHE_HOME: cacheRoot,
     CLANKER_LOCAL_DB: join(tempRoot, "solutions.sqlite"),
     CLANKER_SERVER_URL: "http://127.0.0.1:9",
     CLANKER_WEB_URL: "http://127.0.0.1:9",
