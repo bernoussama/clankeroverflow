@@ -5,61 +5,86 @@ import type * as schema from "./schema";
 
 type Database = ReturnType<typeof getDb>;
 type SearchSolution = Omit<typeof schema.solution.$inferSelect, "updatedAt">;
+export type HostedKeywordStrategy = "exact" | "tiered";
 
-/**
- * Indexed tsvector expression — must match migration 0002
- * (solution_search_vector_idx) exactly so the GIN index is used.
- */
-const TEXT_VECTOR = sql`to_tsvector('simple', btrim(regexp_replace(lower(
+/** Must match solution_search_vector_unicode_idx exactly. */
+const SEARCH_TEXT = sql`lower(
   coalesce("problem", '') || ' ' || coalesce("solution", '') || ' ' || coalesce("tags", '')
-), '[^a-z0-9]+', ' ', 'g')))`;
+)`;
+const TEXT_VECTOR = sql`to_tsvector('simple', ${SEARCH_TEXT})`;
 
-/**
- * Indexed trigram expression — must match migration 0002
- * (solution_search_trgm_idx) exactly so the GIN index is used.
- */
-const TRIGRAM_TEXT = sql`(regexp_replace(lower(
-  coalesce("problem", '') || coalesce("solution", '') || coalesce("tags", '')
-), '[^a-z0-9]+', '', 'g'))`;
+/** Must match solution_search_trgm_unicode_idx exactly. */
+const TRIGRAM_TEXT = SEARCH_TEXT;
 
-function normalizeQuery(query: string): string {
-  return query
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
+function exactQueryText(query: string) {
+  return query.replace(/(^|\s)-+(?=\S)/gu, "$1").trim();
 }
 
-function compactQuery(query: string): string {
-  return query.toLowerCase().replace(/[^a-z0-9]+/g, "");
+function relaxedQueryText(query: string) {
+  const terms = query.match(/[\p{L}\p{N}_]+/gu) ?? [];
+  return [...new Set(terms.map((term) => term.toLowerCase()))]
+    .map((term) => `${term}:*`)
+    .join(" | ");
 }
 
 function isMissingPgTrgm(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const msg = error.message.toLowerCase();
-  return msg.includes("pg_trgm") || msg.includes("gin_trgm_ops") || msg.includes("<%");
+  let current = error;
+  while (current instanceof Error) {
+    const message = current.message.toLowerCase();
+    if (
+      message.includes("pg_trgm") ||
+      message.includes("gin_trgm_ops") ||
+      message.includes("word_similarity") ||
+      message.includes("<%")
+    ) {
+      return true;
+    }
+    current = current.cause;
+  }
+  return false;
 }
 
 export async function searchSolutions(
   db: Database,
-  input: { query: string; limit: number },
+  input: { query: string; limit: number; strategy?: HostedKeywordStrategy },
 ): Promise<SearchSolution[]> {
-  const normalized = normalizeQuery(input.query);
-  if (!normalized) return [];
+  const exactText = exactQueryText(input.query);
+  const relaxedText = relaxedQueryText(input.query);
+  if (!exactText || !relaxedText) return [];
 
-  const compact = compactQuery(input.query);
-  const tsquery = sql`websearch_to_tsquery('simple', ${normalized})`;
+  const strategy = input.strategy ?? "exact";
+  const strictQuery = sql`websearch_to_tsquery('simple', ${exactText})`;
+  const relaxedQuery = sql`to_tsquery('simple', ${relaxedText})`;
+  const candidateQuery = strategy === "exact" ? strictQuery : relaxedQuery;
+  const normalized = exactText.toLowerCase();
+  const candidatePredicate =
+    strategy === "exact"
+      ? sql`${TEXT_VECTOR} @@ ${strictQuery}`
+      : sql`${TEXT_VECTOR} @@ ${relaxedQuery} OR ${normalized} <% ${TRIGRAM_TEXT}`;
+  const similaritySetup =
+    strategy === "tiered"
+      ? sql`WITH search_settings AS MATERIALIZED (
+          SELECT set_config('pg_trgm.word_similarity_threshold', '0.35', true)
+        )`
+      : sql``;
+  const settingsJoin = strategy === "tiered" ? sql`, search_settings` : sql``;
+  const similarityOrder =
+    strategy === "tiered"
+      ? sql`word_similarity(${normalized}, ${TRIGRAM_TEXT})`
+      : sql`(NULL::real)`;
 
   try {
-    // Full-text search + trigram fuzzy matching (both use GIN indexes)
     const { rows } = await db.execute<SearchSolution>(sql`
+      ${similaritySetup}
       SELECT "id", "problem", "solution", "tags",
              "user_id" AS "userId", "score",
              "created_at" AS "createdAt"
-      FROM "solution"
-      WHERE ${TEXT_VECTOR} @@ ${tsquery}
-         OR ${compact} <% ${TRIGRAM_TEXT}
+      FROM "solution"${settingsJoin}
+      WHERE ${candidatePredicate}
       ORDER BY
-        ts_rank(${TEXT_VECTOR}, ${tsquery}) DESC,
+        CASE WHEN ${TEXT_VECTOR} @@ ${strictQuery} THEN 0 ELSE 1 END,
+        ts_rank(${TEXT_VECTOR}, ${candidateQuery}) DESC,
+        ${similarityOrder} DESC,
         "score" DESC,
         "created_at" DESC
       LIMIT ${input.limit}
@@ -68,15 +93,15 @@ export async function searchSolutions(
   } catch (error) {
     if (!isMissingPgTrgm(error)) throw error;
 
-    // Fallback: full-text search only (pg_trgm unavailable)
     const { rows } = await db.execute<SearchSolution>(sql`
       SELECT "id", "problem", "solution", "tags",
              "user_id" AS "userId", "score",
              "created_at" AS "createdAt"
       FROM "solution"
-      WHERE ${TEXT_VECTOR} @@ ${tsquery}
+      WHERE ${TEXT_VECTOR} @@ ${candidateQuery}
       ORDER BY
-        ts_rank(${TEXT_VECTOR}, ${tsquery}) DESC,
+        CASE WHEN ${TEXT_VECTOR} @@ ${strictQuery} THEN 0 ELSE 1 END,
+        ts_rank(${TEXT_VECTOR}, ${candidateQuery}) DESC,
         "score" DESC,
         "created_at" DESC
       LIMIT ${input.limit}

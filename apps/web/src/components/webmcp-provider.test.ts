@@ -52,10 +52,11 @@ describe("WebMCP tool definitions", () => {
         query: "Next.js cache issue",
         limit: 10,
         mode: "keyword",
+        keywordStrategy: "exact",
       });
       expect(result).toEqual({
         results: [{ id: "1", problem: "test", solution: "fix", score: 0 }],
-        attempts: [{ mode: "keyword", resultCount: 1 }],
+        attempts: [{ mode: "keyword", keywordStrategy: "exact", resultCount: 1 }],
       });
     });
 
@@ -72,6 +73,7 @@ describe("WebMCP tool definitions", () => {
         query: "conceptual miss",
         limit: 10,
         mode: "keyword",
+        keywordStrategy: "exact",
       });
       expect(mocked).toHaveBeenNthCalledWith(2, {
         query: "conceptual miss",
@@ -81,7 +83,7 @@ describe("WebMCP tool definitions", () => {
       expect(result).toEqual({
         results: [{ id: "2", problem: "hybrid", solution: "fix", score: 1 }],
         attempts: [
-          { mode: "keyword", resultCount: 0 },
+          { mode: "keyword", keywordStrategy: "exact", resultCount: 0 },
           { mode: "hybrid", resultCount: 1 },
         ],
       });

@@ -4,5 +4,5 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["alchemy.run.ts", "src/**/*.ts"]
+  "include": ["alchemy.run.ts", "retrieval-benchmark.run.ts", "src/**/*.ts"]
 }

@@ -248,7 +248,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("-l, --limit <number>", "Number of results to return", "1")
     .option(
       "-m, --mode <mode>",
-      "auto (keyword first, then hybrid on empty results when available), keyword, semantic, or hybrid",
+      "auto (exact keyword, then hybrid, then tiered keyword fallback), keyword, semantic, or hybrid",
       "auto",
     )
     .option("--source <source>", "configured, local, or remote", "configured")
@@ -493,7 +493,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("-l, --limit <number>", "Number of results to return", "1")
     .option(
       "-m, --mode <mode>",
-      "auto (keyword first, then hybrid on empty results when available), keyword, semantic, or hybrid",
+      "auto (exact keyword, then hybrid, then tiered keyword fallback), keyword, semantic, or hybrid",
       "auto",
     )
     .action(async (query, options) => {

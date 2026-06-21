@@ -179,7 +179,7 @@ describe("CLI MCP server", () => {
     expect(fetchCallUrl).toContain("solutions.search");
 
     const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
-    expect(text).toContain("Search attempts: keyword returned 1.");
+    expect(text).toContain("Search attempts: keyword exact returned 1.");
     expect(text).toContain("UNTRUSTED CONTENT");
     expect(text).toContain("# Problem: test problem");
     expect(text).toContain("ID: 123");
@@ -203,9 +203,9 @@ describe("CLI MCP server", () => {
       await unauthenticatedServer.connect(unauthenticatedServerTransport);
       await unauthenticatedClient.connect(unauthenticatedClientTransport);
 
-      fetchMock.mockImplementationOnce(
-        async () => new Response(JSON.stringify({ result: { data: [] } })),
-      );
+      fetchMock
+        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
+        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })));
 
       const result = await unauthenticatedClient.callTool({
         name: "search_solutions",
@@ -213,8 +213,9 @@ describe("CLI MCP server", () => {
       });
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(text).toContain("keyword returned 0");
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(text).toContain("keyword exact returned 0");
+      expect(text).toContain("keyword tiered returned 0");
       expect(text).toContain("CLANKER_API_KEY is required for hosted hybrid fallback");
       expect(text).toContain("No solutions found.");
     } finally {
@@ -270,7 +271,7 @@ describe("CLI MCP server", () => {
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(text).toContain("Search attempts: keyword returned 0; hybrid returned 1.");
+      expect(text).toContain("Search attempts: keyword exact returned 0; hybrid returned 1.");
       expect(text).toContain("ID: hybrid-1");
     } finally {
       if (previousApiKey === undefined) {

@@ -487,6 +487,7 @@ export const solutionsRouter = router({
         query: z.string().min(1, "Search query is required").max(500, "Search query too long"),
         limit: z.number().min(1).max(20).default(1),
         mode: z.enum(["keyword", "semantic", "hybrid"]).default("keyword"),
+        keywordStrategy: z.enum(["exact", "tiered"]).default("exact"),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -515,7 +516,7 @@ export const solutionsRouter = router({
 
       if (input.mode === "keyword") {
         results = await withTimeout(
-          searchSolutions(ctx.db, payload),
+          searchSolutions(ctx.db, { ...payload, strategy: input.keywordStrategy }),
           DB_TIMEOUT_MS,
           "Solution search timed out",
         );
@@ -567,6 +568,7 @@ export const solutionsRouter = router({
         event: "solution searched",
         properties: {
           search_mode: input.mode,
+          ...(input.mode === "keyword" ? { keyword_strategy: input.keywordStrategy } : {}),
           query_length: trimmed.length,
           result_count: results.length,
         },

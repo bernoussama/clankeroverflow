@@ -127,4 +127,32 @@ describe("searchSolutionsHybrid", () => {
     expect(out.map((r) => r.id)).toEqual(["b", "a", "c"]);
     expect(db.execute).toHaveBeenCalledTimes(1);
   });
+
+  test("can promote agreement between semantic and keyword ranks with RRF", async () => {
+    const db = createDb({
+      semanticRows: [createRow("a"), createRow("b")],
+      keywordRows: [createRow("b"), createRow("c")],
+    });
+    const ai = { run: vi.fn(async () => ({ data: [[0.1]] })) };
+    const vectorize = {
+      query: vi.fn(async () => ({
+        matches: [
+          { id: "a", score: 0.9 },
+          { id: "b", score: 0.8 },
+        ],
+      })),
+      upsert: vi.fn(async () => {}),
+    };
+
+    const out = await searchSolutionsHybrid({
+      db: db as any,
+      ai,
+      vectorize,
+      query: "cache invalidation",
+      limit: 3,
+      fusion: "rrf",
+    });
+
+    expect(out.map((row) => row.id)).toEqual(["b", "c", "a"]);
+  });
 });

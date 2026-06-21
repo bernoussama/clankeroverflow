@@ -238,12 +238,17 @@ describe("CLI", () => {
 
     test("handles no solutions found with auto fallback guidance when unauthenticated", async () => {
       const program = createProgram();
-      fetchMock.mockImplementationOnce(
-        async () => new Response(JSON.stringify({ result: { data: [] } })),
-      );
+      fetchMock
+        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
+        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })));
       await program.parseAsync(["node", "test", "search", "none"]);
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("keyword returned 0"));
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("keyword exact returned 0"),
+      );
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("keyword tiered returned 0"),
+      );
       expect(consoleLogMock).toHaveBeenCalledWith(
         expect.stringContaining("CLANKER_API_KEY is required for hosted hybrid fallback"),
       );
@@ -287,7 +292,7 @@ describe("CLI", () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("Search attempts: keyword returned 0; hybrid returned 1."),
+        expect.stringContaining("Search attempts: keyword exact returned 0; hybrid returned 1."),
       );
       expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("ID: hybrid-1"));
     });

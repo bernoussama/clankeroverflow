@@ -131,6 +131,7 @@ describe("solutionsRouter", () => {
       event: "solution searched",
       properties: {
         search_mode: "keyword",
+        keyword_strategy: "exact",
         query_length: 4,
         result_count: 1,
       },

@@ -28,7 +28,7 @@
   "scripts": {
     "test": "vitest run",
     "build": "tsdown && node dist/plugin/generate-plugin-json.mjs",
-    "check-types": "tsc -b",
+    "check-types": "tsc -b && tsc -p benchmarks/local-embeddings/tsconfig.json --noEmit",
     "prepack": "pnpm run build"
   },
   "dependencies": {

@@ -55,10 +55,11 @@ describe("WebMCP tool definitions", () => {
         query: "Next.js cache issue",
         limit: 10,
         mode: "keyword",
+        keywordStrategy: "exact",
       });
       expect(result).toEqual({
         results: [{ id: "1", problem: "test", solution: "fix", score: 0 }],
-        attempts: [{ mode: "keyword", resultCount: 1 }],
+        attempts: [{ mode: "keyword", keywordStrategy: "exact", resultCount: 1 }],
       });
     });
 
@@ -75,6 +76,7 @@ describe("WebMCP tool definitions", () => {
         query: "conceptual miss",
         limit: 10,
         mode: "keyword",
+        keywordStrategy: "exact",
       });
       expect(mockFn).toHaveBeenNthCalledWith(2, {
         query: "conceptual miss",
@@ -84,7 +86,7 @@ describe("WebMCP tool definitions", () => {
       expect(result).toEqual({
         results: [{ id: "2", problem: "hybrid", solution: "fix", score: 1 }],
         attempts: [
-          { mode: "keyword", resultCount: 0 },
+          { mode: "keyword", keywordStrategy: "exact", resultCount: 0 },
           { mode: "hybrid", resultCount: 1 },
         ],
       });
@@ -92,7 +94,10 @@ describe("WebMCP tool definitions", () => {
 
     it("auto mode reports fallback failure without dropping keyword miss context", async () => {
       const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
-      mockFn.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error("Authentication required"));
+      mockFn
+        .mockResolvedValueOnce([])
+        .mockRejectedValueOnce(new Error("Authentication required"))
+        .mockResolvedValueOnce([]);
 
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
       const result = await tool?.execute({ query: "conceptual miss" });
@@ -100,8 +105,9 @@ describe("WebMCP tool definitions", () => {
       expect(result).toEqual({
         results: [],
         attempts: [
-          { mode: "keyword", resultCount: 0 },
+          { mode: "keyword", keywordStrategy: "exact", resultCount: 0 },
           { mode: "hybrid", error: "Authentication required" },
+          { mode: "keyword", keywordStrategy: "tiered", resultCount: 0 },
         ],
         message:
           "Keyword search returned no results and hybrid fallback was unavailable. Try one smaller or sharper keyword query before debugging from scratch.",

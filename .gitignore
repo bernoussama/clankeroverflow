@@ -45,6 +45,7 @@ coverage
 .nyc_output
 playwright-report
 test-results
+packages/cli/benchmarks/local-embeddings/results
 
 # Misc
 *.tgz

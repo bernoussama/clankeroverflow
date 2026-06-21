@@ -37,26 +37,52 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function ftsQuery(query: string) {
+export function localFtsQuery(query: string) {
   const normalized = query
     .replace(/https?:\/\/\S+/gi, (match) => match.replace(/[/:.?=&%#-]+/g, " "))
     .trim();
   const phrases = [...normalized.matchAll(/"([^"]+)"/g)].map((match) => match[1]?.trim() ?? "");
   const withoutPhrases = normalized.replace(/"[^"]+"/g, " ");
-  const terms = withoutPhrases.match(/-?[\p{L}\p{N}_][\p{L}\p{N}_./:-]*/gu) ?? [];
-  return [...phrases, ...terms]
-    .map((term) => {
-      const isNegated = term.startsWith("-");
-      const clean = (isNegated ? term.slice(1) : term).replace(/[^\p{L}\p{N}_-]+/gu, " ").trim();
-      if (!clean) return "";
-      const quoted = `"${clean.replaceAll('"', '""')}"`;
-      return isNegated ? `NOT ${quoted}` : quoted;
-    })
+  const terms = withoutPhrases.match(/[\p{L}\p{N}_][\p{L}\p{N}_./:-]*/gu) ?? [];
+  const phraseClauses = phrases
+    .map((phrase) => phrase.replace(/[^\p{L}\p{N}_-]+/gu, " ").trim())
     .filter(Boolean)
-    .join(" ");
+    .map((phrase) => `"${phrase.replaceAll('"', '""')}"`);
+  const termClauses = terms
+    .flatMap((term) =>
+      term
+        .replace(/[^\p{L}\p{N}_-]+/gu, " ")
+        .trim()
+        .split(/\s+/),
+    )
+    .filter(Boolean)
+    .map((term) => `"${term.replaceAll('"', '""')}"`);
+  return [...new Set([...phraseClauses, ...termClauses])].join(" ");
 }
 
-function reciprocalRankFusion(
+export function localRelaxedFtsQuery(query: string) {
+  const normalized = query
+    .replace(/https?:\/\/\S+/gi, (match) => match.replace(/[/:.?=&%#-]+/g, " "))
+    .trim();
+  const phrases = [...normalized.matchAll(/"([^"]+)"/g)]
+    .map((match) => match[1]?.replace(/[^\p{L}\p{N}_-]+/gu, " ").trim() ?? "")
+    .filter(Boolean)
+    .map((phrase) => `"${phrase.replaceAll('"', '""')}"`);
+  const terms = normalized
+    .replace(/"[^"]+"/g, " ")
+    .match(/[\p{L}\p{N}_][\p{L}\p{N}_./:-]*/gu)
+    ?.flatMap((term) =>
+      term
+        .replace(/[^\p{L}\p{N}_-]+/gu, " ")
+        .trim()
+        .split(/\s+/),
+    )
+    .filter(Boolean)
+    .map((term) => `"${term.replaceAll('"', '""')}"*`);
+  return [...new Set([...phrases, ...(terms ?? [])])].join(" OR ");
+}
+
+export function reciprocalRankFusion(
   lists: Array<{ weight: number; results: SolutionResult[] }>,
   limit: number,
 ) {
@@ -79,6 +105,66 @@ function reciprocalRankFusion(
     .sort((a, b) => b.score - a.score || b.result.score - a.result.score || a.bestRank - b.bestRank)
     .slice(0, limit)
     .map((entry) => entry.result);
+}
+
+function searchLocalKeywordExpression(db: LocalDb, query: string, limit: number) {
+  if (!query) return [];
+
+  return db
+    .prepare(
+      `WITH fts_matches AS (
+         SELECT rowid, bm25(solution_fts) AS rank
+         FROM solution_fts
+         WHERE solution_fts MATCH ?
+         ORDER BY rank ASC
+         LIMIT ?
+       )
+       SELECT solution.id, solution.problem, solution.solution, solution.tags, solution.score,
+              fts_matches.rank AS rank
+       FROM fts_matches
+       JOIN solution ON solution.rowid = fts_matches.rowid
+       ORDER BY rank ASC, solution.score DESC, solution.created_at DESC
+       LIMIT ?`,
+    )
+    .all(query, Math.max(limit, 40), limit) as SearchRow[];
+}
+
+export function searchLocalKeywordExact(db: LocalDb, queryText: string, limit: number) {
+  return searchLocalKeywordExpression(db, localFtsQuery(queryText.trim()), limit);
+}
+
+export function searchLocalKeywordRelaxed(db: LocalDb, queryText: string, limit: number) {
+  return searchLocalKeywordExpression(db, localRelaxedFtsQuery(queryText.trim()), limit);
+}
+
+export function searchLocalKeyword(db: LocalDb, queryText: string, limit: number) {
+  const exact = searchLocalKeywordExact(db, queryText, limit);
+  if (exact.length >= limit) return exact;
+  const relaxed = searchLocalKeywordRelaxed(db, queryText, Math.max(limit, 40));
+  const seen = new Set(exact.map((result) => result.id));
+  return [...exact, ...relaxed.filter((result) => !seen.has(result.id))].slice(0, limit);
+}
+
+export function searchLocalSemantic(db: LocalDb, embedding: Buffer, limit: number) {
+  const rows = db
+    .prepare(
+      `SELECT solution_id, distance
+       FROM solution_vec
+       WHERE embedding MATCH ? AND k = ?`,
+    )
+    .all(embedding, Math.max(limit, 1)) as Array<{ solution_id: string; distance: number }>;
+  if (!rows.length) return [];
+  const ids = rows.map((row) => row.solution_id);
+  const placeholders = ids.map(() => "?").join(",");
+  const hydrated = db
+    .prepare(
+      `SELECT id, problem, solution, tags, score
+       FROM solution
+       WHERE id IN (${placeholders})`,
+    )
+    .all(...ids) as SolutionResult[];
+  const byId = new Map(hydrated.map((row) => [row.id, row]));
+  return ids.map((id) => byId.get(id)).filter((row): row is SolutionResult => Boolean(row));
 }
 
 export class LocalBackend implements SolutionBackend {
@@ -141,7 +227,7 @@ export class LocalBackend implements SolutionBackend {
     }
     if (input.mode === "hybrid" && this.semantic?.enabled) {
       const [keywordResults, semanticResults] = await Promise.all([
-        this.searchKeyword(input.query, Math.max(input.limit, 20)),
+        searchLocalKeywordRelaxed(this.db, input.query, Math.max(input.limit, 20)),
         this.searchSemantic(input.query, Math.max(input.limit, 20)),
       ]);
       return reciprocalRankFusion(
@@ -152,32 +238,17 @@ export class LocalBackend implements SolutionBackend {
         input.limit,
       );
     }
-    return this.searchKeyword(input.query, input.limit);
+    return input.keywordStrategy === "exact"
+      ? searchLocalKeywordExact(this.db, input.query, input.limit)
+      : this.searchKeyword(input.query, input.limit);
+  }
+
+  searchExactKeyword(input: { query: string; limit: number }) {
+    return Promise.resolve(searchLocalKeywordExact(this.db, input.query, input.limit));
   }
 
   private searchKeyword(queryText: string, limit: number) {
-    const query = ftsQuery(queryText.trim());
-    if (!query) {
-      return [];
-    }
-
-    return this.db
-      .prepare(
-        `WITH fts_matches AS (
-           SELECT rowid, bm25(solution_fts) AS rank
-           FROM solution_fts
-           WHERE solution_fts MATCH ?
-           ORDER BY rank ASC
-           LIMIT ?
-         )
-         SELECT solution.id, solution.problem, solution.solution, solution.tags, solution.score,
-                fts_matches.rank AS rank
-         FROM fts_matches
-         JOIN solution ON solution.rowid = fts_matches.rowid
-         ORDER BY rank ASC, solution.score DESC, solution.created_at DESC
-         LIMIT ?`,
-      )
-      .all(query, Math.max(limit, 40), limit) as SearchRow[];
+    return searchLocalKeyword(this.db, queryText, limit);
   }
 
   private async searchSemantic(queryText: string, limit: number) {
@@ -185,25 +256,7 @@ export class LocalBackend implements SolutionBackend {
     await ensureVecTable(this.db, this.semantic.dimensions);
     const embedder = await this.resolveEmbedder();
     const embedding = await embedder.embed(queryEmbeddingText(queryText));
-    const rows = this.db
-      .prepare(
-        `SELECT solution_id, distance
-         FROM solution_vec
-         WHERE embedding MATCH ? AND k = ?`,
-      )
-      .all(embedding, Math.max(limit, 1)) as Array<{ solution_id: string; distance: number }>;
-    if (!rows.length) return [];
-    const ids = rows.map((row) => row.solution_id);
-    const placeholders = ids.map(() => "?").join(",");
-    const hydrated = this.db
-      .prepare(
-        `SELECT id, problem, solution, tags, score
-         FROM solution
-         WHERE id IN (${placeholders})`,
-      )
-      .all(...ids) as SolutionResult[];
-    const byId = new Map(hydrated.map((row) => [row.id, row]));
-    return ids.map((id) => byId.get(id)).filter((row): row is SolutionResult => Boolean(row));
+    return searchLocalSemantic(this.db, embedding, limit);
   }
 
   async embedPending(options: { force?: boolean; limit?: number } = {}) {

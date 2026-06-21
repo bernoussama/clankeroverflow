@@ -96,9 +96,69 @@ describe("searchSolutions", () => {
     const results = await searchSolutions(db, {
       query: "pstgres serch",
       limit: 1,
+      strategy: "tiered",
     });
 
     expect(results.map((r) => r.id)).toEqual(["sol-fuzzy"]);
+  });
+
+  test("tiered search fills from relaxed prefix matches after strict matches", async () => {
+    await db.insert(schema.solution).values([
+      {
+        id: "sol-strict",
+        problem: "Vite container host unreachable",
+        solution: "Bind the Vite server to the host interface.",
+        tags: "vite,container",
+      },
+      {
+        id: "sol-relaxed",
+        problem: "Vite server is unreachable from a container",
+        solution: "Publish the configured port.",
+        tags: "vite,container",
+      },
+    ]);
+
+    const results = await searchSolutions(db, {
+      query: "vite container host unreachable",
+      limit: 2,
+      strategy: "tiered",
+    });
+
+    expect(results.map((result) => result.id)).toEqual(["sol-strict", "sol-relaxed"]);
+  });
+
+  test("indexes and searches Unicode terms", async () => {
+    await db.insert(schema.solution).values({
+      id: "sol-unicode",
+      problem: "فشل اتصال قاعدة البيانات",
+      solution: "تحقق من عنوان الخادم وإعدادات الشبكة.",
+      tags: "قاعدة-بيانات",
+    });
+
+    const results = await searchSolutions(db, {
+      query: "اتصال قاعدة",
+      limit: 1,
+      strategy: "tiered",
+    });
+
+    expect(results.map((result) => result.id)).toEqual(["sol-unicode"]);
+  });
+
+  test("does not interpret technical leading hyphens as negation", async () => {
+    await db.insert(schema.solution).values({
+      id: "sol-flag",
+      problem: "SQLite WAL file keeps growing",
+      solution: "Checkpoint the WAL after readers finish.",
+      tags: "sqlite,wal",
+    });
+
+    const results = await searchSolutions(db, {
+      query: "sqlite -wal",
+      limit: 1,
+      strategy: "exact",
+    });
+
+    expect(results.map((result) => result.id)).toEqual(["sol-flag"]);
   });
 
   test("falls back to text ranking when pg_trgm is unavailable", async () => {
@@ -114,6 +174,7 @@ describe("searchSolutions", () => {
     const results = await searchSolutions(db, {
       query: "nextjs cache invalidation",
       limit: 1,
+      strategy: "tiered",
     });
 
     expect(results.map((r) => r.id)).toEqual(["sol-fallback"]);

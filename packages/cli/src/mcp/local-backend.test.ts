@@ -92,6 +92,70 @@ describe("CLI local MCP backend", () => {
     expect(results[0]!.problem).toBe("CORS startup failure");
   });
 
+  test("tiered keyword search falls back from exact AND to relaxed prefix OR", async () => {
+    const backend = new LocalBackend(dbPath);
+    await backend.log({
+      problem: "Vite dev server is unreachable from a container",
+      solution: "Bind Vite to 0.0.0.0 with --host.",
+      tags: "vite,container",
+    });
+
+    await expect(
+      backend.searchExactKeyword!({
+        query: "vite container page cannot be reached from host",
+        limit: 5,
+      }),
+    ).resolves.toEqual([]);
+    const results = await backend.search({
+      query: "vite container page cannot be reached from host",
+      limit: 5,
+      mode: "keyword",
+    });
+    expect(results[0]?.problem).toContain("unreachable");
+  });
+
+  test("treats leading hyphens as technical punctuation rather than negation", async () => {
+    const backend = new LocalBackend(dbPath);
+    await backend.log({
+      problem: "SQLite WAL file keeps growing",
+      solution: "Checkpoint WAL after long readers finish.",
+      tags: "sqlite,wal",
+    });
+
+    const results = await backend.search({
+      query: "sqlite -wal",
+      limit: 5,
+      mode: "keyword",
+      keywordStrategy: "exact",
+    });
+    expect(results[0]?.problem).toContain("WAL");
+  });
+
+  test("hybrid search uses relaxed lexical candidates", async () => {
+    const semantic: LocalSemanticConfig = {
+      enabled: true,
+      modelId: "test-model",
+      modelPath,
+      dimensions: 4,
+    };
+    const backend = new LocalBackend(dbPath, {
+      semantic,
+      embedder: { embed: async () => vector([1, 0, 0, 0]) },
+    });
+    await backend.log({
+      problem: "Vite dev server is unreachable from a container",
+      solution: "Bind the service to the host interface.",
+      tags: "vite,container",
+    });
+
+    const results = await backend.search({
+      query: "vite container page cannot be reached",
+      limit: 5,
+      mode: "hybrid",
+    });
+    expect(results[0]?.problem).toContain("unreachable");
+  });
+
   test("semantic search returns a not-configured local error", async () => {
     const backend = new LocalBackend(dbPath);
 

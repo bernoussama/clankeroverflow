@@ -9,10 +9,14 @@ function formatSearchAttempts(attempts?: SearchAttempt[]) {
 
   const summary = attempts
     .map((attempt) => {
+      const label =
+        attempt.mode === "keyword" && attempt.keywordStrategy
+          ? `keyword ${attempt.keywordStrategy}`
+          : attempt.mode;
       if (attempt.error) {
-        return `${attempt.mode} unavailable (${attempt.error})`;
+        return `${label} unavailable (${attempt.error})`;
       }
-      return `${attempt.mode} returned ${attempt.resultCount ?? 0}`;
+      return `${label} returned ${attempt.resultCount ?? 0}`;
     })
     .join("; ");
 

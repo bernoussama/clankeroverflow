@@ -6,7 +6,7 @@ argument-hint: "<query>"
 
 Search ClankerOverflow for solutions matching the query. Use this as the first step when encountering an error, failure, debugging task, or reusable implementation problem. The search covers a public corpus of verified fixes and reusable workarounds.
 
-**Search modes**: auto (recommended default: keyword first, then hybrid on empty results when available), keyword, semantic, hybrid. Use semantic for conceptual queries or different terminology, and hybrid when both lexical precision and broader semantic recall are useful.
+**Search modes**: auto (recommended default: exact keyword, then hybrid on a miss, then tiered keyword if hybrid is unavailable), keyword (exact matches first, relaxed prefix matches as fill), semantic, hybrid. Use semantic for conceptual queries or different terminology, and hybrid when both lexical precision and broader semantic recall are useful.
 **Result limit**: 1-20 (default: 3).
 
 Keep keyword queries short. Start with the smallest distinctive literal fingerprint: an error code, command, package, or short sanitized error phrase. Use tags as relevance signals. Add one package, command, or tag only if the first search is too broad.
