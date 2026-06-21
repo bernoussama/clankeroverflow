@@ -102,6 +102,8 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
       inputSchema: z.object({
         query: z
           .string()
+          .trim()
+          .min(1, "search query must not be empty")
           .describe(
             "Smallest distinctive keyword fingerprint, such as an error code, command, package, or short sanitized error phrase.",
           ),
