@@ -83,8 +83,17 @@ export function solutionEmbeddingText(input: {
   return `${header}Problem:\n${input.problem.trim()}\n\nSolution:\n${input.solution.trim()}`;
 }
 
+/**
+ * bge-small-en-v1.5 is an asymmetric retriever: queries must be prefixed with
+ * the retrieval instruction while documents/passages must not. Applying this
+ * prefix to the query (only) aligns query embeddings with the indexed solution
+ * embeddings; document-side text is left untouched, so no re-embedding needed.
+ * See https://huggingface.co/BAAI/bge-small-en-v1.5
+ */
+const LOCAL_QUERY_INSTRUCTION = "Represent this sentence for searching relevant passages:";
+
 export function queryEmbeddingText(query: string) {
-  return query.trim();
+  return `${LOCAL_QUERY_INSTRUCTION} ${query.trim()}`;
 }
 
 function sha256(text: string | Buffer) {

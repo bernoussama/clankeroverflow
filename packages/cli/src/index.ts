@@ -57,13 +57,51 @@ function formatDoctor(checks: Array<{ name: string; ok: boolean; detail: string 
   ].join("\n");
 }
 
+const SEARCH_LIMIT_MIN = 1;
+const SEARCH_LIMIT_MAX = 20;
+
 function parseSearchLimit(value: string) {
-  const limit = parseInt(value, 10);
-  if (isNaN(limit)) {
-    console.error(pc.red(pc.bold("✖ Error: ")) + pc.red("--limit must be a number"));
+  const limit = Number(value);
+  if (!Number.isInteger(limit)) {
+    console.error(pc.red(pc.bold("✖ Error: ")) + pc.red("--limit must be an integer"));
+    process.exit(1);
+  }
+  if (limit < SEARCH_LIMIT_MIN || limit > SEARCH_LIMIT_MAX) {
+    console.error(
+      pc.red(pc.bold("✖ Error: ")) +
+        pc.red(`--limit must be between ${SEARCH_LIMIT_MIN} and ${SEARCH_LIMIT_MAX}`),
+    );
     process.exit(1);
   }
   return limit;
+}
+
+function parseSearchQuery(value: string) {
+  if (!value || !value.trim()) {
+    console.error(pc.red(pc.bold("✖ Error: ")) + pc.red("search query must not be empty"));
+    process.exit(1);
+  }
+  return value;
+}
+
+/**
+ * When a positional argument (like a search query) starts with `-`, commander
+ * treats it as an unknown option. Detect that case and point the user at the
+ * `--` separator so they can still search for `-1`, `v2.0-beta-1`, etc.
+ */
+function enhanceLeadingDashError(error: unknown): void {
+  if (!(error instanceof Error)) return;
+  const commanderError = error as Error & { code?: string };
+  if (commanderError.code !== "commander.unknownOption") return;
+  // The offending token appears in the message, e.g. `error: unknown option '-1'`.
+  const tokenMatch = error.message.match(/unknown option '(.+)'/);
+  const token = tokenMatch?.[1];
+  if (!token || !token.startsWith("-")) return;
+  if (token === "-h" || token === "--help" || token === "-V" || token === "--version") return;
+  console.error(pc.yellow(`Tip: "${token}" looks like a search query, not a flag.`));
+  console.error(
+    pc.yellow(`     Use "--" to separate options from the query:  clanker search -- ${token}`),
+  );
 }
 
 function parseSearchMode(value: string) {
@@ -106,6 +144,16 @@ async function searchAndPrint(
 export function createProgram(options: CreateProgramOptions = {}) {
   const program = new Command();
   const runMcpServer = options.startMcpServer ?? startMcpServer;
+
+  // Attach the exit override before defining any subcommand so it propagates to
+  // them (subcommands capture the callback when they are created).
+  program.exitOverride((error: Error & { code?: string }) => {
+    enhanceLeadingDashError(error);
+    if (error.code === "commander.help" || error.code === "commander.version") {
+      process.exit(0);
+    }
+    process.exit(1);
+  });
 
   program
     .name("clanker")
@@ -188,6 +236,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     )
     .action(async (query, options) => {
       try {
+        parseSearchQuery(query);
         const limit = parseSearchLimit(options.limit);
         const mode = parseSearchMode(options.mode);
         const config = resolveConfig();
@@ -244,7 +293,9 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   program
     .command("mcp")
-    .description("Start the ClankerOverflow MCP server over stdio")
+    .description(
+      "Start the ClankerOverflow MCP server over stdio (keeps the local model warm across searches)",
+    )
     .action(async () => {
       await runMcpServer();
     });
@@ -356,6 +407,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     )
     .action(async (query, options) => {
       try {
+        parseSearchQuery(query);
         const limit = parseSearchLimit(options.limit);
         const mode = parseSearchMode(options.mode);
         const config = resolveConfig({
@@ -394,9 +446,14 @@ export function createProgram(options: CreateProgramOptions = {}) {
         });
         const limit =
           options.limit === undefined ? undefined : Number.parseInt(String(options.limit), 10);
-        if (options.limit !== undefined && (limit === undefined || Number.isNaN(limit))) {
-          console.error(pc.red(pc.bold("✖ Error: ")) + pc.red("--limit must be a number"));
-          process.exit(1);
+        if (options.limit !== undefined) {
+          if (limit === undefined || !Number.isInteger(limit) || limit < SEARCH_LIMIT_MIN) {
+            console.error(
+              pc.red(pc.bold("✖ Error: ")) +
+                pc.red(`--limit must be an integer of at least ${SEARCH_LIMIT_MIN}`),
+            );
+            process.exit(1);
+          }
         }
         const model = await downloadDefaultLocalModel(config.localSemantic.modelPath);
         const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });

@@ -1,4 +1,5 @@
 import type { ConcreteSearchMode, SearchMode, SolutionBackend, SolutionResult } from "./backend";
+import { FtsQuerySyntaxError } from "./local-backend";
 
 export type SearchAttempt = {
   mode: ConcreteSearchMode;
@@ -37,12 +38,25 @@ export async function searchWithAutoFallback(
     };
   }
 
-  const keywordResults = await backend.search({
-    query: input.query,
-    limit: input.limit,
-    mode: "keyword",
-  });
-  const attempts: SearchAttempt[] = [{ mode: "keyword", resultCount: keywordResults.length }];
+  let keywordResults: SolutionResult[] = [];
+  const attempts: SearchAttempt[] = [];
+  try {
+    keywordResults = await backend.search({
+      query: input.query,
+      limit: input.limit,
+      mode: "keyword",
+    });
+    attempts.push({ mode: "keyword", resultCount: keywordResults.length });
+  } catch (error) {
+    // An FTS5 syntax error only affects the keyword path; fall through to the
+    // semantic/hybrid fallback so the user still gets results. Other errors
+    // (genuine DB failures) should still propagate.
+    if (error instanceof FtsQuerySyntaxError) {
+      attempts.push({ mode: "keyword", error: errorMessage(error) });
+    } else {
+      throw error;
+    }
+  }
   if (keywordResults.length > 0) {
     return { results: keywordResults, attempts };
   }

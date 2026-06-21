@@ -4,6 +4,7 @@ import {
   chunkEmbeddingTokens,
   embedTextWithTokenChunks,
   maxEmbeddingChunkTokens,
+  queryEmbeddingText,
   weightedAverageEmbeddingVectors,
 } from "./local-semantic";
 
@@ -24,6 +25,18 @@ describe("local semantic embedding helpers", () => {
 
     expect(averaged[0]).toBeCloseTo(0.31622777);
     expect(averaged[1]).toBeCloseTo(0.94868329);
+  });
+
+  test("prefixes queries with the BGE v1.5 retrieval instruction", () => {
+    // bge-small-en-v1.5 is an asymmetric retriever: the instruction goes on the
+    // query side only, never the document side, to align query and passage
+    // embeddings for retrieval.
+    expect(queryEmbeddingText("gpu battery")).toBe(
+      "Represent this sentence for searching relevant passages: gpu battery",
+    );
+    expect(queryEmbeddingText("  spaced  ")).toBe(
+      "Represent this sentence for searching relevant passages: spaced",
+    );
   });
 
   test("embeds over-context text as token chunks", async () => {

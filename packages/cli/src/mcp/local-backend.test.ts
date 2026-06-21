@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 
-import { LocalBackend } from "./local-backend";
+import { ftsQuery, FtsQuerySyntaxError, LocalBackend } from "./local-backend";
 import { openLocalDb } from "./local-db";
 import {
   embeddingFingerprintForConfig,
@@ -302,5 +302,86 @@ describe("CLI local MCP backend", () => {
     writeGguf(modelPath, "replacement-model");
 
     expect(await backend.status()).toMatchObject({ embeddedSolutions: 0, pendingEmbeddings: 1 });
+  });
+
+  test("rejects empty search queries at the backend", async () => {
+    const backend = new LocalBackend(dbPath);
+    await expect(backend.search({ query: "   ", limit: 5, mode: "keyword" })).rejects.toThrow(
+      "search query must not be empty",
+    );
+  });
+});
+
+describe("ftsQuery", () => {
+  test("simple mode quotes each term and joins with implicit AND", () => {
+    expect(ftsQuery("oauth redirect")).toBe('"oauth" "redirect"');
+  });
+
+  test("simple mode extracts double-quoted phrases", () => {
+    expect(ftsQuery('"oauth callback" timeout')).toBe('"oauth callback" "timeout"');
+  });
+
+  test("simple mode breaks URLs into space-separated fragments", () => {
+    const result = ftsQuery("https://example.com/path?x=1");
+    expect(result).toContain('"https"');
+    expect(result).not.toContain("://");
+  });
+
+  test("empty or whitespace-only queries yield an empty string", () => {
+    expect(ftsQuery("")).toBe("");
+    expect(ftsQuery("   ")).toBe("");
+  });
+
+  test("simple mode rejects bare leading-dash negation", () => {
+    expect(() => ftsQuery("-foo")).toThrow(FtsQuerySyntaxError);
+  });
+
+  test("advanced mode preserves the AND operator", () => {
+    expect(ftsQuery("database AND crash")).toBe('"database" AND "crash"');
+  });
+
+  test("advanced mode preserves the OR operator with prefix terms", () => {
+    expect(ftsQuery('"some phrase" OR react*')).toBe('"some phrase" OR "react"*');
+  });
+
+  test("advanced mode preserves binary NOT", () => {
+    expect(ftsQuery("database NOT physics")).toBe('"database" NOT "physics"');
+  });
+
+  test("advanced mode renders column filters against known columns", () => {
+    expect(ftsQuery("tags:react hooks")).toBe('tags : "react" AND "hooks"');
+  });
+
+  test("advanced mode rejects unknown column filters", () => {
+    expect(() => ftsQuery("foo:bar")).toThrow(FtsQuerySyntaxError);
+  });
+
+  test("advanced mode rejects a leading NOT", () => {
+    expect(() => ftsQuery("NOT x")).toThrow(FtsQuerySyntaxError);
+  });
+
+  test("advanced mode rejects doubled operators", () => {
+    expect(() => ftsQuery("database AND AND crash")).toThrow(FtsQuerySyntaxError);
+  });
+
+  test("advanced mode rejects unmatched parentheses", () => {
+    expect(() => ftsQuery("(database AND crash")).toThrow(FtsQuerySyntaxError);
+    expect(() => ftsQuery("database AND crash)")).toThrow(FtsQuerySyntaxError);
+  });
+
+  test("advanced mode rejects adjacent terms without an operator", () => {
+    expect(() => ftsQuery("database crash AND")).toThrow(FtsQuerySyntaxError);
+  });
+
+  test("rejects SQL-injection-style query as a syntax error", () => {
+    expect(() => ftsQuery("' OR '1'='1")).toThrow(FtsQuerySyntaxError);
+  });
+
+  test("rejects the BM25 weighting tilde operator", () => {
+    expect(() => ftsQuery("database ~ crash")).toThrow(FtsQuerySyntaxError);
+  });
+
+  test("rejects an unterminated double-quoted phrase", () => {
+    expect(() => ftsQuery('"unterminated')).toThrow(FtsQuerySyntaxError);
   });
 });
