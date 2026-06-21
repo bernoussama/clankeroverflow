@@ -191,8 +191,8 @@ export function createMcpServer() {
                 ? "sqlite-vec: available"
                 : `sqlite-vec: ${status.sqliteVecError}`,
               status.embedderAvailable
-                ? "sqlite-lembed: available"
-                : `sqlite-lembed: ${status.embedderError}`,
+                ? "node-llama-cpp: available"
+                : `node-llama-cpp: ${status.embedderError}`,
             ].join("\n"),
           },
         ],

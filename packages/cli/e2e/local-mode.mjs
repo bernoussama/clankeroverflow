@@ -112,14 +112,35 @@ async function logDirectSolution(env, fixture) {
 async function verifyDirectCli(env) {
   logStep("checking native semantic dependencies import");
   await import("sqlite-vec");
-  await import("sqlite-lembed");
+  await import("node-llama-cpp");
 
-  logStep("downloading or checking the local embedding model");
+  logStep("logging a direct CLI fixture before embeddings are available");
+  const semanticDisabledEnv = { ...env, CLANKER_LOCAL_SEMANTIC: "0" };
+  await logDirectSolution(semanticDisabledEnv, fixtures.vite);
+
+  logStep("checking local semantic status before embedding pending direct logs");
+  const pendingStatus = JSON.parse(await runCli(["local", "status", "--json"], env));
+  assert.equal(pendingStatus.mode, "local");
+  assert.equal(pendingStatus.semantic.enabled, true);
+  assert.equal(pendingStatus.semantic.totalSolutions, 1);
+  assert.equal(pendingStatus.semantic.embeddedSolutions, 0);
+  assert.equal(pendingStatus.semantic.pendingEmbeddings, 1);
+  assert.equal(pendingStatus.semantic.sqliteVecAvailable, true);
+  assert.equal(pendingStatus.semantic.embedderAvailable, true);
+
+  logStep("verifying direct keyword search works before local embeddings exist");
+  const preEmbedKeyword = await runCli(
+    ["search", "EADDRINUSE", "--mode", "keyword", "--limit", "1"],
+    env,
+  );
+  assertTopProblem(preEmbedKeyword, fixtures.vite.problem, "pre-embed direct keyword search");
+
+  logStep("downloading or checking the local embedding model and embedding pending solutions");
   const embedOutput = await runCli(["local", "embed"], env);
   assert.match(embedOutput, /Local embeddings ready/);
+  assert.match(embedOutput, /1 solution\(s\) embedded/);
 
-  logStep("logging direct CLI fixture solutions");
-  await logDirectSolution(env, fixtures.vite);
+  logStep("logging direct CLI fixture solutions with immediate embeddings");
   await logDirectSolution(env, fixtures.playwright);
   await logDirectSolution(env, fixtures.prisma);
 

@@ -198,7 +198,7 @@ Local mode stores solutions in SQLite and does not call the hosted API. The dire
 
 Keyword, semantic, and hybrid search are available locally by default. `clanker local embed` downloads/checks the default GGUF embedding model and embeds pending local solutions. Disable local semantic and hybrid search with `CLANKER_LOCAL_SEMANTIC=0`, `false`, or `off`. Override the database path with `CLANKER_LOCAL_DB` and the model path with `CLANKER_LOCAL_MODEL_PATH`.
 
-The Docker-isolated e2e check is available on demand:
+The Docker-isolated e2e check runs the local-mode suite against Node 22 and Node 24 by default:
 
 ```bash
 pnpm test:e2e:local
