@@ -7,6 +7,10 @@ const NODE_IMAGES = (process.env.CLANKER_LOCAL_E2E_NODE_IMAGES?.split(",") ?? DE
   .map((image) => image.trim())
   .filter(Boolean);
 
+if (NODE_IMAGES.length === 0) {
+  throw new Error("CLANKER_LOCAL_E2E_NODE_IMAGES must include at least one Docker image.");
+}
+
 function imageName(nodeImage: string) {
   if (process.env.CLANKER_LOCAL_E2E_IMAGE) return process.env.CLANKER_LOCAL_E2E_IMAGE;
   const suffix = nodeImage
