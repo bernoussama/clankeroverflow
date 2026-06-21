@@ -69,7 +69,7 @@ type EmbeddingModel = {
 };
 
 export function defaultLocalModelPath(env: NodeJS.ProcessEnv = process.env) {
-  const cacheRoot = env.XDG_CACHE_HOME || join(homedir(), ".cache");
+  const cacheRoot = env.XDG_CACHE_HOME || join(env.HOME || homedir(), ".cache");
   return join(cacheRoot, "clankeroverflow", "models", DEFAULT_LOCAL_MODEL_FILE);
 }
 

@@ -8,6 +8,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 
 import { createMcpServer } from "./server";
+import { resolveConfig } from "./config";
 
 describe("CLI MCP server", () => {
   const testDir = dirname(fileURLToPath(import.meta.url));
@@ -121,6 +122,7 @@ describe("CLI MCP server", () => {
       "Smallest distinctive keyword fingerprint",
     );
     expect(searchTool?.inputSchema.properties?.mode.default).toBe("auto");
+    expect(searchTool?.inputSchema.properties?.source.default).toBe("configured");
   });
 
   test("log_solution logs through the hosted API", async () => {
@@ -340,6 +342,70 @@ describe("CLI MCP server", () => {
     expect(fetchCallUrl).toContain("solutions.vote");
 
     const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
-    expect(text).toBe("Successfully upvoted solution 123");
+    expect(text).toBe("Successfully upvoted remote solution 123");
+  });
+
+  test("remote search and voting overrides do not change local logging", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "clanker-mcp-source-"));
+    const config = resolveConfig({
+      CLANKER_MODE: "local",
+      CLANKER_LOCAL_DB: join(dir, "solutions.sqlite"),
+      CLANKER_LOCAL_SEMANTIC: "0",
+      CLANKER_API_KEY: "clk_test",
+    });
+    const sourceServer = createMcpServer(config);
+    const [sourceClientTransport, sourceServerTransport] = InMemoryTransport.createLinkedPair();
+    const sourceClient = new Client({ name: "source-client", version: "1.0.0" });
+    await sourceServer.connect(sourceServerTransport);
+    await sourceClient.connect(sourceClientTransport);
+
+    try {
+      fetchMock
+        .mockImplementationOnce(
+          async () =>
+            new Response(
+              JSON.stringify({
+                result: {
+                  data: [
+                    {
+                      id: "remote-1",
+                      problem: "remote problem",
+                      solution: "remote solution",
+                      score: 1,
+                      tags: null,
+                    },
+                  ],
+                },
+              }),
+            ),
+        )
+        .mockImplementationOnce(
+          async () => new Response(JSON.stringify({ result: { data: { success: true } } })),
+        );
+
+      const search = await sourceClient.callTool({
+        name: "search_solutions",
+        arguments: { query: "remote", source: "remote", mode: "keyword" },
+      });
+      expect((search.content as Array<{ text: string }>)[0]?.text).toContain("Source: remote");
+
+      await sourceClient.callTool({
+        name: "upvote_solution",
+        arguments: { id: "remote-1", source: "remote" },
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      const logged = await sourceClient.callTool({
+        name: "log_solution",
+        arguments: { problem: "private problem", solution: "private solution" },
+      });
+      expect((logged.content as Array<{ text: string }>)[0]?.text).toContain(
+        "Solution logged locally",
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      await sourceClient.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
