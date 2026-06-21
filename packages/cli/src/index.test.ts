@@ -1,10 +1,35 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 import { createProgram } from "./index";
+import { LocalBackend } from "./mcp/local-backend";
+import {
+  DEFAULT_LOCAL_MODEL_ID,
+  floatVectorToBuffer,
+  type LocalSemanticConfig,
+} from "./mcp/local-semantic";
 import pc from "picocolors";
+
+vi.mock("node-llama-cpp", () => ({
+  getLlama: vi.fn(async () => ({
+    loadModel: vi.fn(async () => ({
+      trainContextSize: 8,
+      tokenize: (text: string) => Array.from(text).map((char) => char.charCodeAt(0)),
+      createEmbeddingContext: vi.fn(async () => ({
+        getEmbeddingFor: vi.fn(async (input: number[] | string) => {
+          const tokens = Array.isArray(input)
+            ? input
+            : Array.from(input).map((char) => char.charCodeAt(0));
+          const average =
+            tokens.reduce((sum, token) => sum + token, 0) / Math.max(tokens.length, 1);
+          return { vector: average < 100 ? [1, 0, 0, 0] : [0, 1, 0, 0] };
+        }),
+      })),
+    })),
+  })),
+}));
 
 async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
   const previousMode = process.env.CLANKER_MODE;
@@ -35,6 +60,14 @@ async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
     }
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+function vector(values: number[]) {
+  return floatVectorToBuffer(values, values.length);
+}
+
+function writeGguf(modelPath: string) {
+  writeFileSync(modelPath, Buffer.from("GGUFtest-model"));
 }
 
 describe("CLI", () => {
@@ -292,6 +325,125 @@ describe("CLI", () => {
           expect.stringContaining("Tags: sqlite-vec,docker"),
         );
       });
+    });
+
+    test("local search reads the explicit local database without CLANKER_MODE", async () => {
+      const previousMode = process.env.CLANKER_MODE;
+      const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-search-"));
+      const dbPath = join(dir, "solutions.sqlite");
+      try {
+        delete process.env.CLANKER_MODE;
+        const backend = new LocalBackend(dbPath);
+        await backend.log({
+          problem: "Explicit local sqlite vector search",
+          solution: "Read the local SQLite database instead of the hosted API",
+          tags: "sqlite-vec,local",
+        });
+        consoleLogMock.mockClear();
+
+        const program = createProgram();
+        await program.parseAsync([
+          "node",
+          "test",
+          "local",
+          "search",
+          "sqlite",
+          "--db",
+          dbPath,
+          "--mode",
+          "keyword",
+          "--limit",
+          "1",
+        ]);
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(consoleLogMock).toHaveBeenCalledWith(
+          expect.stringContaining("Explicit local sqlite vector search"),
+        );
+      } finally {
+        if (previousMode === undefined) {
+          delete process.env.CLANKER_MODE;
+        } else {
+          process.env.CLANKER_MODE = previousMode;
+        }
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    test("local search supports semantic mode with embedded local rows", async () => {
+      const previousMode = process.env.CLANKER_MODE;
+      const previousModelPath = process.env.CLANKER_LOCAL_MODEL_PATH;
+      const previousDimensions = process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
+      const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-semantic-search-"));
+      const dbPath = join(dir, "solutions.sqlite");
+      const modelPath = join(dir, "model.gguf");
+      writeGguf(modelPath);
+      try {
+        delete process.env.CLANKER_MODE;
+        process.env.CLANKER_LOCAL_MODEL_PATH = modelPath;
+        process.env.CLANKER_LOCAL_MODEL_DIMENSIONS = "4";
+        const semantic: LocalSemanticConfig = {
+          enabled: true,
+          modelId: DEFAULT_LOCAL_MODEL_ID,
+          modelPath,
+          dimensions: 4,
+        };
+        const backend = new LocalBackend(dbPath, {
+          semantic,
+          embedder: {
+            embed: async (text: string) =>
+              /aaa/.test(text) ? vector([1, 0, 0, 0]) : vector([0, 1, 0, 0]),
+          },
+        });
+        await backend.log({
+          problem: "aaa semantic local hit",
+          solution: "aaa matching vector",
+          tags: "semantic",
+        });
+        await backend.log({
+          problem: "zzz semantic local miss",
+          solution: "zzz other vector",
+          tags: "semantic",
+        });
+        consoleLogMock.mockClear();
+
+        const program = createProgram();
+        await program.parseAsync([
+          "node",
+          "test",
+          "local",
+          "search",
+          "aaa",
+          "--db",
+          dbPath,
+          "--mode",
+          "semantic",
+          "--limit",
+          "1",
+        ]);
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(consoleLogMock).toHaveBeenCalledWith(
+          expect.stringContaining("aaa semantic local hit"),
+        );
+      } finally {
+        if (previousMode === undefined) {
+          delete process.env.CLANKER_MODE;
+        } else {
+          process.env.CLANKER_MODE = previousMode;
+        }
+        if (previousModelPath === undefined) {
+          delete process.env.CLANKER_LOCAL_MODEL_PATH;
+        } else {
+          process.env.CLANKER_LOCAL_MODEL_PATH = previousModelPath;
+        }
+        if (previousDimensions === undefined) {
+          delete process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
+        } else {
+          process.env.CLANKER_LOCAL_MODEL_DIMENSIONS = previousDimensions;
+        }
+        rmSync(dir, { recursive: true, force: true });
+      }
     });
   });
 

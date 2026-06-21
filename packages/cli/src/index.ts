@@ -57,6 +57,52 @@ function formatDoctor(checks: Array<{ name: string; ok: boolean; detail: string 
   ].join("\n");
 }
 
+function parseSearchLimit(value: string) {
+  const limit = parseInt(value, 10);
+  if (isNaN(limit)) {
+    console.error(pc.red(pc.bold("✖ Error: ")) + pc.red("--limit must be a number"));
+    process.exit(1);
+  }
+  return limit;
+}
+
+function parseSearchMode(value: string) {
+  const mode = value as SearchMode;
+  if (!["auto", "keyword", "semantic", "hybrid"].includes(mode)) {
+    console.error(
+      pc.red(pc.bold("✖ Error: ")) + pc.red("--mode must be auto, keyword, semantic, or hybrid"),
+    );
+    process.exit(1);
+  }
+  return mode;
+}
+
+async function searchAndPrint(
+  backend: Pick<ReturnType<typeof createSolutionBackend>, "search">,
+  input: {
+    query: string;
+    limit: number;
+    mode: SearchMode;
+    allowHybridFallback: boolean;
+    fallbackUnavailableReason: string;
+  },
+) {
+  const searchResult = await searchWithAutoFallback(backend, input);
+  const sanitized = searchResult.results.map((result) => ({
+    id: result.id,
+    problem: sanitizeForTerminal(result.problem),
+    solution: sanitizeForTerminal(result.solution),
+    score: result.score,
+    tags: result.tags ? sanitizeForTerminal(result.tags) : null,
+  }));
+  const sanitizedAttempts = searchResult.attempts.map((attempt) => ({
+    ...attempt,
+    error: attempt.error ? sanitizeForTerminal(attempt.error) : undefined,
+  }));
+
+  console.log(formatSearchResults(sanitized, sanitizedAttempts));
+}
+
 export function createProgram(options: CreateProgramOptions = {}) {
   const program = new Command();
   const runMcpServer = options.startMcpServer ?? startMcpServer;
@@ -142,24 +188,11 @@ export function createProgram(options: CreateProgramOptions = {}) {
     )
     .action(async (query, options) => {
       try {
-        const limit = parseInt(options.limit, 10);
-        if (isNaN(limit)) {
-          console.error(pc.red(pc.bold("✖ Error: ")) + pc.red("--limit must be a number"));
-          process.exit(1);
-        }
-
-        const mode = options.mode as SearchMode;
-        if (!["auto", "keyword", "semantic", "hybrid"].includes(mode)) {
-          console.error(
-            pc.red(pc.bold("✖ Error: ")) +
-              pc.red("--mode must be auto, keyword, semantic, or hybrid"),
-          );
-          process.exit(1);
-        }
-
+        const limit = parseSearchLimit(options.limit);
+        const mode = parseSearchMode(options.mode);
         const config = resolveConfig();
         const backend = createSolutionBackend(config);
-        const searchResult = await searchWithAutoFallback(backend, {
+        await searchAndPrint(backend, {
           query,
           limit,
           mode,
@@ -170,20 +203,6 @@ export function createProgram(options: CreateProgramOptions = {}) {
               ? "local semantic search is not configured"
               : "CLANKER_API_KEY is required for hosted hybrid fallback",
         });
-
-        const sanitized = searchResult.results.map((result) => ({
-          id: result.id,
-          problem: sanitizeForTerminal(result.problem),
-          solution: sanitizeForTerminal(result.solution),
-          score: result.score,
-          tags: result.tags ? sanitizeForTerminal(result.tags) : null,
-        }));
-        const sanitizedAttempts = searchResult.attempts.map((attempt) => ({
-          ...attempt,
-          error: attempt.error ? sanitizeForTerminal(attempt.error) : undefined,
-        }));
-
-        console.log(formatSearchResults(sanitized, sanitizedAttempts));
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error searching solutions:")));
         console.error(pc.red(error.message || error));
@@ -319,6 +338,41 @@ export function createProgram(options: CreateProgramOptions = {}) {
         console.log(formatDoctor(checks));
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error running local doctor:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
+    });
+
+  local
+    .command("search")
+    .description("Search the local SQLite solutions database")
+    .argument("<query>", "The search query")
+    .option("--db <path>", "Local SQLite database path")
+    .option("-l, --limit <number>", "Number of results to return", "1")
+    .option(
+      "-m, --mode <mode>",
+      "auto (keyword first, then hybrid on empty results when available), keyword, semantic, or hybrid",
+      "auto",
+    )
+    .action(async (query, options) => {
+      try {
+        const limit = parseSearchLimit(options.limit);
+        const mode = parseSearchMode(options.mode);
+        const config = resolveConfig({
+          ...process.env,
+          CLANKER_MODE: "local",
+          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
+        });
+        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        await searchAndPrint(backend, {
+          query,
+          limit,
+          mode,
+          allowHybridFallback: config.localSemantic.enabled,
+          fallbackUnavailableReason: "local semantic search is not configured",
+        });
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error searching local solutions:")));
         console.error(pc.red(error.message || error));
         process.exit(1);
       }
