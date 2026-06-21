@@ -23,7 +23,7 @@ export const DEFAULT_LOCAL_MODEL_DIMENSIONS = 384;
 export const DEFAULT_LOCAL_MODEL_URL =
   "https://huggingface.co/ggml-org/bge-small-en-v1.5-Q8_0-GGUF/resolve/main/bge-small-en-v1.5-q8_0.gguf";
 export const LOCAL_EMBEDDER_ID = "node-llama-cpp";
-export const LOCAL_EMBEDDING_FORMAT_VERSION = "solution-v1";
+export const LOCAL_EMBEDDING_FORMAT_VERSION = "solution-v2";
 export const LOCAL_QUERY_FORMAT_VERSION = "query-v1";
 
 export type LocalSemanticConfig = {
@@ -54,6 +54,19 @@ export type LocalSemanticStatus = {
 };
 
 const sqliteVecLoaded = new WeakSet<LocalDb>();
+
+type EmbeddingVector = {
+  vector: readonly number[];
+};
+
+type EmbeddingContext = {
+  getEmbeddingFor(input: number[] | string): Promise<EmbeddingVector>;
+};
+
+type EmbeddingModel = {
+  trainContextSize: number;
+  tokenize(text: string, specialTokens?: boolean, options?: "trimLeadingSpace"): number[];
+};
 
 export function defaultLocalModelPath(env: NodeJS.ProcessEnv = process.env) {
   const cacheRoot = env.XDG_CACHE_HOME || join(homedir(), ".cache");
@@ -199,6 +212,76 @@ export function floatVectorToBuffer(vector: ArrayLike<number>, dimensions: numbe
   return buffer;
 }
 
+export function maxEmbeddingChunkTokens(trainContextSize: number) {
+  const contextSize = Number.isFinite(trainContextSize) ? Math.floor(trainContextSize) : 1;
+  return Math.max(1, contextSize - 2);
+}
+
+export function chunkEmbeddingTokens(tokens: readonly number[], maxTokens: number) {
+  const safeMax = Math.max(1, Math.floor(maxTokens));
+  const chunks: number[][] = [];
+  for (let index = 0; index < tokens.length; index += safeMax) {
+    chunks.push(tokens.slice(index, index + safeMax));
+  }
+  return chunks;
+}
+
+export function weightedAverageEmbeddingVectors(
+  vectors: Array<{ vector: ArrayLike<number>; weight: number }>,
+  dimensions: number,
+) {
+  if (vectors.length === 0) {
+    throw new Error("Cannot average zero local embedding vectors");
+  }
+
+  const averaged = Array.from({ length: dimensions }, () => 0);
+  let totalWeight = 0;
+
+  for (const item of vectors) {
+    if (item.vector.length !== dimensions) {
+      throw new Error(
+        `node-llama-cpp returned ${item.vector.length} embedding dimensions, but CLANKER_LOCAL_MODEL_DIMENSIONS is ${dimensions}`,
+      );
+    }
+    const weight = Math.max(1, item.weight);
+    totalWeight += weight;
+    for (let index = 0; index < dimensions; index += 1) {
+      averaged[index]! += item.vector[index]! * weight;
+    }
+  }
+
+  for (let index = 0; index < dimensions; index += 1) {
+    averaged[index]! /= totalWeight;
+  }
+
+  const magnitude = Math.hypot(...averaged);
+  if (magnitude === 0) return averaged;
+  return averaged.map((value) => value / magnitude);
+}
+
+export async function embedTextWithTokenChunks(
+  model: EmbeddingModel,
+  context: EmbeddingContext,
+  text: string,
+  dimensions: number,
+) {
+  const tokens = model.tokenize(text, false, "trimLeadingSpace");
+  const chunks = chunkEmbeddingTokens(tokens, maxEmbeddingChunkTokens(model.trainContextSize));
+
+  if (chunks.length === 0) {
+    const embedding = await context.getEmbeddingFor(text);
+    return floatVectorToBuffer(embedding.vector, dimensions);
+  }
+
+  const embeddings = [];
+  for (const chunk of chunks) {
+    const embedding = await context.getEmbeddingFor(chunk);
+    embeddings.push({ vector: embedding.vector, weight: chunk.length });
+  }
+
+  return floatVectorToBuffer(weightedAverageEmbeddingVectors(embeddings, dimensions), dimensions);
+}
+
 export async function createLocalEmbedder(config: LocalSemanticConfig) {
   const modelValidation = validateGgufFile(config.modelPath);
   if (!modelValidation.ok) {
@@ -207,11 +290,15 @@ export async function createLocalEmbedder(config: LocalSemanticConfig) {
   const { getLlama } = await import("node-llama-cpp");
   const llama = await getLlama();
   const model = await llama.loadModel({ modelPath: config.modelPath });
-  const context = await model.createEmbeddingContext();
+  const context = await model.createEmbeddingContext({ contextSize: model.trainContextSize });
   return {
     async embed(text: string) {
-      const embedding = await context.getEmbeddingFor(text);
-      return floatVectorToBuffer(embedding.vector, config.dimensions);
+      return embedTextWithTokenChunks(
+        model,
+        context as unknown as EmbeddingContext,
+        text,
+        config.dimensions,
+      );
     },
   };
 }

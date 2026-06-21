@@ -131,6 +131,62 @@ describe("CLI local MCP backend", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  test("logs long local solutions with immediate semantic indexing", async () => {
+    const semantic: LocalSemanticConfig = {
+      enabled: true,
+      modelId: "test-model",
+      modelPath,
+      dimensions: 4,
+    };
+    const embedder = {
+      embed: vi.fn(async () => vector([1, 0, 0, 0])),
+    };
+    const backend = new LocalBackend(dbPath, { semantic, embedder });
+    const longSolution = "Use chunked local embedding. ".repeat(200);
+
+    const result = await backend.log({
+      problem: "Long local solution cannot be embedded",
+      solution: longSolution,
+      tags: "local,semantic",
+    });
+
+    expect(result.warning).toBeUndefined();
+    expect(embedder.embed).toHaveBeenCalledWith(expect.stringContaining(longSolution.trim()));
+    expect(await backend.status()).toMatchObject({ embeddedSolutions: 1, pendingEmbeddings: 0 });
+  });
+
+  test("local embed drains pending long solutions", async () => {
+    const semantic: LocalSemanticConfig = {
+      enabled: true,
+      modelId: "test-model",
+      modelPath,
+      dimensions: 4,
+    };
+    const loggingBackend = new LocalBackend(dbPath, {
+      semantic: { ...semantic, enabled: false },
+    });
+    await loggingBackend.log({
+      problem: "Long pending solution",
+      solution: "The pending solution is intentionally verbose. ".repeat(200),
+      tags: "local,semantic",
+    });
+
+    const embeddingBackend = new LocalBackend(dbPath, {
+      semantic,
+      embedder: { embed: async () => vector([1, 0, 0, 0]) },
+    });
+
+    expect(await embeddingBackend.status()).toMatchObject({
+      embeddedSolutions: 0,
+      pendingEmbeddings: 1,
+    });
+    await expect(embeddingBackend.embedPending()).resolves.toEqual({ embedded: 1 });
+    expect(await embeddingBackend.status()).toMatchObject({
+      embeddedSolutions: 1,
+      pendingEmbeddings: 0,
+    });
+  });
+
   test("re-embeds solutions with current metadata but missing vector rows", async () => {
     const semantic: LocalSemanticConfig = {
       enabled: true,

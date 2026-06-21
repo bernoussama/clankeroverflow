@@ -29,6 +29,28 @@ const fixtures = {
       "Grant create database permission for the test user or configure a dedicated shadow database URL.",
     tags: "prisma,postgres,migrations",
   },
+  longPending: {
+    problem: "Local embed handles long pending solution text without context overflow",
+    solution: [
+      "When a local solution is much longer than the embedding model context, split the tokenized text into safe windows.",
+      "Embed each window with the same local GGUF model, weight each vector by the chunk token count, average the vectors, and normalize the stored result.",
+      "This prevents node-llama-cpp from throwing Input is longer than the context size while still preserving information from the whole solution.",
+    ]
+      .join(" ")
+      .repeat(30),
+    tags: "clankeroverflow,local,semantic,long-embedding",
+  },
+  longImmediate: {
+    problem: "Local log immediately indexes long semantic solution text",
+    solution: [
+      "The local log command should use the same chunked embedding path as local embed.",
+      "Long entries must remain synchronously searchable after logging when local semantic search is enabled.",
+      "No warning should be emitted, no pending embedding should remain, and semantic search should be able to retrieve the entry.",
+    ]
+      .join(" ")
+      .repeat(30),
+    tags: "clankeroverflow,local,semantic,immediate-indexing",
+  },
 };
 
 function logStep(message) {
@@ -114,17 +136,18 @@ async function verifyDirectCli(env) {
   await import("sqlite-vec");
   await import("node-llama-cpp");
 
-  logStep("logging a direct CLI fixture before embeddings are available");
+  logStep("logging direct CLI fixtures before embeddings are available");
   const semanticDisabledEnv = { ...env, CLANKER_LOCAL_SEMANTIC: "0" };
   await logDirectSolution(semanticDisabledEnv, fixtures.vite);
+  await logDirectSolution(semanticDisabledEnv, fixtures.longPending);
 
   logStep("checking local semantic status before embedding pending direct logs");
   const pendingStatus = JSON.parse(await runCli(["local", "status", "--json"], env));
   assert.equal(pendingStatus.mode, "local");
   assert.equal(pendingStatus.semantic.enabled, true);
-  assert.equal(pendingStatus.semantic.totalSolutions, 1);
+  assert.equal(pendingStatus.semantic.totalSolutions, 2);
   assert.equal(pendingStatus.semantic.embeddedSolutions, 0);
-  assert.equal(pendingStatus.semantic.pendingEmbeddings, 1);
+  assert.equal(pendingStatus.semantic.pendingEmbeddings, 2);
   assert.equal(pendingStatus.semantic.sqliteVecAvailable, true);
   assert.equal(pendingStatus.semantic.embedderAvailable, true);
 
@@ -138,18 +161,55 @@ async function verifyDirectCli(env) {
   logStep("downloading or checking the local embedding model and embedding pending solutions");
   const embedOutput = await runCli(["local", "embed"], env);
   assert.match(embedOutput, /Local embeddings ready/);
-  assert.match(embedOutput, /1 solution\(s\) embedded/);
+  assert.match(embedOutput, /2 solution\(s\) embedded/);
+
+  logStep("verifying long pending solution was embedded without context overflow");
+  const postLongEmbedStatus = JSON.parse(await runCli(["local", "status", "--json"], env));
+  assert.equal(postLongEmbedStatus.semantic.embeddedSolutions, 2);
+  assert.equal(postLongEmbedStatus.semantic.pendingEmbeddings, 0);
+  const longPendingSemantic = await runCli(
+    [
+      "search",
+      "context overflow chunked embedding average normalized vectors",
+      "--mode",
+      "semantic",
+      "--limit",
+      "1",
+    ],
+    env,
+  );
+  assertTopProblem(
+    longPendingSemantic,
+    fixtures.longPending.problem,
+    "long pending semantic search",
+  );
 
   logStep("logging direct CLI fixture solutions with immediate embeddings");
   await logDirectSolution(env, fixtures.playwright);
   await logDirectSolution(env, fixtures.prisma);
 
+  logStep("logging long direct CLI solution with immediate chunked embedding");
+  const longImmediateOutput = await runCli(
+    [
+      "log",
+      "--problem",
+      fixtures.longImmediate.problem,
+      "--solution",
+      fixtures.longImmediate.solution,
+      "--tags",
+      fixtures.longImmediate.tags,
+    ],
+    env,
+  );
+  assert.match(longImmediateOutput, /Solution logged locally: [0-9a-f-]{36}/);
+  assert.doesNotMatch(longImmediateOutput, /local semantic indexing failed/i);
+
   logStep("checking local semantic status after direct logs");
   const status = JSON.parse(await runCli(["local", "status", "--json"], env));
   assert.equal(status.mode, "local");
   assert.equal(status.semantic.enabled, true);
-  assert.equal(status.semantic.totalSolutions, 3);
-  assert.equal(status.semantic.embeddedSolutions, 3);
+  assert.equal(status.semantic.totalSolutions, 5);
+  assert.equal(status.semantic.embeddedSolutions, 5);
   assert.equal(status.semantic.pendingEmbeddings, 0);
   assert.equal(status.semantic.staleEmbeddings, 0);
   assert.equal(status.semantic.modelValid, true);
@@ -176,6 +236,30 @@ async function verifyDirectCli(env) {
   const auto = await runCli(["search", semanticQuery, "--limit", "1"], env);
   assert.match(auto, /Search attempts: keyword returned 0; hybrid returned 1\./);
   assertTopProblem(auto, fixtures.vite.problem, "direct auto search");
+
+  logStep("verifying explicit local search works without CLANKER_MODE");
+  const explicitLocalEnv = { ...env };
+  delete explicitLocalEnv.CLANKER_MODE;
+  const localKeyword = await runCli(
+    ["local", "search", "immediate chunked embedding", "--mode", "keyword", "--limit", "1"],
+    explicitLocalEnv,
+  );
+  assertTopProblem(localKeyword, fixtures.longImmediate.problem, "explicit local keyword search");
+
+  logStep("verifying explicit local semantic search works without CLANKER_MODE");
+  const localSemantic = await runCli(
+    [
+      "local",
+      "search",
+      "synchronously searchable after logging local semantic enabled",
+      "--mode",
+      "semantic",
+      "--limit",
+      "1",
+    ],
+    explicitLocalEnv,
+  );
+  assertTopProblem(localSemantic, fixtures.longImmediate.problem, "explicit local semantic search");
 }
 
 async function verifyMcp(env) {
@@ -221,8 +305,8 @@ async function verifyMcp(env) {
     );
     assert.match(textFromTool(statusResult), /ClankerOverflow mode: local/);
     assert.equal(statusResult.structuredContent?.mode, "local");
-    assert.equal(statusResult.structuredContent?.semantic?.totalSolutions, 4);
-    assert.equal(statusResult.structuredContent?.semantic?.embeddedSolutions, 4);
+    assert.equal(statusResult.structuredContent?.semantic?.totalSolutions, 6);
+    assert.equal(statusResult.structuredContent?.semantic?.embeddedSolutions, 6);
     assert.equal(statusResult.structuredContent?.semantic?.pendingEmbeddings, 0);
     assert.equal(statusResult.structuredContent?.semantic?.modelValid, true);
     assert.equal(statusResult.structuredContent?.semantic?.sqliteVecAvailable, true);
