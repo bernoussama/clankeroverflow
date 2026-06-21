@@ -2,6 +2,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { readPersistedConfig } from "./mcp/config";
 import { detectAgents, getCursorConfigPath, getOpenCodeConfigPath, setupAgents } from "./setup";
 import pc from "picocolors";
 
@@ -54,6 +55,7 @@ describe("smart setup", () => {
       {
         agents: ["opencode", "cursor"],
         apiKey: "clk_test",
+        mode: "remote",
         env: {},
         home: tempDir,
         packageRoot,
@@ -73,9 +75,7 @@ describe("smart setup", () => {
       "mcp",
     ]);
     expect(cursor.mcpServers.existing).toEqual({ command: "old" });
-    expect(cursor.mcpServers.clankeroverflow.env.CLANKER_SERVER_URL).toBe(
-      "https://api.clankeroverflow.com",
-    );
+    expect(cursor.mcpServers.clankeroverflow.env).toEqual({ CLANKER_API_KEY: "clk_test" });
     await expect(
       readFile(path.join(tempDir, ".agents", "skills", "clankeroverflow-mcp", "SKILL.md"), "utf8"),
     ).resolves.toContain("clankeroverflow-mcp");
@@ -97,17 +97,47 @@ describe("smart setup", () => {
     );
 
     const cursor = JSON.parse(await readFile(getCursorConfigPath(tempDir), "utf8"));
-    expect(cursor.mcpServers.clankeroverflow.env).toEqual({
-      CLANKER_MODE: "local",
-      CLANKER_LOCAL_DB: "/tmp/clanker.sqlite",
-      CLANKER_LOCAL_SEMANTIC: "1",
-      CLANKER_LOCAL_MODEL_PATH: "/tmp/bge.gguf",
-    });
+    expect(cursor.mcpServers.clankeroverflow.env).toEqual({});
+    expect(readPersistedConfig({ HOME: tempDir }, { home: tempDir })).toEqual(
+      expect.objectContaining({
+        mode: "local",
+        local: expect.objectContaining({
+          databasePath: "/tmp/clanker.sqlite",
+          semantic: true,
+          modelPath: "/tmp/bge.gguf",
+        }),
+      }),
+    );
+  });
+
+  test("defaults interactive setup to persisted local mode before authentication", async () => {
+    const fetch = vi.fn();
+    await setupAgents(
+      { agents: ["cursor"], env: {}, home: tempDir, packageRoot },
+      {
+        commandExists: noCommands,
+        fetch: fetch as typeof globalThis.fetch,
+        promptConfirm: async () => true,
+        stdinIsTTY: true,
+      },
+    );
+
+    expect(readPersistedConfig({ HOME: tempDir }, { home: tempDir })?.mode).toBe("local");
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  test("requires a mode choice in non-interactive setup", async () => {
+    await expect(
+      setupAgents(
+        { agents: ["cursor"], noApiKey: true, env: {}, home: tempDir, packageRoot },
+        { commandExists: noCommands, stdinIsTTY: false },
+      ),
+    ).rejects.toThrow("Non-interactive setup requires --mode local|remote");
   });
 
   test("installs only the CLI skill for a pi-only setup", async () => {
     await setupAgents(
-      { agents: ["pi"], noApiKey: true, env: {}, home: tempDir, packageRoot },
+      { agents: ["pi"], noApiKey: true, mode: "remote", env: {}, home: tempDir, packageRoot },
       { commandExists: noCommands },
     );
     await expect(
@@ -124,7 +154,14 @@ describe("smart setup", () => {
       return { stdout: "", stderr: "" };
     });
     await setupAgents(
-      { agents: ["claude"], noApiKey: true, env: {}, home: tempDir, packageRoot },
+      {
+        agents: ["claude"],
+        noApiKey: true,
+        mode: "remote",
+        env: {},
+        home: tempDir,
+        packageRoot,
+      },
       { runCommand, commandExists: noCommands },
     );
     expect(runCommand).toHaveBeenCalledWith("claude", [
@@ -133,8 +170,6 @@ describe("smart setup", () => {
       "--scope",
       "user",
       "clankeroverflow",
-      "--env",
-      "CLANKER_SERVER_URL=https://api.clankeroverflow.com",
       "--",
       "npx",
       "-y",
@@ -145,7 +180,14 @@ describe("smart setup", () => {
 
   test("validates supplied API keys through the API-key-aware endpoint", async () => {
     await setupAgents(
-      { agents: ["cursor"], apiKey: "clk_test", env: {}, home: tempDir, packageRoot },
+      {
+        agents: ["cursor"],
+        apiKey: "clk_test",
+        mode: "remote",
+        env: {},
+        home: tempDir,
+        packageRoot,
+      },
       { fetch: validFetch as typeof fetch, commandExists: noCommands },
     );
 
@@ -160,7 +202,14 @@ describe("smart setup", () => {
 
     await expect(
       setupAgents(
-        { agents: ["cursor"], apiKey: "clk_test", env: {}, home: tempDir, packageRoot },
+        {
+          agents: ["cursor"],
+          apiKey: "clk_test",
+          mode: "remote",
+          env: {},
+          home: tempDir,
+          packageRoot,
+        },
         { fetch: fetch as typeof globalThis.fetch, commandExists: noCommands },
       ),
     ).rejects.toThrow("The supplied API key is invalid.");
@@ -169,15 +218,20 @@ describe("smart setup", () => {
   test("registers Codex MCP through its CLI without printing or editing config files", async () => {
     const runCommand = vi.fn(async () => ({ stdout: "", stderr: "" }));
     await setupAgents(
-      { agents: ["codex"], noApiKey: true, env: {}, home: tempDir, packageRoot },
+      {
+        agents: ["codex"],
+        noApiKey: true,
+        mode: "remote",
+        env: {},
+        home: tempDir,
+        packageRoot,
+      },
       { runCommand, commandExists: noCommands },
     );
     expect(runCommand).toHaveBeenCalledWith("codex", [
       "mcp",
       "add",
       "clankeroverflow",
-      "--env",
-      "CLANKER_SERVER_URL=https://api.clankeroverflow.com",
       "--",
       "npx",
       "-y",
@@ -189,7 +243,7 @@ describe("smart setup", () => {
   test("requires an explicit credential choice in non-interactive mode", async () => {
     await expect(
       setupAgents(
-        { agents: ["cursor"], env: {}, home: tempDir, packageRoot },
+        { agents: ["cursor"], mode: "remote", env: {}, home: tempDir, packageRoot },
         { commandExists: noCommands, stdinIsTTY: false },
       ),
     ).rejects.toThrow("Non-interactive setup requires --api-key <key> or --no-api-key.");
@@ -259,7 +313,7 @@ describe("smart setup", () => {
     });
 
     await setupAgents(
-      { agents: ["cursor"], env: {}, home: tempDir, packageRoot },
+      { agents: ["cursor"], mode: "remote", env: {}, home: tempDir, packageRoot },
       {
         commandExists: noCommands,
         fetch: fetch as typeof globalThis.fetch,
@@ -282,7 +336,14 @@ describe("smart setup", () => {
     await mkdir(path.dirname(opencodePath), { recursive: true });
     await writeFile(opencodePath, "{ broken");
     const results = await setupAgents(
-      { agents: ["opencode"], noApiKey: true, env: {}, home: tempDir, packageRoot },
+      {
+        agents: ["opencode"],
+        noApiKey: true,
+        mode: "remote",
+        env: {},
+        home: tempDir,
+        packageRoot,
+      },
       { commandExists: noCommands },
     );
     expect(results).toContainEqual(

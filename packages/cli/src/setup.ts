@@ -11,6 +11,12 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@clankeroverflow/api/routers/index";
 import pc from "picocolors";
 import yoctoSpinner from "yocto-spinner";
+import {
+  resolveConfig,
+  toPersistedConfig,
+  writePersistedConfig,
+  type ClankerMode,
+} from "./mcp/config";
 import { defaultLocalModelPath } from "./mcp/local-semantic";
 
 const execFileAsync = promisify(execFile);
@@ -40,6 +46,7 @@ export type SetupOptions = {
   env?: Partial<NodeJS.ProcessEnv>;
   home?: string;
   local?: boolean;
+  mode?: ClankerMode;
   localDb?: string;
   localModelPath?: string;
   localSemantic?: boolean;
@@ -190,18 +197,8 @@ export async function detectAgents(
 }
 
 function createMcpEnv(ctx: Context) {
-  if (ctx.local) {
-    return {
-      CLANKER_MODE: "local",
-      ...(ctx.localDb ? { CLANKER_LOCAL_DB: ctx.localDb } : {}),
-      ...(ctx.localSemantic ? { CLANKER_LOCAL_SEMANTIC: "1" } : {}),
-      ...(ctx.localModelPath ? { CLANKER_LOCAL_MODEL_PATH: ctx.localModelPath } : {}),
-    };
-  }
-  return {
-    ...(ctx.apiKey ? { CLANKER_API_KEY: ctx.apiKey } : {}),
-    CLANKER_SERVER_URL: ctx.serverUrl,
-  };
+  if (ctx.local) return {};
+  return ctx.apiKey ? { CLANKER_API_KEY: ctx.apiKey } : {};
 }
 
 async function readJsonObject(filePath: string) {
@@ -577,6 +574,27 @@ function validateSkillSelection(skill: SkillSelection | undefined) {
   return skill;
 }
 
+async function resolveSetupMode(options: SetupOptions, deps: SetupDependencies) {
+  if (options.mode && !["local", "remote"].includes(options.mode)) {
+    throw new Error(`Invalid --mode: ${options.mode}. Use local or remote.`);
+  }
+  if (options.mode && options.local && options.mode !== "local") {
+    throw new Error("--local cannot be combined with --mode remote.");
+  }
+  if (options.mode) return options.mode;
+  if (options.local || options.localSemantic) return "local" as const;
+  if (options.uninstall) return "remote" as const;
+
+  const isInteractive = deps.stdinIsTTY ?? Boolean(process.stdin.isTTY);
+  if (!isInteractive) {
+    throw new Error("Non-interactive setup requires --mode local|remote (or --local).");
+  }
+  const useLocal = await (deps.promptConfirm ?? promptConfirm)(
+    "Use private local storage instead of the hosted service?",
+  );
+  return useLocal ? ("local" as const) : ("remote" as const);
+}
+
 export async function setupAgents(options: SetupOptions = {}, deps: SetupDependencies = {}) {
   const env = options.env ?? process.env;
   const home = options.home ?? env.HOME ?? homedir();
@@ -586,7 +604,20 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
   }
   const packageRoot =
     options.packageRoot ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const serverUrl = validateServerUrl(options.serverUrl ?? DEFAULT_SERVER_URL);
+  const mode = await resolveSetupMode(options, deps);
+  const configEnv = {
+    ...env,
+    ...(options.localDb ? { CLANKER_LOCAL_DB: options.localDb } : {}),
+    ...(options.localModelPath ? { CLANKER_LOCAL_MODEL_PATH: options.localModelPath } : {}),
+    ...(options.localSemantic !== undefined
+      ? { CLANKER_LOCAL_SEMANTIC: options.localSemantic ? "1" : "0" }
+      : {}),
+    ...(options.serverUrl ? { CLANKER_SERVER_URL: options.serverUrl } : {}),
+  } as NodeJS.ProcessEnv;
+  const resolvedConfig = options.uninstall ? undefined : resolveConfig(configEnv, { home });
+  const serverUrl = validateServerUrl(
+    options.serverUrl ?? resolvedConfig?.serverUrl ?? DEFAULT_SERVER_URL,
+  );
   const skill = validateSkillSelection(options.skill);
   const ctx: Context = {
     env,
@@ -595,20 +626,37 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
     serverUrl,
     apiKey: options.uninstall
       ? undefined
-      : await resolveApiKey({ ...options, serverUrl }, deps, home, env),
+      : await resolveApiKey({ ...options, local: mode === "local", serverUrl }, deps, home, env),
     dryRun: Boolean(options.dryRun),
-    local: Boolean(options.local),
-    localDb: options.localDb,
+    local: mode === "local",
+    localDb: options.localDb ?? resolvedConfig?.localDbPath,
     localModelPath:
       options.localModelPath ??
+      resolvedConfig?.localSemantic.modelPath ??
       (options.localSemantic ? defaultLocalModelPath(env as NodeJS.ProcessEnv) : undefined),
-    localSemantic: Boolean(options.localSemantic),
+    localSemantic: options.localSemantic ?? resolvedConfig?.localSemantic.enabled ?? true,
     runCommand: deps.runCommand ?? defaultRunCommand,
   };
   const results: SetupResult[] = [];
   const uninstall = Boolean(options.uninstall);
   const sharedSkillsDir = path.join(home, ".agents", "skills");
   const hasMcpSharedAgent = agents.some((agent) => ["codex", "opencode", "cursor"].includes(agent));
+
+  if (!uninstall && resolvedConfig) {
+    const persisted = toPersistedConfig(resolvedConfig, mode);
+    persisted.local.databasePath = ctx.localDb ?? persisted.local.databasePath;
+    persisted.local.semantic = ctx.localSemantic;
+    persisted.local.modelPath = ctx.localModelPath ?? persisted.local.modelPath;
+    persisted.remote.serverUrl = serverUrl;
+    const configPath = ctx.dryRun
+      ? resolvedConfig.configPath
+      : await writePersistedConfig(persisted, env as NodeJS.ProcessEnv, { home });
+    results.push({
+      agent: "configuration",
+      status: "configured",
+      detail: `${mode} mode at ${configPath}`,
+    });
+  }
 
   try {
     if (uninstall) {
