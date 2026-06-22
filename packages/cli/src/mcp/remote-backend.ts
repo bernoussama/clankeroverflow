@@ -19,7 +19,18 @@ export class RemoteBackend implements SolutionBackend {
   }
 
   async search(input: SearchSolutionsInput): Promise<SolutionResult[]> {
-    return this.trpc.solutions.search.query(input);
+    return this.trpc.solutions.search.query({
+      ...input,
+      ...(input.mode === "keyword" ? { keywordStrategy: input.keywordStrategy ?? "tiered" } : {}),
+    });
+  }
+
+  async searchExactKeyword(input: { query: string; limit: number }) {
+    return this.trpc.solutions.search.query({
+      ...input,
+      mode: "keyword",
+      keywordStrategy: "exact",
+    });
   }
 
   async vote(input: VoteSolutionInput): Promise<void> {

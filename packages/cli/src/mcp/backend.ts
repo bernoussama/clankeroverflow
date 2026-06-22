@@ -1,5 +1,6 @@
 export type ConcreteSearchMode = "keyword" | "semantic" | "hybrid";
 export type SearchMode = "auto" | ConcreteSearchMode;
+export type KeywordSearchStrategy = "exact" | "tiered";
 
 export type LogSolutionInput = {
   problem: string;
@@ -11,6 +12,7 @@ export type SearchSolutionsInput = {
   query: string;
   limit: number;
   mode: ConcreteSearchMode;
+  keywordStrategy?: KeywordSearchStrategy;
 };
 
 export type VoteSolutionInput = {
@@ -29,5 +31,6 @@ export type SolutionResult = {
 export type SolutionBackend = {
   log(input: LogSolutionInput): Promise<{ id: string; warning?: string }>;
   search(input: SearchSolutionsInput): Promise<SolutionResult[]>;
+  searchExactKeyword?(input: { query: string; limit: number }): Promise<SolutionResult[]>;
   vote(input: VoteSolutionInput): Promise<void>;
 };

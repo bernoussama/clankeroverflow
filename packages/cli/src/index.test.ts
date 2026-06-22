@@ -238,12 +238,17 @@ describe("CLI", () => {
 
     test("handles no solutions found with auto fallback guidance when unauthenticated", async () => {
       const program = createProgram();
-      fetchMock.mockImplementationOnce(
-        async () => new Response(JSON.stringify({ result: { data: [] } })),
-      );
+      fetchMock
+        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
+        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })));
       await program.parseAsync(["node", "test", "search", "none"]);
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("keyword returned 0"));
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("keyword exact returned 0"),
+      );
+      expect(consoleLogMock).toHaveBeenCalledWith(
+        expect.stringContaining("keyword tiered returned 0"),
+      );
       expect(consoleLogMock).toHaveBeenCalledWith(
         expect.stringContaining("CLANKER_API_KEY is required for hosted hybrid fallback"),
       );
@@ -287,9 +292,99 @@ describe("CLI", () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("Search attempts: keyword returned 0; hybrid returned 1."),
+        expect.stringContaining("Search attempts: keyword exact returned 0; hybrid returned 1."),
       );
       expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("ID: hybrid-1"));
+    });
+
+    test("rejects an empty search query", async () => {
+      const program = createProgram();
+      try {
+        await program.parseAsync(["node", "test", "search", "   "]);
+      } catch (e: any) {
+        expect(e.message).toBe("Process.exit(1)");
+      }
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        pc.red(pc.bold("✖ Error: ")) + pc.red("search query must not be empty"),
+      );
+    });
+
+    test("rejects --limit 0", async () => {
+      const program = createProgram();
+      try {
+        await program.parseAsync(["node", "test", "search", "test", "--limit", "0"]);
+      } catch (e: any) {
+        expect(e.message).toBe("Process.exit(1)");
+      }
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        expect.stringContaining("--limit must be between 1 and 20"),
+      );
+    });
+
+    test("rejects --limit above 20", async () => {
+      const program = createProgram();
+      try {
+        await program.parseAsync(["node", "test", "search", "test", "--limit", "21"]);
+      } catch (e: any) {
+        expect(e.message).toBe("Process.exit(1)");
+      }
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        expect.stringContaining("--limit must be between 1 and 20"),
+      );
+    });
+
+    test("rejects a non-integer --limit", async () => {
+      const program = createProgram();
+      try {
+        await program.parseAsync(["node", "test", "search", "test", "--limit", "2.5"]);
+      } catch (e: any) {
+        expect(e.message).toBe("Process.exit(1)");
+      }
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        expect.stringContaining("--limit must be an integer"),
+      );
+    });
+
+    test("passes a leading-dash query via the -- separator", async () => {
+      await withLocalCliEnv(async () => {
+        const logProgram = createProgram();
+        await logProgram.parseAsync([
+          "node",
+          "test",
+          "log",
+          "--problem",
+          "Negative version string mismatch",
+          "--solution",
+          "Parse the version as a SemVer range",
+          "--tags",
+          "versioning",
+        ]);
+        consoleLogMock.mockClear();
+
+        const searchProgram = createProgram();
+        await searchProgram.parseAsync([
+          "node",
+          "test",
+          "search",
+          "--",
+          "-version",
+          "--mode",
+          "keyword",
+        ]);
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(consoleLogMock).toHaveBeenCalledWith(
+          expect.stringContaining("Negative version string mismatch"),
+        );
+      });
+    });
+
+    test("hints at the -- separator for a bare leading-dash query", async () => {
+      const program = createProgram();
+      await expect(program.parseAsync(["node", "test", "search", "-1"])).rejects.toThrow();
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        expect.stringContaining("clanker search -- -1"),
+      );
     });
 
     test("strips terminal control characters from search results", async () => {

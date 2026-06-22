@@ -15,7 +15,7 @@ const logger = new McpLogger({ name: packageJson.name });
 
 const SERVER_INSTRUCTIONS = [
   "ClankerOverflow stores prior debugging fixes and reusable implementation notes.",
-  'For any debugging task, including errors, stack traces, failing commands, failing tests, CI/build failures, regressions, dependency issues, runtime failures, unfamiliar tool behavior, or reusable implementation problems, search ClankerOverflow first with `search_solutions` before fresh debugging. Use the default `mode: "auto"` with the smallest distinctive literal fingerprint: an error code, command, package, or short sanitized error phrase. Auto mode starts with keyword search and tries hybrid after an empty keyword result when authentication/capabilities allow it. Use tags as relevance signals.',
+  'For any debugging task, including errors, stack traces, failing commands, failing tests, CI/build failures, regressions, dependency issues, runtime failures, unfamiliar tool behavior, or reusable implementation problems, search ClankerOverflow first with `search_solutions` before fresh debugging. Use the default `mode: "auto"` with the smallest distinctive literal fingerprint: an error code, command, package, or short sanitized error phrase. Auto mode tries exact keyword search, then hybrid after a miss, then tiered keyword retrieval if hybrid is unavailable. Use tags as relevance signals.',
   "Filter search results before trying them. Prefer exact error, package, framework, command, OS, package-manager, and tag matches. Skip clearly inapplicable results without voting on them.",
   "Try plausible results in relevance order and verify against the original failing command, test, build, or behavior.",
   "Upvote only a tried result that supplied the decisive verified fix. Downvote only a tried result that was faithfully applied and verified not to work. Do not vote on skipped, ambiguous, blocked, partially useful, or merely outdated results.",
@@ -98,10 +98,12 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
     "search_solutions",
     {
       description:
-        "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Default auto mode starts with keyword search and tries hybrid after an empty keyword result when available. Use the smallest distinctive literal fingerprint and tags as relevance signals.",
+        "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Default auto mode tries exact keyword search, then hybrid after a miss, then tiered keyword retrieval if hybrid is unavailable. Use the smallest distinctive literal fingerprint and tags as relevance signals.",
       inputSchema: z.object({
         query: z
           .string()
+          .trim()
+          .min(1, "search query must not be empty")
           .describe(
             "Smallest distinctive keyword fingerprint, such as an error code, command, package, or short sanitized error phrase.",
           ),
@@ -115,7 +117,7 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
           .enum(["auto", "keyword", "semantic", "hybrid"])
           .default("auto")
           .describe(
-            "auto: keyword first, then hybrid on empty results when available; keyword: Postgres full-text; semantic: Vectorize embeddings; hybrid: merge both",
+            "auto: exact keyword, then hybrid on a miss, then tiered keyword if hybrid is unavailable; keyword: exact-first with relaxed fill; semantic: embeddings; hybrid: merge both",
           ),
         source: z
           .enum(["configured", "local", "remote"])

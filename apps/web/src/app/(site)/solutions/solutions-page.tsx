@@ -65,6 +65,7 @@ export default function SolutionsPage() {
           query: activeQuery,
           limit: PAGE_SIZE,
           mode: searchMode,
+          ...(searchMode === "keyword" ? { keywordStrategy: "tiered" as const } : {}),
         }),
       ),
     enabled: isSearching,

@@ -12,6 +12,10 @@ const serverWranglerSource = readFileSync(
   resolve(dirname(fileURLToPath(import.meta.url)), "../../../apps/server/wrangler.toml"),
   "utf8",
 );
+const retrievalBenchmarkSource = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), "../retrieval-benchmark.run.ts"),
+  "utf8",
+);
 
 describe("infra worker config", () => {
   it("loads local TypeScript helpers without static .ts imports", () => {
@@ -71,5 +75,12 @@ describe("infra worker config", () => {
     expect(alchemyRunSource).toContain("SOLUTION_VECTORS: solutionVectorIndex");
     expect(serverWranglerSource).not.toContain("[ai]");
     expect(serverWranglerSource).not.toContain("[[vectorize]]");
+  });
+
+  it("isolates disposable retrieval infrastructure from production resources", () => {
+    expect(retrievalBenchmarkSource).toContain('alchemy("clankeroverflow-retrieval-benchmark"');
+    expect(retrievalBenchmarkSource).toContain('VectorizeIndex("benchmark-vectors"');
+    expect(retrievalBenchmarkSource).not.toContain("adopt:");
+    expect(retrievalBenchmarkSource).not.toContain("domains:");
   });
 });

@@ -9,6 +9,9 @@ import type { WorkersAiBinding } from "./embeddings";
 import { embedTexts } from "./embeddings";
 import { solutionEmbeddingText } from "./solution-text";
 
+export type HostedHybridFusion = "semantic-first" | "rrf";
+export const HOSTED_HYBRID_FUSION: HostedHybridFusion = "semantic-first";
+
 /** Subset of Vectorize binding used for solution search. */
 export type SolutionVectorizeBinding = {
   query(
@@ -73,6 +76,7 @@ export async function searchSolutionsHybrid(params: {
   vectorize: SolutionVectorizeBinding;
   query: string;
   limit: number;
+  fusion?: HostedHybridFusion;
 }): Promise<SolutionRow[]> {
   const q = params.query.trim();
   if (!q) return [];
@@ -83,10 +87,38 @@ export async function searchSolutionsHybrid(params: {
       ai: params.ai,
       vectorize: params.vectorize,
       query: q,
-      limit: params.limit,
+      limit: Math.max(params.limit, 20),
     }),
-    searchSolutions(params.db, { query: q, limit: params.limit }),
+    searchSolutions(params.db, {
+      query: q,
+      limit: Math.max(params.limit, 20),
+      strategy: "tiered",
+    }),
   ]);
+
+  if ((params.fusion ?? HOSTED_HYBRID_FUSION) === "rrf") {
+    const k = 60;
+    const scores = new Map<string, { row: SolutionRow; score: number; bestRank: number }>();
+    for (const [rows, weight] of [
+      [keywordRows, 1.25],
+      [semanticOrdered, 1],
+    ] as const) {
+      rows.forEach((row, index) => {
+        const rank = index + 1;
+        const existing = scores.get(row.id);
+        if (existing) {
+          existing.score += weight / (k + rank);
+          existing.bestRank = Math.min(existing.bestRank, rank);
+        } else {
+          scores.set(row.id, { row, score: weight / (k + rank), bestRank: rank });
+        }
+      });
+    }
+    return [...scores.values()]
+      .sort((a, b) => b.score - a.score || b.row.score - a.row.score || a.bestRank - b.bestRank)
+      .slice(0, params.limit)
+      .map((entry) => entry.row);
+  }
 
   const byId = new Map<string, SolutionRow>();
   for (const r of keywordRows) byId.set(r.id, r);

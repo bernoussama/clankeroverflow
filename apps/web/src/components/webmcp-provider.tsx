@@ -35,7 +35,7 @@ declare global {
 const searchSolutionsTool: WebMCPTool = {
   name: "search_solutions",
   description:
-    "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Default auto mode starts with keyword search and tries hybrid after an empty keyword result when available. Use the smallest distinctive keyword fingerprint and tags as relevance signals.",
+    "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Default auto mode tries exact keyword search, then hybrid after a miss, then tiered keyword retrieval if hybrid is unavailable. Use the smallest distinctive keyword fingerprint and tags as relevance signals.",
   inputSchema: {
     type: "object",
     properties: {
@@ -49,7 +49,7 @@ const searchSolutionsTool: WebMCPTool = {
         enum: ["auto", "keyword", "semantic", "hybrid"],
         default: "auto",
         description:
-          "auto: keyword first, then hybrid on empty results when available; keyword, semantic, or hybrid for strict mode",
+          "auto: exact keyword, then hybrid on a miss, then tiered keyword if hybrid is unavailable; keyword uses exact-first relaxed-fill retrieval",
       },
     },
     required: ["query"],
@@ -63,22 +63,35 @@ const searchSolutionsTool: WebMCPTool = {
       : "auto";
 
     try {
-      const search = (searchMode: ConcreteSearchMode) =>
+      const search = (searchMode: ConcreteSearchMode, keywordStrategy?: "exact" | "tiered") =>
         trpcClient.solutions.search.query({
           query,
           limit: 10,
           mode: searchMode,
+          ...(keywordStrategy ? { keywordStrategy } : {}),
         });
 
       if (mode !== "auto") {
-        const results = await search(mode);
-        return { results, attempts: [{ mode, resultCount: results.length }] };
+        const results = await search(mode, mode === "keyword" ? "tiered" : undefined);
+        return {
+          results,
+          attempts: [
+            {
+              mode,
+              ...(mode === "keyword" ? { keywordStrategy: "tiered" as const } : {}),
+              resultCount: results.length,
+            },
+          ],
+        };
       }
 
-      const keywordResults = await search("keyword");
-      const attempts: Array<{ mode: ConcreteSearchMode; resultCount?: number; error?: string }> = [
-        { mode: "keyword", resultCount: keywordResults.length },
-      ];
+      const keywordResults = await search("keyword", "exact");
+      const attempts: Array<{
+        mode: ConcreteSearchMode;
+        keywordStrategy?: "exact" | "tiered";
+        resultCount?: number;
+        error?: string;
+      }> = [{ mode: "keyword", keywordStrategy: "exact", resultCount: keywordResults.length }];
       if (keywordResults.length > 0) {
         return { results: keywordResults, attempts };
       }
@@ -92,8 +105,14 @@ const searchSolutionsTool: WebMCPTool = {
           mode: "hybrid",
           error: error instanceof Error ? error.message : "Unknown error",
         });
+        const relaxedResults = await search("keyword", "tiered");
+        attempts.push({
+          mode: "keyword",
+          keywordStrategy: "tiered",
+          resultCount: relaxedResults.length,
+        });
         return {
-          results: keywordResults,
+          results: relaxedResults,
           attempts,
           message:
             "Keyword search returned no results and hybrid fallback was unavailable. Try one smaller or sharper keyword query before debugging from scratch.",
