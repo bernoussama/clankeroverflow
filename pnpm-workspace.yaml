@@ -20,11 +20,11 @@ catalog:
   zod: ^4.4.3
   typescript: ^6.0.3
   "@cloudflare/workers-types": ^4.20260530.1
-  hono: ^4.8.2
+  hono: ^4.12.25
   "@trpc/server": ^11.17.0
   better-auth: ^1.6.12
   alchemy: ^0.93.9
   wrangler: ^4.95.0
   "@trpc/client": ^11.17.0
   pg: ^8.21.0
-  vitest: ^4.1.7
+  vitest: ^4.1.0
