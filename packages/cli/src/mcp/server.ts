@@ -9,7 +9,11 @@ import type { SolutionBackend } from "./backend.js";
 import { modeForSource, resolveConfig, type ServerConfig } from "./config.js";
 import { createSolutionBackend } from "./create-backend.js";
 import { formatSearchResults } from "./format.js";
-import { LocalBackend, LocalSemanticSearchNotConfiguredError } from "./local-backend.js";
+import {
+  FtsQuerySyntaxError,
+  LocalBackend,
+  LocalSemanticSearchNotConfiguredError,
+} from "./local-backend.js";
 
 const logger = new McpLogger({ name: packageJson.name });
 
@@ -154,6 +158,14 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
         if (error instanceof LocalSemanticSearchNotConfiguredError) {
           logger.error("Local semantic search not configured", {
             error: error.message,
+          });
+          return { content: [{ type: "text" as const, text: error.message }] };
+        }
+        if (error instanceof FtsQuerySyntaxError) {
+          logger.warn("Invalid FTS5 search syntax", {
+            error: error.message,
+            query,
+            mode,
           });
           return { content: [{ type: "text" as const, text: error.message }] };
         }

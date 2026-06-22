@@ -374,6 +374,70 @@ describe("CLI local MCP backend", () => {
       "search query must not be empty",
     );
   });
+
+  test("exact keyword search honors the AND operator", async () => {
+    const backend = new LocalBackend(dbPath);
+    const { id } = await backend.log({
+      problem: "OAuth callback timeout",
+      solution: "Keep waitUntil tasks alive",
+      tags: "auth",
+    });
+    await backend.log({
+      problem: "OAuth misconfiguration only",
+      solution: "Check redirect URIs.",
+      tags: "auth",
+    });
+
+    const results = await backend.search({
+      query: "OAuth AND timeout",
+      limit: 5,
+      mode: "keyword",
+      keywordStrategy: "exact",
+    });
+    expect(results).toHaveLength(1);
+    expect(results[0]!.id).toBe(id);
+  });
+
+  test("exact keyword search honors column filters", async () => {
+    const backend = new LocalBackend(dbPath);
+    await backend.log({
+      problem: "OAuth callback timeout",
+      solution: "Keep waitUntil tasks alive",
+      tags: "auth",
+    });
+    await backend.log({
+      problem: "Startup race condition",
+      solution: "Await initialization.",
+      tags: "init",
+    });
+
+    const results = await backend.search({
+      query: "tags:auth",
+      limit: 5,
+      mode: "keyword",
+      keywordStrategy: "exact",
+    });
+    expect(results).toHaveLength(1);
+    expect(results[0]!.problem).toBe("OAuth callback timeout");
+  });
+
+  test("exact keyword search rejects a malformed advanced query", async () => {
+    const backend = new LocalBackend(dbPath);
+    await backend.log({
+      problem: "Database crash",
+      solution: "Restart the service.",
+      tags: "db",
+    });
+
+    await expect(
+      backend.search({
+        query: "database AND",
+        limit: 5,
+        mode: "keyword",
+        keywordStrategy: "exact",
+      }),
+    ).rejects.toThrow(FtsQuerySyntaxError);
+  });
 });
 
 describe("ftsQuery", () => {
@@ -396,8 +460,9 @@ describe("ftsQuery", () => {
     expect(ftsQuery("   ")).toBe("");
   });
 
-  test("simple mode rejects bare leading-dash negation", () => {
-    expect(() => ftsQuery("-foo")).toThrow(FtsQuerySyntaxError);
+  test("simple mode treats a leading dash as punctuation, not negation", () => {
+    expect(ftsQuery("-foo")).toBe('"foo"');
+    expect(ftsQuery("sqlite -wal")).toBe('"sqlite" "wal"');
   });
 
   test("advanced mode preserves the AND operator", () => {
@@ -414,6 +479,22 @@ describe("ftsQuery", () => {
 
   test("advanced mode renders column filters against known columns", () => {
     expect(ftsQuery("tags:react hooks")).toBe('tags : "react" AND "hooks"');
+  });
+
+  test("advanced mode preserves balanced parentheses as a group", () => {
+    expect(ftsQuery("(database OR crash) AND startup")).toBe(
+      '( "database" OR "crash" ) AND "startup"',
+    );
+  });
+
+  test("advanced mode normalizes NEAR(...) comma form to space-separated FTS5", () => {
+    expect(ftsQuery("NEAR(token, nft, 5)")).toBe("NEAR(token nft, 5)");
+    expect(ftsQuery("NEAR(oauth timeout)")).toBe("NEAR(oauth timeout)");
+    expect(ftsQuery("NEAR(token, nft)")).toBe("NEAR(token nft)");
+  });
+
+  test("advanced mode rejects an unterminated NEAR(...) expression", () => {
+    expect(() => ftsQuery("NEAR(token nft")).toThrow(FtsQuerySyntaxError);
   });
 
   test("advanced mode rejects unknown column filters", () => {
