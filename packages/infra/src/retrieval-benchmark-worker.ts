@@ -42,6 +42,9 @@ export default {
         if (!Array.isArray(documents) || documents.length === 0) {
           return json({ error: "documents are required" }, 400);
         }
+        if (documents.some((document) => !document?.id || !document?.text)) {
+          return json({ error: "each document must include id and text" }, 400);
+        }
         for (let start = 0; start < documents.length; start += BATCH_SIZE) {
           const batch = documents.slice(start, start + BATCH_SIZE);
           const vectors = await embed(
@@ -65,6 +68,9 @@ export default {
         if (!Array.isArray(queries) || queries.length === 0) {
           return json({ error: "queries are required" }, 400);
         }
+        if (queries.some((query) => !query?.id || !query?.text)) {
+          return json({ error: "each query must include id and text" }, 400);
+        }
         const rankings: Array<{ queryId: string; ids: string[] }> = [];
         for (let start = 0; start < queries.length; start += BATCH_SIZE) {
           const batch = queries.slice(start, start + BATCH_SIZE);
@@ -72,6 +78,9 @@ export default {
             env,
             batch.map((query) => query.text),
           );
+          if (vectors.length !== batch.length || vectors.some((vector) => vector.length !== 768)) {
+            throw new Error("Unexpected embedding dimensions");
+          }
           for (let index = 0; index < batch.length; index += 1) {
             const result = await env.SOLUTION_VECTORS.query(vectors[index]!, {
               topK: Math.min(50, Math.max(1, topK)),

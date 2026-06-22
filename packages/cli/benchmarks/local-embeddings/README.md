@@ -25,7 +25,7 @@ The runner supports `--models`, `--backend cpu|auto`, `--quality-only`, `--perfo
 ignored `.cache` directory by default. Set `CLANKER_BENCHMARK_MODEL_CACHE` to override it.
 
 Every model URL contains an immutable repository revision, and every download is checked against
-the SHA-256 and byte size recorded in `models.ts`. Results are written as raw JSON and a Markdown
+the SHA-256 recorded in `models.ts` (with expected artifact sizes tracked there for reporting). Results are written as raw JSON and a Markdown
 report. The default `results` directory is ignored because measurements are host-specific.
 
 The quality report includes separate exact and tiered keyword baselines. Exact requires all query

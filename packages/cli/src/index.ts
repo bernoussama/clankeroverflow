@@ -588,7 +588,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
           ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
         const limit =
-          options.limit === undefined ? undefined : Number.parseInt(String(options.limit), 10);
+          options.limit === undefined ? undefined : Number(String(options.limit));
         if (options.limit !== undefined) {
           if (limit === undefined || !Number.isInteger(limit) || limit < SEARCH_LIMIT_MIN) {
             console.error(

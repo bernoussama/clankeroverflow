@@ -367,7 +367,7 @@ describe("CLI", () => {
           "test",
           "search",
           "--",
-          "version",
+          "-version",
           "--mode",
           "keyword",
         ]);

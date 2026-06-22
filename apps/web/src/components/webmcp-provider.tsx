@@ -73,7 +73,16 @@ const searchSolutionsTool: WebMCPTool = {
 
       if (mode !== "auto") {
         const results = await search(mode, mode === "keyword" ? "tiered" : undefined);
-        return { results, attempts: [{ mode, resultCount: results.length }] };
+        return {
+          results,
+          attempts: [
+            {
+              mode,
+              ...(mode === "keyword" ? { keywordStrategy: "tiered" as const } : {}),
+              resultCount: results.length,
+            },
+          ],
+        };
       }
 
       const keywordResults = await search("keyword", "exact");

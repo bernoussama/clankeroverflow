@@ -14,8 +14,9 @@ import { evaluateRetrievalGate } from "../../cli/benchmarks/local-embeddings/qua
 import * as schema from "../src/schema";
 import { searchSolutions } from "../src/search";
 
-const infraDirectory = fileURLToPath(new URL("../../infra", import.meta.url));
-const migrationsFolder = fileURLToPath(new URL("../src/migrations", import.meta.url));
+const here = dirname(fileURLToPath(import.meta.url));
+const infraDirectory = resolve(here, "../../infra");
+const migrationsFolder = resolve(here, "../src/migrations");
 const entrypoint = "retrieval-benchmark.run.ts";
 const stage = `retrieval-${Date.now()}-${randomBytes(3).toString("hex")}`;
 const token = randomBytes(32).toString("hex");
@@ -52,15 +53,22 @@ function runAlchemy(command: "deploy" | "destroy") {
 }
 
 async function post<T>(url: string, path: string, body: unknown): Promise<T> {
-  const response = await fetch(new URL(path, url), {
-    method: "POST",
-    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const payload = await response.json();
-  if (!response.ok)
-    throw new Error(`${path} failed (${response.status}): ${JSON.stringify(payload)}`);
-  return payload as T;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60_000);
+  try {
+    const response = await fetch(new URL(path, url), {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const payload = await response.json();
+    if (!response.ok)
+      throw new Error(`${path} failed (${response.status}): ${JSON.stringify(payload)}`);
+    return payload as T;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 const sleep = (milliseconds: number) =>

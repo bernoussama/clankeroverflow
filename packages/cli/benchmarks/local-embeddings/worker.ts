@@ -105,22 +105,24 @@ async function loadEmbedder(input: WorkerInput) {
 
 async function runCold(input: WorkerInput): Promise<ColdWorkerResult> {
   const loaded = await loadEmbedder(input);
-  const query = formatQuery(input.model, "native", benchmarkCorpus.queries[0]!.text);
-  const started = performance.now();
-  await loaded.embed(query);
-  const firstQueryMs = performance.now() - started;
-  const result: ColdWorkerResult = {
-    model: input.model,
-    backend: input.backend,
-    resolvedBackend: String(loaded.llama.gpu),
-    loadMs: loaded.loadMs,
-    firstQueryMs,
-    peakRssBytes: peakRssBytes(),
-  };
-  await loaded.context.dispose();
-  await loaded.model.dispose();
-  await loaded.llama.dispose();
-  return result;
+  try {
+    const query = formatQuery(input.model, "native", benchmarkCorpus.queries[0]!.text);
+    const started = performance.now();
+    await loaded.embed(query);
+    const firstQueryMs = performance.now() - started;
+    return {
+      model: input.model,
+      backend: input.backend,
+      resolvedBackend: String(loaded.llama.gpu),
+      loadMs: loaded.loadMs,
+      firstQueryMs,
+      peakRssBytes: peakRssBytes(),
+    };
+  } finally {
+    await loaded.context.dispose();
+    await loaded.model.dispose();
+    await loaded.llama.dispose();
+  }
 }
 
 async function createIndexedDb(
@@ -152,72 +154,76 @@ async function createIndexedDb(
 
 async function runFull(input: WorkerInput): Promise<FullWorkerResult> {
   const loaded = await loadEmbedder(input);
-  const indexRuns: FullWorkerResult["indexRuns"] = [];
   let retained: Awaited<ReturnType<typeof createIndexedDb>> | undefined;
-  for (let repetition = 0; repetition < input.repetitions; repetition += 1) {
-    const indexed = await createIndexedDb(input, loaded);
-    indexRuns.push({
-      elapsedMs: indexed.elapsedMs,
-      tokens: indexed.tokens,
-      documents: benchmarkCorpus.documents.length,
-    });
-    if (repetition === input.repetitions - 1) retained = indexed;
-    else {
-      indexed.db.close();
-      rmSync(indexed.directory, { recursive: true, force: true });
-    }
-  }
-  if (!retained) throw new Error("Benchmark did not create an index");
-
-  const queryLatenciesMs: number[] = [];
-  let rankings: Ranking[] | undefined;
-  for (let repetition = 0; repetition < input.repetitions; repetition += 1) {
-    const orderedQueries = shuffled(benchmarkCorpus.queries, 20_260_621 + repetition);
-    const currentRankings: Ranking[] = [];
-    for (const query of orderedQueries) {
-      const started = performance.now();
-      const embedding = await loaded.embed(formatQuery(input.model, input.profile, query.text));
-      const semantic = searchLocalSemantic(retained.db, embedding, 20);
-      queryLatenciesMs.push(performance.now() - started);
-      if (input.includeRankings && repetition === 0) {
-        const keyword = searchLocalKeywordRelaxed(retained.db, query.text, 20);
-        const hybrid = reciprocalRankFusion(
-          [
-            { weight: 1.25, results: keyword },
-            { weight: 1, results: semantic },
-          ],
-          10,
-        );
-        currentRankings.push({
-          queryId: query.id,
-          semantic: semantic.slice(0, 10).map((result) => result.id),
-          hybrid: hybrid.map((result) => result.id),
-        });
+  try {
+    const indexRuns: FullWorkerResult["indexRuns"] = [];
+    for (let repetition = 0; repetition < input.repetitions; repetition += 1) {
+      const indexed = await createIndexedDb(input, loaded);
+      indexRuns.push({
+        elapsedMs: indexed.elapsedMs,
+        tokens: indexed.tokens,
+        documents: benchmarkCorpus.documents.length,
+      });
+      if (repetition === input.repetitions - 1) retained = indexed;
+      else {
+        indexed.db.close();
+        rmSync(indexed.directory, { recursive: true, force: true });
       }
     }
-    if (input.includeRankings && repetition === 0) rankings = currentRankings;
-  }
+    if (!retained) throw new Error("Benchmark did not create an index");
 
-  const result: FullWorkerResult = {
-    model: input.model,
-    profile: input.profile,
-    backend: input.backend,
-    resolvedBackend: String(loaded.llama.gpu),
-    dimensions: BENCHMARK_MODELS[input.model].dimensions,
-    contextSize: loaded.model.trainContextSize,
-    gpuLayers: loaded.model.gpuLayers,
-    loadMs: loaded.loadMs,
-    indexRuns,
-    queryLatenciesMs,
-    rankings,
-    peakRssBytes: peakRssBytes(),
-  };
-  retained.db.close();
-  rmSync(retained.directory, { recursive: true, force: true });
-  await loaded.context.dispose();
-  await loaded.model.dispose();
-  await loaded.llama.dispose();
-  return result;
+    const queryLatenciesMs: number[] = [];
+    let rankings: Ranking[] | undefined;
+    for (let repetition = 0; repetition < input.repetitions; repetition += 1) {
+      const orderedQueries = shuffled(benchmarkCorpus.queries, 20_260_621 + repetition);
+      const currentRankings: Ranking[] = [];
+      for (const query of orderedQueries) {
+        const started = performance.now();
+        const embedding = await loaded.embed(formatQuery(input.model, input.profile, query.text));
+        const semantic = searchLocalSemantic(retained.db, embedding, 20);
+        queryLatenciesMs.push(performance.now() - started);
+        if (input.includeRankings && repetition === 0) {
+          const keyword = searchLocalKeywordRelaxed(retained.db, query.text, 20);
+          const hybrid = reciprocalRankFusion(
+            [
+              { weight: 1.25, results: keyword },
+              { weight: 1, results: semantic },
+            ],
+            10,
+          );
+          currentRankings.push({
+            queryId: query.id,
+            semantic: semantic.slice(0, 10).map((result) => result.id),
+            hybrid: hybrid.map((result) => result.id),
+          });
+        }
+      }
+      if (input.includeRankings && repetition === 0) rankings = currentRankings;
+    }
+
+    return {
+      model: input.model,
+      profile: input.profile,
+      backend: input.backend,
+      resolvedBackend: String(loaded.llama.gpu),
+      dimensions: BENCHMARK_MODELS[input.model].dimensions,
+      contextSize: loaded.model.trainContextSize,
+      gpuLayers: loaded.model.gpuLayers,
+      loadMs: loaded.loadMs,
+      indexRuns,
+      queryLatenciesMs,
+      rankings,
+      peakRssBytes: peakRssBytes(),
+    };
+  } finally {
+    if (retained) {
+      retained.db.close();
+      rmSync(retained.directory, { recursive: true, force: true });
+    }
+    await loaded.context.dispose();
+    await loaded.model.dispose();
+    await loaded.llama.dispose();
+  }
 }
 
 const input = JSON.parse(

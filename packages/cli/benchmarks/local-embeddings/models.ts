@@ -75,11 +75,20 @@ export async function ensureModel(model: BenchmarkModel, cacheDir: string) {
   mkdirSync(dirname(modelPath), { recursive: true });
   const temporaryPath = `${modelPath}.tmp-${process.pid}`;
   rmSync(temporaryPath, { force: true });
-  const response = await fetch(model.url);
-  if (!response.ok || !response.body) {
-    throw new Error(`Unable to download ${model.label} (${response.status})`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5 * 60_000);
+  try {
+    const response = await fetch(model.url, { signal: controller.signal });
+    if (!response.ok || !response.body) {
+      throw new Error(`Unable to download ${model.label} (${response.status})`);
+    }
+    await pipeline(Readable.fromWeb(response.body as any), createWriteStream(temporaryPath));
+  } catch (error) {
+    rmSync(temporaryPath, { force: true });
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-  await pipeline(Readable.fromWeb(response.body as any), createWriteStream(temporaryPath));
   const actualHash = await fileSha256(temporaryPath);
   if (actualHash !== model.sha256) {
     rmSync(temporaryPath, { force: true });

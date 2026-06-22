@@ -60,6 +60,9 @@ export function summarizeMetrics(
   seed = 20_260_621,
 ): MetricSummary {
   if (queries.length === 0) throw new Error("Cannot summarize an empty query set");
+  if (!Number.isInteger(bootstrapSamples) || bootstrapSamples < 1) {
+    throw new Error("bootstrapSamples must be an integer >= 1");
+  }
   const rows = queries.map((query) => queryMetrics(query, rankings.get(query.id) ?? []));
   const random = mulberry32(seed);
   const names: MetricName[] = ["ndcg10", "mrr10", "recall1", "recall3", "recall10"];

@@ -15,6 +15,7 @@
     "db:migrate": "tsx src/migrate.ts",
     "db:migrate:search-indexes": "tsx src/create-search-indexes.ts",
     "benchmark:hosted-retrieval": "tsx benchmarks/hosted-retrieval.ts",
+    "check-types": "tsc --noEmit -p tsconfig.benchmarks.json",
     "test": "vitest run src/package.test.ts src/runtime.test.ts",
     "test:integration": "vitest run src/index.test.ts src/search.test.ts"
   },
