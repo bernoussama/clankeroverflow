@@ -37,29 +37,6 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-export function localFtsQuery(query: string) {
-  const normalized = query
-    .replace(/https?:\/\/\S+/gi, (match) => match.replace(/[/:.?=&%#-]+/g, " "))
-    .trim();
-  const phrases = [...normalized.matchAll(/"([^"]+)"/g)].map((match) => match[1]?.trim() ?? "");
-  const withoutPhrases = normalized.replace(/"[^"]+"/g, " ");
-  const terms = withoutPhrases.match(/[\p{L}\p{N}_][\p{L}\p{N}_./:-]*/gu) ?? [];
-  const phraseClauses = phrases
-    .map((phrase) => phrase.replace(/[^\p{L}\p{N}_-]+/gu, " ").trim())
-    .filter(Boolean)
-    .map((phrase) => `"${phrase.replaceAll('"', '""')}"`);
-  const termClauses = terms
-    .flatMap((term) =>
-      term
-        .replace(/[^\p{L}\p{N}_-]+/gu, " ")
-        .trim()
-        .split(/\s+/),
-    )
-    .filter(Boolean)
-    .map((term) => `"${term.replaceAll('"', '""')}"`);
-  return [...new Set([...phraseClauses, ...termClauses])].join(" ");
-}
-
 export class FtsQuerySyntaxError extends Error {}
 
 /** FTS5 column names backed by the solution_fts(problem, solution, tags) table. */
@@ -70,7 +47,7 @@ const FTS_BOOLEAN_OPERATORS = new Set(["AND", "OR", "NOT"]);
 function ftsSyntaxError(message: string): never {
   throw new FtsQuerySyntaxError(
     `${message} Valid FTS5 syntax: quoted "phrases", prefix term*, ` +
-      `column:term, term AND/OR/NOT term, (group), NEAR(term, term, N). ` +
+      `column:term, term AND/OR/NOT term, (group), NEAR(term term [, N]). ` +
       `To search for these words literally, wrap the whole query in double quotes.`,
   );
 }
@@ -111,7 +88,8 @@ function tokenizeFtsQuery(query: string): FtsToken[] {
     }
   };
 
-  for (const char of query) {
+  for (let i = 0; i < query.length; i += 1) {
+    const char = query[i]!;
     if (inQuotes) {
       current += char;
       if (char === '"') inQuotes = false;
@@ -120,6 +98,17 @@ function tokenizeFtsQuery(query: string): FtsToken[] {
     if (char === '"') {
       current += char;
       inQuotes = true;
+      continue;
+    }
+    // Capture a whole NEAR(...) expression as one token so the comma-separated
+    // form (e.g. NEAR(token, nft, 5)) survives as a unit and can be normalized
+    // to FTS5's space-separated form. Parens inside quotes are already handled
+    // above by the inQuotes branch.
+    if (char === "(" && /^NEAR$/i.test(current.trim())) {
+      const near = captureNear(query, i);
+      current = "";
+      tokens.push({ type: "word", value: near.value });
+      i = near.endIndex;
       continue;
     }
     if (char === "(" || char === ")") {
@@ -136,6 +125,51 @@ function tokenizeFtsQuery(query: string): FtsToken[] {
   if (inQuotes) ftsSyntaxError("unterminated double-quoted phrase.");
   flushWord();
   return tokens;
+}
+
+/**
+ * Normalize a `NEAR(...)` expression to FTS5's space-separated form. FTS5 wants
+ * `NEAR(term1 term2 [, N])` where terms are space-separated and the optional
+ * integer distance follows a comma. The forgiving comma-separated form
+ * `NEAR(a, b, 5)` is translated by replacing term-separating commas with spaces
+ * while preserving a trailing `, N` distance argument.
+ */
+function normalizeNear(raw: string): string {
+  const match = raw.match(/^NEAR\s*\((.*)\)$/is);
+  if (!match) ftsSyntaxError("malformed NEAR(...) expression.");
+  const inner = match[1]!.trim();
+  if (!inner) ftsSyntaxError("NEAR(...) needs at least one term.");
+  // Split on commas, drop empties, so "a, b, 5" -> ["a","b","5"] and "a b, 5" -> ["a b","5"].
+  const parts = inner
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  // A trailing bare integer is the NEAR distance; keep it after a comma.
+  const last = parts[parts.length - 1];
+  const distance = parts.length >= 2 && /^\d+$/.test(last!) ? `, ${last}` : "";
+  const terms = (distance ? parts.slice(0, -1) : parts).join(" ").trim();
+  if (!terms) ftsSyntaxError("NEAR(...) needs at least one term.");
+  return `NEAR(${terms}${distance})`;
+}
+
+/**
+ * Capture a `NEAR(...)` expression starting at the `(` located at `parenIndex`,
+ * returning the raw text (including `NEAR(` ... `)`) and the index of the final
+ * `)`. Terms inside are left as-is; the caller normalizes commas to spaces.
+ */
+function captureNear(query: string, parenIndex: number): { value: string; endIndex: number } {
+  let depth = 0;
+  let j = parenIndex;
+  for (; j < query.length; j += 1) {
+    const char = query[j]!;
+    if (char === "(") depth += 1;
+    else if (char === ")") {
+      depth -= 1;
+      if (depth === 0) break;
+    }
+  }
+  if (depth !== 0) ftsSyntaxError('unmatched "(" in NEAR(...) expression.');
+  return { value: query.slice(parenIndex - 4, j + 1), endIndex: j };
 }
 
 /** Convert a quoted `"..."` token (with surrounding quotes) into a phrase token. */
@@ -250,7 +284,7 @@ function buildAdvancedQuery(tokens: FtsToken[]) {
         if (!expectTerm) parts.push("AND"); // implicit AND between adjacent terms
         parts.push(
           token.type === "word" && /^NEAR\s*\(/i.test(token.value)
-            ? token.value
+            ? normalizeNear(token.value)
             : renderAdvancedTerm(token),
         );
         expectTerm = false;
@@ -282,15 +316,14 @@ function buildSimpleQuery(query: string) {
         `Drop them or use explicit AND/OR/NOT operators.`,
     );
   }
-  const terms = withoutPhrases.match(/-?[\p{L}\p{N}_][\p{L}\p{N}_./:-]*/gu) ?? [];
+  const terms = withoutPhrases.match(/[\p{L}\p{N}_][\p{L}\p{N}_./:-]*/gu) ?? [];
   const rendered = [...phrases, ...terms]
     .map((term) => {
-      if (term.startsWith("-")) {
-        ftsSyntaxError(
-          `bare negation "-${term.slice(1)}" needs a positive term first; use FTS5 NOT instead.`,
-        );
-      }
-      const clean = term.replace(/[^\p{L}\p{N}_-]+/gu, " ").trim();
+      // Treat a leading hyphen (e.g. "sqlite -wal") as punctuation, not FTS5
+      // NOT: strip it so the term still matches. Bare negation must be spelled
+      // out explicitly with the FTS5 NOT operator in advanced mode.
+      const stripped = term.replace(/^-+/, "");
+      const clean = stripped.replace(/[^\p{L}\p{N}_-]+/gu, " ").trim();
       return clean ? quoteFtsTerm(clean) : "";
     })
     .filter(Boolean);
@@ -387,7 +420,7 @@ function searchLocalKeywordExpression(db: LocalDb, query: string, limit: number)
 }
 
 export function searchLocalKeywordExact(db: LocalDb, queryText: string, limit: number) {
-  return searchLocalKeywordExpression(db, localFtsQuery(queryText.trim()), limit);
+  return searchLocalKeywordExpression(db, ftsQuery(queryText.trim()), limit);
 }
 
 export function searchLocalKeywordRelaxed(db: LocalDb, queryText: string, limit: number) {

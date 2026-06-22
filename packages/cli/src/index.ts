@@ -18,7 +18,7 @@ import {
 import { createSolutionBackend } from "./mcp/create-backend.js";
 import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
-import { LocalBackend } from "./mcp/local-backend.js";
+import { FtsQuerySyntaxError, LocalBackend } from "./mcp/local-backend.js";
 import { downloadDefaultLocalModel } from "./mcp/local-semantic.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
 import pc from "picocolors";
@@ -322,7 +322,11 @@ export function createProgram(options: CreateProgramOptions = {}) {
           source: backendMode,
         });
       } catch (error: any) {
-        console.error(pc.red(pc.bold("✖ Error searching solutions:")));
+        if (error instanceof FtsQuerySyntaxError) {
+          console.error(pc.red(pc.bold("✖ Invalid search syntax:")));
+        } else {
+          console.error(pc.red(pc.bold("✖ Error searching solutions:")));
+        }
         console.error(pc.red(error.message || error));
         process.exit(1);
       }
@@ -567,7 +571,11 @@ export function createProgram(options: CreateProgramOptions = {}) {
           source: "local",
         });
       } catch (error: any) {
-        console.error(pc.red(pc.bold("✖ Error searching local solutions:")));
+        if (error instanceof FtsQuerySyntaxError) {
+          console.error(pc.red(pc.bold("✖ Invalid search syntax:")));
+        } else {
+          console.error(pc.red(pc.bold("✖ Error searching local solutions:")));
+        }
         console.error(pc.red(error.message || error));
         process.exit(1);
       }
