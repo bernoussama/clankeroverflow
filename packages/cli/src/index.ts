@@ -745,6 +745,9 @@ export function createProgram(options: CreateProgramOptions = {}) {
             );
           }
           console.log();
+          if (results.some((result) => result.status === "failed")) {
+            process.exit(1);
+          }
           return;
         }
 

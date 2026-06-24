@@ -227,14 +227,16 @@ async function writeJsonObject(
  * Only marks objects that contain a `command` field (the actual hook entries),
  * not the event-grouping objects or the top-level `hooks` wrapper.
  */
-function markOwn(hooksConfig: Record<string, unknown>): Record<string, unknown> {
+export function markOwn(hooksConfig: Record<string, unknown>): Record<string, unknown> {
   const marked = JSON.parse(JSON.stringify(hooksConfig));
   function walk(obj: any) {
     if (Array.isArray(obj)) {
       for (const item of obj) walk(item);
     } else if (obj && typeof obj === "object") {
-      // Only mark leaf-level hook command objects.
-      if ("command" in obj && "type" in obj) {
+      // Only mark leaf-level hook command objects. Gate on `command` (not
+      // `type`): Cursor hooks use {command, matcher} without a `type` field,
+      // while Claude/Codex/ZCode use {type: "command", command}.
+      if ("command" in obj) {
         obj._clankeroverflow = true;
       }
       for (const v of Object.values(obj)) walk(v);
@@ -253,7 +255,7 @@ function markOwn(hooksConfig: Record<string, unknown>): Record<string, unknown> 
  * if all their hook commands were ours. The marker field is stripped from
  * any object that survives.
  */
-function removeOwn(hooksObj: any): any {
+export function removeOwn(hooksObj: any): any {
   // Leaf-level hook command marked as ours → remove it.
   if (
     hooksObj &&
@@ -306,7 +308,7 @@ function mergeClaudeHooks(
  * Merge our hooks into a Cursor hooks.json.
  * Cursor format: { version: 1, hooks: { postToolUse: [...], beforeSubmitPrompt: [...] } }
  */
-function mergeCursorHooks(
+export function mergeCursorHooks(
   existing: Record<string, any>,
   own: Record<string, any>,
 ): Record<string, any> {

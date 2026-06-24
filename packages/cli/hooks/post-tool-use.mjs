@@ -46,10 +46,18 @@ const ERROR_CODE_PATTERNS = [
   /\b(ORA-\d{5})\b/g, // Oracle
 ];
 
+// Regex patterns that signal a stack trace / failure. Unlike substring
+// matches, these are anchored to structure (e.g. a JS stack frame is
+// `\n    at <name> (<loc>)`) to avoid matching ordinary prose like
+// "look at this" or "at runtime".
+const FAILURE_PATTERNS = [
+  /\n\s*at\s+\S+/, // JS/Node stack frame: "\n    at foo (file:1:2)"
+  /Traceback \(most recent call last\)/, // Python
+];
+
 // Stack trace / failure indicator patterns (case-insensitive substring search).
 const FAILURE_INDICATORS = [
   "stack trace",
-  "at ",
   "traceback (most recent call last)", // Python
   "error: ", // generic
   "error:", // generic
@@ -161,6 +169,13 @@ function detectFailure(text) {
   const exitMatch = text.match(/(?:exit[_ ]?code|exitCode|status|code)\s*[:=]\s*(\d+)/i);
   if (exitMatch && parseInt(exitMatch[1], 10) !== 0) {
     return { failed: true, fingerprint: extractFingerprint(text) };
+  }
+
+  // Check for structured stack-trace patterns (anchored to layout, not prose).
+  for (const pattern of FAILURE_PATTERNS) {
+    if (pattern.test(text)) {
+      return { failed: true, fingerprint: extractFingerprint(text) };
+    }
   }
 
   // Check for failure indicator substrings.
