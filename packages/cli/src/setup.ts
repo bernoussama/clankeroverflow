@@ -18,6 +18,7 @@ import {
   type ClankerMode,
 } from "./mcp/config";
 import { defaultLocalModelPath } from "./mcp/local-semantic";
+import { installHooks, type HookInstallOptions } from "./hooks/install";
 
 const execFileAsync = promisify(execFile);
 const MCP_NAME = "clankeroverflow";
@@ -216,6 +217,16 @@ async function writeJsonObject(filePath: string, value: Record<string, any>, dry
   if (dryRun) return;
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, JSON.stringify(value, null, 2) + "\n", "utf8");
+}
+
+function getHookInstallOptions(ctx: Context): HookInstallOptions {
+  const hooksDir = path.join(ctx.packageRoot, "hooks");
+  return {
+    postToolUseScript: path.join(hooksDir, "post-tool-use.mjs"),
+    sessionStartScript: path.join(hooksDir, "session-start.mjs"),
+    dryRun: ctx.dryRun,
+    home: ctx.home,
+  };
 }
 
 async function configureOpenCode(ctx: Context, uninstall: boolean) {
@@ -687,6 +698,22 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
       if (uninstall) await removeSkill(ctx, "clankeroverflow-mcp", claudeSkills);
       else await copySkill(ctx, "clankeroverflow-mcp", claudeSkills);
       const detail = await configureClaude(ctx, uninstall, options.claudePlugin ?? CLAUDE_PLUGIN);
+      if (!uninstall) {
+        try {
+          const hookResults = await installHooks("claude", getHookInstallOptions(ctx));
+          for (const hr of hookResults) {
+            if (hr.status === "failed") {
+              results.push({ agent: "claude hooks", status: "failed", detail: hr.detail });
+            }
+          }
+        } catch (error) {
+          results.push({
+            agent: "claude hooks",
+            status: "failed",
+            detail: String((error as Error).message),
+          });
+        }
+      }
       results.push({ agent: "claude", status: uninstall ? "removed" : "configured", detail });
     } catch (error) {
       results.push({ agent: "claude", status: "failed", detail: String((error as Error).message) });
@@ -699,6 +726,22 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
       if (agent === "codex") await configureCodex(ctx, uninstall);
       if (agent === "opencode") await configureOpenCode(ctx, uninstall);
       if (agent === "cursor") await configureCursor(ctx, uninstall);
+      if (!uninstall && (agent === "codex" || agent === "cursor")) {
+        try {
+          const hookResults = await installHooks(agent, getHookInstallOptions(ctx));
+          for (const hr of hookResults) {
+            if (hr.status === "failed") {
+              results.push({ agent: `${agent} hooks`, status: "failed", detail: hr.detail });
+            }
+          }
+        } catch (error) {
+          results.push({
+            agent: `${agent} hooks`,
+            status: "failed",
+            detail: String((error as Error).message),
+          });
+        }
+      }
       results.push({
         agent,
         status: uninstall ? "removed" : "configured",

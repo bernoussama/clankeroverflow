@@ -62,14 +62,12 @@ describe("CLI MCP server", () => {
 
     expect(frontmatter).toContain("name: clankeroverflow-mcp");
     expect(frontmatter).not.toContain("version:");
-    expect(frontmatter).toContain(
-      "description: This skill should be used for coding-agent debugging",
-    );
-    expect(frontmatter).toContain('"debug an error"');
-    expect(frontmatter).toContain('"fix CI"');
-    expect(frontmatter).toContain('"search prior fixes"');
-    expect(frontmatter).toContain("whenever an error, stack trace, regression");
-    expect(frontmatter).not.toContain("description: Use this skill");
+    expect(frontmatter).toContain("description: Use this skill BEFORE implementing");
+    expect(frontmatter).toContain("framework-specific");
+    expect(frontmatter).toContain("version-sensitive");
+    expect(frontmatter).toContain("Search ClankerOverflow FIRST");
+    expect(frontmatter).toContain("EADDRINUSE");
+    expect(frontmatter).toContain("The search cost is near-zero");
     expect(markdownBody).not.toMatch(/\bYou should\b|\bIf you need\b/);
   });
 

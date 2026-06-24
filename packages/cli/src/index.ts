@@ -3,6 +3,7 @@
 import { Command } from "commander";
 import fs from "fs/promises";
 import path from "path";
+import { fileURLToPath } from "node:url";
 import packageJson from "../package.json";
 import { searchWithAutoFallback } from "./mcp/auto-search.js";
 import type { SearchMode } from "./mcp/backend.js";
@@ -681,6 +682,77 @@ export function createProgram(options: CreateProgramOptions = {}) {
       } catch (error: any) {
         console.error("");
         console.error(pc.red(pc.bold("✖ Error installing ClankerOverflow:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("hook")
+    .description(
+      "Output or install ambient hooks that nudge the agent to search ClankerOverflow when a failure signal is detected.",
+    )
+    .argument(
+      "[harness]",
+      "Harness format: claude, codex, cursor, or json (raw plugin hooks.json). Defaults to 'json'.",
+      "json",
+    )
+    .option("--install", "Merge hooks into the harness config file instead of printing to stdout.")
+    .option("--dry-run", "Show what would change without modifying files")
+    .action(async (harness, options) => {
+      try {
+        const hookScriptDir = path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          "..",
+          "hooks",
+        );
+        const postToolUseScript = path.join(hookScriptDir, "post-tool-use.mjs");
+        const sessionStartScript = path.join(hookScriptDir, "session-start.mjs");
+
+        const scripts: Array<[string, string]> = [
+          ["post-tool-use.mjs", postToolUseScript],
+          ["session-start.mjs", sessionStartScript],
+        ];
+        for (const [label, script] of scripts) {
+          try {
+            await fs.access(script);
+          } catch {
+            console.error(
+              pc.red(pc.bold("✖ Error: ")) + pc.red(`Hook script ${label} not found at ${script}`),
+            );
+            process.exit(1);
+          }
+        }
+
+        if (options.install) {
+          const { installHooks } = await import("./hooks/install.js");
+          const results = await installHooks(harness, {
+            postToolUseScript,
+            sessionStartScript,
+            dryRun: Boolean(options.dryRun),
+          });
+          const title = options.dryRun ? "Planned Hook Changes" : "Hook Installation Results";
+          console.log(`\n${pc.bold(pc.magenta(`=== ${title} ===`))}`);
+          for (const result of results) {
+            const indicator =
+              result.status === "configured"
+                ? pc.green("✔ configured")
+                : result.status === "skipped"
+                  ? pc.yellow("○ skipped")
+                  : pc.red(pc.bold("▲ failed"));
+            console.log(
+              `  ${pc.bold(result.harness.padEnd(15))} ${indicator} - ${pc.dim(result.detail)}`,
+            );
+          }
+          console.log();
+          return;
+        }
+
+        const { generateHookConfig } = await import("./hooks/install.js");
+        const config = generateHookConfig(harness, { postToolUseScript, sessionStartScript });
+        console.log(JSON.stringify(config, null, 2));
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error:")));
         console.error(pc.red(error.message || error));
         process.exit(1);
       }
