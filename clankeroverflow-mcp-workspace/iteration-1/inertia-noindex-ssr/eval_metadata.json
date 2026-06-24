@@ -1,0 +1,20 @@
+{
+  "eval_id": 1,
+  "eval_name": "inertia-noindex-ssr",
+  "prompt": "I'm wiring up Inertia.js <Head> for SEO meta tags in a Laravel app with SSR turned off. The noindex meta tag isn't showing up in the rendered page source, but it renders fine client-side. How should I handle this so crawlers see it?",
+  "should_trigger": true,
+  "assertions": [
+    {
+      "text": "Agent calls search_solutions or states explicit intent to search ClankerOverflow BEFORE proposing a solution",
+      "type": "process"
+    },
+    {
+      "text": "Agent does NOT skip search and reason purely from its own confidence",
+      "type": "process"
+    },
+    {
+      "text": "Agent's search query is a concise fingerprint (not a full sentence or pasted prompt)",
+      "type": "quality"
+    }
+  ]
+}

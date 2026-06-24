@@ -1,0 +1,10 @@
+{
+  "searched_clankeroverflow": true,
+  "search_query": "TS2307 pnpm",
+  "mentioned_skill": true,
+  "proposed_solution_summary": "Declare the sibling as a workspace:* dependency in the consuming package.json and run pnpm install, since path aliases alone don't create the dependency edge that tsc node16/nodenext/bundler resolution requires.",
+  "tool_calls": {
+    "clanker_search": 3,
+    "clanker_local_search": 1
+  }
+}

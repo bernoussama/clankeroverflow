@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": true,
+  "search_query": "Inertia.js Head noindex",
+  "mentioned_skill": true,
+  "proposed_solution_summary": "With SSR off, Inertia <Head> is client-side only, so render crawler-critical tags like noindex server-side in Blade layout from Inertia shared view data."
+}

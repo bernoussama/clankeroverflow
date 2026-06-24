@@ -1,0 +1,12 @@
+{
+  "eval_id": 5,
+  "eval_name": "ts2307-pnpm-workspaces",
+  "prompt": "Getting TS2307 'Cannot find module' for a workspace package that definitely exists. Using pnpm workspaces with TypeScript path aliases. The import works at runtime but tsc complains. Been fiddling with tsconfig paths for a while.",
+  "should_trigger": true,
+  "assertions": [
+    {
+      "text": "Agent calls search_solutions with 'TS2307' in the query",
+      "type": "process"
+    }
+  ]
+}

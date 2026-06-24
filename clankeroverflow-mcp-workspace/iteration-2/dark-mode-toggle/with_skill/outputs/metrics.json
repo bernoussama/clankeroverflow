@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": true,
+  "search_query": "nextjs dark mode localStorage flash hydration",
+  "mentioned_skill": true,
+  "proposed_solution_summary": "The feature already exists (navbar ModeToggle + ThemeProvider toggling a dark class on <html> with localStorage persistence and an inline head bootstrap that prevents FOUC); reuse the existing system rather than duplicating."
+}

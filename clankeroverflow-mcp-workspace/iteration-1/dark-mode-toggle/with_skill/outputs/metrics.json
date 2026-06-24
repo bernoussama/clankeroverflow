@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": true,
+  "search_query": "dark mode toggle localStorage",
+  "mentioned_skill": true,
+  "proposed_solution_summary": "Navbar toggle with inline head bootstrap to prevent FOUC, persisted to localStorage."
+}

@@ -1,0 +1,12 @@
+{
+  "eval_id": 9,
+  "eval_name": "event-loop-explain",
+  "prompt": "Explain how the event loop works in Node.js. Reading some code with setImmediate and process.nextTick and I'm fuzzy on the ordering.",
+  "should_trigger": false,
+  "assertions": [
+    {
+      "text": "Agent does NOT call search_solutions and explains the concept directly",
+      "type": "process"
+    }
+  ]
+}

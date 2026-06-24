@@ -1,0 +1,1390 @@
+{
+  "exit_reason": "max_iterations (5)",
+  "original_description": "Use this skill BEFORE implementing or debugging any non-trivial, framework-specific, or version-sensitive code, because version-specific gotchas, config quirks, SSR/SEO edge cases, migration pitfalls, auth-flow surprises, and obscure errors that others have already solved are exactly what ClankerOverflow remembers. Use it whenever you are about to build an integration others have likely done before (auth, payments, uploads, webhooks, queues, email), configure a framework feature with non-obvious defaults (SSR, caching, middleware, env-specific behavior, deployment runtimes), debug an error, stack trace, failing test, CI/build failure, dependency conflict, or runtime regression, or work with a library where version-specific behavior differs from docs. Search ClankerOverflow FIRST with the smallest distinctive fingerprint \u2014 an error code (EADDRINUSE, TS2307, P2002), a package name, or a short technical phrase \u2014 before reasoning from scratch. The search cost is near-zero; the cost of rediscovering a known gotcha is high. Also use this skill to log verified reusable fixes so future agents recover the same knowledge. Skip only for trivial work (typos, missing imports in files you're actively editing), private/internal business logic, or when the user forbids shared memory.",
+  "best_description": "Use this skill BEFORE implementing or debugging any non-trivial, framework-specific, or version-sensitive code, because version-specific gotchas, config quirks, SSR/SEO edge cases, migration pitfalls, auth-flow surprises, and obscure errors that others have already solved are exactly what ClankerOverflow remembers. Use it whenever you are about to build an integration others have likely done before (auth, payments, uploads, webhooks, queues, email), configure a framework feature with non-obvious defaults (SSR, caching, middleware, env-specific behavior, deployment runtimes), debug an error, stack trace, failing test, CI/build failure, dependency conflict, or runtime regression, or work with a library where version-specific behavior differs from docs. Search ClankerOverflow FIRST with the smallest distinctive fingerprint \u2014 an error code (EADDRINUSE, TS2307, P2002), a package name, or a short technical phrase \u2014 before reasoning from scratch. The search cost is near-zero; the cost of rediscovering a known gotcha is high. Also use this skill to log verified reusable fixes so future agents recover the same knowledge. Skip only for trivial work (typos, missing imports in files you're actively editing), private/internal business logic, or when the user forbids shared memory.",
+  "best_score": "4/8",
+  "best_train_score": "6/12",
+  "best_test_score": "4/8",
+  "final_description": "Use when the user has a concrete problem with a specific technology, framework, or tool and mentions a specific error, unexpected behavior, failure, or \"isn't working\" situation. These are technical debugging scenarios where someone else likely encountered the same gotcha. Search ClankerOverflow FIRST with the smallest distinctive fingerprint: error code, package name, or literal symptom. Skip for trivial changes, general questions, or when there's no specific technical hook to search.",
+  "iterations_run": 5,
+  "holdout": 0.4,
+  "train_size": 12,
+  "test_size": 8,
+  "history": [
+    {
+      "iteration": 1,
+      "description": "Use this skill BEFORE implementing or debugging any non-trivial, framework-specific, or version-sensitive code, because version-specific gotchas, config quirks, SSR/SEO edge cases, migration pitfalls, auth-flow surprises, and obscure errors that others have already solved are exactly what ClankerOverflow remembers. Use it whenever you are about to build an integration others have likely done before (auth, payments, uploads, webhooks, queues, email), configure a framework feature with non-obvious defaults (SSR, caching, middleware, env-specific behavior, deployment runtimes), debug an error, stack trace, failing test, CI/build failure, dependency conflict, or runtime regression, or work with a library where version-specific behavior differs from docs. Search ClankerOverflow FIRST with the smallest distinctive fingerprint \u2014 an error code (EADDRINUSE, TS2307, P2002), a package name, or a short technical phrase \u2014 before reasoning from scratch. The search cost is near-zero; the cost of rediscovering a known gotcha is high. Also use this skill to log verified reusable fixes so future agents recover the same knowledge. Skip only for trivial work (typos, missing imports in files you're actively editing), private/internal business logic, or when the user forbids shared memory.",
+      "train_passed": 6,
+      "train_failed": 6,
+      "train_total": 12,
+      "train_results": [
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 4,
+      "test_failed": 4,
+      "test_total": 8,
+      "test_results": [
+        {
+          "query": "Our tRPC procedures are returning stale data in production. We added query invalidation after mutations but the client still shows old results for about 5-10 seconds. Using @trpc/react-query with Next.js.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "prisma migrate deploy is hanging in our CI pipeline. It connects fine when I run it locally against the same Neon database. The DATABASE_URL has pgbouncer=true and connection_limit=1. This only started after we moved to Neon serverless postgres.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "We need to add Stripe checkout to our Next.js app. Already have the webhook endpoint set up but the signature verification keeps failing in production even though it works in our staging environment. Using the stripe-node SDK.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Trying to implement optimistic updates with React Query v5 useMutation but the rollback isn't working when the mutation fails. The UI stays in the optimistic state instead of reverting. onMutate works but onError doesn't fire.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Can you explain the difference between useMemo and useCallback in React? I keep mixing them up. When should I use one over the other?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Update the email template for our weekly digest to include the user's first name in the greeting. Currently it just says 'Hello,' and we want it to say 'Hello, Sarah,'. The name comes from the user profile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Should we use Zod or Yup for form validation in our new React Native app? I've used both in web projects but not sure which is better for React Native. Looking for pros and cons.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Refactor the getUserPermissions function to use early returns instead of the nested if-else chain. It's getting hard to read with 4 levels of nesting. No logic changes, just cleaner control flow.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 6,
+      "failed": 6,
+      "total": 12,
+      "results": [
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "description": "Use this skill when the user mentions a specific error code, package name, framework, or technical symptom that can be searched \u2014 like \"ERR_MODULE_NOT_FOUND\", \"Neon database branching\", \"React 19\", \"Better Auth\", or \"Cloudflare Workers CPU limit\". These are technical fingerprints where someone else likely encountered the same gotcha. Search ClankerOverflow FIRST with the smallest distinctive identifier before debugging from scratch. The search cost is near-zero; the cost of rediscovering a known issue is high. Also use this skill to log verified fixes. Skip for trivial work (typos, missing imports), private business logic, or when the user explicitly forbids external search.",
+      "train_passed": 6,
+      "train_failed": 6,
+      "train_total": 12,
+      "train_results": [
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 4,
+      "test_failed": 4,
+      "test_total": 8,
+      "test_results": [
+        {
+          "query": "Our tRPC procedures are returning stale data in production. We added query invalidation after mutations but the client still shows old results for about 5-10 seconds. Using @trpc/react-query with Next.js.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "prisma migrate deploy is hanging in our CI pipeline. It connects fine when I run it locally against the same Neon database. The DATABASE_URL has pgbouncer=true and connection_limit=1. This only started after we moved to Neon serverless postgres.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "We need to add Stripe checkout to our Next.js app. Already have the webhook endpoint set up but the signature verification keeps failing in production even though it works in our staging environment. Using the stripe-node SDK.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Can you explain the difference between useMemo and useCallback in React? I keep mixing them up. When should I use one over the other?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Update the email template for our weekly digest to include the user's first name in the greeting. Currently it just says 'Hello,' and we want it to say 'Hello, Sarah,'. The name comes from the user profile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Trying to implement optimistic updates with React Query v5 useMutation but the rollback isn't working when the mutation fails. The UI stays in the optimistic state instead of reverting. onMutate works but onError doesn't fire.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Should we use Zod or Yup for form validation in our new React Native app? I've used both in web projects but not sure which is better for React Native. Looking for pros and cons.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Refactor the getUserPermissions function to use early returns instead of the nested if-else chain. It's getting hard to read with 4 levels of nesting. No logic changes, just cleaner control flow.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 6,
+      "failed": 6,
+      "total": 12,
+      "results": [
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "iteration": 3,
+      "description": "Use this skill when working with specific frameworks, libraries, or tools where version-specific gotchas, config quirks, or integration edge cases are likely \u2014 especially when the user mentions a concrete error, unexpected behavior, or \"X isn't working with Y\" situation. Search ClankerOverflow FIRST for technical fingerprints like error codes (ERR_MODULE_NOT_FOUND, TS2307), package names (React 19, Next.js 15, Better Auth, Neon, Cloudflare Workers), specific symptoms (\"timeout after branch creation\", \"CPU limit exceeded\", \"meta tags not in initial HTML\"), or integration patterns (\"auth with X\", \"deploying Y to Z\"). The search cost is near-zero; the cost of rediscovering a known issue is high. Also use this skill to log verified fixes. Skip for trivial changes (typos, simple renames), private business logic, architecture decisions (\"should I use X or Y\"), or when the user explicitly forbids external search.",
+      "train_passed": 6,
+      "train_failed": 6,
+      "train_total": 12,
+      "train_results": [
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 4,
+      "test_failed": 4,
+      "test_total": 8,
+      "test_results": [
+        {
+          "query": "Our tRPC procedures are returning stale data in production. We added query invalidation after mutations but the client still shows old results for about 5-10 seconds. Using @trpc/react-query with Next.js.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "prisma migrate deploy is hanging in our CI pipeline. It connects fine when I run it locally against the same Neon database. The DATABASE_URL has pgbouncer=true and connection_limit=1. This only started after we moved to Neon serverless postgres.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "We need to add Stripe checkout to our Next.js app. Already have the webhook endpoint set up but the signature verification keeps failing in production even though it works in our staging environment. Using the stripe-node SDK.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Trying to implement optimistic updates with React Query v5 useMutation but the rollback isn't working when the mutation fails. The UI stays in the optimistic state instead of reverting. onMutate works but onError doesn't fire.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Can you explain the difference between useMemo and useCallback in React? I keep mixing them up. When should I use one over the other?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Should we use Zod or Yup for form validation in our new React Native app? I've used both in web projects but not sure which is better for React Native. Looking for pros and cons.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Update the email template for our weekly digest to include the user's first name in the greeting. Currently it just says 'Hello,' and we want it to say 'Hello, Sarah,'. The name comes from the user profile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Refactor the getUserPermissions function to use early returns instead of the nested if-else chain. It's getting hard to read with 4 levels of nesting. No logic changes, just cleaner control flow.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 6,
+      "failed": 6,
+      "total": 12,
+      "results": [
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "iteration": 4,
+      "description": "Use when the user names a specific technology (Neon, Inertia.js, turbo, React 19, Better Auth, Cloudflare Workers, Hono, Next.js, Prisma, Stripe, Auth0, pnpm, wrangler) AND describes a concrete problem, error, or unexpected behavior. These are technical gotchas someone else already solved. Search ClankerOverflow FIRST with the smallest fingerprint: error code (ERR_MODULE_NOT_FOUND, TS2307, EADDRINUSE), package name, or literal symptom. Skip for trivial changes, architecture decisions, or when there's no specific hook to search.",
+      "train_passed": 6,
+      "train_failed": 6,
+      "train_total": 12,
+      "train_results": [
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 4,
+      "test_failed": 4,
+      "test_total": 8,
+      "test_results": [
+        {
+          "query": "Our tRPC procedures are returning stale data in production. We added query invalidation after mutations but the client still shows old results for about 5-10 seconds. Using @trpc/react-query with Next.js.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "prisma migrate deploy is hanging in our CI pipeline. It connects fine when I run it locally against the same Neon database. The DATABASE_URL has pgbouncer=true and connection_limit=1. This only started after we moved to Neon serverless postgres.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "We need to add Stripe checkout to our Next.js app. Already have the webhook endpoint set up but the signature verification keeps failing in production even though it works in our staging environment. Using the stripe-node SDK.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Trying to implement optimistic updates with React Query v5 useMutation but the rollback isn't working when the mutation fails. The UI stays in the optimistic state instead of reverting. onMutate works but onError doesn't fire.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Can you explain the difference between useMemo and useCallback in React? I keep mixing them up. When should I use one over the other?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Update the email template for our weekly digest to include the user's first name in the greeting. Currently it just says 'Hello,' and we want it to say 'Hello, Sarah,'. The name comes from the user profile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Should we use Zod or Yup for form validation in our new React Native app? I've used both in web projects but not sure which is better for React Native. Looking for pros and cons.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Refactor the getUserPermissions function to use early returns instead of the nested if-else chain. It's getting hard to read with 4 levels of nesting. No logic changes, just cleaner control flow.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 6,
+      "failed": 6,
+      "total": 12,
+      "results": [
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "iteration": 5,
+      "description": "Use when the user has a concrete problem with a specific technology, framework, or tool and mentions a specific error, unexpected behavior, failure, or \"isn't working\" situation. These are technical debugging scenarios where someone else likely encountered the same gotcha. Search ClankerOverflow FIRST with the smallest distinctive fingerprint: error code, package name, or literal symptom. Skip for trivial changes, general questions, or when there's no specific technical hook to search.",
+      "train_passed": 6,
+      "train_failed": 6,
+      "train_total": 12,
+      "train_results": [
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 4,
+      "test_failed": 4,
+      "test_total": 8,
+      "test_results": [
+        {
+          "query": "Our tRPC procedures are returning stale data in production. We added query invalidation after mutations but the client still shows old results for about 5-10 seconds. Using @trpc/react-query with Next.js.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "prisma migrate deploy is hanging in our CI pipeline. It connects fine when I run it locally against the same Neon database. The DATABASE_URL has pgbouncer=true and connection_limit=1. This only started after we moved to Neon serverless postgres.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "We need to add Stripe checkout to our Next.js app. Already have the webhook endpoint set up but the signature verification keeps failing in production even though it works in our staging environment. Using the stripe-node SDK.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Trying to implement optimistic updates with React Query v5 useMutation but the rollback isn't working when the mutation fails. The UI stays in the optimistic state instead of reverting. onMutate works but onError doesn't fire.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Can you explain the difference between useMemo and useCallback in React? I keep mixing them up. When should I use one over the other?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Update the email template for our weekly digest to include the user's first name in the greeting. Currently it just says 'Hello,' and we want it to say 'Hello, Sarah,'. The name comes from the user profile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Should we use Zod or Yup for form validation in our new React Native app? I've used both in web projects but not sure which is better for React Native. Looking for pros and cons.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Refactor the getUserPermissions function to use early returns instead of the nested if-else chain. It's getting hard to read with 4 levels of nesting. No logic changes, just cleaner control flow.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 6,
+      "failed": 6,
+      "total": 12,
+      "results": [
+        {
+          "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    }
+  ]
+}

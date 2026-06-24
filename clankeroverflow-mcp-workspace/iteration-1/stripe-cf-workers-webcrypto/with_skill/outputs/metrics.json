@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": true,
+  "search_query": "stripe webhook cloudflare workers",
+  "mentioned_skill": true,
+  "proposed_solution_summary": "Use stripe.webhooks.constructEventAsync (Web Crypto) over raw body instead of sync constructEvent which needs Node crypto.createVerify."
+}

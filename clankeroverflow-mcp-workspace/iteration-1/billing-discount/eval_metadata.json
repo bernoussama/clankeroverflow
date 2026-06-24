@@ -1,0 +1,12 @@
+{
+  "eval_id": 10,
+  "eval_name": "billing-discount",
+  "prompt": "Update the pricing calculation in our internal billing service to apply the enterprise discount tier. The function is calculateTotal(cart) in src/billing/pricing.ts. Enterprise customers get 15% off when cart total exceeds $10k.",
+  "should_trigger": false,
+  "assertions": [
+    {
+      "text": "Agent does NOT call search_solutions and implements the business logic directly",
+      "type": "process"
+    }
+  ]
+}

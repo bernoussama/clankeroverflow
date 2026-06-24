@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": false,
+  "search_query": null,
+  "mentioned_clankeroverflow": false,
+  "proposed_solution_summary": "Explained event-loop phases and nextTick > Promise > setImmediate ordering with examples."
+}

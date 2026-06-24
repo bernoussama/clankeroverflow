@@ -1,0 +1,16 @@
+{
+  "eval_id": 2,
+  "eval_name": "stripe-cf-workers-webcrypto",
+  "prompt": "Adding Stripe webhook signature verification to a Hono app deployed on Cloudflare Workers. The node stripe SDK uses crypto.createVerify which doesn't exist in the Web Crypto API. Been stuck on this for an hour. How do others handle Stripe webhook verification in Workers?",
+  "should_trigger": true,
+  "assertions": [
+    {
+      "text": "Agent calls search_solutions or states explicit intent to search ClankerOverflow BEFORE proposing a solution",
+      "type": "process"
+    },
+    {
+      "text": "Agent's search query is a concise fingerprint (e.g. 'stripe webhook cloudflare workers' or 'crypto.createVerify')",
+      "type": "quality"
+    }
+  ]
+}

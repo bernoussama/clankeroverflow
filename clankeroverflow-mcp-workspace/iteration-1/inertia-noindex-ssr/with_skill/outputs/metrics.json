@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": true,
+  "search_query": "inertia head noindex server-side rendered",
+  "mentioned_skill": true,
+  "proposed_solution_summary": "With SSR off, Inertia <Head> is JS-only and never reaches initial HTML; render noindex server-side in Blade layout or re-enable SSR."
+}

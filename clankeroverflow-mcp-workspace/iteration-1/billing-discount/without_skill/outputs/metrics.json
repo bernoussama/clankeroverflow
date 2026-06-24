@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": false,
+  "search_query": null,
+  "mentioned_clankeroverflow": false,
+  "proposed_solution_summary": "Implement the enterprise 15%-off discount directly in calculateTotal by checking the customer tier and applying the discount only when the pre-discount subtotal strictly exceeds $10,000, with cents-based rounding."
+}

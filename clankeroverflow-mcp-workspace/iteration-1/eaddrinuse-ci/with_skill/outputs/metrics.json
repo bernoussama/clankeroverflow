@@ -1,0 +1,9 @@
+{
+  "searched_clankeroverflow": true,
+  "search_query": "EADDRINUSE",
+  "mentioned_skill": true,
+  "proposed_solution_summary": "The EADDRINUSE is a TIME_WAIT socket (not a live process, so killing port 3000 finds nothing); fix by binding an ephemeral port in CI or ensuring SO_REUSEADDR plus graceful shutdown.",
+  "tool_calls": {
+    "search_solutions": 2
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": false,
+  "search_query": null,
+  "mentioned_clankeroverflow": false,
+  "proposed_solution_summary": "Point Prisma db pull at the Neon direct (non-pooled) URL via directUrl since the pooled PgBouncer endpoint breaks introspection prepared statements, and run prisma scoped to the owning pnpm workspace package."
+}
