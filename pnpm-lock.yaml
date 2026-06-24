@@ -25,8 +25,8 @@ catalogs:
       specifier: ^17.4.2
       version: 17.4.2
     hono:
-      specifier: ^4.8.2
-      version: 4.12.23
+      specifier: ^4.12.25
+      version: 4.12.26
     pg:
       specifier: ^8.21.0
       version: 8.21.0
@@ -34,7 +34,7 @@ catalogs:
       specifier: ^6.0.3
       version: 6.0.3
     vitest:
-      specifier: ^4.1.7
+      specifier: ^4.1.0
       version: 4.1.7
     wrangler:
       specifier: ^4.95.0
@@ -98,7 +98,7 @@ importers:
         version: link:../../packages/env
       '@hono/trpc-server':
         specifier: ^0.4.0
-        version: 0.4.2(@trpc/server@11.17.0(typescript@6.0.3))(hono@4.12.23)
+        version: 0.4.2(@trpc/server@11.17.0(typescript@6.0.3))(hono@4.12.26)
       '@sentry/cloudflare':
         specifier: ^10.53.1
         version: 10.55.0(@cloudflare/workers-types@4.20260530.1)
@@ -110,7 +110,7 @@ importers:
         version: 1.6.12(@cloudflare/workers-types@4.20260530.1)(@opentelemetry/api@1.9.1)(better-sqlite3@12.10.0)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.20.0)(better-sqlite3@12.10.0)(kysely@0.28.17)(pg@8.21.0))(next@16.2.6(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(pg@8.21.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@22.19.19)(msw@2.14.6(@types/node@22.19.19)(typescript@6.0.3))(vite@7.3.3(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.16.9)(tsx@4.22.3)(yaml@2.9.0)))
       hono:
         specifier: 'catalog:'
-        version: 4.12.23
+        version: 4.12.26
     devDependencies:
       '@clankeroverflow/config':
         specifier: workspace:*
@@ -281,7 +281,7 @@ importers:
         version: link:../config
       hono:
         specifier: 'catalog:'
-        version: 4.12.23
+        version: 4.12.26
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -4704,6 +4704,10 @@ packages:
     resolution: {integrity: sha512-eIaZ9qDgu7XV0pxOCrg7/WhnQ6Ivm22UcxhXx/A3dcbqbbYgBEkc6e/J/s7j2tS96zoB0S9VBdLwQNCWwUo4LA==}
     engines: {node: '>=16.9.0'}
 
+  hono@4.12.26:
+    resolution: {integrity: sha512-uyZtpnYxM9CmQ7QsQknM4zN8EftNqhON1qYeIKM0Se67CCEe2c44xyGURwB0axX2fBDu1dqHrHAc1hmNT8ITkw==}
+    engines: {node: '>=16.9.0'}
+
   hookable@6.1.1:
     resolution: {integrity: sha512-U9LYDy1CwhMCnprUfeAZWZGByVbhd54hwepegYTK7Pi5NvqEj63ifz5z+xukznehT7i6NIZRu89Ay1AZmRsLEQ==}
 
@@ -8178,10 +8182,10 @@ snapshots:
     dependencies:
       hono: 4.12.23
 
-  '@hono/trpc-server@0.4.2(@trpc/server@11.17.0(typescript@6.0.3))(hono@4.12.23)':
+  '@hono/trpc-server@0.4.2(@trpc/server@11.17.0(typescript@6.0.3))(hono@4.12.26)':
     dependencies:
       '@trpc/server': 11.17.0(typescript@6.0.3)
-      hono: 4.12.23
+      hono: 4.12.26
 
   '@huggingface/jinja@0.5.9':
     optional: true
@@ -10735,6 +10739,8 @@ snapshots:
       set-cookie-parser: 3.1.0
 
   hono@4.12.23: {}
+
+  hono@4.12.26: {}
 
   hookable@6.1.1: {}
 

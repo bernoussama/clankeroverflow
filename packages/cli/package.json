@@ -48,7 +48,7 @@
     "@types/node": "^22.13.14",
     "tsdown": "^0.22.1",
     "typescript": "^5",
-    "vitest": "4.0.7"
+    "vitest": "4.1.0"
   },
   "optionalDependencies": {
     "node-llama-cpp": "3.18.1"
