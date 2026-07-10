@@ -47,6 +47,9 @@ playwright-report
 test-results
 packages/cli/benchmarks/local-embeddings/results
 clankeroverflow-mcp-workspace/product-proof/runs/traces
+clankeroverflow-mcp-workspace/product-proof/reports/summary*.json
+clankeroverflow-mcp-workspace/product-proof/runs/*.json
+!clankeroverflow-mcp-workspace/product-proof/runs/sample-runs.json
 
 # Misc
 *.tgz
