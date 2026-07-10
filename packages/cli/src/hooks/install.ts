@@ -82,6 +82,17 @@ export function generateClaudeHooks(opts: HookInstallOptions): Record<string, un
           ],
         },
       ],
+      Stop: [
+        {
+          hooks: [
+            {
+              type: "command",
+              command: `node "${opts.postToolUseScript}"`,
+              timeout: 5,
+            },
+          ],
+        },
+      ],
     },
   };
 }
@@ -100,6 +111,12 @@ export function generateCodexHooks(opts: HookInstallOptions): Record<string, unk
       },
     ],
     UserPromptSubmit: [
+      {
+        command: `node "${opts.postToolUseScript}"`,
+        timeout: 5,
+      },
+    ],
+    Stop: [
       {
         command: `node "${opts.postToolUseScript}"`,
         timeout: 5,
@@ -163,6 +180,17 @@ export function generatePluginHooks(_opts: HookInstallOptions): Record<string, u
         },
       ],
       UserPromptSubmit: [
+        {
+          hooks: [
+            {
+              type: "command",
+              command: 'node "${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.mjs"',
+              timeout: 5,
+            },
+          ],
+        },
+      ],
+      Stop: [
         {
           hooks: [
             {
@@ -337,6 +365,10 @@ function generateCodexToml(opts: HookInstallOptions): string {
   lines.push("timeout = 5");
   lines.push("");
   lines.push("[[hooks.UserPromptSubmit]]");
+  lines.push(`command = 'node "${opts.postToolUseScript}"'`);
+  lines.push("timeout = 5");
+  lines.push("");
+  lines.push("[[hooks.Stop]]");
   lines.push(`command = 'node "${opts.postToolUseScript}"'`);
   lines.push("timeout = 5");
   lines.push("");

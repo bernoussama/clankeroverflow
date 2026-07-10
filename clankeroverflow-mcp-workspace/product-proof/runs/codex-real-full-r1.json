@@ -1,0 +1,829 @@
+{
+  "metadata": {
+    "name": "real paired Codex runs",
+    "sample": false,
+    "agent": "codex",
+    "model": "configured-default",
+    "created_at": "2026-07-03T21:04:44.866Z",
+    "notes": "Reasoning effort: low. Fixture DB: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/fixtures.sqlite."
+  },
+  "runs": [
+    {
+      "scenario_id": "inertia-noindex-ssr",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/inertia-noindex-ssr-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/inertia-noindex-ssr-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "With SSR turned off, Inertia’s `<Head>` only updates the DOM after JavaScript runs. That means it will appear in DevTools/client-side HTML, but not in the initial “view page source” response. Crawlers that don’t execute JS may never see your `noindex`.\n\nFor SEO-critical tags like:\n\n```html\n<meta name=\"robots\" content=\"noindex, nofollow\">\n```\n\ndon’t rely on Inertia `<Head>` unless SSR is enabled.\n\nHandle it server-side instead:\n\n```blade\n{{-- resources/views/app.blade.php --}}\n@if($page['props']['noindex'] ?? false)\n    <meta name=\"robots\" content=\"noindex, nofollow\">\n@endif\n```\n\nThen pass the flag from Laravel:\n\n```php\nreturn Inertia::render('SomePage', [\n    'noindex' => true,\n]);\n```\n\nBetter yet, for routes that must never be indexed, set the HTTP header too:\n\n```php\nreturn Inertia::render('SomePage')\n    ->toResponse($request)\n    ->header('X-Robots-Tag', 'noindex, nofollow');\n```\n\nThe header is often the safest option because crawlers can read it without parsing or executing the page at all.\n\nSo the practical rule is: use Inertia `<Head>` for client-visible title/meta updates, but put crawl directives like `noindex`, canonical URLs, and critical SEO tags in the initial Laravel response, or enable Inertia SSR."
+    },
+    {
+      "scenario_id": "inertia-noindex-ssr",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/inertia-noindex-ssr-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/inertia-noindex-ssr-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "With SSR turned off, Inertia’s `<Head>` only updates the DOM after JavaScript runs. That means `view-source:` and crawlers that don’t execute JS will not see your `<meta name=\"robots\" content=\"noindex\">`.\n\nFor SEO-critical tags like `noindex`, don’t rely on client-rendered `<Head>` unless SSR is enabled.\n\nHandle it server-side instead:\n\n```blade\n{{-- resources/views/app.blade.php --}}\n@if($noindex ?? false)\n    <meta name=\"robots\" content=\"noindex,nofollow\">\n@endif\n\n@inertiaHead\n```\n\nThen pass the flag from Laravel before rendering the Inertia page, for example via controller/view data or middleware:\n\n```php\nreturn Inertia::render('SomePage')\n    ->withViewData([\n        'noindex' => true,\n    ]);\n```\n\nOr, for route-wide control, use middleware to set `noindex` for staging, private, search-result, filtered, or user-specific pages.\n\nIf you need crawlers to reliably see dynamic `<Head>` tags from Inertia pages, your options are:\n\n1. Put critical meta tags in the initial Blade response.\n2. Enable Inertia SSR so `<Head>` is rendered into the HTML response.\n3. Use HTTP headers for robots control where appropriate:\n\n```php\nreturn response($html)\n    ->header('X-Robots-Tag', 'noindex, nofollow');\n```\n\nFor `noindex`, I’d favor server-rendered Blade meta or `X-Robots-Tag`. Client-side `<Head>` is fine for browser-visible title updates, but not something I’d trust for crawler directives without SSR."
+    },
+    {
+      "scenario_id": "stripe-cf-workers-webcrypto",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/stripe-cf-workers-webcrypto-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/stripe-cf-workers-webcrypto-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Use Stripe’s async verifier, not the sync one.\n\nIn Workers, `stripe.webhooks.constructEvent()` is the trap: it uses Node-style crypto. Use `constructEventAsync()` with the raw body from Hono:\n\n```ts\nimport Stripe from 'stripe'\nimport { Hono } from 'hono'\n\ntype Env = {\n  STRIPE_SECRET_KEY: string\n  STRIPE_WEBHOOK_SECRET: string\n}\n\nconst app = new Hono<{ Bindings: Env }>()\n\napp.post('/webhook/stripe', async (c) => {\n  const stripe = new Stripe(c.env.STRIPE_SECRET_KEY)\n\n  const signature = c.req.header('stripe-signature')\n  if (!signature) {\n    return c.text('Missing stripe-signature', 400)\n  }\n\n  const rawBody = await c.req.text()\n\n  let event: Stripe.Event\n\n  try {\n    event = await stripe.webhooks.constructEventAsync(\n      rawBody,\n      signature,\n      c.env.STRIPE_WEBHOOK_SECRET\n    )\n  } catch (err) {\n    console.error('Stripe webhook verification failed:', err)\n    return c.text('Invalid signature', 400)\n  }\n\n  switch (event.type) {\n    case 'checkout.session.completed':\n      // handle event.data.object\n      break\n    default:\n      console.log(`Unhandled event: ${event.type}`)\n  }\n\n  return c.text('ok', 200)\n})\n\nexport default app\n```\n\nThe important bits:\n\n- Use `await c.req.text()` before any JSON parsing.\n- Do not call `await c.req.json()` first.\n- Do not stringify the parsed body back into JSON.\n- Use `constructEventAsync`, not `constructEvent`.\n- Make sure `STRIPE_WEBHOOK_SECRET` is the `whsec_...` value for that exact endpoint, not your Stripe API key.\n\nHono’s current Stripe webhook example shows exactly this pattern with `context.req.text()` and `constructEventAsync()` because signature verification needs the unmodified raw body. Cloudflare’s Stripe support also points at Web Crypto / async webhook verification for Workers.\n\nSources: Hono example: https://hono.dev/examples/stripe-webhook, Cloudflare Stripe Workers post: https://blog.cloudflare.com/announcing-stripe-support-in-workers/"
+    },
+    {
+      "scenario_id": "stripe-cf-workers-webcrypto",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/stripe-cf-workers-webcrypto-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/stripe-cf-workers-webcrypto-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Use Stripe’s async webhook verifier, not the sync Node path.\n\nIn Workers/Hono, the usual fix is:\n\n```ts\nimport Stripe from 'stripe'\nimport { Hono } from 'hono'\n\ntype Env = {\n  STRIPE_SECRET_KEY: string\n  STRIPE_WEBHOOK_SECRET: string\n}\n\nconst app = new Hono<{ Bindings: Env }>()\n\napp.post('/stripe/webhook', async (c) => {\n  const stripe = new Stripe(c.env.STRIPE_SECRET_KEY, {\n    httpClient: Stripe.createFetchHttpClient(),\n  })\n\n  const signature = c.req.header('stripe-signature')\n  if (!signature) return c.text('Missing Stripe signature', 400)\n\n  try {\n    const rawBody = await c.req.text()\n\n    const event = await stripe.webhooks.constructEventAsync(\n      rawBody,\n      signature,\n      c.env.STRIPE_WEBHOOK_SECRET,\n      undefined,\n      Stripe.createSubtleCryptoProvider()\n    )\n\n    switch (event.type) {\n      case 'checkout.session.completed':\n        // handle event.data.object\n        break\n    }\n\n    return c.text('ok', 200)\n  } catch (err) {\n    return c.text('Invalid signature', 400)\n  }\n})\n\nexport default app\n```\n\nThe key bits:\n\n- Use `constructEventAsync`, not `constructEvent`.\n- Pass the raw body from `await c.req.text()`.\n- Do not call `await c.req.json()` before verification.\n- Use the `stripe-signature` header exactly.\n- In Workers, use fetch/WebCrypto via `Stripe.createFetchHttpClient()` and `Stripe.createSubtleCryptoProvider()`.\n\nHono’s own Stripe webhook example now uses `context.req.text()` plus `stripe.webhooks.constructEventAsync(...)`, specifically because raw request body preservation matters for signature verification. Stripe’s webhook docs also emphasize verifying requests with the endpoint signing secret and returning a quick `2xx` once accepted.\n\nSources: [Hono Stripe Webhook example](https://hono.dev/examples/stripe-webhook), [Stripe webhooks docs](https://docs.stripe.com/webhooks)."
+    },
+    {
+      "scenario_id": "prisma-neon-timeout",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/prisma-neon-timeout-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/prisma-neon-timeout-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "prisma db pull timeout 30s Neon serverless Postgres",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "prisma db pull timeout 30s Neon serverless Postgres",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": ["fix-prisma-neon-direct-url", "fix-neon-branch-first-query-timeout"]
+        }
+      ],
+      "search_query": "prisma db pull timeout 30s Neon serverless Postgres",
+      "returned_solution_ids": [
+        "fix-prisma-neon-direct-url",
+        "fix-neon-branch-first-query-timeout"
+      ],
+      "final_answer": "This is usually Prisma using the wrong Neon URL, not Postgres being unreachable.\n\nFor Prisma schema operations like `db pull`, `migrate`, and introspection, avoid Neon’s pooled/PgBouncer URL. Use the direct Neon connection URL.\n\nIn `schema.prisma`:\n\n```prisma\ndatasource db {\n  provider  = \"postgresql\"\n  url       = env(\"DATABASE_URL\")\n  directUrl = env(\"DIRECT_URL\")\n}\n```\n\nThen set:\n\n```env\n# Runtime / Prisma Client: pooled Neon URL is fine\nDATABASE_URL=\"postgresql://...@...pooler.neon.tech/...?...sslmode=require\"\n\n# Prisma CLI / migrations / db pull: direct URL, no pooler\nDIRECT_URL=\"postgresql://...@...neon.tech/...?...sslmode=require\"\n```\n\nRun Prisma from the package that owns the schema/env file:\n\n```bash\npnpm --filter your-db-package prisma db pull\n```\n\nOr explicitly:\n\n```bash\npnpm prisma db pull --schema packages/db/prisma/schema.prisma\n```\n\nIn a pnpm monorepo, the other classic footgun is env loading: `psql` may be using the URL you exported in your shell, while Prisma is reading a different `.env` relative to the schema path. Confirm with:\n\n```bash\npnpm prisma validate --schema packages/db/prisma/schema.prisma\n```\n\nIf you are already using the direct URL, then add a timeout param to the direct URL:\n\n```env\nDIRECT_URL=\"postgresql://...@...neon.tech/...?...sslmode=require&connect_timeout=60\"\n```\n\nBut I’d bet on the pooled URL or wrong `.env` first. Prisma introspection plus PgBouncer/serverless pooling is exactly the sort of “works in `psql`, times out in Prisma” misery."
+    },
+    {
+      "scenario_id": "prisma-neon-timeout",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/prisma-neon-timeout-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/prisma-neon-timeout-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "This is usually Prisma introspection hitting a different path than `psql`.\n\nFor Neon + Prisma, check these first:\n\n1. Use the **direct/unpooled Neon URL** for Prisma schema operations.\n\n```prisma\ndatasource db {\n  provider  = \"postgresql\"\n  url       = env(\"DATABASE_URL\")\n  directUrl = env(\"DIRECT_DATABASE_URL\")\n}\n```\n\nThen:\n\n```env\nDATABASE_URL=\"postgresql://...-pooler.../db?sslmode=require\"\nDIRECT_DATABASE_URL=\"postgresql://...neon.tech/db?sslmode=require\"\n```\n\n`db pull`, migrations, and some schema operations should use the direct URL. The pooled URL is better for runtime app queries.\n\n2. Run Prisma from the package that owns the schema.\n\nIn a pnpm monorepo, make sure the CLI is reading the intended `.env` and schema:\n\n```bash\npnpm --filter your-db-package prisma db pull --schema packages/db/prisma/schema.prisma\n```\n\nOr from that package directory:\n\n```bash\npnpm prisma db pull\n```\n\nA lot of “works in psql” pain is actually Prisma loading a different `.env`.\n\n3. Wake Neon before introspection.\n\nNeon can be idle, and Prisma’s connection path may time out while the compute wakes. Try:\n\n```bash\npsql \"$DIRECT_DATABASE_URL\" -c \"select 1\"\npnpm prisma db pull --schema packages/db/prisma/schema.prisma\n```\n\n4. Add connection timeout params to the **direct** URL:\n\n```env\nDIRECT_DATABASE_URL=\"postgresql://...?sslmode=require&connect_timeout=60\"\n```\n\nIf you are currently using the pooled URL for `db pull`, I’d bet that is the main issue. Use pooled for the app, direct/unpooled for Prisma CLI operations."
+    },
+    {
+      "scenario_id": "eaddrinuse-ci",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/eaddrinuse-ci-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/eaddrinuse-ci-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "EADDRINUSE port 3000 GitHub Actions ubuntu-latest",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "EADDRINUSE port 3000 GitHub Actions ubuntu-latest",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": ["fix-eaddrinuse-ci-time-wait"]
+        }
+      ],
+      "search_query": "EADDRINUSE port 3000 GitHub Actions ubuntu-latest",
+      "returned_solution_ids": ["fix-eaddrinuse-ci-time-wait"],
+      "final_answer": "Likely cause: nothing is “still running” on `3000`. Intermittent `EADDRINUSE` after killing processes is often a socket lifecycle race, especially `TIME_WAIT`, or a previous test/dev-server process that has not released cleanly yet. Killing by port can miss child processes, late-spawning servers, or parallel test workers.\n\nBest fix for CI: stop using fixed port `3000`.\n\nUse an ephemeral port:\n\n```js\nserver.listen(0, '127.0.0.1', () => {\n  const { port } = server.address()\n  process.env.BASE_URL = `http://127.0.0.1:${port}`\n})\n```\n\nThen pass that actual port into Playwright/Cypress/Jest/etc.\n\nIf your tests require a fixed URL, make CI allocate a free port first:\n\n```bash\nPORT=$(node -e \"const s=require('net').createServer();s.listen(0,()=>{console.log(s.address().port);s.close()})\")\nnpm run start -- --port \"$PORT\" &\nnpx wait-on \"http://127.0.0.1:$PORT\"\nBASE_URL=\"http://127.0.0.1:$PORT\" npm test\n```\n\nAlso check these common CI footguns:\n\n```yaml\nstrategy:\n  max-parallel: 1\n```\n\nor ensure each matrix job/worker uses a different port.\n\nAnd make teardown graceful:\n\n```js\nafterAll(async () => {\n  await new Promise(resolve => server.close(resolve))\n})\n```\n\nAvoid relying on `kill -9`, `kill-port 3000`, or `lsof -ti:3000 | xargs kill` as the main fix. Those hide the race; they do not remove it. The robust pattern is: bind to port `0`, wait for readiness, pass the resolved URL to tests, and close the server cleanly."
+    },
+    {
+      "scenario_id": "eaddrinuse-ci",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/eaddrinuse-ci-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/eaddrinuse-ci-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "This usually means the problem is not “a forgotten process on port 3000” but one of these CI race conditions:\n\n1. **Two things are trying to bind `3000` at the same time**\n   Common in Playwright/Cypress/Vitest setups where:\n   - the test runner starts the dev server\n   - your workflow also starts `npm run dev`\n   - retries/shards/parallel jobs reuse the same port\n\n   Check for `webServer` in Playwright config, `start-server-and-test`, background `npm run dev &`, or parallel matrix jobs all using `PORT=3000`.\n\n2. **The server is binding both IPv4/IPv6 differently**\n   On Ubuntu, `localhost` may resolve to `::1` and `127.0.0.1`. One process can appear absent from a simple port check while another bind still conflicts.\n\n   Prefer explicit host/port:\n\n   ```bash\n   HOST=127.0.0.1 PORT=3000 npm run dev\n   ```\n\n   And in tests use:\n\n   ```txt\n   http://127.0.0.1:3000\n   ```\n\n3. **Cleanup runs before the server has fully exited**\n   `kill` is async. The next run may start while the old process is still shutting down.\n\n   Use a real wait:\n\n   ```bash\n   fuser -k 3000/tcp || true\n   timeout 10 bash -c 'while lsof -iTCP:3000 -sTCP:LISTEN; do sleep 0.5; done'\n   ```\n\n4. **Port `3000` is the wrong abstraction in CI**\n   The most robust fix is to avoid a fixed port. Let the OS assign one, or derive from job index:\n\n   ```bash\n   PORT=$((3000 + GITHUB_RUN_ATTEMPT))\n   ```\n\n   Better for parallel jobs:\n\n   ```bash\n   PORT=$((3000 + MATRIX_INDEX))\n   ```\n\nMy strongest bet: your CI has a duplicate server start or parallel test worker occasionally racing for `3000`. Search the workflow and test config for `3000`, `npm run dev`, `webServer`, `start-server-and-test`, and background `&`. Then either make only one layer own the server, or allocate a unique port per job/run."
+    },
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/ts2307-pnpm-workspaces-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/ts2307-pnpm-workspaces-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 pnpm workspaces TypeScript paths",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 pnpm workspaces TypeScript paths",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": [
+            "fix-ts2307-pnpm-workspace-dep",
+            "fix-pnpm-err-module-not-found-turbo-build",
+            "fix-prisma-neon-direct-url"
+          ]
+        }
+      ],
+      "search_query": "TS2307 pnpm workspaces TypeScript paths",
+      "returned_solution_ids": [
+        "fix-ts2307-pnpm-workspace-dep",
+        "fix-pnpm-err-module-not-found-turbo-build",
+        "fix-prisma-neon-direct-url"
+      ],
+      "final_answer": "Most likely: TypeScript is resolving this as a real package import, but the consuming package does not have a real dependency edge to that workspace package.\n\nCheck these first:\n\n1. In the consuming package’s `package.json`, add the workspace package:\n\n```json\n{\n  \"dependencies\": {\n    \"@your-scope/pkg\": \"workspace:*\"\n  }\n}\n```\n\nThen run:\n\n```bash\npnpm install\n```\n\n2. In the imported package’s `package.json`, make sure its types are exposed and actually exist:\n\n```json\n{\n  \"name\": \"@your-scope/pkg\",\n  \"main\": \"./dist/index.js\",\n  \"types\": \"./dist/index.d.ts\"\n}\n```\n\nor, with exports:\n\n```json\n{\n  \"exports\": {\n    \".\": {\n      \"types\": \"./dist/index.d.ts\",\n      \"import\": \"./dist/index.js\"\n    }\n  }\n}\n```\n\n3. If you are importing source directly via TS paths, make sure `baseUrl` and `paths` are in the `tsconfig` that `tsc` is actually using, not only a root/editor config:\n\n```json\n{\n  \"compilerOptions\": {\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@your-scope/pkg\": [\"../pkg/src/index.ts\"],\n      \"@your-scope/pkg/*\": [\"../pkg/src/*\"]\n    }\n  }\n}\n```\n\nBut the key bit: `paths` is not a substitute for declaring the workspace dependency. Runtime tools often tolerate this because bundlers/pnpm symlinks can find it, while `tsc` with `node16`, `nodenext`, or `bundler` resolution still expects the package graph and type entrypoints to make sense.\n\nI’d run:\n\n```bash\npnpm --filter <consumer> exec tsc --traceResolution\n```\n\nThen look for the failing package name. It will usually reveal one of: missing dependency, wrong `exports.types`, missing built `.d.ts`, or `tsc` reading a different `tsconfig` than expected."
+    },
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/ts2307-pnpm-workspaces-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/ts2307-pnpm-workspaces-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "The workspace here is empty, so I can’t inspect the actual configs. But for pnpm workspace packages, this TS2307 pattern is usually one of these:\n\n1. `paths` alias doesn’t match the real import exactly\n\n```json\n{\n  \"compilerOptions\": {\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@scope/pkg\": [\"packages/pkg/src/index.ts\"],\n      \"@scope/pkg/*\": [\"packages/pkg/src/*\"]\n    }\n  }\n}\n```\n\nYou often need both the bare package alias and the wildcard alias.\n\n2. The consuming package is not extending the root tsconfig\n\nRuntime may resolve via pnpm symlinks or bundler config, while `tsc` only sees the local `tsconfig.json`. Check that the package running `tsc` has:\n\n```json\n{\n  \"extends\": \"../../tsconfig.json\"\n}\n```\n\nor has equivalent `baseUrl` / `paths`.\n\n3. TypeScript is reading package `exports`, but the package has no type entry\n\nIf importing by workspace package name, make sure the package’s `package.json` exposes types:\n\n```json\n{\n  \"name\": \"@scope/pkg\",\n  \"main\": \"./dist/index.js\",\n  \"types\": \"./dist/index.d.ts\",\n  \"exports\": {\n    \".\": {\n      \"types\": \"./dist/index.d.ts\",\n      \"import\": \"./dist/index.js\"\n    }\n  }\n}\n```\n\nIf the package is source-only during dev, either point `paths` at `src`, or build the referenced package first.\n\n4. `moduleResolution` mismatch\n\nFor modern package `exports`, use one of:\n\n```json\n{\n  \"compilerOptions\": {\n    \"moduleResolution\": \"Bundler\"\n  }\n}\n```\n\nor, for Node-style ESM:\n\n```json\n{\n  \"compilerOptions\": {\n    \"moduleResolution\": \"NodeNext\",\n    \"module\": \"NodeNext\"\n  }\n}\n```\n\n5. Project references are missing\n\nFor workspace packages compiled separately, use references:\n\n```json\n{\n  \"references\": [{ \"path\": \"../pkg\" }]\n}\n```\n\nand in the referenced package:\n\n```json\n{\n  \"compilerOptions\": {\n    \"composite\": true,\n    \"declaration\": true\n  }\n}\n```\n\nFastest debug command:\n\n```bash\npnpm tsc --noEmit --traceResolution\n```\n\nSearch the output for the failing module. It will tell you whether TS is checking `paths`, `node_modules`, `exports`, or the wrong `tsconfig` entirely. My first bet: the package-level `tsconfig` running `tsc` is not inheriting the root `paths`, or the alias has `@scope/pkg/*` but is missing the bare `@scope/pkg` entry."
+    },
+    {
+      "scenario_id": "better-auth-org-invite-session",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/better-auth-org-invite-session-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/better-auth-org-invite-session-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "Cannot read properties of undefined reading session",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "Cannot read properties of undefined reading session",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": ["fix-better-auth-org-invite-session"]
+        }
+      ],
+      "search_query": "Cannot read properties of undefined reading session",
+      "returned_solution_ids": ["fix-better-auth-org-invite-session"],
+      "final_answer": "This is almost certainly the accept-invitation call losing the request headers/cookies, not the user actually being logged out.\n\nFor Better Auth’s organization plugin, server-side `acceptInvitation` must receive the incoming request headers:\n\n```ts\nimport { headers } from \"next/headers\";\nimport { auth } from \"@/lib/auth\";\n\nawait auth.api.acceptInvitation({\n  body: {\n    invitationId,\n  },\n  headers: await headers(),\n});\n```\n\nIf you call it from a detached server action, route handler helper, background function, or shared utility without passing `headers`, Better Auth cannot read the session cookie and can hit errors like:\n\n```txt\nCannot read properties of undefined (reading 'session')\n```\n\nClient-side, prefer:\n\n```ts\nawait authClient.organization.acceptInvitation({\n  invitationId,\n});\n```\n\nAlso check these two common pnpm/Next 15 gotchas:\n\n```bash\npnpm why better-auth\npnpm why @better-auth/cli\n```\n\nMake sure you do not have multiple Better Auth versions installed through workspace packages. With pnpm, duplicated versions can cause plugin/client/server shape mismatches.\n\nFinally, verify your auth route exports all methods and uses the same `auth` instance that includes the organization plugin:\n\n```ts\n// app/api/auth/[...all]/route.ts\nimport { auth } from \"@/lib/auth\";\nimport { toNextJsHandler } from \"better-auth/next-js\";\n\nexport const { GET, POST } = toNextJsHandler(auth);\n```\n\nThe key fix: pass `headers: await headers()` when accepting invitations on the server."
+    },
+    {
+      "scenario_id": "better-auth-org-invite-session",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/better-auth-org-invite-session-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/better-auth-org-invite-session-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Most likely cause: you’re calling the server API without forwarding request headers/cookies. Better Auth’s org `acceptInvitation` endpoint requires session cookies, so “user is logged in” in the browser is not enough unless the server action/route passes `headers()`.\n\nUse one of these shapes:\n\n```ts\n// client component\nawait authClient.organization.acceptInvitation({\n  invitationId,\n})\n```\n\nor, if using a server action / route handler:\n\n```ts\n\"use server\"\n\nimport { headers } from \"next/headers\"\nimport { auth } from \"@/lib/auth\"\n\nexport async function acceptInvite(invitationId: string) {\n  return auth.api.acceptInvitation({\n    body: { invitationId },\n    headers: await headers(),\n  })\n}\n```\n\nAlso verify:\n\n```ts\n// app/api/auth/[...all]/route.ts\nimport { auth } from \"@/lib/auth\"\nimport { toNextJsHandler } from \"better-auth/next-js\"\n\nexport const { GET, POST } = toNextJsHandler(auth)\n```\n\nAnd your client has the org client plugin:\n\n```ts\nimport { createAuthClient } from \"better-auth/react\"\nimport { organizationClient } from \"better-auth/client/plugins\"\n\nexport const authClient = createAuthClient({\n  plugins: [organizationClient()],\n})\n```\n\nWith `pnpm`, also regenerate/migrate after adding the org plugin:\n\n```bash\npnpm dlx @better-auth/cli generate\n# or\npnpm dlx @better-auth/cli migrate\n```\n\nThe key fix is usually `headers: await headers()` on `auth.api.acceptInvitation(...)`. Better Auth’s docs explicitly show that for accept invitation, and note it must be called after login. Sources: Better Auth organization docs and Next.js integration docs."
+    },
+    {
+      "scenario_id": "hono-workers-cpu-upload",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/hono-workers-cpu-upload-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/hono-workers-cpu-upload-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "Worker's CPU time limit exceeded",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "Worker's CPU time limit exceeded",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": [
+            "fix-hono-workers-cpu-image-upload",
+            "fix-stripe-workers-construct-event-async",
+            "fix-neon-branch-first-query-timeout"
+          ]
+        }
+      ],
+      "search_query": "Worker's CPU time limit exceeded",
+      "returned_solution_ids": [
+        "fix-hono-workers-cpu-image-upload",
+        "fix-stripe-workers-construct-event-async",
+        "fix-neon-branch-first-query-timeout"
+      ],
+      "final_answer": "This is almost certainly real Workers CPU enforcement, not a Hono bug.\n\n`wrangler dev --local` runs in a local runtime and can hide CPU-bound problems. Remote `wrangler dev` runs closer to the deployed Workers environment, where image decoding/resizing/compression in JS/WASM can blow past the CPU limit on `/upload`.\n\nWhat to do:\n\n1. Move image processing out of the request path.\n   Upload the original image to R2, return quickly, then process async via Workers Queues, a separate backend, or Cloudflare Images.\n\n2. Do not rely on `ctx.executionCtx.waitUntil()` to fix this.\n   `waitUntil()` lets work continue after the response, but it still runs under Worker CPU constraints.\n\n3. Avoid JS/WASM image libraries in Workers for heavy transforms.\n   Packages like `sharp` are Node-native and generally not Worker-friendly; WASM codecs can work for tiny images but often exceed CPU on real uploads.\n\n4. Put hard guards on `/upload`.\n   Limit file size, pixel dimensions, MIME types, and reject huge images before decoding them.\n\n5. If you only need resizing/variants, prefer Cloudflare Images or Image Resizing.\n   Let Cloudflare’s image pipeline do the CPU-heavy part instead of your Worker.\n\nA good Workers shape is:\n\n```ts\napp.post('/upload', async (c) => {\n  const form = await c.req.formData()\n  const file = form.get('file')\n\n  // validate size/type\n  // store original in R2\n  // enqueue job for processing\n\n  return c.json({ status: 'queued' }, 202)\n})\n```\n\nThen the queue consumer performs bounded processing, or hands off to Cloudflare Images / another service.\n\nShort version: remote dev is telling the truth. The `/upload` endpoint is doing too much CPU-bound image work inside a Worker request. Move the transform out of the request or off Workers entirely."
+    },
+    {
+      "scenario_id": "hono-workers-cpu-upload",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/hono-workers-cpu-upload-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/hono-workers-cpu-upload-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "This almost certainly means `/upload` is doing CPU-heavy image work inside the Worker isolate, and `wrangler dev --local` is hiding the real production/runtime constraint.\n\nCloudflare Workers are a poor fit for synchronous image processing if you decode/resize/compress images in JS/WASM during the request. Remote `wrangler dev` runs closer to the real Workers runtime, so it enforces CPU limits; local mode does not faithfully reproduce that.\n\nWhat to check first:\n\n1. Confirm the hot path\n   Add timing around decode/resize/encode steps:\n\n```ts\nconst t0 = Date.now()\n// parse image\nconsole.log(\"decode\", Date.now() - t0)\n\nconst t1 = Date.now()\n// resize/compress\nconsole.log(\"transform\", Date.now() - t1)\n```\n\nIf one step is hundreds/thousands of ms, that is your crash.\n\n2. Avoid doing image transforms in the Worker request\n   Prefer one of these:\n\n- Upload original image to R2 from the Worker\n- Process asynchronously via Queues\n- Use Cloudflare Images / Image Resizing\n- Send the image to a dedicated service better suited for CPU work\n- Do client-side resizing before upload if acceptable\n\n3. If using libraries like `sharp`, `jimp`, `squoosh`, `wasm-vips`, etc.\n   Be careful: many image libraries are CPU/memory expensive or not ideal for Workers. `sharp` also does not run normally in Workers because it depends on native binaries.\n\n4. Make the endpoint streaming/lightweight\n   The Worker should ideally do:\n\n```ts\napp.post(\"/upload\", async (c) => {\n  const body = await c.req.parseBody()\n  const file = body[\"file\"]\n\n  // validate type/size\n  // store original in R2\n  // enqueue processing job\n\n  return c.json({ ok: true })\n})\n```\n\n5. Reproduce against real runtime\n   Treat this as meaningful:\n\n```bash\nwrangler dev\n```\n\nand this as less trustworthy for CPU limits:\n\n```bash\nwrangler dev --local\n```\n\nLikely fix: move image processing out of the synchronous Hono route. Let the Worker validate/store/enqueue, then process via Cloudflare Queues, Cloudflare Images, or an external image service."
+    },
+    {
+      "scenario_id": "stripe-webhook-raw-body-production",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/stripe-webhook-raw-body-production-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/stripe-webhook-raw-body-production-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "The production-only Stripe webhook signature failure is almost always one of these:\n\n1. **Wrong webhook signing secret**\n   - Staging and production Stripe webhook endpoints have different `whsec_...` secrets.\n   - Make sure production is using the secret from the **live-mode webhook endpoint**, not test mode or staging.\n   - Log only a fingerprint, not the full secret, e.g. first/last 4 chars.\n\n2. **Body is being parsed or mutated before verification**\n   Stripe signature verification requires the exact raw request body.\n\nFor **Next.js Pages Router**:\n\n```ts\n// pages/api/stripe/webhook.ts\nimport Stripe from \"stripe\";\nimport { buffer } from \"micro\";\n\nexport const config = {\n  api: {\n    bodyParser: false,\n  },\n};\n\nconst stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);\n\nexport default async function handler(req, res) {\n  const sig = req.headers[\"stripe-signature\"];\n  const rawBody = await buffer(req);\n\n  let event;\n\n  try {\n    event = stripe.webhooks.constructEvent(\n      rawBody,\n      sig!,\n      process.env.STRIPE_WEBHOOK_SECRET!\n    );\n  } catch (err) {\n    console.error(\"Stripe webhook signature failed:\", err.message);\n    return res.status(400).send(`Webhook Error: ${err.message}`);\n  }\n\n  res.status(200).json({ received: true });\n}\n```\n\nFor **Next.js App Router**:\n\n```ts\n// app/api/stripe/webhook/route.ts\nimport Stripe from \"stripe\";\nimport { NextResponse } from \"next/server\";\n\nconst stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);\n\nexport async function POST(req: Request) {\n  const sig = req.headers.get(\"stripe-signature\");\n  const rawBody = await req.text();\n\n  try {\n    const event = stripe.webhooks.constructEvent(\n      rawBody,\n      sig!,\n      process.env.STRIPE_WEBHOOK_SECRET!\n    );\n\n    return NextResponse.json({ received: true });\n  } catch (err: any) {\n    console.error(\"Stripe webhook signature failed:\", err.message);\n    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });\n  }\n}\n```\n\n3. **Production proxy/CDN is altering the body**\n   Check whether something in front of Next.js is decompressing, re-encoding, trimming, or otherwise transforming the request body. Stripe verification needs the byte-identical payload.\n\n4. **Using the wrong endpoint mode**\n   If Stripe is sending live events, the webhook secret must come from a live-mode endpoint. Test-mode events use a separate secret.\n\n5. **Multiple reads of the body**\n   If any middleware, logger, auth wrapper, or validation layer reads `req.body`, `req.json()`, or `req.text()` before `constructEvent`, verification can fail.\n\nThe fix I’d check first: confirm production has `bodyParser: false` if using Pages Router, or `await req.text()` if using App Router, and verify the production `STRIPE_WEBHOOK_SECRET` is the live webhook endpoint’s `whsec_...`."
+    },
+    {
+      "scenario_id": "stripe-webhook-raw-body-production",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/stripe-webhook-raw-body-production-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/stripe-webhook-raw-body-production-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Most production-only Stripe webhook signature failures come from the raw request body being changed before `stripe.webhooks.constructEvent(...)`.\n\nFor `stripe-node`, signature verification must use:\n\n1. The exact raw body bytes Stripe sent\n2. The exact `stripe-signature` header\n3. The correct webhook signing secret for that endpoint/environment\n\nIn a Next.js app, check these first:\n\n```ts\nconst event = stripe.webhooks.constructEvent(\n  rawBody,\n  req.headers['stripe-signature'],\n  process.env.STRIPE_WEBHOOK_SECRET\n)\n```\n\nKey production gotchas:\n\n- **Body parser is enabled**: If Next parses JSON first, the payload changes. In Pages Router, disable it:\n\n```ts\nexport const config = {\n  api: {\n    bodyParser: false,\n  },\n}\n```\n\nThen read the raw stream, for example with `micro`:\n\n```ts\nimport { buffer } from 'micro'\n\nconst rawBody = await buffer(req)\n```\n\n- **App Router uses the wrong body method**: Use `await req.text()` or `await req.arrayBuffer()` before parsing JSON. Do not call `await req.json()` before verification.\n\n```ts\nconst body = await req.text()\nconst signature = req.headers.get('stripe-signature')\n\nconst event = stripe.webhooks.constructEvent(\n  body,\n  signature!,\n  process.env.STRIPE_WEBHOOK_SECRET!\n)\n```\n\n- **Wrong webhook secret in production**: The webhook signing secret is not the API secret key. Also, staging and production webhook endpoints each have their own `whsec_...`.\n\n- **Proxy/CDN middleware mutates the body**: Some middleware, logging, edge functions, or request transforms can decompress, normalize, or reserialize the body. Stripe verification will fail if even whitespace changes.\n\n- **Using Connect vs account webhooks**: If this is Stripe Connect, make sure the production endpoint secret matches the actual endpoint receiving the event.\n\n- **Endpoint deployed as Edge runtime**: Prefer Node.js runtime for `stripe-node` webhook handling.\n\nFor App Router, a solid shape is:\n\n```ts\nexport const runtime = 'nodejs'\n\nexport async function POST(req: Request) {\n  const body = await req.text()\n  const sig = req.headers.get('stripe-signature')\n\n  let event\n\n  try {\n    event = stripe.webhooks.constructEvent(\n      body,\n      sig!,\n      process.env.STRIPE_WEBHOOK_SECRET!\n    )\n  } catch (err) {\n    return new Response(`Webhook Error: ${(err as Error).message}`, {\n      status: 400,\n    })\n  }\n\n  // handle event\n\n  return Response.json({ received: true })\n}\n```\n\nI’d first compare staging vs production on three things: route runtime, body parsing path, and the exact `whsec_...` value configured for the deployed production webhook endpoint."
+    },
+    {
+      "scenario_id": "react19-external-store-warning",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/react19-external-store-warning-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/react19-external-store-warning-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "Cannot update a component while rendering a different component",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "Cannot update a component while rendering a different component",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": ["fix-react19-external-store-render-update"]
+        }
+      ],
+      "search_query": "Cannot update a component while rendering a different component",
+      "returned_solution_ids": ["fix-react19-external-store-render-update"],
+      "final_answer": "This is almost certainly your custom external store violating a `useSyncExternalStore` invariant that React 19 is stricter/louder about.\n\nCheck these first:\n\n1. `getSnapshot` must be pure\n   It should only read store state. It must not initialize missing data, write defaults, emit events, call `setState`, subscribe, or trigger derived-store updates.\n\n2. `getSnapshot` must return a cached/stable value\n   If it returns a new object/array every call, React may think the store changed during render.\n\n   Bad:\n\n```ts\ngetSnapshot: () => ({ ...store.state })\n```\n\n   Better:\n\n```ts\nlet snapshot = store.state\n\nfunction setState(next) {\n  snapshot = next\n  listeners.forEach(listener => listener())\n}\n\nfunction getSnapshot() {\n  return snapshot\n}\n```\n\n3. Do not notify subscribers during render\n   Watch for code paths like:\n\n```ts\nfunction getSnapshot() {\n  if (!initialized) {\n    initialized = true\n    notify()\n  }\n  return snapshot\n}\n```\n\n   or selector code that lazily computes something and writes back to the store.\n\n4. Selector/equality logic must not update state\n   If you have a custom hook around `useSyncExternalStore`, make sure selector evaluation is read-only. Any “cache miss, populate cache, notify” behavior should move to an effect or explicit action.\n\nA good shape is:\n\n```ts\nfunction subscribe(listener: () => void) {\n  listeners.add(listener)\n  return () => listeners.delete(listener)\n}\n\nfunction getSnapshot() {\n  return currentSnapshot\n}\n\nfunction updateStore(nextState) {\n  currentSnapshot = nextState\n  listeners.forEach(listener => listener())\n}\n```\n\nThen call `updateStore` only from events, async callbacks, effects, or explicit actions, never from render-time reads.\n\nThe spike after React 19 likely means the bug existed already, but React is now detecting/reporting it more consistently."
+    },
+    {
+      "scenario_id": "react19-external-store-warning",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/react19-external-store-warning-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/react19-external-store-warning-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "This warning usually means your external store is notifying subscribers synchronously while React is still rendering another component.\n\nWith `useSyncExternalStore`, the store contract is stricter than many custom stores accidentally assume:\n\n- `getSnapshot()` must be pure.\n- `getSnapshot()` must return a stable cached value when the underlying data has not changed.\n- `subscribe()` must only register/unregister listeners.\n- Store notifications should not happen during render.\n- A component should not call a store setter while rendering.\n\nThe likely React 19 upgrade effect is that React is surfacing or hitting this timing more consistently, especially with concurrent rendering and stricter external store checks.\n\nThe suspicious pattern is something like:\n\n```ts\nfunction getSnapshot() {\n  if (needsInit) {\n    store.setState(...)\n  }\n\n  return { ...state } // also bad if recreated every call\n}\n```\n\nor:\n\n```ts\nfunction Component() {\n  const value = useStore()\n\n  if (!value.ready) {\n    store.setState({ ready: true }) // render-phase update\n  }\n\n  return ...\n}\n```\n\nFix shape:\n\n```ts\nlet state = initialState\nlet snapshot = state\nconst listeners = new Set<() => void>()\n\nexport function setState(next) {\n  if (Object.is(next, state)) return\n\n  state = next\n  snapshot = state\n\n  for (const listener of listeners) {\n    listener()\n  }\n}\n\nexport function getSnapshot() {\n  return snapshot\n}\n\nexport function subscribe(listener) {\n  listeners.add(listener)\n  return () => listeners.delete(listener)\n}\n```\n\nThen consume it like:\n\n```ts\nconst value = useSyncExternalStore(\n  store.subscribe,\n  store.getSnapshot,\n  store.getServerSnapshot\n)\n```\n\nIf initialization or derived writes are needed, move them to an effect:\n\n```ts\nconst value = useStore()\n\nuseEffect(() => {\n  if (!value.ready) {\n    store.setState({ ready: true })\n  }\n}, [value.ready])\n```\n\nI’d inspect your custom store for three things first:\n\n1. Any `setState` / `emit` / `notify` inside `getSnapshot`, selectors, or render-time hooks.\n2. `getSnapshot()` returning a new object/array every call.\n3. Subscription callbacks firing immediately inside `subscribe()` during render.\n\nThe most common React 19 regression here is `getSnapshot` returning fresh derived objects. Cache snapshots or use selectors that preserve identity when selected data has not changed."
+    },
+    {
+      "scenario_id": "trpc-react-query-stale-data",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/trpc-react-query-stale-data-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/trpc-react-query-stale-data-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "@trpc/react-query stale data invalidation mutations Next.js",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "@trpc/react-query stale data invalidation mutations Next.js",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": [
+            "fix-trpc-react-query-stale-after-mutation",
+            "fix-next-cache-tags-revalidate-miss",
+            "fix-react-query-v5-optimistic-rollback"
+          ]
+        }
+      ],
+      "search_query": "@trpc/react-query stale data invalidation mutations Next.js",
+      "returned_solution_ids": [
+        "fix-trpc-react-query-stale-after-mutation",
+        "fix-next-cache-tags-revalidate-miss",
+        "fix-react-query-v5-optimistic-rollback"
+      ],
+      "final_answer": "Most likely this is not tRPC invalidation failing. It is another cache above or beside React Query.\n\nCheck these in order:\n\n1. **Invalidate the exact tRPC query key**\n   \n```ts\nconst utils = trpc.useUtils()\n\nawait utils.post.list.invalidate()\n// or, for scoped inputs:\nawait utils.post.list.invalidate({ orgId })\n```\n\nIf the query was called with `{ orgId, filters }`, invalidating without matching the right path/input may miss the active query.\n\n2. **Await invalidation in `onSuccess` / `onSettled`**\n\n```ts\nconst mutation = trpc.post.create.useMutation({\n  onSuccess: async () => {\n    await utils.post.list.invalidate()\n  },\n})\n```\n\nWithout `await`, UI transitions, modal closes, or route refreshes can race the refetch.\n\n3. **Check React Query defaults**\n\nLook for production-only config like:\n\n```ts\nstaleTime: 10_000\nrefetchOnMount: false\nrefetchOnWindowFocus: false\n```\n\nA `staleTime` of 5-10 seconds exactly matches your symptom. Invalidation should mark queries stale, but if the query is disabled, inactive, mismatched, or hydrated from elsewhere, it may not visibly refetch.\n\n4. **Check Next.js caching**\n   \nIf the tRPC procedure calls `fetch` inside Next.js App Router, production may cache it unless disabled:\n\n```ts\nawait fetch(url, { cache: 'no-store' })\n```\n\nor:\n\n```ts\nawait fetch(url, { next: { revalidate: 0 } })\n```\n\nAlso check route segment config:\n\n```ts\nexport const dynamic = 'force-dynamic'\n```\n\nThis is a common production-only trap: dev looks fresh, prod serves cached server data.\n\n5. **Check CDN / database replica lag**\n\nA consistent 5-10 second delay can also be:\n   \n- reads going to a lagging replica after writes\n- Vercel/Next route cache\n- CDN caching API responses\n- tRPC response batching hitting a cached endpoint\n\nThe fastest diagnostic: after mutation succeeds, log whether the refetch actually happens and what the network response contains. If the refetch response is old, the problem is server/Next/cache/replica. If the response is fresh but UI is old, it is React Query key mismatch or local state shadowing query data."
+    },
+    {
+      "scenario_id": "trpc-react-query-stale-data",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/trpc-react-query-stale-data-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/trpc-react-query-stale-data-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Most likely this is not a tRPC mutation problem. It is usually one of these cache layers:\n\n1. **React Query invalidation only refetches active queries by default.**  \n   If the stale query is currently inactive, it may stay stale until remount/focus unless you refetch all matching queries.\n\n```ts\nconst utils = trpc.useUtils();\n\nconst mutation = trpc.post.update.useMutation({\n  onSuccess: async () => {\n    await utils.post.list.invalidate(undefined, {\n      refetchType: 'all',\n    });\n  },\n});\n```\n\n2. **Your invalidation key may not match the query input.**  \n   If the list query is called with filters/pagination, invalidate the whole procedure or the exact same input:\n\n```ts\nawait utils.post.list.invalidate(); // all post.list queries\n// or\nawait utils.post.list.invalidate({ workspaceId });\n```\n\n3. **Next.js / HTTP / CDN caching may be serving stale tRPC GET responses.**  \n   The “5-10 seconds in production” symptom strongly suggests a server/CDN cache, especially if it only happens in prod. Check `Cache-Control`, Vercel/Cloudflare caching, route handlers, and any `responseMeta` config. Mutations may succeed, React Query may refetch, but the refetch receives a cached old response.\n\nFor mutable tRPC query responses, make sure they are not publicly cached:\n\n```ts\nresponseMeta() {\n  return {\n    headers: {\n      'cache-control': 'no-store',\n    },\n  };\n}\n```\n\n4. **SSR/SSG hydration can seed old data.**  \n   If the page uses `getStaticProps`, ISR, App Router `fetch` caching, or dehydrated React Query state, the client can hydrate with stale server data. For dynamic user data, prefer no-store/dynamic rendering and let React Query own freshness.\n\n5. **Use optimistic or direct cache updates for instant UI.**  \n   Invalidation is eventually consistent UX. If the user must see the mutation immediately:\n\n```ts\nonSuccess: (updated) => {\n  utils.post.byId.setData({ id: updated.id }, updated);\n  utils.post.list.invalidate();\n}\n```\n\nI would debug by opening DevTools Network after the mutation: if the refetch happens immediately but returns old JSON, it is server/CDN/Next caching. If no refetch happens, it is React Query key matching, inactive query behavior, or `staleTime: 'static'` / unusual query options."
+    },
+    {
+      "scenario_id": "react-query-v5-optimistic-rollback",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/react-query-v5-optimistic-rollback-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/react-query-v5-optimistic-rollback-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "React Query useMutation onError not firing",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "React Query useMutation onError not firing",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": [
+            "fix-react-query-v5-optimistic-rollback",
+            "fix-trpc-react-query-stale-after-mutation",
+            "fix-neon-branch-first-query-timeout"
+          ]
+        }
+      ],
+      "search_query": "React Query useMutation onError not firing",
+      "returned_solution_ids": [
+        "fix-react-query-v5-optimistic-rollback",
+        "fix-trpc-react-query-stale-after-mutation",
+        "fix-neon-branch-first-query-timeout"
+      ],
+      "final_answer": "Most likely: your `mutationFn` is not actually rejecting.\n\nIn React Query v5, `onError` only fires if the promise returned by `mutationFn` rejects or throws. A common bug is catching the error inside `mutationFn` and returning it, or using `fetch` without throwing on non-2xx responses.\n\nBad:\n\n```ts\nmutationFn: async (input) => {\n  try {\n    const res = await fetch(\"/api/item\", {\n      method: \"POST\",\n      body: JSON.stringify(input),\n    })\n\n    return await res.json()\n  } catch (err) {\n    return err // onError will NOT fire\n  }\n}\n```\n\nBetter:\n\n```ts\nmutationFn: async (input) => {\n  const res = await fetch(\"/api/item\", {\n    method: \"POST\",\n    body: JSON.stringify(input),\n  })\n\n  if (!res.ok) {\n    throw new Error(\"Mutation failed\")\n  }\n\n  return res.json()\n}\n```\n\nRollback shape:\n\n```ts\nconst mutation = useMutation({\n  mutationFn: updateItem,\n\n  onMutate: async (newItem) => {\n    await queryClient.cancelQueries({ queryKey: [\"items\"] })\n\n    const previousItems = queryClient.getQueryData([\"items\"])\n\n    queryClient.setQueryData([\"items\"], (old: any[] = []) =>\n      old.map((item) =>\n        item.id === newItem.id ? { ...item, ...newItem } : item\n      )\n    )\n\n    return { previousItems }\n  },\n\n  onError: (_error, _variables, context) => {\n    queryClient.setQueryData([\"items\"], context?.previousItems)\n  },\n\n  onSettled: () => {\n    queryClient.invalidateQueries({ queryKey: [\"items\"] })\n  },\n})\n```\n\nAlso check these:\n\n- Use `mutate(...)`, not `mutateAsync(...).catch(() => {})` in a way that hides the failure upstream.\n- If using Axios, make sure interceptors do not convert errors into successful responses.\n- If using `fetch`, remember 400/500 responses do not reject automatically.\n- Make sure `onError` is on the `useMutation({ ... })` options object, not accidentally passed somewhere else.\n- In v5, the value returned from `onMutate` is the rollback context received by `onError`.\n\nThe key diagnostic: add a log right before the end of `mutationFn`. If it reaches `return` on a failed request, React Query considers the mutation successful."
+    },
+    {
+      "scenario_id": "react-query-v5-optimistic-rollback",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/react-query-v5-optimistic-rollback-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/react-query-v5-optimistic-rollback-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Most likely the mutation is not actually “failing” from React Query’s perspective.\n\nIn React Query, `onError` only fires if your `mutationFn` rejects or throws. If you catch the error inside `mutationFn` and return something, React Query treats it as success, so rollback never runs.\n\nCheck for this pattern:\n\n```ts\nuseMutation({\n  mutationFn: async (input) => {\n    try {\n      const res = await api.update(input)\n      return res\n    } catch (err) {\n      console.error(err)\n      return err // Problem: this resolves successfully\n    }\n  },\n  onMutate: async (newItem) => {\n    await queryClient.cancelQueries({ queryKey: ['items'] })\n\n    const previousItems = queryClient.getQueryData(['items'])\n\n    queryClient.setQueryData(['items'], (old) =>\n      old.map((item) => item.id === newItem.id ? newItem : item)\n    )\n\n    return { previousItems }\n  },\n  onError: (_error, _variables, context) => {\n    queryClient.setQueryData(['items'], context.previousItems)\n  },\n})\n```\n\nFix it by rethrowing:\n\n```ts\nmutationFn: async (input) => {\n  try {\n    return await api.update(input)\n  } catch (err) {\n    console.error(err)\n    throw err\n  }\n}\n```\n\nOr simpler:\n\n```ts\nmutationFn: (input) => api.update(input)\n```\n\nAlso check your HTTP client. `fetch` does **not** reject on `400` / `500`; you must throw manually:\n\n```ts\nmutationFn: async (input) => {\n  const res = await fetch('/api/items', {\n    method: 'POST',\n    body: JSON.stringify(input),\n  })\n\n  if (!res.ok) {\n    throw new Error('Update failed')\n  }\n\n  return res.json()\n}\n```\n\nA solid v5 optimistic update shape:\n\n```ts\nconst mutation = useMutation({\n  mutationFn: updateItem,\n\n  onMutate: async (updatedItem) => {\n    await queryClient.cancelQueries({ queryKey: ['items'] })\n\n    const previousItems = queryClient.getQueryData(['items'])\n\n    queryClient.setQueryData(['items'], (old = []) =>\n      old.map((item) =>\n        item.id === updatedItem.id ? { ...item, ...updatedItem } : item\n      )\n    )\n\n    return { previousItems }\n  },\n\n  onError: (_error, _updatedItem, context) => {\n    queryClient.setQueryData(['items'], context?.previousItems)\n  },\n\n  onSettled: () => {\n    queryClient.invalidateQueries({ queryKey: ['items'] })\n  },\n})\n```\n\nSo the short diagnosis: `onMutate` works because the mutation starts, but `onError` does not fire because your `mutationFn` is resolving instead of rejecting. Make the failing path `throw`, especially if using `fetch`."
+    },
+    {
+      "scenario_id": "neon-preview-branch-first-query",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/neon-preview-branch-first-query-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/neon-preview-branch-first-query-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Yes, this smells like branch/compute activation rather than `connection_timeout`.\n\n`connection_timeout` only controls how long the client waits to establish the Postgres connection. If the TCP/TLS/Postgres connection succeeds but the first SQL statement waits while Neon activates the compute, attaches storage, warms routing/pooler state, or queues behind PgBouncer, that setting will not save you.\n\nNeon’s docs say computes scale to zero by default after 5 minutes, and an idle compute is activated by connecting or running a query. They also expose API endpoints to start/suspend a compute, and paid plans can tune `suspend_timeout_seconds`: https://neon.com/docs/connect/connection-latency\n\nWhat I’d do for preview branches:\n\n1. After creating the branch, explicitly start/warm the compute before exposing the preview URL.\n   Run a retrying readiness query like:\n\n```sql\nselect 1;\n```\n\nor better, something touching your app schema:\n\n```sql\nselect 1 from your_small_table limit 1;\n```\n\n2. Treat warmup as a separate deploy step with a generous timeout and retries/backoff.\n\nPseudo-flow:\n\n```bash\ncreate_neon_branch\nget_branch_connection_string\nrun_migrations_if_needed\nuntil psql \"$DATABASE_URL\" -c \"select 1\"; do\n  sleep 2\ndone\ndeploy_preview_app\n```\n\n3. Make the app’s first-request DB path retry once or twice, especially in serverless/preview environments.\n\n4. If previews are actively used, increase or disable scale-to-zero for those branch computes where cost allows. Neon documents this via `suspend_timeout_seconds`.\n\nOne subtle thing: if you are using Neon’s pooled hostname with `-pooler`, there are two waits involved: reaching PgBouncer/pooler and the backend compute becoming query-ready. A client-side connection timeout may only cover the former. So the fix is usually not “bigger connection timeout”; it is “readiness probe plus query retry.”\n\nI’d also check whether your timeout is coming from the app/query layer, not the connection layer: ORM query timeout, serverless function max duration, HTTP request timeout, migration tool timeout, or PgBouncer queue timeout. The exact error text will usually reveal which layer is giving up."
+    },
+    {
+      "scenario_id": "neon-preview-branch-first-query",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/neon-preview-branch-first-query-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/neon-preview-branch-first-query-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Yes, this is very likely a Neon compute wake-up/branch readiness issue, but `connection_timeout` may be the wrong lever.\n\nNeon branches can be created successfully while the compute is still idle or not yet warmed. Neon’s docs say scale-to-zero cold starts happen when a compute transitions from idle to active, and that connecting or querying can trigger activation. They also expose explicit **Start endpoint** APIs for activating a compute. Source: [Neon latency/timeouts docs](https://neon.com/docs/connect/connection-latency), [Create branch API](https://api-docs.neon.tech/reference/createprojectbranch).\n\nWhat I’d do for preview environments:\n\n1. After creating the branch and `read_write` endpoint, explicitly warm it:\n   ```sql\n   SELECT 1;\n   ```\n\n2. Wrap that warm-up query in retry/backoff, separate from app startup:\n   ```ts\n   for (let i = 0; i < 6; i++) {\n     try {\n       await db.query(\"select 1\");\n       break;\n     } catch (err) {\n       await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));\n     }\n   }\n   ```\n\n3. If using Neon’s API, call the **start endpoint** for the compute before deploying/running migrations, then poll until active if your workflow needs determinism.\n\n4. Check the timeout knob for your actual driver:\n   - `pg` Node client: use `connectionTimeoutMillis`, not usually a URL param.\n   - libpq/psql-style clients: the URL param is usually `connect_timeout`, not `connection_timeout`.\n   - Prisma may fail with pool acquisition timeouts, where `connect_timeout` will not help much; you may need `pool_timeout` / Prisma pool config.\n\nThe key distinction: a connection timeout only gives the TCP/Postgres connection more time. If your framework’s **first query**, **pool acquisition**, or **migration command** has its own shorter timeout, that can still fail even if the connection string timeout is higher. For previews, a dedicated “create branch → create endpoint → start/warm → run migrations → deploy app” step is usually the cleanest fix."
+    },
+    {
+      "scenario_id": "loading-spinner-submit-button",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/loading-spinner-submit-button-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/loading-spinner-submit-button-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Use the form’s submitting state to drive both the spinner and disabled state.\n\nExample in React:\n\n```tsx\nconst [isSubmitting, setIsSubmitting] = useState(false)\n\nasync function handleSubmit(event: React.FormEvent) {\n  event.preventDefault()\n\n  if (isSubmitting) return\n\n  setIsSubmitting(true)\n\n  try {\n    await submitContactForm()\n  } finally {\n    setIsSubmitting(false)\n  }\n}\n```\n\nThen update the button:\n\n```tsx\n<button type=\"submit\" disabled={isSubmitting}>\n  {isSubmitting ? (\n    <>\n      <span className=\"spinner\" aria-hidden=\"true\" />\n      Sending...\n    </>\n  ) : (\n    \"Submit\"\n  )}\n</button>\n```\n\nCSS:\n\n```css\n.spinner {\n  width: 14px;\n  height: 14px;\n  border: 2px solid currentColor;\n  border-right-color: transparent;\n  border-radius: 50%;\n  display: inline-block;\n  margin-right: 8px;\n  vertical-align: -2px;\n  animation: spin 0.7s linear infinite;\n}\n\nbutton:disabled {\n  opacity: 0.7;\n  cursor: not-allowed;\n}\n\n@keyframes spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n```\n\nKey detail: put `setIsSubmitting(false)` in `finally` so the button always re-enables after success or error."
+    },
+    {
+      "scenario_id": "loading-spinner-submit-button",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/loading-spinner-submit-button-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/loading-spinner-submit-button-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "I can’t edit files in this turn because you asked for no persistent changes, but the implementation should be:\n\n```jsx\nconst [isSubmitting, setIsSubmitting] = useState(false);\n\nasync function handleSubmit(e) {\n  e.preventDefault();\n  setIsSubmitting(true);\n\n  try {\n    await submitContactForm(formData);\n  } finally {\n    setIsSubmitting(false);\n  }\n}\n```\n\nThen update the button:\n\n```jsx\n<button type=\"submit\" disabled={isSubmitting}>\n  {isSubmitting ? (\n    <>\n      <Spinner />\n      Sending...\n    </>\n  ) : (\n    'Submit'\n  )}\n</button>\n```\n\nKey points:\n- Set `isSubmitting` to `true` before the async submit starts.\n- Reset it in `finally` so it hides after success or error.\n- Use `disabled={isSubmitting}` to prevent double clicks.\n- Keep the spinner inline with the button label for good feedback."
+    },
+    {
+      "scenario_id": "brand-color-blue-to-green",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/brand-color-blue-to-green-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/brand-color-blue-to-green-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "I can’t inspect usages because the workspace is empty: `/tmp/clanker-codex-eval-workspace-8FMnTM` has no files, including no `tailwind.config.js`.\n\nOnce the repo is present, I’d check:\n\n```bash\nrg -n \"blue|primary|brand|bg-primary|text-primary|border-primary|ring-primary|from-primary|to-primary|bg-blue|text-blue|border-blue|ring-blue|from-blue|to-blue\" .\n```\n\nThen update the brand token in `tailwind.config.js`, ideally changing the `primary`/brand color value from blue to green rather than replacing every utility manually. Also search for hard-coded hex/RGB values matching the old blue, since those often hide outside Tailwind classes."
+    },
+    {
+      "scenario_id": "brand-color-blue-to-green",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/brand-color-blue-to-green-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/brand-color-blue-to-green-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "The workspace is empty, so I can’t inspect the actual Tailwind config or usages here.\n\nTo catch everything in your app, I’d check:\n\n```bash\nrg -n \"primary|blue|bg-blue|text-blue|border-blue|ring-blue|from-blue|via-blue|to-blue|#[0-9A-Fa-f]{3,8}\" .\n```\n\nThen update `tailwind.config.js`, likely something like:\n\n```js\ntheme: {\n  extend: {\n    colors: {\n      primary: {\n        // change blue values to green values\n      },\n    },\n  },\n}\n```\n\nKey places to verify after the config change:\n\n- Tailwind semantic classes: `bg-primary`, `text-primary`, `border-primary`, `ring-primary`\n- Direct blue utilities: `bg-blue-*`, `text-blue-*`, `border-blue-*`, `ring-blue-*`\n- Gradients: `from-blue-*`, `via-blue-*`, `to-blue-*`\n- Hardcoded hex/rgb/hsl blues in CSS or components\n- SVGs/icons using blue fills or strokes\n- External theme files, CSS variables, or design token files\n\nIf you put the app files in this workspace, I can give you an exact hit list."
+    },
+    {
+      "scenario_id": "zod-vs-yup-react-native",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/zod-vs-yup-react-native-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/zod-vs-yup-react-native-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "For a new React Native app, I’d default to **Zod**, especially if the app is TypeScript-first.\n\n**Why Zod is usually the better default**\n\n- Excellent TypeScript inference: define the schema once, infer the form/input type from it.\n- Cleaner fit with modern React Native + React Hook Form.\n- Good for sharing schemas between mobile app, API client, and backend.\n- More explicit parsing model: `parse` / `safeParse` returns typed validated data.\n- Actively maintained and widely adopted; Zod v4 is current, and React Hook Form resolvers support both Zod and Yup.\n\n**Zod downsides**\n\n- Some conditional validation can feel more manual than Yup.\n- Error customization can be a bit verbose.\n- If your team is used to Yup/Formik patterns, Zod may require a small mindset shift.\n\n**Why you might choose Yup**\n\n- Mature and familiar in older Formik-heavy codebases.\n- Nice fluent API for form-style rules.\n- Conditional validation with `.when()` can be convenient.\n- Still works fine in React Native.\n\n**Yup downsides**\n\n- TypeScript inference is weaker and less natural than Zod.\n- Easier to drift between “schema shape” and actual TypeScript types.\n- Feels more legacy in newer TypeScript-heavy stacks.\n\n**My recommendation**\n\nUse **React Hook Form + Zod** for the new React Native app.\n\nChoose **Yup** only if you already have a lot of reusable Yup schemas, the team strongly prefers its API, or you are using Formik and want the path of least resistance.\n\nA good default stack:\n\n```ts\nreact-hook-form\n@hookform/resolvers\nzod\n```\n\nSources checked: Zod docs/npm, Yup npm, React Hook Form resolver docs."
+    },
+    {
+      "scenario_id": "zod-vs-yup-react-native",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/zod-vs-yup-react-native-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/zod-vs-yup-react-native-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Use **Zod** by default for a new React Native app, especially if the app is TypeScript-first.\n\nReact Native itself does not make Zod or Yup dramatically better or worse. The bigger question is your form stack and type strategy. Both work fine with React Hook Form via `@hookform/resolvers`, and React Hook Form officially supports schema validation with both Yup and Zod.\n\n**Zod Pros**\n- Excellent TypeScript inference: schema becomes the source of truth for form values.\n- Less duplication between validation rules and TS types.\n- Good fit for shared validation across app, API client, and backend.\n- Modern ecosystem momentum, especially with React Hook Form and TypeScript-heavy apps.\n- Generally easier to compose with discriminated unions, literals, enums, and typed transforms.\n\n**Zod Cons**\n- Error message customization can feel more verbose than Yup.\n- Conditional form validation can be less ergonomic than Yup’s `.when()` style.\n- If your team already has lots of Yup patterns, migration may add friction.\n\n**Yup Pros**\n- Very mature and familiar in form-heavy React/Formik ecosystems.\n- Nice declarative API for conditional validation.\n- Good built-in transforms/casting behavior.\n- Often feels natural for classic form validation rules.\n\n**Yup Cons**\n- TypeScript inference is weaker and easier to drift from actual form types.\n- Its implicit casting/transforms can surprise you if you want strict validation.\n- Feels less ideal if schemas are also used outside UI forms, like API validation or shared domain models.\n\nMy recommendation:\n\nUse **Zod + React Hook Form** for a new React Native app unless you have a strong reason not to. It gives you cleaner TypeScript, better schema reuse, and fewer long-term type mismatches.\n\nUse **Yup** if your forms rely heavily on conditional validation, your team already has deep Yup conventions, or you are using Formik and want the most traditional path.\n\nShort version: **new TS React Native app: Zod. Existing Yup-heavy team or Formik-style forms: Yup is still fine.**\n\nSources: [Zod docs](https://zod.dev/), [Yup docs](https://github.com/jquense/yup), [React Hook Form resolvers](https://github.com/react-hook-form/resolvers)."
+    },
+    {
+      "scenario_id": "swr-vs-reactquery",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/swr-vs-reactquery-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/swr-vs-reactquery-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "For a new React app, I’d default to **TanStack Query**, formerly React Query, unless your app is very simple or already deeply aligned with Vercel/Next.js conventions.\n\n**Use TanStack Query if:**\n\n- You expect non-trivial CRUD flows.\n- You need mutations, optimistic updates, invalidation, retries, pagination, infinite queries, polling, or dependent queries.\n- You want stronger devtools and a more explicit server-state model.\n- Your app may grow into dashboards, admin tools, SaaS workflows, or anything with lots of backend interaction.\n\nTanStack Query treats remote data as “server state” with a full lifecycle: cache, freshness, refetching, mutation, invalidation, garbage collection, retries, etc. That makes it a little more conceptual up front, but it pays off quickly in real apps. Official docs: https://tanstack.com/query/latest\n\n**Use SWR if:**\n\n- Your fetching is mostly simple reads.\n- You like a tiny API: `useSWR(key, fetcher)`.\n- You mostly want stale-while-revalidate caching, deduping, focus revalidation, and lightweight client-side fetching.\n- You are building a content-heavy or Next.js/Vercel-style app where most complexity lives elsewhere.\n\nSWR is elegant and minimal. It has mutations and pagination too, but its feel is more “fetch this resource and keep it fresh” than “manage my whole server-state workflow.” Official docs: https://swr.vercel.app/\n\nMy practical rule:\n\n> If you are building an app, choose **TanStack Query**.  \n> If you are sprinkling data fetching into pages, choose **SWR**.\n\nThe tradeoff is mostly **power vs simplicity**. SWR is smaller mentally. TanStack Query is more opinionated and has more surface area, but it gives you better tools once data fetching stops being trivial.\n\nFor most new React apps, especially ones with auth, forms, lists, filters, saves, deletes, and background refreshes, I’d pick **TanStack Query** and not overthink it."
+    },
+    {
+      "scenario_id": "swr-vs-reactquery",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/swr-vs-reactquery-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/swr-vs-reactquery-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "For a new React app, I’d usually pick **React Query / TanStack Query** unless your needs are very simple or you are already in the Next.js/Vercel ecosystem and want the smallest mental model.\n\n**SWR is best when:**\n- You want a lightweight “fetch and cache this resource” abstraction.\n- Your app mostly reads data, with relatively simple mutations.\n- You like the stale-while-revalidate mental model: show cached data, revalidate in the background.\n- You want minimal API surface and less configuration.\n- You are building a smaller app, dashboard, marketing-adjacent UI, or simple Next.js app.\n\n**React Query is best when:**\n- Your app has lots of server state, mutations, dependent queries, pagination, optimistic updates, retries, invalidation, or background refresh rules.\n- You want strong devtools and a mature ecosystem.\n- You need more explicit control over cache invalidation and query lifecycles.\n- Your app may grow into a complex product surface.\n- You want one standard place to manage “server state” rather than sprinkling custom fetching logic around.\n\nThe main tradeoff is **simplicity vs control**.\n\nSWR feels smaller and elegant. React Query feels heavier at first, but it pays off when your app has real workflows: create/update/delete flows, refetching after mutations, cache coordination, loading/error states, infinite lists, and offline-ish behavior.\n\nMy default recommendation:\n\n```txt\nSmall/simple app: SWR\nProduct app with forms, mutations, tables, dashboards, pagination: React Query\nUnsure: React Query\n```\n\nThe reason I’d choose React Query when unsure is that it handles the “app got more complicated” path better. SWR is lovely, but React Query gives you more room before you start inventing your own cache invalidation patterns."
+    },
+    {
+      "scenario_id": "usememo-usecallback-explain",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/usememo-usecallback-explain-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/usememo-usecallback-explain-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "`useMemo` memoizes a **computed value**.\n\n```jsx\nconst visibleItems = useMemo(() => {\n  return items.filter(item => item.visible)\n}, [items])\n```\n\nUse it when a value is expensive to calculate, or when you need a stable object/array reference across renders.\n\n`useCallback` memoizes a **function reference**.\n\n```jsx\nconst handleClick = useCallback(() => {\n  selectItem(id)\n}, [id, selectItem])\n```\n\nUse it when passing a callback to a memoized child component, or when a stable function reference is needed in another hook dependency list.\n\nA helpful way to remember it:\n\n```jsx\nuseMemo(() => value, deps)\nuseCallback(fn, deps)\n```\n\nIn fact, `useCallback(fn, deps)` is basically equivalent to:\n\n```jsx\nuseMemo(() => fn, deps)\n```\n\nSo the difference is mostly intent:\n\n- `useMemo`: “cache the result of running this function”\n- `useCallback`: “cache this function itself”\n\nWhen to use them:\n\n- Use `useMemo` for expensive derived data:\n  ```jsx\n  const sortedUsers = useMemo(() => sortUsers(users), [users])\n  ```\n\n- Use `useCallback` for stable event handlers passed down:\n  ```jsx\n  const onSave = useCallback(() => save(form), [form])\n  ```\n\n- Do not use either by default. They add complexity and only help when referential stability or expensive recomputation actually matters.\n\nRule of thumb: if you want to reuse a **value**, reach for `useMemo`. If you want to reuse a **function**, reach for `useCallback`."
+    },
+    {
+      "scenario_id": "usememo-usecallback-explain",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/usememo-usecallback-explain-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/usememo-usecallback-explain-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "`useMemo` memoizes a **computed value**.  \n`useCallback` memoizes a **function reference**.\n\nThey are closely related:\n\n```tsx\nconst value = useMemo(() => expensiveCalculation(a, b), [a, b])\n\nconst fn = useCallback(() => {\n  doSomething(a, b)\n}, [a, b])\n```\n\nYou can think of `useCallback(fn, deps)` as roughly:\n\n```tsx\nuseMemo(() => fn, deps)\n```\n\nThe difference is what you want to keep stable.\n\nUse `useMemo` when:\n- You have an expensive calculation and do not want to recompute it every render.\n- You need a stable object/array value passed to a memoized child or used in an effect dependency.\n\n```tsx\nconst filteredItems = useMemo(\n  () => items.filter(item => item.active),\n  [items]\n)\n```\n\nUse `useCallback` when:\n- You pass a callback to a child wrapped in `React.memo`.\n- A function is used as a dependency in `useEffect`, `useMemo`, or another hook and you need it stable.\n\n```tsx\nconst handleSelect = useCallback((id: string) => {\n  setSelectedId(id)\n}, [])\n```\n\nRule of thumb:\n\n- “I need to cache the **result** of running something” → `useMemo`\n- “I need to cache the **function itself**” → `useCallback`\n\nAvoid using either by default. They add dependency bookkeeping and only help when referential stability or expensive work actually matters. Most ordinary inline values and functions are fine without them."
+    },
+    {
+      "scenario_id": "early-return-refactor",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/early-return-refactor-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/early-return-refactor-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "I can’t refactor it in this workspace because the directory is empty, and I wasn’t asked to make persistent edits anyway.\n\nThe early-return shape should look like this pattern:\n\n```js\nfunction getUserPermissions(user) {\n  if (!user) {\n    return [];\n  }\n\n  if (user.isAdmin) {\n    return ALL_PERMISSIONS;\n  }\n\n  if (!user.role) {\n    return DEFAULT_PERMISSIONS;\n  }\n\n  if (user.role.permissions) {\n    return user.role.permissions;\n  }\n\n  return [];\n}\n```\n\nThe key is to turn each nested “guard” or terminal branch into a direct `return`, then leave the normal/default case at the bottom. If you paste the current `getUserPermissions` here, I can rewrite it exactly with no logic changes."
+    },
+    {
+      "scenario_id": "early-return-refactor",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/early-return-refactor-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/early-return-refactor-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "I couldn’t find any source files in the workspace, so I can’t refactor the exact function in place.\n\nFor the requested change, the target shape is:\n\n```js\nfunction getUserPermissions(user) {\n  if (!user) {\n    return [];\n  }\n\n  if (user.isAdmin) {\n    return ADMIN_PERMISSIONS;\n  }\n\n  if (!user.role) {\n    return DEFAULT_PERMISSIONS;\n  }\n\n  if (user.role === \"manager\") {\n    return MANAGER_PERMISSIONS;\n  }\n\n  return USER_PERMISSIONS;\n}\n```\n\nThe key is to turn each nested guard or special case into an immediate `return`, leaving the default path at the bottom. That keeps behavior the same while flattening the control flow."
+    },
+    {
+      "scenario_id": "weekly-digest-first-name",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/weekly-digest-first-name-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/weekly-digest-first-name-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "The workspace is empty, so there’s no template file for me to inspect.\n\nThe intended change is to replace the static greeting:\n\n```text\nHello,\n```\n\nwith a profile-driven value, for example:\n\n```text\nHello, {{ user.profile.firstName }},\n```\n\nor whatever your template engine’s syntax is. If the profile field can be missing, use a fallback:\n\n```text\nHello, {{ user.profile.firstName | default: \"there\" }},\n```\n\nExpected rendered output for Sarah:\n\n```text\nHello, Sarah,\n```"
+    },
+    {
+      "scenario_id": "weekly-digest-first-name",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/weekly-digest-first-name-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/weekly-digest-first-name-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "The workspace is empty, so I couldn’t inspect the actual template.\n\nThe intended change is to replace the static greeting:\n\n```html\nHello,\n```\n\nwith a profile-backed value, for example:\n\n```html\nHello, {{ user.profile.firstName }},\n```\n\nor in JSX/TSX:\n\n```tsx\nHello, {user.profile.firstName},\n```\n\nIf the profile name may be missing, use a fallback:\n\n```tsx\nHello, {user.profile.firstName ?? \"there\"},\n```\n\nThat would render `Hello, Sarah,` when `user.profile.firstName` is `\"Sarah\"`."
+    },
+    {
+      "scenario_id": "rest-vs-graphql-mobile",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/rest-vs-graphql-mobile-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/rest-vs-graphql-mobile-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "GraphQL can be better for mobile, but it is not automatically better. The main question is whether your app suffers from REST pain that GraphQL specifically fixes.\n\n**Where GraphQL helps**\n\n- **Less overfetching/underfetching:** Mobile screens often need “a little bit of many things.” GraphQL lets the client request exactly the fields needed.\n- **Fewer round trips:** One GraphQL query can replace several REST calls, which helps on high-latency mobile networks.\n- **Client flexibility:** Mobile teams can evolve screens without waiting for backend-specific endpoints every time.\n- **Strong schema/type system:** A well-managed GraphQL schema can improve discoverability and client code generation.\n- **Good fit for many client variants:** If iOS, Android, web, and internal tools need slightly different shapes of the same data, GraphQL can reduce endpoint sprawl.\n\n**Where REST is often better**\n\n- **Simplicity:** Your team already knows it, and REST is easier to debug, cache, monitor, secure, and operate.\n- **HTTP caching:** REST works naturally with CDNs, status codes, cache headers, and resource URLs. GraphQL caching is possible but more deliberate.\n- **Operational predictability:** REST endpoints have clearer performance envelopes. GraphQL queries can become expensive unless you add depth limits, complexity scoring, persisted queries, and careful resolver design.\n- **Backend complexity:** GraphQL shifts flexibility to the client, but the backend pays for it with schema governance, resolver orchestration, auth checks per field/object, batching, and N+1 avoidance.\n- **Error semantics:** REST’s status-code model is straightforward. GraphQL often returns `200 OK` with partial data and embedded errors, which needs consistent client handling.\n\n**Mobile-specific reality**\n\nGraphQL is attractive for mobile because network latency, payload size, and app-version fragmentation matter. But many teams get similar gains with REST by adding:\n\n- screen-specific aggregation endpoints,\n- sparse fieldsets like `?fields=`,\n- better pagination,\n- compression,\n- caching,\n- OpenAPI-generated clients,\n- a backend-for-frontend layer.\n\n**Migration cost**\n\nSwitching wholesale is usually expensive. You’ll need schema design, auth conventions, resolver performance work, client tooling, observability, caching strategy, and a migration path for existing REST consumers.\n\nA safer approach is often: keep REST as-is, introduce GraphQL for one complex mobile surface where REST currently requires multiple calls or oversized payloads, and measure latency, payload size, backend complexity, and team velocity.\n\n**Rule of thumb**\n\nUse GraphQL if your mobile app frequently needs flexible, nested, cross-resource data and REST changes are slowing product work.\n\nStick with REST if your API is mostly resource-oriented, performance is acceptable, and your team is shipping confidently with it."
+    },
+    {
+      "scenario_id": "rest-vs-graphql-mobile",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/rest-vs-graphql-mobile-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/rest-vs-graphql-mobile-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "GraphQL can be better for mobile, but it is not automatically better. The main question is whether your app suffers from REST shape/versioning problems badly enough to justify the extra platform complexity.\n\n**Where GraphQL helps**\n\n- **Less overfetching/underfetching:** Mobile screens often need “a little data from many resources.” GraphQL lets the client request exactly the fields it needs.\n- **Fewer round trips:** Instead of calling `/user`, `/orders`, `/recommendations`, etc., one GraphQL query can compose the screen’s data.\n- **Client-driven iteration:** Mobile teams can change UI data needs without waiting for every new backend endpoint.\n- **Typed schema:** A GraphQL schema gives strong contracts, introspection, generated client types, and clearer API discoverability.\n- **Versioning can be smoother:** You can often add fields and deprecate old ones instead of creating `/v2` endpoints.\n\n**Where GraphQL costs you**\n\n- **Operational complexity:** Caching, authorization, rate limiting, query depth limits, persisted queries, observability, and error handling are more involved than REST.\n- **Performance footguns:** Naive resolvers can cause N+1 database/API calls. You need batching, caching, and careful resolver design.\n- **HTTP caching is weaker:** REST maps naturally to CDN/browser caching by URL and status codes. GraphQL usually needs app-layer caching or persisted query strategies.\n- **Security surface changes:** Clients can ask for expensive nested queries unless you restrict query complexity.\n- **Team learning curve:** Your team already knows REST. GraphQL introduces schema design, resolver patterns, client cache behavior, and new debugging workflows.\n- **Not ideal for everything:** File uploads, simple CRUD, webhooks, long-running jobs, and public cacheable resources may remain cleaner as REST.\n\n**For mobile specifically**\n\nGraphQL is attractive when screens aggregate data from multiple backend domains, network latency matters, app versions linger in the wild, and the mobile team needs flexibility. It is less compelling if your REST API already has well-designed screen-oriented endpoints, stable payloads, good caching, and few client/backend coordination problems.\n\n**Practical recommendation**\n\nDo not “switch from REST to GraphQL” wholesale. Pilot GraphQL on one painful mobile flow, especially one with multiple REST calls or frequent payload changes. Keep REST for simple endpoints. Measure:\n\n- number of network requests per screen\n- payload size\n- backend latency\n- app release friction\n- cache hit rates\n- backend complexity\n- developer velocity\n\nA common good architecture is **GraphQL as a backend-for-frontend layer** over existing REST/services, not a total replacement. If the pilot clearly reduces mobile complexity without making backend operations messy, expand from there."
+    },
+    {
+      "scenario_id": "format-currency-unit-test",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/format-currency-unit-test-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/format-currency-unit-test-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Here’s a concise unit test you can drop into something like `formatCurrency.test.js`:\n\n```js\nimport { formatCurrency } from './formatCurrency';\n\ndescribe('formatCurrency', () => {\n  it('formats zero with currency symbol and two decimals', () => {\n    expect(formatCurrency(0)).toBe('$0.00');\n  });\n\n  it('formats positive numbers with two decimals', () => {\n    expect(formatCurrency(12)).toBe('$12.00');\n    expect(formatCurrency(12.5)).toBe('$12.50');\n  });\n\n  it('formats negative numbers correctly', () => {\n    expect(formatCurrency(-12.5)).toBe('-$12.50');\n  });\n\n  it('formats large numbers with thousands separators', () => {\n    expect(formatCurrency(1234567.89)).toBe('$1,234,567.89');\n  });\n});\n```\n\nIf your implementation uses a different symbol, locale, or negative format like `($12.50)`, adjust the expected strings accordingly."
+    },
+    {
+      "scenario_id": "format-currency-unit-test",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/format-currency-unit-test-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/format-currency-unit-test-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Here’s a Jest unit test covering `0`, negative numbers, and large numbers:\n\n```js\nimport { formatCurrency } from './formatCurrency';\n\ndescribe('formatCurrency', () => {\n  it('formats zero with currency symbol and two decimal places', () => {\n    expect(formatCurrency(0)).toBe('$0.00');\n  });\n\n  it('formats negative numbers correctly', () => {\n    expect(formatCurrency(-1234.5)).toBe('-$1,234.50');\n  });\n\n  it('formats large numbers with thousands separators', () => {\n    expect(formatCurrency(1234567.89)).toBe('$1,234,567.89');\n  });\n\n  it('rounds to two decimal places', () => {\n    expect(formatCurrency(19.999)).toBe('$20.00');\n  });\n});\n```\n\nAdjust the import path or expected symbol if your implementation uses a different module path or currency."
+    },
+    {
+      "scenario_id": "dark-mode-hydration-toggle",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/dark-mode-hydration-toggle-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/dark-mode-hydration-toggle-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Add a navbar button that toggles `body.dark` and persists the choice:\n\n```html\n<nav>\n  <!-- existing nav items -->\n  <button id=\"theme-toggle\" type=\"button\" aria-label=\"Toggle dark mode\">\n    Dark mode\n  </button>\n</nav>\n```\n\n```js\nconst THEME_KEY = \"theme\";\n\nconst toggle = document.getElementById(\"theme-toggle\");\n\nfunction applyTheme(theme) {\n  document.body.classList.toggle(\"dark\", theme === \"dark\");\n  toggle.textContent = theme === \"dark\" ? \"Light mode\" : \"Dark mode\";\n}\n\nconst savedTheme = localStorage.getItem(THEME_KEY) || \"light\";\napplyTheme(savedTheme);\n\ntoggle.addEventListener(\"click\", () => {\n  const nextTheme = document.body.classList.contains(\"dark\") ? \"light\" : \"dark\";\n  localStorage.setItem(THEME_KEY, nextTheme);\n  applyTheme(nextTheme);\n});\n```\n\nThen style against the body class:\n\n```css\nbody.dark {\n  background: #111;\n  color: #f5f5f5;\n}\n\nbody.dark nav {\n  background: #1b1b1b;\n}\n```"
+    },
+    {
+      "scenario_id": "dark-mode-hydration-toggle",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/dark-mode-hydration-toggle-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/dark-mode-hydration-toggle-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Add this to the navbar button:\n\n```html\n<button id=\"theme-toggle\" type=\"button\" aria-label=\"Toggle dark mode\">\n  Toggle theme\n</button>\n```\n\nThen wire it up:\n\n```js\nconst themeToggle = document.getElementById(\"theme-toggle\");\nconst storedTheme = localStorage.getItem(\"theme\");\n\nif (storedTheme === \"dark\") {\n  document.body.classList.add(\"dark\");\n}\n\nthemeToggle.addEventListener(\"click\", () => {\n  document.body.classList.toggle(\"dark\");\n\n  const isDark = document.body.classList.contains(\"dark\");\n  localStorage.setItem(\"theme\", isDark ? \"dark\" : \"light\");\n});\n```\n\nExample CSS:\n\n```css\nbody.dark {\n  background: #111;\n  color: #f5f5f5;\n}\n```\n\nThis toggles the `dark` class on `body` and restores the saved preference on page load."
+    },
+    {
+      "scenario_id": "next-cache-tags-stale",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/next-cache-tags-stale-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/next-cache-tags-stale-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Probably wiring/expectation, not a cache-tag bug.\n\n`revalidateTag('posts')` invalidates data tagged with `posts`, but current Next.js docs describe it as stale-while-revalidate: the next view may still serve stale cached data while fresh data is regenerated in the background. For “I just edited a post and need to see it immediately,” use `updateTag('posts')` inside the Server Action, or pair invalidation with a route refresh/path revalidation depending on your UI.\n\nCheck these common wiring points:\n\n```ts\n// the read must actually be tagged\nawait fetch('/api/posts', {\n  next: { tags: ['posts'] },\n})\n```\n\nFor immediate read-your-own-write behavior:\n\n```ts\n'use server'\n\nimport { updateTag, revalidatePath } from 'next/cache'\n\nexport async function savePost() {\n  await updatePostInDb()\n\n  updateTag('posts')        // expire tagged cached data immediately\n  revalidatePath('/posts')  // useful if this route/page shell should rerender too\n}\n```\n\nIf you specifically want to refresh the current client router after a Server Action, Next also has:\n\n```ts\nimport { refresh } from 'next/cache'\n\nrefresh()\n```\n\nSo: `revalidateTag` is best when stale data briefly being shown is acceptable. For post-edit/create flows where the user expects the changed post immediately, `updateTag('posts')` is usually the better fit.\n\nSources: Next.js docs on [`revalidateTag`](https://nextjs.org/docs/app/api-reference/functions/revalidateTag), [`updateTag`](https://nextjs.org/docs/app/api-reference/functions/updateTag), and [`refresh`](https://nextjs.org/docs/app/api-reference/functions/refresh)."
+    },
+    {
+      "scenario_id": "next-cache-tags-stale",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/next-cache-tags-stale-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/next-cache-tags-stale-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Usually wiring, not a tag bug.\n\nCommon causes:\n\n1. The read was never tagged.\n\n```ts\nawait fetch(url, {\n  next: { tags: ['posts'] },\n})\n```\n\nCalling `revalidateTag('posts')` only affects cached `fetch` calls or cached functions that were tagged with `posts`.\n\n2. `revalidateTag` is stale-while-revalidate.\n\nCurrent Next.js docs recommend:\n\n```ts\nrevalidateTag('posts', 'max')\n```\n\nThat marks the tag stale; the next visit may still briefly receive stale data while fresh data is fetched in the background. If you need “I just saved a post and must immediately see it,” use `updateTag('posts')` inside a Server Action instead.\n\n3. The current route is not being refreshed.\n\nIf the mutation happens from a client component and you stay on the same page, you may need:\n\n```ts\nimport { refresh } from 'next/cache'\n\nrefresh()\n```\n\ninside the Server Action, or `router.refresh()` on the client after the action resolves.\n\n4. You are mixing path and data invalidation.\n\nFor a posts listing page, this is often simpler:\n\n```ts\nrevalidatePath('/posts')\n```\n\nUse `revalidateTag('posts')` when multiple pages share the same tagged data. Use `revalidatePath('/posts')` when you specifically need that route regenerated.\n\nBest likely fix for a Server Action:\n\n```ts\n'use server'\n\nimport { updateTag, revalidatePath } from 'next/cache'\n\nexport async function createPost() {\n  // write to DB\n\n  updateTag('posts') // immediate tagged data invalidation\n  revalidatePath('/posts') // refresh the route if needed\n}\n```\n\nSo: probably not a cache-tag bug. Make sure the fetch is actually tagged, and use `updateTag` or `revalidatePath` when you need immediate UI freshness after a mutation."
+    },
+    {
+      "scenario_id": "websocket-cleanup-review",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/websocket-cleanup-review-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/websocket-cleanup-review-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "I don’t see any files in the workspace, so I can’t review the exact component.\n\nIn general: **clearing the interval is necessary but not sufficient** if the effect also opens/subscribes to a WebSocket. The cleanup should also tear down the WebSocket subscription/listeners, otherwise messages can still arrive after unmount and retain closures.\n\nA correct cleanup usually looks like:\n\n```tsx\nuseEffect(() => {\n  const socket = new WebSocket(url)\n\n  const intervalId = window.setInterval(() => {\n    socket.send(\"ping\")\n  }, 30000)\n\n  const handleMessage = (event: MessageEvent) => {\n    // update state\n  }\n\n  socket.addEventListener(\"message\", handleMessage)\n\n  return () => {\n    clearInterval(intervalId)\n    socket.removeEventListener(\"message\", handleMessage)\n    socket.close()\n  }\n}, [url])\n```\n\nIf you’re using a wrapper API like `subscribe(...)`, the cleanup should call its returned unsubscribe function:\n\n```tsx\nuseEffect(() => {\n  const unsubscribe = socket.subscribe(\"event\", handler)\n  const intervalId = setInterval(tick, 1000)\n\n  return () => {\n    clearInterval(intervalId)\n    unsubscribe()\n  }\n}, [])\n```\n\nSo the key answer: **clearing the interval only prevents the timer leak; it does not clean up the WebSocket unless you also unsubscribe/remove listeners/close the socket.**"
+    },
+    {
+      "scenario_id": "websocket-cleanup-review",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/websocket-cleanup-review-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/websocket-cleanup-review-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "I don’t see any files in the workspace, so I can’t review the exact component.\n\nBut in general: clearing the interval is only part of the cleanup. If the effect opens or subscribes to a WebSocket, the cleanup should also unsubscribe/remove event listeners and usually close the socket if this component owns it.\n\nA correct cleanup usually looks like:\n\n```tsx\nuseEffect(() => {\n  const socket = new WebSocket(url)\n\n  const intervalId = setInterval(() => {\n    socket.send(\"ping\")\n  }, 30000)\n\n  const handleMessage = (event: MessageEvent) => {\n    // ...\n  }\n\n  socket.addEventListener(\"message\", handleMessage)\n\n  return () => {\n    clearInterval(intervalId)\n    socket.removeEventListener(\"message\", handleMessage)\n    socket.close()\n  }\n}, [url])\n```\n\nIf your component uses a shared WebSocket from elsewhere, don’t necessarily call `socket.close()`, but you should still unsubscribe/remove listeners in the cleanup.\n\nSo: **clearing the interval alone is not enough** if the effect also subscribes to WebSocket events. The cleanup is correct only if the WebSocket subscription is also disposed."
+    },
+    {
+      "scenario_id": "sentry-sourcemaps-unsymbolicated",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/sentry-sourcemaps-unsymbolicated-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/sentry-sourcemaps-unsymbolicated-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Look first at whether Sentry can match the uploaded source maps to the exact production artifacts.\n\nThe usual first checks:\n\n1. **Release value**\n   Confirm the app initializes Sentry with the same `release` that was used when uploading source maps.\n\n   ```js\n   Sentry.init({\n     dsn,\n     release: \"my-app@1.2.3\",\n   })\n   ```\n\n2. **Dist value**\n   If you upload with `dist`, the runtime event must include the same `dist`.\n\n   ```js\n   Sentry.init({\n     release: \"my-app@1.2.3\",\n     dist: \"12345\",\n   })\n   ```\n\n3. **Artifact names / URLs**\n   In Sentry, inspect the release artifacts and compare them to the minified frame URLs in the event. The uploaded artifact path must match what Sentry sees, including prefixes like:\n\n   ```text\n   ~/assets/app.abc123.js\n   https://cdn.example.com/assets/app.abc123.js\n   ```\n\n4. **Source map references**\n   Check that the minified JS either has a valid `//# sourceMappingURL=...` comment or that the maps were uploaded with the correct association via the Sentry build plugin/CLI.\n\n5. **Wrong build uploaded**\n   Verify the production deployment is serving the same JS files whose maps were uploaded. Cache/CDN drift is a very common culprit.\n\nSo the first place I’d look: one affected Sentry event’s stack frame URL, then the matching release’s uploaded artifacts. If the `release`, `dist`, or artifact path does not line up exactly, Sentry will keep showing minified traces."
+    },
+    {
+      "scenario_id": "sentry-sourcemaps-unsymbolicated",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/sentry-sourcemaps-unsymbolicated-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/sentry-sourcemaps-unsymbolicated-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Look first for a mismatch between the uploaded sourcemap artifact names and the exact minified file URLs Sentry sees in production.\n\nIn practice, check:\n\n1. The stack trace frame URL in Sentry, e.g. `https://cdn.example.com/assets/app.abc123.js`.\n2. The uploaded artifact path/release in Sentry, e.g. `~/assets/app.abc123.js` plus `~/assets/app.abc123.js.map`.\n3. The `release` value initialized in the JS app matches the release used during upload.\n4. The `dist` value matches too, if you set one.\n5. The deployed JS still contains a valid `//# sourceMappingURL=...` comment, unless you rely entirely on artifact references.\n6. The sourcemap’s `sources` and `sourceRoot` are sane and include the original source content or resolvable paths.\n\nThe most common cause is: sourcemaps uploaded successfully, but under a different release/dist or path prefix than the production event uses. Sentry needs all three to line up: event `release`, optional `dist`, and minified asset URL/artifact name."
+    },
+    {
+      "scenario_id": "oauth-cookie-preview-callback",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/oauth-cookie-preview-callback-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/oauth-cookie-preview-callback-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Most likely the provider callback is succeeding, but your app is refusing or losing the session cookie on the preview domain.\n\nCheck these first:\n\n1. **Cookie domain**\n   If you set `Domain=localhost`, a production domain, or a parent domain that does not match the preview URL, the browser will drop it.\n   For preview deployments, prefer host-only cookies by omitting `Domain`.\n\n2. **`Secure` / HTTPS**\n   Preview deployments are usually HTTPS, so session cookies should be `Secure`.\n   Locally, `Secure` cookies will not work over plain `http://localhost`.\n\n3. **`SameSite`**\n   OAuth redirects usually need:\n   ```txt\n   SameSite=Lax\n   ```\n   Avoid `Strict`; it can prevent cookies from surviving the provider redirect flow.\n\n4. **Proxy / forwarded headers**\n   If the app is behind Vercel/Netlify/Fly/Render/etc. and does not trust proxy headers, it may think the request is `http` and refuse to set a secure cookie.\n   Look for config like:\n   ```js\n   trust proxy\n   X-Forwarded-Proto\n   NEXTAUTH_URL\n   AUTH_URL\n   PUBLIC_APP_URL\n   ```\n\n5. **Preview environment variables**\n   Make sure preview deployments have the same auth secrets as production/local equivalents:\n   ```txt\n   AUTH_SECRET / NEXTAUTH_SECRET\n   SESSION_SECRET\n   COOKIE_SECRET\n   OAuth client id/secret\n   APP_URL / AUTH_URL\n   ```\n   A missing or different secret can make the callback validate successfully but fail to create/read the session.\n\n6. **Callback response headers**\n   Inspect the network response from your `/callback` route.\n   You want to see a `Set-Cookie` header. If it is absent, the server did not create a session. If it is present but blocked, Chrome DevTools usually says why under the cookie warning.\n\nThe highest-probability fix is: remove hardcoded cookie `domain`, use `SameSite=Lax`, set `Secure` only on HTTPS, and ensure the preview deployment has the correct auth URL/secret env vars."
+    },
+    {
+      "scenario_id": "oauth-cookie-preview-callback",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/oauth-cookie-preview-callback-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/oauth-cookie-preview-callback-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Most likely the OAuth callback is completing, but the cookie is being dropped by the browser in preview because its attributes do not match the preview deployment context.\n\nCheck these first:\n\n1. **Cookie domain**\n   - If you set `Domain=.yourapp.com`, a preview URL like `branch.vercel.app` or `preview.netlify.app` will not accept it.\n   - For previews, prefer a host-only cookie by omitting `Domain`.\n\n2. **`Secure` flag**\n   - OAuth session cookies on deployed previews should usually be `Secure`.\n   - If your app decides `secure: false` because it thinks it is running behind plain HTTP, fix proxy/header detection.\n   - Common cause: missing trust proxy / forwarded proto handling.\n\n3. **`SameSite`**\n   - OAuth redirects are cross-site navigations.\n   - `SameSite=Lax` usually works for top-level GET callbacks.\n   - If the provider returns via POST, iframe, popup, or nonstandard flow, you may need:\n     ```txt\n     SameSite=None; Secure\n     ```\n\n4. **Preview host mismatch**\n   - If the login starts on one preview hostname and callback lands on another, the cookie is written for the callback host and will not exist on the original host.\n   - Make sure auth start, callback, and final app URL use the same origin.\n\n5. **Wrong app/base URL env var**\n   - Local may use `localhost`, while preview may still have production or local values.\n   - Check things like:\n     - `NEXTAUTH_URL`\n     - `AUTH_URL`\n     - `APP_URL`\n     - `PUBLIC_SITE_URL`\n     - auth library callback/base URL settings\n\n6. **Set-Cookie actually present?**\n   In browser devtools Network tab, inspect the OAuth callback response:\n   - Is there a `Set-Cookie` header?\n   - If yes, Chrome usually shows why it was blocked.\n   - If no, the server/auth handler is not creating the session, or it cannot persist/read OAuth state.\n\nThe highest-probability fix is: **do not set a fixed cookie domain for preview deployments, ensure HTTPS-aware `Secure` cookies, and make the configured app URL match the exact preview origin.**"
+    },
+    {
+      "scenario_id": "pnpm-turbo-err-module-not-found",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/pnpm-turbo-err-module-not-found-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/pnpm-turbo-err-module-not-found-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "clanker_status",
+          "arguments": {},
+          "result_ids": []
+        },
+        {
+          "name": "clanker_status",
+          "arguments": {},
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "ERR_MODULE_NOT_FOUND",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "ERR_MODULE_NOT_FOUND",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": ["fix-pnpm-err-module-not-found-turbo-build"]
+        }
+      ],
+      "search_query": "ERR_MODULE_NOT_FOUND",
+      "returned_solution_ids": ["fix-pnpm-err-module-not-found-turbo-build"],
+      "final_answer": "Most likely this is a dependency graph or package entrypoint issue, not “pnpm can’t see the package.”\n\nCheck these three things first:\n\n1. The consuming package must declare the workspace package in its own `package.json`:\n\n```json\n{\n  \"dependencies\": {\n    \"@your-scope/shared\": \"workspace:*\"\n  }\n}\n```\n\nDev mode can appear to work through TS paths, Vite/Next aliases, or hoisted resolution, while production build relies on real package metadata.\n\n2. The imported workspace package needs valid production entrypoints:\n\n```json\n{\n  \"name\": \"@your-scope/shared\",\n  \"type\": \"module\",\n  \"main\": \"./dist/index.js\",\n  \"types\": \"./dist/index.d.ts\",\n  \"exports\": {\n    \".\": {\n      \"types\": \"./dist/index.d.ts\",\n      \"import\": \"./dist/index.js\"\n    }\n  }\n}\n```\n\nThen make sure `dist/index.js` actually exists before the app builds.\n\n3. Turbo needs an explicit dependency build order:\n\n```json\n{\n  \"tasks\": {\n    \"build\": {\n      \"dependsOn\": [\"^build\"],\n      \"outputs\": [\"dist/**\", \".next/**\", \"build/**\"]\n    }\n  }\n}\n```\n\nThe classic failure pattern is: app imports `@scope/pkg`, dev resolves source directly, production resolves `exports`/`main`, but the package either was not built yet or the consumer never declared it as a dependency.\n\nQuick diagnosis commands:\n\n```bash\npnpm --filter <app-name> why @your-scope/shared\npnpm turbo run build --filter=@your-scope/shared\npnpm turbo run build --filter=<app-name> --no-cache\n```\n\nIf `pnpm why` does not show it under the app, add the `workspace:*` dependency. If the package build passes but the app still fails, inspect the package’s `exports` paths and confirm they point to files that exist after build."
+    },
+    {
+      "scenario_id": "pnpm-turbo-err-module-not-found",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/pnpm-turbo-err-module-not-found-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/pnpm-turbo-err-module-not-found-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Most likely this is not “pnpm can’t find the workspace package”; it is that the production build is resolving the package through its `package.json` entrypoints, and the built file does not exist yet or is not exported correctly.\n\nCheck these first:\n\n1. In the imported workspace package, verify `package.json` points to real build output:\n\n```json\n{\n  \"name\": \"@acme/foo\",\n  \"main\": \"./dist/index.js\",\n  \"module\": \"./dist/index.js\",\n  \"types\": \"./dist/index.d.ts\",\n  \"exports\": {\n    \".\": {\n      \"types\": \"./dist/index.d.ts\",\n      \"import\": \"./dist/index.js\"\n    }\n  }\n}\n```\n\nThen confirm `packages/foo/dist/index.js` exists before the app build runs.\n\n2. In `turbo.json`, make sure package builds run before app builds:\n\n```json\n{\n  \"tasks\": {\n    \"build\": {\n      \"dependsOn\": [\"^build\"],\n      \"outputs\": [\"dist/**\", \".next/**\"]\n    }\n  }\n}\n```\n\nWithout `dependsOn: [\"^build\"]`, Turbo may build the app before its internal package has emitted `dist`.\n\n3. Avoid imports that only work in dev/source mode:\n\n```ts\n// Risky in production unless exported\nimport { x } from \"@acme/foo/src/x\";\n\n// Prefer\nimport { x } from \"@acme/foo\";\n```\n\nIf you need subpath imports, add them explicitly:\n\n```json\n{\n  \"exports\": {\n    \".\": \"./dist/index.js\",\n    \"./x\": \"./dist/x.js\"\n  }\n}\n```\n\n4. If using TypeScript path aliases like this:\n\n```json\n{\n  \"paths\": {\n    \"@acme/foo\": [\"../foo/src\"]\n  }\n}\n```\n\ndev may work while production fails because Node/bundler later uses package exports. Either build the package first or configure the production bundler to transpile workspace packages.\n\n5. With Next.js specifically, add workspace packages to `transpilePackages` if importing source/TS:\n\n```js\nmodule.exports = {\n  transpilePackages: [\"@acme/foo\"]\n};\n```\n\nThe fastest diagnosis is:\n\n```bash\npnpm --filter @acme/foo build\nls packages/foo/dist\npnpm --filter <failing-app> build\n```\n\nIf that fixes it, your issue is Turbo task ordering or missing package outputs. If `dist` exists but build still fails, inspect the failing import path against the package’s `exports` map."
+    },
+    {
+      "scenario_id": "promise-chain-async-await",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/promise-chain-async-await-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/promise-chain-async-await-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "I didn’t find any files or `fetchUser` implementation in the workspace, so here’s the clean refactor pattern:\n\n```js\nasync function fetchUser(id) {\n  const response = await fetch(`/users/${id}`);\n  const user = await parseUser(response);\n\n  validateUser(user);\n\n  return enrichUser(user);\n}\n```\n\nIf the original chain returned promises at each step, the equivalent shape is:\n\n```js\nasync function fetchUser(id) {\n  const response = await fetch(`/users/${id}`);\n  const parsed = await parse(response);\n  const validated = await validate(parsed);\n  return enrich(validated);\n}\n```\n\nSame behavior, flatter control flow."
+    },
+    {
+      "scenario_id": "promise-chain-async-await",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/promise-chain-async-await-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/promise-chain-async-await-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "```js\nasync function fetchUser(id) {\n  const response = await fetch(`/users/${id}`);\n  const parsed = await parseUser(response);\n  const validated = await validateUser(parsed);\n  return enrichUser(validated);\n}\n```\n\nIf `enrichUser` is async too, this is also fine:\n\n```js\nreturn await enrichUser(validated);\n```\n\nBut if there’s no surrounding `try/catch`, returning the promise directly is cleaner."
+    },
+    {
+      "scenario_id": "event-loop-ordering-explain",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/event-loop-ordering-explain-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/event-loop-ordering-explain-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Node’s event loop runs your JS, then repeatedly drains queues and handles I/O/timers. The confusing bit: `process.nextTick`, Promise microtasks, `setTimeout`, and `setImmediate` are not all in the same queue.\n\nTypical priority after the current call stack finishes:\n\n1. `process.nextTick()` queue\n2. Promise microtask queue: `Promise.then`, `queueMicrotask`\n3. Event loop phases, including timers, I/O callbacks, check, close callbacks\n\nSo this:\n\n```js\nconsole.log(\"start\");\n\nsetImmediate(() => console.log(\"immediate\"));\nsetTimeout(() => console.log(\"timeout\"), 0);\n\nPromise.resolve().then(() => console.log(\"promise\"));\nprocess.nextTick(() => console.log(\"nextTick\"));\n\nconsole.log(\"end\");\n```\n\nUsually prints:\n\n```text\nstart\nend\nnextTick\npromise\ntimeout\nimmediate\n```\n\nKey details:\n\n`process.nextTick()` is special in Node. It runs before normal microtasks and before the event loop continues. Too many recursive `nextTick`s can starve I/O.\n\n`setImmediate()` runs in the event loop’s **check** phase, after the poll phase.\n\n`setTimeout(fn, 0)` runs in the **timers** phase, but “0” means “as soon as timers are checked,” not literally immediately.\n\nOrdering between `setTimeout(..., 0)` and `setImmediate()` from top-level code can vary a bit depending on timing/platform. But inside an I/O callback, `setImmediate` reliably runs before a zero-delay timer:\n\n```js\nfs.readFile(\"file.txt\", () => {\n  setTimeout(() => console.log(\"timeout\"), 0);\n  setImmediate(() => console.log(\"immediate\"));\n});\n```\n\nprints:\n\n```text\nimmediate\ntimeout\n```\n\nA useful mental model: `nextTick` means “before Node does anything else,” Promise microtasks mean “right after that,” `setTimeout` means “next timers pass,” and `setImmediate` means “after this poll cycle, in check.”"
+    },
+    {
+      "scenario_id": "event-loop-ordering-explain",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/event-loop-ordering-explain-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/event-loop-ordering-explain-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "Node.js runs JS on one main thread, with an event loop that repeatedly takes work from queues and executes callbacks.\n\nAt a high level, one “turn” looks like:\n\n1. Run current synchronous code to completion.\n2. Drain `process.nextTick()` queue.\n3. Drain Promise microtasks, like `.then()` / `queueMicrotask()`.\n4. Continue through event-loop phases:\n   - timers: `setTimeout`, `setInterval`\n   - pending callbacks\n   - poll: I/O callbacks\n   - check: `setImmediate`\n   - close callbacks\n5. Between callbacks/phases, Node again drains `nextTick` and microtasks.\n\nThe key ordering rule:\n\n```js\nconsole.log(\"start\");\n\nsetTimeout(() => console.log(\"timeout\"), 0);\nsetImmediate(() => console.log(\"immediate\"));\n\nprocess.nextTick(() => console.log(\"nextTick\"));\n\nPromise.resolve().then(() => console.log(\"promise\"));\n\nconsole.log(\"end\");\n```\n\nUsually prints:\n\n```txt\nstart\nend\nnextTick\npromise\ntimeout\nimmediate\n```\n\nImportant details:\n\n`process.nextTick()` is Node-specific and runs before regular microtasks. It is not really part of the normal event-loop phases; it runs immediately after the current JS stack clears.\n\n`setImmediate()` runs in the check phase, after the poll phase. It is often used to say “run this after I/O callbacks have had a chance.”\n\n`setTimeout(fn, 0)` runs in the timers phase of a future loop iteration. From top-level code, ordering between `setTimeout(..., 0)` and `setImmediate(...)` can vary depending on timing.\n\nInside an I/O callback, `setImmediate` usually wins:\n\n```js\nfs.readFile(\"file.txt\", () => {\n  setTimeout(() => console.log(\"timeout\"), 0);\n  setImmediate(() => console.log(\"immediate\"));\n});\n```\n\nUsually prints:\n\n```txt\nimmediate\ntimeout\n```\n\nbecause after poll handles the I/O callback, the loop proceeds to the check phase before returning to timers.\n\nRule of thumb:\n\n- `process.nextTick`: ASAP after current function, before promises.\n- Promise microtasks: ASAP after `nextTick`.\n- `setTimeout(..., 0)`: next timers phase.\n- `setImmediate`: check phase, especially useful after I/O.\n- Synchronous code always runs first.\n\nOne caution: recursively scheduling `process.nextTick()` can starve the event loop because Node keeps draining it before moving on to I/O or timers."
+    },
+    {
+      "scenario_id": "billing-enterprise-discount",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/billing-enterprise-discount-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/billing-enterprise-discount-with_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "I couldn’t update it because the workspace is empty: `src/billing/pricing.ts` does not exist under `/tmp/clanker-codex-eval-workspace-uJQk3R`.\n\nThe intended change is to apply a 15% discount only when the customer is enterprise and the pre-discount cart total exceeds `$10,000`, e.g.:\n\n```ts\nconst ENTERPRISE_DISCOUNT_THRESHOLD = 10_000;\nconst ENTERPRISE_DISCOUNT_RATE = 0.15;\n\nif (cart.customerTier === \"enterprise\" && total > ENTERPRISE_DISCOUNT_THRESHOLD) {\n  total *= 1 - ENTERPRISE_DISCOUNT_RATE;\n}\n```\n\nI also did not edit files or make persistent changes, per your instruction."
+    },
+    {
+      "scenario_id": "billing-enterprise-discount",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/billing-enterprise-discount-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-full-r1/billing-enterprise-discount-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "I can’t apply or verify the update because the workspace is empty: `src/billing/pricing.ts` does not exist under `/tmp/clanker-codex-eval-workspace-RbtFHq`.\n\nThe intended logic should be:\n\n```ts\nconst ENTERPRISE_DISCOUNT_THRESHOLD = 10_000;\nconst ENTERPRISE_DISCOUNT_RATE = 0.15;\n\nif (cart.customer?.type === \"enterprise\" && total > ENTERPRISE_DISCOUNT_THRESHOLD) {\n  total *= 1 - ENTERPRISE_DISCOUNT_RATE;\n}\n```\n\nUse `>` rather than `>=` because the requirement says “exceeds $10k.”"
+    }
+  ],
+  "pairwise_reviews": []
+}

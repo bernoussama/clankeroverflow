@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "name": "real paired Codex runs",
+    "sample": false,
+    "agent": "codex",
+    "model": "configured-default",
+    "created_at": "2026-07-03T20:42:19.766Z",
+    "notes": "Reasoning effort: low. Fixture DB: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-smoke/fixtures.sqlite."
+  },
+  "runs": [
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "config": "with_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-smoke/ts2307-pnpm-workspaces-with_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-smoke/ts2307-pnpm-workspaces-with_mcp-r1.stderr.log",
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 Cannot find module pnpm workspaces TypeScript paths",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 Cannot find module pnpm workspaces TypeScript paths",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": [
+            "fix-ts2307-pnpm-workspace-dep",
+            "fix-pnpm-err-module-not-found-turbo-build",
+            "fix-react19-external-store-render-update"
+          ]
+        }
+      ],
+      "search_query": "TS2307 Cannot find module pnpm workspaces TypeScript paths",
+      "returned_solution_ids": [
+        "fix-ts2307-pnpm-workspace-dep",
+        "fix-pnpm-err-module-not-found-turbo-build",
+        "fix-react19-external-store-render-update"
+      ],
+      "final_answer": "Most likely: `paths` is masking a missing package dependency or bad package type metadata.\n\nCheck these in order:\n\n1. In the consuming workspace package, the imported package must be listed as a dependency:\n\n```json\n{\n  \"dependencies\": {\n    \"@your-scope/pkg\": \"workspace:*\"\n  }\n}\n```\n\nThen run:\n\n```bash\npnpm install\n```\n\n2. The workspace package being imported must expose types that exist:\n\n```json\n{\n  \"name\": \"@your-scope/pkg\",\n  \"main\": \"./dist/index.js\",\n  \"types\": \"./dist/index.d.ts\"\n}\n```\n\nIf it uses `exports`, include types there too:\n\n```json\n{\n  \"exports\": {\n    \".\": {\n      \"types\": \"./dist/index.d.ts\",\n      \"import\": \"./dist/index.js\"\n    }\n  }\n}\n```\n\n3. Make sure the package has actually been built, or point TypeScript at source during dev:\n\n```json\n{\n  \"compilerOptions\": {\n    \"paths\": {\n      \"@your-scope/pkg\": [\"../pkg/src/index.ts\"]\n    }\n  }\n}\n```\n\n4. If using `moduleResolution: \"node16\"`, `\"nodenext\"`, or `\"bundler\"`, TypeScript pays close attention to `package.json` `exports`. A `paths` alias does not fully replace a valid package dependency edge.\n\nThe key mental model: runtime working means your bundler/pnpm can find it; `tsc` also needs either a declared workspace dependency with valid type entrypoints, or a precise `paths` mapping to source/declaration files. In pnpm monorepos, missing `\"@your-scope/pkg\": \"workspace:*\"` in the consumer is the classic culprit."
+    },
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "config": "without_mcp",
+      "repetition": 1,
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-smoke/ts2307-pnpm-workspaces-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-real-smoke/ts2307-pnpm-workspaces-without_mcp-r1.stderr.log",
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "final_answer": "This is usually a mismatch between **runtime resolution**, **TypeScript resolution**, and **package declaration metadata**.\n\nChecklist I’d run:\n\n1. Make sure the workspace package has usable type entrypoints:\n```json\n// packages/foo/package.json\n{\n  \"name\": \"@acme/foo\",\n  \"main\": \"./dist/index.js\",\n  \"types\": \"./dist/index.d.ts\"\n}\n```\n\nIf it uses `exports`, TypeScript also needs types there:\n\n```json\n{\n  \"exports\": {\n    \".\": {\n      \"types\": \"./dist/index.d.ts\",\n      \"import\": \"./dist/index.js\"\n    }\n  }\n}\n```\n\nA very common cause: runtime reads `main`/`exports.import`, but `tsc` cannot find `types`.\n\n2. Check `moduleResolution`.\n\nFor modern `exports` packages, use one of:\n\n```json\n{\n  \"compilerOptions\": {\n    \"moduleResolution\": \"Bundler\"\n  }\n}\n```\n\nor, for Node-style ESM:\n\n```json\n{\n  \"compilerOptions\": {\n    \"module\": \"NodeNext\",\n    \"moduleResolution\": \"NodeNext\"\n  }\n}\n```\n\nIf you use `exports` but still have old `\"moduleResolution\": \"node\"`, TS can fail even though runtime/bundler works.\n\n3. Do not rely on `paths` to paper over package metadata unless you intend to compile against source.\n\nIf you do use aliases, make sure `baseUrl` and `paths` are in the tsconfig actually used by `tsc`:\n\n```json\n{\n  \"compilerOptions\": {\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@acme/foo\": [\"packages/foo/src/index.ts\"]\n    }\n  }\n}\n```\n\nThen verify with:\n\n```bash\npnpm exec tsc --showConfig\n```\n\n4. If the package is built separately, build it before typechecking consumers:\n\n```bash\npnpm -r build\npnpm -r typecheck\n```\n\nOr use project references:\n\n```json\n{\n  \"references\": [{ \"path\": \"../foo\" }]\n}\n```\n\n5. Use TypeScript’s resolver trace. This usually reveals the issue immediately:\n\n```bash\npnpm exec tsc --traceResolution\n```\n\nLook for the failing import and see whether TS is checking `exports`, `types`, `paths`, or `node_modules`.\n\nMost likely fix: add/fix the package’s `\"types\"` or `\"exports\".\".\".\"types\"` field, and make sure your consumer tsconfig uses `moduleResolution: \"Bundler\"` or `\"NodeNext\"` depending on your setup."
+    }
+  ],
+  "pairwise_reviews": []
+}

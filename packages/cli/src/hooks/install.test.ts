@@ -35,6 +35,9 @@ describe("markOwn / removeOwn", () => {
     const inner = postToolUse[0].hooks[0];
     expect(inner).toHaveProperty("_clankeroverflow", true);
     expect(inner).toHaveProperty("type", "command");
+
+    const stop = (marked.hooks as Record<string, any[]>).Stop;
+    expect(stop[0].hooks[0]).toHaveProperty("_clankeroverflow", true);
   });
 
   it("removeOwn strips our entries but preserves user entries", () => {

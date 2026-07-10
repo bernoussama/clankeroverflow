@@ -1,0 +1,144 @@
+{
+  "metadata": {
+    "name": "real paired Codex runs",
+    "sample": false,
+    "agent": "codex",
+    "model": "gpt-5.5",
+    "created_at": "2026-07-05T20:10:22.089Z",
+    "notes": "Reasoning effort: low. Per-run fixture DBs live under /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-debug-cost-hidden-gpt-5.5-low-smoke3."
+  },
+  "runs": [
+    {
+      "scenario_id": "debug-ts2307-pnpm",
+      "config": "with_mcp_known_fix",
+      "repetition": 1,
+      "status": "completed",
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-debug-cost-hidden-gpt-5.5-low-smoke3/debug-ts2307-pnpm-with_mcp_known_fix-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-debug-cost-hidden-gpt-5.5-low-smoke3/debug-ts2307-pnpm-with_mcp_known_fix-r1.stderr.log",
+      "usage": {
+        "input_tokens": 98180,
+        "cached_input_tokens": 75904,
+        "output_tokens": 921,
+        "reasoning_output_tokens": 0,
+        "total_provider_tokens": 99101,
+        "elapsed_ms": 35764
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "pnpm workspace import package exists TS2307",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": [],
+          "logged_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "pnpm workspace import package exists TS2307",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": [
+            "fix-ts2307-pnpm-workspace-dep",
+            "fix-pnpm-err-module-not-found-turbo-build",
+            "fix-prisma-neon-direct-url"
+          ],
+          "logged_ids": []
+        }
+      ],
+      "search_query": "pnpm workspace import package exists TS2307",
+      "returned_solution_ids": [
+        "fix-ts2307-pnpm-workspace-dep",
+        "fix-pnpm-err-module-not-found-turbo-build",
+        "fix-prisma-neon-direct-url"
+      ],
+      "logged_solution_ids": [],
+      "verification_command": "node \"/home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof\"/workspace-verifiers/debug-ts2307-pnpm.mjs \"/tmp/clanker-debug-debug-ts2307-pnpm-with_mcp_known_fix-r1-mLq06H\"",
+      "verification_passed": true,
+      "verification_stdout": "",
+      "verification_stderr": "",
+      "changed_files": ["package-under-test.json"],
+      "final_answer": "Fixed the consuming package manifest in [package-under-test.json](/tmp/clanker-debug-debug-ts2307-pnpm-with_mcp_known_fix-r1-mLq06H/package-under-test.json) by declaring `@acme/ui` as a real pnpm workspace dependency:\n\n```json\n\"@acme/ui\": \"workspace:*\"\n```\n\nVerification passed: `node test.mjs` exits successfully."
+    },
+    {
+      "scenario_id": "debug-ts2307-pnpm",
+      "config": "with_mcp_empty_db",
+      "repetition": 1,
+      "status": "completed",
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-debug-cost-hidden-gpt-5.5-low-smoke3/debug-ts2307-pnpm-with_mcp_empty_db-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-debug-cost-hidden-gpt-5.5-low-smoke3/debug-ts2307-pnpm-with_mcp_empty_db-r1.stderr.log",
+      "usage": {
+        "input_tokens": 129433,
+        "cached_input_tokens": 102912,
+        "output_tokens": 880,
+        "reasoning_output_tokens": 80,
+        "total_provider_tokens": 130393,
+        "elapsed_ms": 30406
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 pnpm workspace",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": [],
+          "logged_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 pnpm workspace",
+            "limit": 3,
+            "mode": "auto"
+          },
+          "result_ids": ["fix-pnpm-err-module-not-found-turbo-build", "fix-prisma-neon-direct-url"],
+          "logged_ids": []
+        }
+      ],
+      "search_query": "TS2307 pnpm workspace",
+      "returned_solution_ids": [
+        "fix-pnpm-err-module-not-found-turbo-build",
+        "fix-prisma-neon-direct-url"
+      ],
+      "logged_solution_ids": [],
+      "verification_command": "node \"/home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof\"/workspace-verifiers/debug-ts2307-pnpm.mjs \"/tmp/clanker-debug-debug-ts2307-pnpm-with_mcp_empty_db-r1-8QAQXc\"",
+      "verification_passed": true,
+      "verification_stdout": "",
+      "verification_stderr": "",
+      "changed_files": ["package-under-test.json"],
+      "final_answer": "Fixed [package-under-test.json](/tmp/clanker-debug-debug-ts2307-pnpm-with_mcp_empty_db-r1-8QAQXc/package-under-test.json:1) by declaring the imported workspace package:\n\n```json\n\"@acme/ui\": \"workspace:*\"\n```\n\nVerification passed: `node test.mjs`."
+    },
+    {
+      "scenario_id": "debug-ts2307-pnpm",
+      "config": "without_mcp",
+      "repetition": 1,
+      "status": "completed",
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-debug-cost-hidden-gpt-5.5-low-smoke3/debug-ts2307-pnpm-without_mcp-r1.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/codex-debug-cost-hidden-gpt-5.5-low-smoke3/debug-ts2307-pnpm-without_mcp-r1.stderr.log",
+      "usage": {
+        "input_tokens": 91458,
+        "cached_input_tokens": 75904,
+        "output_tokens": 1296,
+        "reasoning_output_tokens": 95,
+        "total_provider_tokens": 92849,
+        "elapsed_ms": 44873
+      },
+      "cost_estimate": null,
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "logged_solution_ids": [],
+      "verification_command": "node \"/home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof\"/workspace-verifiers/debug-ts2307-pnpm.mjs \"/tmp/clanker-debug-debug-ts2307-pnpm-without_mcp-r1-8o77Jd\"",
+      "verification_passed": true,
+      "verification_stdout": "",
+      "verification_stderr": "",
+      "changed_files": ["package-under-test.json"],
+      "final_answer": "Fixed the consuming package manifest in [package-under-test.json](/tmp/clanker-debug-debug-ts2307-pnpm-without_mcp-r1-8o77Jd/package-under-test.json:1) by declaring `@acme/ui` as a pnpm workspace dependency:\n\n```json\n\"@acme/ui\": \"workspace:*\"\n```\n\nVerification passed: `node test.mjs`."
+    }
+  ],
+  "pairwise_reviews": []
+}

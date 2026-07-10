@@ -13,10 +13,11 @@
 
 console.log(
   [
-    "ClankerOverflow is active as your engineering memory.",
+    "ClankerOverflow is active as your internal StackOverflow, not vague memory.",
     "Search BEFORE implementing or debugging any non-trivial, framework-specific code",
     "(integrations, SSR/SEO, auth flows, config gotchas) or any error/stack trace.",
     "Use `search_solutions` with the smallest distinctive fingerprint first.",
+    "After a verified non-obvious fix, call `learn_solution` so the next session can reuse the Q/A.",
     "The search cost is near-zero; the cost of rediscovering a known gotcha is high.",
   ].join(" "),
 );

@@ -1,4 +1,12 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -75,8 +83,35 @@ describe("CLI", () => {
   let consoleErrorMock: MockInstance<typeof console.error>;
   let processExitMock: MockInstance<typeof process.exit>;
   let fetchMock: MockInstance<typeof global.fetch>;
+  let previousMode: string | undefined;
+  let previousDb: string | undefined;
+  let previousSemantic: string | undefined;
+  let previousApiKey: string | undefined;
+  let previousXdgConfigHome: string | undefined;
+  let previousHome: string | undefined;
+  let previousModelPath: string | undefined;
+  let previousModelDimensions: string | undefined;
+  let testHome: string;
 
   beforeEach(() => {
+    previousMode = process.env.CLANKER_MODE;
+    previousDb = process.env.CLANKER_LOCAL_DB;
+    previousSemantic = process.env.CLANKER_LOCAL_SEMANTIC;
+    previousApiKey = process.env.CLANKER_API_KEY;
+    previousXdgConfigHome = process.env.XDG_CONFIG_HOME;
+    previousHome = process.env.HOME;
+    previousModelPath = process.env.CLANKER_LOCAL_MODEL_PATH;
+    previousModelDimensions = process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
+    testHome = mkdtempSync(join(tmpdir(), "clanker-cli-test-home-"));
+    delete process.env.CLANKER_MODE;
+    delete process.env.CLANKER_LOCAL_DB;
+    delete process.env.CLANKER_LOCAL_SEMANTIC;
+    delete process.env.CLANKER_API_KEY;
+    delete process.env.CLANKER_LOCAL_MODEL_PATH;
+    delete process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
+    process.env.XDG_CONFIG_HOME = join(testHome, ".config");
+    process.env.HOME = testHome;
+
     consoleLogMock = vi.spyOn(console, "log").mockImplementation(() => {});
     consoleErrorMock = vi.spyOn(console, "error").mockImplementation(() => {});
     processExitMock = vi.spyOn(process, "exit").mockImplementation(((code?: number) => {
@@ -94,6 +129,23 @@ describe("CLI", () => {
     consoleErrorMock.mockRestore();
     processExitMock.mockRestore();
     fetchMock.mockRestore();
+    if (previousMode === undefined) delete process.env.CLANKER_MODE;
+    else process.env.CLANKER_MODE = previousMode;
+    if (previousDb === undefined) delete process.env.CLANKER_LOCAL_DB;
+    else process.env.CLANKER_LOCAL_DB = previousDb;
+    if (previousSemantic === undefined) delete process.env.CLANKER_LOCAL_SEMANTIC;
+    else process.env.CLANKER_LOCAL_SEMANTIC = previousSemantic;
+    if (previousApiKey === undefined) delete process.env.CLANKER_API_KEY;
+    else process.env.CLANKER_API_KEY = previousApiKey;
+    if (previousXdgConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
+    else process.env.XDG_CONFIG_HOME = previousXdgConfigHome;
+    if (previousHome === undefined) delete process.env.HOME;
+    else process.env.HOME = previousHome;
+    if (previousModelPath === undefined) delete process.env.CLANKER_LOCAL_MODEL_PATH;
+    else process.env.CLANKER_LOCAL_MODEL_PATH = previousModelPath;
+    if (previousModelDimensions === undefined) delete process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
+    else process.env.CLANKER_LOCAL_MODEL_DIMENSIONS = previousModelDimensions;
+    rmSync(testHome, { recursive: true, force: true });
   });
 
   describe("log command", () => {
@@ -199,6 +251,145 @@ describe("CLI", () => {
         else process.env.XDG_CONFIG_HOME = previousXdg;
         rmSync(dir, { recursive: true, force: true });
       }
+    });
+  });
+
+  describe("learn command", () => {
+    test("learns locally and writes a repo Markdown mirror", async () => {
+      await withLocalCliEnv(async (dbPath) => {
+        const repo = mkdtempSync(join(tmpdir(), "clanker-cli-learn-repo-"));
+        mkdirSync(join(repo, ".git"), { recursive: true });
+
+        try {
+          const program = createProgram();
+          await program.parseAsync([
+            "node",
+            "test",
+            "learn",
+            "--problem",
+            "Expo Router reload keeps stale native bundle after SDK upgrade",
+            "--root-cause",
+            "Metro kept the old native module graph after the SDK changed.",
+            "--solution",
+            "Clear Metro and Expo caches, then rebuild the native runtime.",
+            "--verification",
+            "pnpm expo start --clear loaded the new native module graph.",
+            "--tags",
+            "expo,metro",
+            "--fingerprints",
+            "expo metro stale native bundle",
+            "--repo",
+            repo,
+          ]);
+
+          expect(fetchMock).not.toHaveBeenCalled();
+          expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("Learned"));
+          expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("Markdown note:"));
+
+          const noteDir = join(repo, ".clankeroverflow", "solutions");
+          const notes = readdirSync(noteDir).filter((entry) => entry.endsWith(".md"));
+          expect(notes).toHaveLength(1);
+          const note = readFileSync(join(noteDir, notes[0]!), "utf8");
+          expect(note).toContain("# Problem");
+          expect(note).toContain("Expo Router reload keeps stale native bundle");
+          expect(note).toContain("## Verification");
+
+          const backend = new LocalBackend(dbPath);
+          const results = await backend.search({
+            query: "expo metro stale native bundle",
+            limit: 1,
+            mode: "keyword",
+          });
+          expect(results[0]?.problem).toContain("Expo Router reload");
+          expect(results[0]?.solution).toContain("## Root Cause");
+        } finally {
+          rmSync(repo, { recursive: true, force: true });
+        }
+      });
+    });
+
+    test("rejects unverified learn entries", async () => {
+      await withLocalCliEnv(async () => {
+        const program = createProgram();
+        await expect(
+          program.parseAsync([
+            "node",
+            "test",
+            "learn",
+            "--problem",
+            "Unverified problem",
+            "--root-cause",
+            "Unknown root cause",
+            "--solution",
+            "Maybe clear cache",
+            "--tags",
+            "cache",
+            "--no-markdown",
+          ]),
+        ).rejects.toThrow("Process.exit(1)");
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(consoleErrorMock).toHaveBeenCalledWith(
+          expect.stringContaining("Error learning solution"),
+        );
+        expect(consoleErrorMock).toHaveBeenCalledWith(
+          expect.stringContaining("verification is required"),
+        );
+      });
+    });
+
+    test("sync imports repo notes and export regenerates notes from the local DB", async () => {
+      await withLocalCliEnv(async (dbPath) => {
+        const repo = mkdtempSync(join(tmpdir(), "clanker-cli-learn-sync-repo-"));
+        const exportRepo = mkdtempSync(join(tmpdir(), "clanker-cli-learn-export-repo-"));
+        mkdirSync(join(repo, ".git"), { recursive: true });
+        mkdirSync(join(exportRepo, ".git"), { recursive: true });
+
+        try {
+          const learnProgram = createProgram();
+          await learnProgram.parseAsync([
+            "node",
+            "test",
+            "learn",
+            "--problem",
+            "Expo Router reload keeps stale native bundle after SDK upgrade",
+            "--root-cause",
+            "Metro kept the old native module graph after the SDK changed.",
+            "--solution",
+            "Clear Metro and Expo caches, then rebuild the native runtime.",
+            "--verification",
+            "pnpm expo start --clear loaded the new native module graph.",
+            "--tags",
+            "expo,metro",
+            "--fingerprints",
+            "expo metro stale native bundle",
+            "--repo",
+            repo,
+          ]);
+
+          consoleLogMock.mockClear();
+          const syncProgram = createProgram();
+          await syncProgram.parseAsync(["node", "test", "learn", "sync", "--repo", repo]);
+          expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("Synced"));
+
+          consoleLogMock.mockClear();
+          const exportProgram = createProgram();
+          await exportProgram.parseAsync(["node", "test", "learn", "export", "--repo", exportRepo]);
+          expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("Exported"));
+          expect(existsSync(join(exportRepo, ".clankeroverflow", "solutions"))).toBe(true);
+
+          const backend = new LocalBackend(dbPath);
+          const results = await backend.search({
+            query: "expo metro stale native bundle",
+            limit: 2,
+            mode: "keyword",
+          });
+          expect(results.length).toBeGreaterThanOrEqual(1);
+        } finally {
+          rmSync(repo, { recursive: true, force: true });
+          rmSync(exportRepo, { recursive: true, force: true });
+        }
+      });
     });
   });
 

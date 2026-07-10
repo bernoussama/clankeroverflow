@@ -33,6 +33,7 @@ import { homedir } from "node:os";
 // ── Configuration ────────────────────────────────────────────────────────────
 
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes between identical nudges
+const LEARN_WINDOW_MS = 2 * 60 * 60 * 1000; // remember a failure for 2 hours
 
 // Error codes that are distinctive enough to fingerprint a search.
 const ERROR_CODE_PATTERNS = [
@@ -102,6 +103,27 @@ function debounceDir() {
   return join(base, "clankeroverflow");
 }
 
+function hookStateFile() {
+  return join(debounceDir(), "hook-state.json");
+}
+
+function readJsonFile(file, fallback) {
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonFile(file, value) {
+  try {
+    mkdirSync(debounceDir(), { recursive: true });
+    writeFileSync(file, JSON.stringify(value), "utf8");
+  } catch {
+    // Best-effort only. Hooks must never disrupt the user session.
+  }
+}
+
 function shouldDebounce(fingerprint) {
   const dir = debounceDir();
   const file = join(dir, "hook-debounce.json");
@@ -114,6 +136,42 @@ function shouldDebounce(fingerprint) {
     // No state file or invalid JSON — don't debounce.
   }
   return false;
+}
+
+function readHookState() {
+  return readJsonFile(hookStateFile(), {});
+}
+
+function writeHookState(state) {
+  writeJsonFile(hookStateFile(), state);
+}
+
+function recordActiveFailure(key, fingerprint) {
+  const state = readHookState();
+  state.activeFailure = {
+    key,
+    fingerprint,
+    observedAt: Date.now(),
+  };
+  writeHookState(state);
+}
+
+function clearActiveFailure() {
+  const state = readHookState();
+  if (!state.activeFailure) return;
+  delete state.activeFailure;
+  writeHookState(state);
+}
+
+function recentActiveFailure() {
+  const state = readHookState();
+  const active = state.activeFailure;
+  if (!active || typeof active.observedAt !== "number") return null;
+  if (Date.now() - active.observedAt > LEARN_WINDOW_MS) {
+    clearActiveFailure();
+    return null;
+  }
+  return active;
 }
 
 function recordDebounce(fingerprint) {
@@ -211,6 +269,44 @@ function flattenStrings(obj, depth = 0) {
   return "";
 }
 
+function isLearnAction(text) {
+  return /\b(learn_solution|clanker\s+learn|log_solution)\b|Solution learned|Solution logged/i.test(
+    text,
+  );
+}
+
+function eventName(payload) {
+  if (!payload || typeof payload !== "object") return "";
+  return String(
+    payload.hook_event_name || payload.hookEventName || payload.event || payload.type || "",
+  );
+}
+
+function isStopEvent(payload) {
+  return /^(Stop|SessionEnd|SessionStop|stop)$/i.test(eventName(payload));
+}
+
+function looksLikeVerificationSuccess(text) {
+  const lower = text.toLowerCase();
+  const exitMatch = text.match(/(?:exit[_ ]?code|exitCode|status|code)\s*[:=]\s*(\d+)/i);
+  const hasCleanExit = exitMatch ? parseInt(exitMatch[1], 10) === 0 : false;
+  const verificationCommand =
+    /\b(pnpm|npm|yarn|vitest|jest|pytest|playwright|tsc|lint|typecheck|check|test|build|expo)\b/i.test(
+      text,
+    );
+  const successPhrase =
+    lower.includes("tests passed") ||
+    lower.includes("all tests passed") ||
+    lower.includes("build succeeded") ||
+    lower.includes("build completed") ||
+    lower.includes("compiled successfully") ||
+    lower.includes("typecheck passed") ||
+    lower.includes("lint passed") ||
+    lower.includes("passed in") ||
+    lower.includes("done in");
+  return successPhrase || (hasCleanExit && verificationCommand);
+}
+
 // ── Nudge message ────────────────────────────────────────────────────────────
 
 function buildNudge(fingerprint) {
@@ -225,6 +321,20 @@ function buildNudge(fingerprint) {
     `Before re-debugging, search for prior fixes with: search_solutions(${queryHint})`,
     "A reusable verified fix may already exist. The search cost is ~2 seconds;",
     "rediscovering a known gotcha costs far more.",
+    "─".repeat(64),
+  ].join("\n");
+}
+
+function buildLearnNudge(active) {
+  const fingerprint = active?.fingerprint || active?.key || "the resolved failure";
+  return [
+    "",
+    "─".repeat(64),
+    "ClankerOverflow: A previous failure now appears resolved.",
+    "",
+    `If you verified the fix for "${fingerprint}", learn it with learn_solution.`,
+    "Capture problem, root cause, solution, verification, tags, and fingerprints",
+    "so the next session can recover the Q/A instead of rediscovering it.",
     "─".repeat(64),
   ].join("\n");
 }
@@ -256,20 +366,37 @@ function main() {
   // Flatten the entire payload into searchable text.
   const text = typeof payload === "string" ? payload : flattenStrings(payload);
 
+  if (isLearnAction(text)) {
+    clearActiveFailure();
+    return;
+  }
+
   // Detect failure.
   const { failed, fingerprint } = detectFailure(text);
-  if (!failed) return;
-
-  // Debounce: don't nudge repeatedly for the same signal.
   const debounceKey =
     fingerprint || createHash("md5").update(text.slice(0, 500)).digest("hex").slice(0, 12);
-  if (shouldDebounce(debounceKey)) return;
+  if (failed) {
+    recordActiveFailure(debounceKey, fingerprint);
 
-  // Record this nudge for future debounce checks.
-  recordDebounce(debounceKey);
+    // Debounce: don't nudge repeatedly for the same signal.
+    if (shouldDebounce(debounceKey)) return;
 
-  // Print the nudge to stdout — the harness injects this into the agent context.
-  console.log(buildNudge(fingerprint));
+    // Record this nudge for future debounce checks.
+    recordDebounce(debounceKey);
+
+    // Print the nudge to stdout — the harness injects this into the agent context.
+    console.log(buildNudge(fingerprint));
+    return;
+  }
+
+  const active = recentActiveFailure();
+  if (!active) return;
+  if (!isStopEvent(payload) && !looksLikeVerificationSuccess(text)) return;
+
+  const learnDebounceKey = `learn-${active.fingerprint || active.key}`;
+  if (shouldDebounce(learnDebounceKey)) return;
+  recordDebounce(learnDebounceKey);
+  console.log(buildLearnNudge(active));
 }
 
 try {

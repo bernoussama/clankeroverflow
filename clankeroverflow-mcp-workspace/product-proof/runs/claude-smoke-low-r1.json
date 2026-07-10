@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "name": "real paired Claude CLI runs",
+    "sample": false,
+    "agent": "claude-cli",
+    "model": "sonnet",
+    "created_at": "2026-07-06T18:40:58.279Z",
+    "notes": "Effort: low. Per-run fixture DBs live under /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1."
+  },
+  "runs": [
+    {
+      "scenario_id": "eaddrinuse-ci",
+      "config": "with_mcp_known_fix",
+      "repetition": 1,
+      "status": "completed",
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-with_mcp_known_fix-r1.claude.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-with_mcp_known_fix-r1.claude.stderr.log",
+      "usage": {
+        "input_tokens": 44876,
+        "cached_input_tokens": 41408,
+        "output_tokens": 797,
+        "reasoning_output_tokens": 0,
+        "total_provider_tokens": 45673,
+        "elapsed_ms": 27419
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "EADDRINUSE port 3000 GitHub Actions ubuntu-latest intermittent",
+            "mode": "auto"
+          },
+          "result_ids": ["fix-eaddrinuse-ci-time-wait"],
+          "logged_ids": []
+        }
+      ],
+      "search_query": "EADDRINUSE port 3000 GitHub Actions ubuntu-latest intermittent",
+      "returned_solution_ids": ["fix-eaddrinuse-ci-time-wait"],
+      "logged_solution_ids": [],
+      "changed_files": [],
+      "final_answer": "Searched ClankerOverflow first — one match (`fix-eaddrinuse-ci-time-wait`) that aligns with the most likely root cause. Here's the practical answer.\n\n## Why killing the process doesn't help\n\n`EADDRINUSE` fires when the **socket** is still bound, not when a **process** is alive. On a fresh GitHub Actions `ubuntu-latest` runner there's no leftover process from a previous job (each job is a clean VM), so \"kill everything on 3000\" is fighting the wrong target. The real culprits, in rough order:\n\n1. **TIME_WAIT sockets** — a TCP socket you (or a previous test step) closed still occupies the port for ~60s. `kill` won't touch it. This is the classic \"every 3rd/4th run\" timing pattern.\n2. **Async shutdown race** — your test tears down the server but the next step/next test starts before the OS releases the port (close → release is not synchronous).\n3. **`SO_REUSEADDR` not set** — Node sets it by default for `net`/`http` servers, but some custom setups or Docker-wrapped servers don't, making TIME_WAIT collisions fatal.\n\n## Fix (in priority order)\n\n**Best: don't pin the port.** Bind to port `0`, let the OS pick a free one, and pass it to your tests:\n\n```js\nconst server = app.listen(0, () => {\n  const { port } = server.address();\n  runTests(port); // or set process.env.PORT = port\n});\n```\nThis eliminates the entire class of collision.\n\n**If you must use a fixed port:**\n- Add `SO_REUSEADDR` explicitly if using a raw socket / custom server.\n- Wait for graceful close (server emits `close`) before the next start; add a readiness/healthcheck poll rather than a `sleep`.\n- Set `SO_REUSEADDR=1` and, as a last resort, enable `SO_REUSEPORT` on the listener.\n\n**Diagnostics to confirm it's TIME_WAIT** (run right after a failure):\n```bash\nss -ltnp '( sport = :3000 )'         # any LISTEN? if empty, it's TIME_WAIT\nss -tan state time-wait '( sport = :3000 )' | wc -l\n```\nA populated `time-wait` count with an empty `LISTEN` row confirms the diagnosis.\n\nThe ClankerOverflow result advised exactly this (port 0 over kill-port loops + graceful shutdown), so it didn't change the fix but corroborated it. Nothing to log — it's already recorded there.\n\nWant me to look at your workflow file or server bootstrap to apply port 0 / readiness handling?"
+    },
+    {
+      "scenario_id": "eaddrinuse-ci",
+      "config": "with_mcp_empty_db",
+      "repetition": 1,
+      "status": "completed",
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-with_mcp_empty_db-r1.claude.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-with_mcp_empty_db-r1.claude.stderr.log",
+      "usage": {
+        "input_tokens": 68938,
+        "cached_input_tokens": 44864,
+        "output_tokens": 1371,
+        "reasoning_output_tokens": 0,
+        "total_provider_tokens": 70309,
+        "elapsed_ms": 64421
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "EADDRINUSE port 3000 CI intermittent"
+          },
+          "result_ids": ["fix-neon-branch-first-query-timeout"],
+          "logged_ids": []
+        },
+        {
+          "name": "WebSearch",
+          "arguments": {
+            "query": "GitHub Actions ubuntu-latest EADDRINUSE port 3000 intermittent already in use"
+          },
+          "result_ids": [],
+          "logged_ids": []
+        }
+      ],
+      "search_query": "EADDRINUSE port 3000 CI intermittent",
+      "returned_solution_ids": ["fix-neon-branch-first-query-timeout"],
+      "logged_solution_ids": [],
+      "changed_files": [],
+      "final_answer": "Searched ClankerOverflow (local DB had no match) and the web. Here's the most likely diagnosis.\n\n## Why it's intermittent even after you \"kill everything\"\n\n`lsof`/`fuser`/`kill-port` kill **listening processes**, but on `ubuntu-latest` the port can still be unavailable for two reasons that escape a simple kill:\n\n1. **TIME_WAIT lingering.** When the previous server closes, the kernel can hold the 4-tuple in `TIME_WAIT` for ~60s. Node's default `SO_REUSEADDR` lets you re-bind to a port in `TIME_WAIT` *only if no active listener exists* — but if your test runner is also keeping connections open or you're binding with `exclusive: true` / cluster workers, the bind races the TIME_WAIT teardown. \"Every 3rd/4th run\" is the classic timing-dependent symptom.\n2. **Orphaned child, not the PID you killed.** If your server is started detached/backgrounded (e.g. `&`, `npm run dev &`, a Playwright/Vite child), `kill` on the parent PID often leaves the actual listening child alive. Your kill looks successful, but the listener survives into the next step.\n\nOn GitHub-hosted runners there's also a known wrinkle: **port 3000 is not safe to assume free** — `ubuntu-latest` images ship background services, and a leftover from an earlier job step on the same runner can occupy it. Killing *your* processes won't touch those.\n\n## Fixes, in order of robustness\n\n**1. Don't hardcode 3000 — bind to an OS-assigned port.**\n```js\nserver.listen(0, () => console.log(server.address().port))\n```\nThis eliminates the class of bug entirely. For tools that need a fixed port (Vite/Next/Playwright), pick an uncommon high port or generate one in the step and pass it down:\n```yaml\n- run: echo \"PORT=$((20000 + RANDOM % 10000))\" >> \"$GITHUB_ENV\"\n```\n\n**2. Kill the whole process tree, not just the parent.** Between steps:\n```bash\npkill -f 'node.*dev' || true\nnpx kill-port 3000 || true\n# or, for detached children:\nfuser -k 3000/tcp || true\n```\n\n**3. Add a wait + readiness check instead of assuming the port frees instantly.** Don't bind immediately after a kill — sleep 1–2s or poll until the port is free.\n\n**4. Diagnose the actual culprit in one run.** Add a debug step right before the failing one to see *what* holds the port — this tells you definitively whether it's TIME_WAIT or a real process:\n```yaml\n- run: |\n    sudo ss -ltnp 'sport = :3000' || true\n    sudo lsof -i :3000 || true\n    sudo netstat -tlnp | grep 3000 || true\n```\n- If `lsof`/`ss` shows **a process** → orphaned child (fix #2).\n- If nothing shows but bind still fails → **TIME_WAIT** (fix #1 or #3).\n\nThe single highest-leverage change is **#1 (random port)** — it removes the timing race completely rather than papering over it.\n\nSources:\n- [Node/Express EADDRINUSE — Stack Overflow](https://stackoverflow.com/questions/4075287/node-express-eaddrinuse-address-already-in-use-how-can-i-stop-the-process)\n- [listen EADDRINUSE :::3000 — Vercel #12563](https://github.com/vercel/vercel/issues/12563)\n- [How to Fix 'EADDRINUSE' in Node.js — OneUptime](https://oneuptime.com/blog/post/2026-01-25-fix-eaddrinuse-nodejs/view)\n- [Failed to start server, port 3000 — Bun #9560](https://github.com/oven-sh/bun/issues/9560)\n- [Supertest EADDRINUSE in CI #568](https://github.com/forwardemail/supertest/issues/568)"
+    },
+    {
+      "scenario_id": "eaddrinuse-ci",
+      "config": "without_mcp",
+      "repetition": 1,
+      "status": "completed",
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-without_mcp-r1.claude.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-without_mcp-r1.claude.stderr.log",
+      "usage": {
+        "input_tokens": 20131,
+        "cached_input_tokens": 0,
+        "output_tokens": 1095,
+        "reasoning_output_tokens": 0,
+        "total_provider_tokens": 21226,
+        "elapsed_ms": 23861
+      },
+      "cost_estimate": null,
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "logged_solution_ids": [],
+      "changed_files": [],
+      "final_answer": "Intermittent `EADDRINUSE` on a hardcoded port is almost always one of three things — and killing processes won't fix two of them:\n\n**1. TIME_WAIT (no PID to kill)** — After a previous server stops, the kernel keeps the socket in `TIME_WAIT` for ~60s. There's no *process* to kill — it's a kernel socket state, so `kill`/`fuser`/`lsof` find nothing. Two fixes:\n   - Set `SO_REUSEADDR` (Node's `http`/`net` servers do this by default, but raw sockets or some wrappers don't — verify yours).\n   - Ensure graceful shutdown: actually `await server.close()` before the process exits. If the test runner force-exits, the socket may linger.\n\n**2. Parallel test workers** — If you're on Jest/Vitest/Mocha with >1 worker and each worker binds **3000**, you get a race that lands on different workers each run — textbook \"every 3rd or 4th run.\" This is the most likely cause given the symptom.\n\n**3. Two listeners in one job** — A dev server + a test server, or a `before`/`after` hook starting a server that the previous test didn't tear down.\n\n### The real fix\nDon't bind a fixed port in CI tests at all. Let the OS pick a free one:\n\n```js\nconst server = app.listen(0);           // 0 = ephemeral port\nconst { port } = server.address();      // use this in test clients\n```\n\nThis eliminates the race entirely — every worker gets its own port, no TIME_WAIT collisions.\n\n### If you must keep 3000\n- Run tests single-worker (`--maxWorkers=1` / `--runInBand`) to rule out #2.\n- Add a listen retry with backoff (try 3000, if EADDRINUSE wait 200ms, retry N times).\n- Confirm teardown: log `server.close()` completion, and check you're not `process.exit(0)`-ing before it resolves.\n\nQuick way to confirm the cause: in the failing job, run `ss -ltnp 'sport = :3000'` and `ss -tan 'sport = :3000'` right before you start the server. If you see `TIME-WAIT` rows → it's #1; if you see another process's `LISTEN` → it's #2/#3."
+    },
+    {
+      "scenario_id": "eaddrinuse-ci",
+      "config": "learn_then_reuse_pass1",
+      "repetition": 1,
+      "status": "completed",
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-learn_then_reuse_pass1-r1.claude.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-learn_then_reuse_pass1-r1.claude.stderr.log",
+      "usage": {
+        "input_tokens": 21123,
+        "cached_input_tokens": 11840,
+        "output_tokens": 1369,
+        "reasoning_output_tokens": 0,
+        "total_provider_tokens": 22492,
+        "elapsed_ms": 31682
+      },
+      "cost_estimate": null,
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "logged_solution_ids": [],
+      "changed_files": [],
+      "final_answer": "Checked ClankerOverflow first — the MCP search tool isn't connected in this session, so I can't query/log prior fixes here. Answering directly.\n\n## Why it's intermittent even after you kill the process\n\nKilling the process doesn't instantly free the port. On ~1 in 3–4 runs you're hitting one of two races:\n\n1. **The previous server is still shutting down when the new one binds.** `kill` / `SIGTERM` triggers *graceful* shutdown — the process keeps the listening socket open while it drains requests or exits cleanly. Even `kill -9` leaves the socket briefly. Your next step starts before the kernel releases port 3000.\n2. **`TIME_WAIT` lingering sockets.** A closed connection sits in `TIME_WAIT` (default up to 60s on Linux). If your server doesn't set `SO_REUSEADDR`, a fresh bind to the same port can collide with those lingering sockets.\n\n\"Every 3rd/4th run\" is the fingerprint of a timing race against shutdown, not a stuck process — which is why killing everything on 3000 doesn't reliably help.\n\n## Fixes (apply in order)\n\n**1. Ensure `SO_REUSEADDR` on the listener.** Most frameworks (Express, Next, Vite, etc.) set this already, but if you bind manually:\n\n```js\nconst srv = http.createServer(app);\nsrv.on('error', (e) => { if (e.code === 'EADDRINUSE') { /* wait + retry */ } });\n```\n\nIf binding a raw socket: `server.on('listening'...)` won't help; set the option before `listen()`.\n\n**2. Wait for the port to actually be free before (re)starting** — this is the real fix for the intermittent CI case. Replace `kill` with a poll loop in your workflow:\n\n```yaml\n- name: Stop server and wait for port\n  run: |\n    # send SIGTERM, then wait until the port is free (not just until the PID dies)\n    fuser -k 3000/tcp 2>/dev/null || true\n    for i in $(seq 1 30); do\n      if ! nc -z 127.0.0.1 3000 2>/dev/null; then echo \"port free\"; break; fi\n      sleep 1\n    done\n    # belt-and-suspenders for TIME_WAIT\n    sleep 1\n```\n\nKey point: poll the **port**, not the **PID** — `nc -z` (or `ss -ltn 'sport = :3000'`) tells you when the bind is actually released, which lags behind process exit.\n\n**3. Let the previous instance finish its own shutdown** rather than force-killing. If your test runner spawns the server, give it a graceful-shutdown timeout and wait on the child exit + port-free signal before starting the next run.\n\n**4. As a last resort, pick an ephemeral port per run** (`PORT=$(python3 -c \"import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()\")`) so successive runs never contend for 3000 at all.\n\nThe combination that usually kills this on `ubuntu-latest`: **SIGTERM the old process → poll the port with `nc -z` until free → short sleep for `TIME_WAIT` → then start.** Drop the reliance on `kill` alone."
+    },
+    {
+      "scenario_id": "eaddrinuse-ci",
+      "config": "learn_then_reuse_pass2",
+      "repetition": 1,
+      "status": "completed",
+      "transcript": "events: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-learn_then_reuse_pass2-r1.claude.events.jsonl\nstderr: /home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/product-proof/runs/traces/claude-smoke-low-r1/eaddrinuse-ci-learn_then_reuse_pass2-r1.claude.stderr.log",
+      "usage": {
+        "input_tokens": 65510,
+        "cached_input_tokens": 59328,
+        "output_tokens": 1385,
+        "reasoning_output_tokens": 0,
+        "total_provider_tokens": 66895,
+        "elapsed_ms": 44088
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "Skill",
+          "arguments": {
+            "skill": "clankeroverflow-mcp"
+          },
+          "result_ids": [],
+          "logged_ids": []
+        },
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "EADDRINUSE GitHub Actions ubuntu-latest intermittent"
+          },
+          "result_ids": [],
+          "logged_ids": []
+        }
+      ],
+      "search_query": "EADDRINUSE GitHub Actions ubuntu-latest intermittent",
+      "returned_solution_ids": [],
+      "logged_solution_ids": [],
+      "changed_files": [],
+      "final_answer": "I searched ClankerOverflow first — no matching solutions logged for this one, so here's from first principles.\n\n## Root cause\n\n\"Intermittent, every 3rd–4th run, even after killing the process\" is almost always **TIME_WAIT socket linger**, not a live process. When the previous listener is killed mid-connection (or tears down ungracefully, which CI teardown commonly does), its sockets enter the kernel's 60s `TIME_WAIT` window. The *process* is gone (so `kill`/`fuser` find nothing), but the *port* is still considered in use by the kernel for ~60s. A new bind to the same fixed port then races that window → intermittent `EADDRINUSE`.\n\nOn ubuntu-latest this is amplified because the runner has no warmup slack and parallel test workers may each spin up/down a server on the same port.\n\n## Fix (in priority order)\n\n**1. Stop hardcoding port 3000 — bind to port `0`.**\nThe OS hands you a guaranteed-free ephemeral port. This eliminates the race entirely and is the canonical fix for flaky test servers:\n\n```js\nconst server = app.listen(0, () => {\n  const port = server.address().port;   // pass this to your test client\n});\n```\nThen read back the real port and pass it to your test client. No fixed port = no collision, ever.\n\n**2. If you must keep a fixed port**, set `SO_REUSEADDR` before bind/listen so TIME_WAIT sockets don't block the bind:\n- Node: nothing to do for the listen socket (libuv sets it by default) — so if you still see it on Node, it's #1/#3.\n- Go: `net.ListenConfig{Control: reuseAddr}`; raw socket: `setsockopt(SO_REUSEADDR)`.\n\n**3. Ensure graceful shutdown.** Make your test teardown `server.close()` (and close all keep-alive connections) *before* the process exits, so sockets don't get RST'd into TIME_WAIT:\n```js\nserver.closeAllConnections?.(); // Node 18.2+\nserver.close(done);\n```\n\n**4. Diagnostic — confirm it's TIME_WAIT, not a real process.** Add to the failing step:\n```bash\nss -ltnp | grep ':3000'      # live listener?\nss -tan | grep ':3000'       # TIME-WAIT count\n```\nIf you see `TIME-WAIT` entries and no listener, that's the smoking gun.\n\n## What it's *not*\n- Not a leaked process you can `kill` (you've confirmed that).\n- Not a preinstalled runner service — nothing on ubuntu-latest listens on 3000.\n- Not IPv6 `::1` vs `127.0.0.1` (that gives `ECONNREFUSED`/hang, not `EADDRINUSE`).\n\n**Recommendation:** do #1 (bind port 0). It's a one-line change and removes the entire class of failure. Want me to look at how your server is started in CI to apply it?"
+    }
+  ],
+  "pairwise_reviews": []
+}

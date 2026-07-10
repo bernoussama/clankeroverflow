@@ -46,6 +46,7 @@ coverage
 playwright-report
 test-results
 packages/cli/benchmarks/local-embeddings/results
+clankeroverflow-mcp-workspace/product-proof/runs/traces
 
 # Misc
 *.tgz
