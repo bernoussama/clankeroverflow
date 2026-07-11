@@ -361,16 +361,20 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .command("sync")
     .description("Import .clankeroverflow/solutions/*.md into the local ClankerOverflow DB")
     .option("--repo <path>", "Repository root containing .clankeroverflow/solutions")
-    .option("--source <source>", "local, remote, or configured", "local")
+    .option("--source <source>", "local, remote, or configured")
     .option("--no-dedupe", "Skip the pre-log duplicate search")
-    .action(async (options) => {
+    .action(async (options, command) => {
       try {
         const parentOptions = learnCommand.opts();
         const repoOption = options.repo ?? parentOptions.repo;
+        const childSource = command.getOptionValueSource("source") === "cli";
+        const childDedupe = command.getOptionValueSource("dedupe") === "cli";
         const result = await syncRepoSolutions({
-          source: parseBackendSource(options.source ?? parentOptions.source ?? "local"),
+          source: parseBackendSource(
+            childSource ? options.source : (parentOptions.source ?? "local"),
+          ),
           repoRoot: repoOption ? path.resolve(process.cwd(), repoOption) : gitRepoRoot(),
-          dedupe: options.dedupe ?? parentOptions.dedupe,
+          dedupe: childDedupe ? options.dedupe : parentOptions.dedupe,
           mirror: false,
         });
         console.log(

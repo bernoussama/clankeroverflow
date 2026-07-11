@@ -427,7 +427,8 @@ function runCodex(
   if (result.status !== 0) {
     const stderrExcerpt = (result.stderr ?? "").split(/\r?\n/).slice(-12).join("\n").trim();
     const eventErrors = eventErrorMessages(eventsPath).join("\n").trim();
-    const errorText = [eventErrors, stderrExcerpt].filter(Boolean).join("\n");
+    const spawnError = result.error ? `${result.error.name}: ${result.error.message}` : "";
+    const errorText = [spawnError, eventErrors, stderrExcerpt].filter(Boolean).join("\n");
     return {
       scenario_id: scenario.id,
       config,

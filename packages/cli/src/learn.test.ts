@@ -2,14 +2,16 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import {
   DEFAULT_REPO_SOLUTIONS_DIR,
   exportLocalSolutions,
   learnSolution,
   parseLearnMarkdown,
+  readSolutionResource,
   syncRepoSolutions,
+  writeLearnMarkdown,
   type LearnInput,
 } from "./learn";
 import { resolveConfig } from "./mcp/config";
@@ -69,7 +71,7 @@ describe("learn workflow", () => {
         {
           ...expoInput,
           solution:
-            "Clear Metro cache with SECRET_TOKEN=super-private and remove sk_test_12345678901234567890 from logs.",
+            "Clear Metro with SECRET_TOKEN=super-private, API_KEY='single-secret', and ACCESS_TOKEN=\"double-secret\"; remove sk_test_12345678901234567890 from logs.",
           repoNote: "Observed at /home/oussama/private/app and http://service.internal/debug.",
         },
         { config, repoRoot, dedupe: false },
@@ -85,6 +87,10 @@ describe("learn workflow", () => {
       expect(note).toContain("# Problem");
       expect(note).toContain("Expo Router reload keeps stale native bundle");
       expect(note).not.toContain("super-private");
+      expect(note).not.toContain("single-secret");
+      expect(note).not.toContain("double-secret");
+      expect(note).toContain("API_KEY=<redacted>");
+      expect(note).toContain("ACCESS_TOKEN=<redacted>");
       expect(note).not.toContain("sk_test_12345678901234567890");
       expect(note).not.toContain("/home/oussama/private/app");
       expect(note).not.toContain("service.internal");
@@ -159,6 +165,46 @@ describe("learn workflow", () => {
       expect(exported.paths).toHaveLength(1);
       const exportedFiles = readdirSync(join(exportRepo, DEFAULT_REPO_SOLUTIONS_DIR));
       expect(exportedFiles[0]).toMatch(/expo-router-reload/);
+      const exportedInput = parseLearnMarkdown(
+        readFileSync(join(exportRepo, DEFAULT_REPO_SOLUTIONS_DIR, exportedFiles[0]!), "utf8"),
+      );
+      expect(exportedInput.framework).toBe("Expo");
+      expect(exportedInput.runtime).toBe("React Native");
+      expect(exportedInput.packageManager).toBe("pnpm");
+      expect(exportedInput.fingerprints).toBe("expo metro stale native bundle");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("closes its backend on success, duplicate, and validation error paths", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "clanker-learn-close-"));
+    const close = vi.spyOn(LocalBackend.prototype, "close");
+    try {
+      const config = localConfig(dir);
+      await learnSolution(expoInput, { config, mirror: false, dedupe: false });
+      await learnSolution(expoInput, { config, mirror: false });
+      await expect(
+        learnSolution({ ...expoInput, verification: "" }, { config, mirror: false }),
+      ).rejects.toThrow("verification is required");
+      expect(close).toHaveBeenCalledTimes(3);
+    } finally {
+      close.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("reads repo resources only by an exact basename or exact stored id", () => {
+    const dir = mkdtempSync(join(tmpdir(), "clanker-resource-exact-"));
+    const repoRoot = createRepo(dir);
+    try {
+      const file = writeLearnMarkdown(repoRoot, "solution-id-123", expoInput);
+      const slug = file.split("/").at(-1)!.replace(/\.md$/, "");
+      expect(readSolutionResource(slug, repoRoot).file).toBe(file);
+      expect(readSolutionResource("solution-id-123", repoRoot).file).toBe(file);
+      expect(() => readSolutionResource("solution-id", repoRoot)).toThrow(
+        "Repo solution not found",
+      );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

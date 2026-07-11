@@ -80,7 +80,7 @@ function normalizeTags(input: LearnInput) {
 
 function redactText(value: string, warnings: string[]) {
   const replacements: Array<[RegExp, string, string]> = [
-    [/\b([A-Z][A-Z0-9_]{2,})=([^\s"'`]+)/g, "$1=<redacted>", "env var value"],
+    [/\b([A-Z][A-Z0-9_]{2,})=(?:"[^"]*"|'[^']*'|[^\s"'`]+)/g, "$1=<redacted>", "env var value"],
     [
       /\b(?:sk|pk|rk|clk|ghp|github_pat|xoxb|xoxp)_[A-Za-z0-9_-]{12,}\b/g,
       "<redacted-secret>",
@@ -304,47 +304,51 @@ export async function learnSolution(
   const config = options.config ?? resolveConfig();
   const source = modeForSource(config, options.source ?? "local");
   const backend = createSolutionBackend(config, source);
-  const { input: sanitized, warnings } = sanitizeInput({
-    ...input,
-    tags: normalizeTags(input),
-  });
+  try {
+    const { input: sanitized, warnings } = sanitizeInput({
+      ...input,
+      tags: normalizeTags(input),
+    });
 
-  if (options.dedupe !== false) {
-    const duplicate = await findDuplicate(backend, sanitized, config, source);
-    if (duplicate) {
-      if (options.upvoteExisting !== false) {
-        await backend.vote({ id: duplicate.id, isUpvote: true }).catch(() => undefined);
+    if (options.dedupe !== false) {
+      const duplicate = await findDuplicate(backend, sanitized, config, source);
+      if (duplicate) {
+        if (options.upvoteExisting !== false) {
+          await backend.vote({ id: duplicate.id, isUpvote: true }).catch(() => undefined);
+        }
+        return {
+          id: duplicate.id,
+          source,
+          status: "duplicate",
+          warnings,
+          duplicateIds: [duplicate.id],
+        };
       }
-      return {
-        id: duplicate.id,
-        source,
-        status: "duplicate",
-        warnings,
-        duplicateIds: [duplicate.id],
-      };
     }
+
+    const result = await backend.log({
+      problem: sanitized.problem,
+      solution: formatLearnedSolution(sanitized),
+      tags: sanitized.tags,
+    });
+
+    const repoRoot = options.repoRoot === undefined ? findRepoRoot() : options.repoRoot;
+    const repoNotePath =
+      options.mirror === false || !repoRoot
+        ? undefined
+        : writeLearnMarkdown(repoRoot, result.id, sanitized);
+
+    return {
+      id: result.id,
+      source,
+      status: "logged",
+      repoNotePath,
+      warnings: uniqueList([...warnings, result.warning ?? ""]),
+      duplicateIds: [],
+    };
+  } finally {
+    await backend.close();
   }
-
-  const result = await backend.log({
-    problem: sanitized.problem,
-    solution: formatLearnedSolution(sanitized),
-    tags: sanitized.tags,
-  });
-
-  const repoRoot = options.repoRoot === undefined ? findRepoRoot() : options.repoRoot;
-  const repoNotePath =
-    options.mirror === false || !repoRoot
-      ? undefined
-      : writeLearnMarkdown(repoRoot, result.id, sanitized);
-
-  return {
-    id: result.id,
-    source,
-    status: "logged",
-    repoNotePath,
-    warnings: uniqueList([...warnings, result.warning ?? ""]),
-    duplicateIds: [],
-  };
 }
 
 export function repoSolutionsDir(repoRoot = findRepoRoot()) {
@@ -377,12 +381,19 @@ export async function syncRepoSolutions(options: LearnOptions = {}) {
 }
 
 function parseStructuredSolution(solution: string) {
+  const reusableContext = markdownSection(solution, "Reusable Context");
+  const contextField = (label: string) =>
+    reusableContext.match(new RegExp(`^\\s*-\\s*${label}:\\s*(.+)$`, "im"))?.[1]?.trim() ?? "";
   return {
     rootCause: markdownSection(solution, "Root Cause") || "See verified fix.",
     solution: markdownSection(solution, "Verified Fix") || solution,
     verification:
       markdownSection(solution, "Verification") || "Previously logged in ClankerOverflow.",
-    repoNote: markdownSection(solution, "Reusable Context"),
+    framework: contextField("Framework"),
+    runtime: contextField("Runtime"),
+    packageManager: contextField("Package manager"),
+    fingerprints: contextField("Fingerprints"),
+    repoNote: contextField("Repo note"),
   };
 }
 
@@ -409,6 +420,10 @@ export function exportLocalSolutions(
         solution: parsed.solution,
         verification: parsed.verification,
         repoNote: parsed.repoNote,
+        framework: parsed.framework,
+        runtime: parsed.runtime,
+        packageManager: parsed.packageManager,
+        fingerprints: parsed.fingerprints,
         tags: row.tags ?? "clankeroverflow",
       });
     });
@@ -443,9 +458,11 @@ export function solutionResourceIndex(repoRoot = findRepoRoot()) {
 
 export function readSolutionResource(idOrSlug: string, repoRoot = findRepoRoot()) {
   const files = listRepoSolutionFiles(repoRoot);
-  const file = files.find(
-    (candidate) => basename(candidate, ".md") === idOrSlug || candidate.includes(idOrSlug),
-  );
+  const file = files.find((candidate) => {
+    if (basename(candidate, ".md") === idOrSlug) return true;
+    const frontmatter = readFileSync(candidate, "utf8").match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
+    return fieldFromFrontmatter(frontmatter, "id") === idOrSlug;
+  });
   if (!file) throw new Error(`Repo solution not found: ${idOrSlug}`);
   return { file, text: readFileSync(file, "utf8") };
 }

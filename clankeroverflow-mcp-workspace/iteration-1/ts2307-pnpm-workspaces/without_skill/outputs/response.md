@@ -1,5 +1,26 @@
 # TS2307 "Cannot find module" in pnpm workspaces with path aliases
 
+> **Post-run technical correction:** This file preserves the recorded agent
+> output below. Its `node`/`node10` statement is inaccurate: legacy Node
+> resolution does not support `package.json` `exports`; packages relying on
+> `exports` require `node16`, `nodenext`, or `bundler`. Its `.ts` export target
+> is suitable only for a bundler or configured TypeScript loader. Stock Node
+> consumers should export compiled JavaScript and declarations, for example:
+>
+> ```json
+> {
+>   "exports": {
+>     ".": {
+>       "types": "./dist/index.d.ts",
+>       "import": "./dist/index.js"
+>     }
+>   }
+> }
+> ```
+>
+> This correction is additive so the original evaluation transcript remains
+> auditable rather than silently rewriting what the evaluated agent produced.
+
 The core issue is almost always **module resolution mode + `exports` map mismatch**, not the `paths` array. This is the single most common reason "works at runtime, `tsc` complains" shows up: `paths` tells TypeScript where to _remap_ an import, but it does nothing if the resolution mode (`moduleResolution`) can't even see the package's `exports`/`main`/`types` fields, or if the `paths` glob doesn't line up with how the package is imported.
 
 Below is a diagnostic order that fixes this in 90% of cases, then concrete config.

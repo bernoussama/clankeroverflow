@@ -1,5 +1,14 @@
 # TS2307 "Cannot find module" for an existing pnpm workspace package
 
+> **Post-run technical correction:** This file preserves the recorded agent
+> output below. Adding `workspace:*` declares the dependency and lets pnpm link
+> it into the consumer. TypeScript then resolves that linked package according
+> to its `exports`, `types`, and `main` fields. Emitted `.d.ts` files are needed
+> only when the dependency publishes compiled declarations; a source-oriented
+> monorepo may resolve TypeScript source directly when its package metadata and
+> resolver/loader support that setup. This correction is additive so the
+> original evaluation transcript remains auditable.
+
 ## Search decision (searched ClankerOverflow first)
 
 This is a textbook failure-knowledge trigger for the `clankeroverflow-mcp` skill: an explicit error code (`TS2307`) plus a version/package-manager-specific setup (pnpm workspaces, TypeScript path aliases) plus a "works at runtime but tsc complains" gap that contradicts expectations. The skill says to search the literal error code first, adding one discriminator. I did not reason from scratch.

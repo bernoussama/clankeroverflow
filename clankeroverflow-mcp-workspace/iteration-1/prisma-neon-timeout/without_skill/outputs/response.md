@@ -25,7 +25,7 @@ In the Neon Console -> Connect dialog, both strings are shown side by side ("Poo
 
 Optionally bump the connect timeout on the direct URL to absorb Neon cold starts (Neon suspends idle compute after ~5 min, so the first connection after idle can take several seconds):
 
-```
+```dotenv
 DIRECT_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/db?sslmode=require&connect_timeout=30"
 ```
 

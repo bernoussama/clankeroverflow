@@ -169,6 +169,7 @@ def grade_assertion(should_trigger: bool, searched: bool, config: str) -> bool:
 
 
 def main():
+    """Grade recorded runs and write per-run plus aggregate benchmark artifacts."""
     grading_results = []
     benchmark_runs = []
 
@@ -247,6 +248,7 @@ def main():
     baseline_snt = [r for r in grading_results if r.get("config") == "without_skill" and not r.get("should_trigger")]
 
     def pass_rate(runs):
+        """Return the fraction of valid grading results that passed."""
         valid = [r for r in runs if r.get("passed") is not None]
         if not valid:
             return 0.0
@@ -264,6 +266,7 @@ def main():
 
     # ── Write benchmark.json ──
     def stats(runs):
+        """Summarize pass rates for a collection of benchmark runs."""
         rates = [r["result"]["pass_rate"] for r in runs]
         if not rates:
             return {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0}
@@ -286,7 +289,7 @@ def main():
         "run_summary": {
             "with_skill": {"pass_rate": stats(ws_runs)},
             "without_skill": {"pass_rate": stats(wo_runs)},
-            "delta": {"pass_rate": f"+{stats(ws_runs)['mean'] - stats(wo_runs)['mean']:.2f}"},
+            "delta": {"pass_rate": f"{stats(ws_runs)['mean'] - stats(wo_runs)['mean']:+.2f}"},
         },
         "notes": [
             "Should-trigger recall: skill caused search on 4/4 successful runs (1 failed). Baseline searched on 0/5.",

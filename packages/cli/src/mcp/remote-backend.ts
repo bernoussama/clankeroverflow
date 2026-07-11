@@ -14,6 +14,10 @@ export class RemoteBackend implements SolutionBackend {
     this.trpc = createTrpcClient(options);
   }
 
+  close(): void {
+    // The hosted backend owns no persistent client-side resources.
+  }
+
   async log(input: LogSolutionInput): Promise<{ id: string }> {
     return this.trpc.solutions.log.mutate(input);
   }

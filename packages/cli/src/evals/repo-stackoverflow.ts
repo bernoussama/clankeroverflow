@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -100,6 +100,13 @@ function formatJson(result: RepoStackOverflowEvalResult) {
   return JSON.stringify(result, null, 2).replace(/\[\n\s+"([^"]+)"\n\s+\]/g, '["$1"]');
 }
 
+export function detectsSensitiveContent(text: string) {
+  return (
+    /\/home\/|\/Users\/|https?:\/\//i.test(text) ||
+    /\b[A-Z][A-Z0-9_]{2,}\s*=\s*["']?[^\s"']+/.test(text)
+  );
+}
+
 export async function runRepoStackOverflowEval(
   options: {
     workspaceRoot?: string;
@@ -126,21 +133,30 @@ export async function runRepoStackOverflowEval(
       dedupe: false,
     });
     const pass2Backend = new LocalBackend(pass2Config.localDbPath);
-    const pass2Search = await searchWithAutoFallback(pass2Backend, {
-      query: "expo metro stale native bundle",
-      limit: 3,
-      mode: "auto",
-      allowHybridFallback: false,
-      fallbackUnavailableReason: "local semantic search is not configured",
-    });
+    const pass2Search = await (async () => {
+      try {
+        return await searchWithAutoFallback(pass2Backend, {
+          query: "expo metro stale native bundle",
+          limit: 3,
+          mode: "auto",
+          allowHybridFallback: false,
+          fallbackUnavailableReason: "local semantic search is not configured",
+        });
+      } finally {
+        pass2Backend.close();
+      }
+    })();
     const pass2ImportedIds = sync.results.map((entry) => entry.id);
     const pass2ReturnedIds = pass2Search.results.map((result) => result.id);
+    const noteText = learned.repoNotePath ? readFileSync(learned.repoNotePath, "utf8") : "";
     const unsafeText = [
       expoScenario.problem,
       expoScenario.solution,
       expoScenario.verification,
+      noteText,
+      ...pass2Search.results.flatMap((entry) => [entry.problem, entry.solution, entry.tags ?? ""]),
     ].join("\n");
-    const unsafeCopying = /\/home\/|\/Users\/|https?:\/\/|[A-Z0-9_]{3,}=/i.test(unsafeText);
+    const unsafeCopying = detectsSensitiveContent(unsafeText);
 
     const result: RepoStackOverflowEvalResult = {
       benchmark: "Repo StackOverflow Reuse Eval",
@@ -187,16 +203,19 @@ export async function runRepoStackOverflowEval(
   }
 }
 
-function parseArg(name: string) {
-  const index = process.argv.indexOf(name);
+export function parseArg(argv: string[], name: string) {
+  const index = argv.indexOf(name);
   if (index === -1) return undefined;
-  return process.argv[index + 1];
+  const value = argv[index + 1];
+  if (!value || value.startsWith("--")) throw new Error(`${name} requires a value`);
+  return value;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const outputJson = parseArg("--output-json");
-  const outputMarkdown = parseArg("--output-markdown");
-  const workspaceRoot = parseArg("--workspace-root");
+  const argv = process.argv.slice(2);
+  const outputJson = parseArg(argv, "--output-json");
+  const outputMarkdown = parseArg(argv, "--output-markdown");
+  const workspaceRoot = parseArg(argv, "--workspace-root");
   const result = await runRepoStackOverflowEval({ outputJson, outputMarkdown, workspaceRoot });
   console.log(formatReport(result));
 }

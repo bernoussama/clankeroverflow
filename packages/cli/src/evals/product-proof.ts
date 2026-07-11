@@ -678,11 +678,9 @@ function summarize(
   const withMcp = completedGrades.filter((grade) => isMcpConfig(grade.config));
   const knownFix = withMcp.filter((grade) => grade.config === "with_mcp_known_fix");
   const mustSearch = knownFix.filter((grade) => grade.policyLabel === "must_search");
+  const allMustSearch = withMcp.filter((grade) => grade.policyLabel === "must_search");
   const mustNotSearch = withMcp.filter((grade) => grade.policyLabel === "must_not_search");
   const knownRetrievalGrades = knownFix.filter((grade) => grade.retrievalPass !== null);
-  const retrievalGrades = withMcp.filter(
-    (grade) => grade.config === "with_mcp_known_fix" && grade.retrievalPass !== null,
-  );
   const reviewedPairs = pairGrades.filter((pair) => pair.winner !== "pending");
   const decisivePairs = reviewedPairs.filter((pair) => pair.winner !== "tie");
   const scenarioById = new Map(input.scenarios.map((scenario) => [scenario.id, scenario]));
@@ -823,14 +821,17 @@ function summarize(
     debugMedianTokenSavingsRateKnownVsNoMcp: median(debugTokenSavingsRateKnownVsNoMcp),
     debugMedianCostSavingsRateKnownVsNoMcp: median(debugCostSavingsRateKnownVsNoMcp),
     debugMedianElapsedSavingsRateKnownVsNoMcp: median(debugElapsedSavingsRateKnownVsNoMcp),
-    mustSearchRecall: rate(mustSearch.filter((grade) => grade.searched).length, mustSearch.length),
+    mustSearchRecall: rate(
+      allMustSearch.filter((grade) => grade.searched).length,
+      allMustSearch.length,
+    ),
     mustNotSearchPrecision: rate(
       mustNotSearch.filter((grade) => !grade.searched).length,
       mustNotSearch.length,
     ),
     usefulRetrievalRate: rate(
-      retrievalGrades.filter((grade) => grade.retrievalPass).length,
-      retrievalGrades.length,
+      withMcp.filter((grade) => grade.retrievalPass === true).length,
+      withMcp.filter((grade) => grade.retrievalPass !== null).length,
     ),
     mcpWinRate: rate(
       reviewedPairs.filter((pair) => pair.winner === "with_mcp_win").length,
@@ -1134,6 +1135,7 @@ export function renderMarkdownReport(input: BenchmarkInput, analysis: BenchmarkA
     `- Scenarios: ${analysis.summary.scenarioCount}`,
     `- Sanitized fixture fixes: ${analysis.summary.fixtureCount}`,
     `- Recorded runs: ${analysis.summary.runCount} (${analysis.summary.realRunCount} real, ${analysis.summary.sampleRunCount} sample)`,
+    `- Run provenance: ${input.runFiles.map((file) => `${basename(file.path)} (${file.data.runs.length})`).join(", ") || "none"}`,
     `- Failed recorded runs excluded from behavior metrics: ${analysis.summary.failedRunCount}`,
     "",
     scenarioMixTable(analysis.summary),

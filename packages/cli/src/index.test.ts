@@ -391,6 +391,55 @@ describe("CLI", () => {
         }
       });
     });
+
+    test("sync inherits parent source and no-dedupe options", async () => {
+      const repo = mkdtempSync(join(tmpdir(), "clanker-cli-learn-parent-options-"));
+      mkdirSync(join(repo, ".git"), { recursive: true });
+      mkdirSync(join(repo, ".clankeroverflow", "solutions"), { recursive: true });
+      writeFileSync(
+        join(repo, ".clankeroverflow", "solutions", "parent-options.md"),
+        [
+          "---",
+          'id: "parent-options-id"',
+          'tags: "commander,cli"',
+          "---",
+          "# Problem",
+          "Commander parent options were ignored by a sync subcommand.",
+          "## Root Cause",
+          "Child defaults shadowed explicitly supplied parent options.",
+          "## Verified Fix",
+          "Use the explicitly supplied parent values when child flags are absent.",
+          "## Verification",
+          "The remote log request was issued without a duplicate search.",
+        ].join("\n"),
+      );
+      process.env.CLANKER_API_KEY = "test-api-key";
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify({ result: { data: { id: "remote-new" } } }), {
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+      try {
+        const program = createProgram();
+        await program.parseAsync([
+          "node",
+          "test",
+          "learn",
+          "--source",
+          "remote",
+          "--no-dedupe",
+          "sync",
+          "--repo",
+          repo,
+        ]);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(String(fetchMock.mock.calls[0]?.[0])).toContain("solutions.log");
+      } finally {
+        rmSync(repo, { recursive: true, force: true });
+      }
+    });
   });
 
   describe("search command", () => {

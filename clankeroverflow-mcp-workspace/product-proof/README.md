@@ -8,7 +8,7 @@ product proof.
 
 ## Files
 
-- `scenarios.json`: 30 MCP-agent prompts with trigger policy, difficulty,
+- `scenarios.json`: 38 MCP-agent prompts with trigger policy, difficulty,
   learned-reuse, and cost-claim metadata.
 - `fixtures.json`: sanitized reusable fixes loaded into the local fixture
   corpus for retrieval checks.

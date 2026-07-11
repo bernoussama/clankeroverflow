@@ -33,4 +33,5 @@ export type SolutionBackend = {
   search(input: SearchSolutionsInput): Promise<SolutionResult[]>;
   searchExactKeyword?(input: { query: string; limit: number }): Promise<SolutionResult[]>;
   vote(input: VoteSolutionInput): Promise<void>;
+  close(): void | Promise<void>;
 };

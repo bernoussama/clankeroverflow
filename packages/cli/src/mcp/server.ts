@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { basename } from "node:path";
 
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -464,16 +465,18 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
     "repo-solution",
     new ResourceTemplate("clankeroverflow://repo/solutions/{id}", {
       list: async () => ({
-        resources: listRepoSolutionFiles().map((file) => {
-          const parsed = parseLearnMarkdown(readFileSync(file, "utf8"));
-          const name = file.split("/").at(-1)?.replace(/\.md$/, "") ?? file;
-          return {
-            uri: `clankeroverflow://repo/solutions/${name}`,
-            name,
-            title: parsed.problem,
-            mimeType: "text/markdown",
-          };
-        }),
+        resources: await Promise.all(
+          listRepoSolutionFiles().map(async (file) => {
+            const parsed = parseLearnMarkdown(await readFile(file, "utf8"));
+            const name = basename(file, ".md");
+            return {
+              uri: `clankeroverflow://repo/solutions/${name}`,
+              name,
+              title: parsed.problem,
+              mimeType: "text/markdown",
+            };
+          }),
+        ),
       }),
     }),
     {

@@ -54,8 +54,13 @@ describe("product-proof Codex recorder", () => {
   test("disables ClankerOverflow for the without_mcp config", () => {
     const args = codexArgs(options, "without_mcp", "/tmp/final.md", "prompt");
 
-    expect(args).toContain("mcp_servers.clankeroverflow.enabled=true");
-    expect(args).toContain("mcp_servers.clankeroverflow.enabled=false");
+    const settings = args.filter((arg) => arg.startsWith("mcp_servers.clankeroverflow.enabled="));
+    expect(settings).toEqual([
+      "mcp_servers.clankeroverflow.enabled=true",
+      "mcp_servers.clankeroverflow.enabled=false",
+    ]);
+    expect(args.lastIndexOf(settings[1]!)).toBeGreaterThan(args.lastIndexOf(settings[0]!));
+    expect(args.at(-1)).toBe("prompt");
   });
 
   test("isolates Codex skills for MCP and no-MCP configs", () => {

@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { runRepoStackOverflowEval } from "./repo-stackoverflow";
+import { detectsSensitiveContent, parseArg, runRepoStackOverflowEval } from "./repo-stackoverflow";
 
 describe("Repo StackOverflow reuse eval", () => {
   test("learns, syncs, and retrieves the Expo fixture in pass 2", async () => {
@@ -27,5 +27,18 @@ describe("Repo StackOverflow reuse eval", () => {
     } finally {
       rmSync(workspaceRoot, { recursive: true, force: true });
     }
+  });
+});
+
+describe("Repo StackOverflow eval arguments", () => {
+  test("rejects a missing option value", () => {
+    expect(() => parseArg(["--output-json", "--workspace-root", "/tmp"], "--output-json")).toThrow(
+      "--output-json requires a value",
+    );
+  });
+
+  test("detects quoted environment secrets", () => {
+    expect(detectsSensitiveContent('API_KEY="secret"')).toBe(true);
+    expect(detectsSensitiveContent("verification passed")).toBe(false);
   });
 });

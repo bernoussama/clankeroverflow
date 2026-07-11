@@ -2,6 +2,17 @@
 
 > Status: benchmark report generated from recorded run files.
 
+> Reproducibility note: each `24/24` denominator represents 24 recorded run
+> instances from `codex-debug-cost-hidden-gpt-5.5-low-r2.json`: eight debug
+> scenarios (`debug-eaddrinuse-ci`, `debug-inertia-noindex`,
+> `debug-neon-first-query`, `debug-prisma-neon`,
+> `debug-react-query-rollback`, `debug-sentry-sourcemaps`,
+> `debug-stripe-workers`, and `debug-ts2307-pnpm`) repeated three times. It is
+> a run-instance denominator, not the count of `must_search` scenarios in the
+> full catalog. The raw run file was removed from this PR to keep generated
+> benchmark data out of source control; it remains available in commit
+> `444f067` for auditability.
+
 ## Headline Metrics
 
 | Metric                    |       Result |
