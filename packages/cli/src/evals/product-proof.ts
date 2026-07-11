@@ -408,6 +408,7 @@ function detectsUnsafeCopying(answer: string) {
 }
 
 function pricingForModel(pricing: PricingConfig | undefined, model: string) {
+  // `model` is the literal generic fallback rate; `[model]` is the requested model's rate.
   return pricing?.[model] ?? pricing?.model ?? pricing?.default;
 }
 

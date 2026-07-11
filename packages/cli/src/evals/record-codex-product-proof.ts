@@ -340,7 +340,7 @@ function verifyWorkspace(scenario: Scenario, benchmarkWorkspaceDir: string, work
   if (scenario.task_type !== "debug_workspace" || !scenario.verification_command) {
     return {};
   }
-  const quote = (value: string) => JSON.stringify(value);
+  const quote = (value: string) => `'${value.replaceAll("'", `'\\''`)}'`;
   const command = scenario.verification_command
     .replaceAll("{workspace}", quote(workspacePath))
     .replaceAll("{workspaceDir}", quote(benchmarkWorkspaceDir));
