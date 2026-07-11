@@ -229,6 +229,18 @@ function getHookInstallOptions(ctx: Context): HookInstallOptions {
   };
 }
 
+async function configurePiExtension(ctx: Context, uninstall: boolean) {
+  const target = path.join(ctx.home, ".pi", "agent", "extensions", "clankeroverflow-reminder.ts");
+  if (ctx.dryRun) return target;
+  if (uninstall) {
+    await rm(target, { force: true });
+    return target;
+  }
+  await mkdir(path.dirname(target), { recursive: true });
+  await cp(path.join(ctx.packageRoot, "extensions", "clankeroverflow-reminder.ts"), target);
+  return target;
+}
+
 async function configureOpenCode(ctx: Context, uninstall: boolean) {
   const configPath = getOpenCodeConfigPath(ctx.home, ctx.env);
   const config = await readJsonObject(configPath);
@@ -760,6 +772,19 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
     });
   }
 
+  if (agents.includes("pi") || uninstall) {
+    try {
+      const detail = await configurePiExtension(ctx, uninstall);
+      results.push({ agent: "pi reminder", status: uninstall ? "removed" : "configured", detail });
+    } catch (error) {
+      results.push({
+        agent: "pi reminder",
+        status: "failed",
+        detail: String((error as Error).message),
+      });
+    }
+  }
+
   for (const target of options.targets ?? []) {
     try {
       const selection = skill ?? "mcp";
@@ -789,7 +814,7 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
     results.push({
       agent: "pi",
       status: "configured",
-      detail: "CLI skill installed; export CLANKER_API_KEY in your shell",
+      detail: "CLI skill and conditional reminder installed; export CLANKER_API_KEY in your shell",
     });
   }
   return results;

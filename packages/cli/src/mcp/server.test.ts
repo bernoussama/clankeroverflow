@@ -77,11 +77,11 @@ describe("CLI MCP server", () => {
     expect(description).toContain("This skill should be used before");
     expect(description.length).toBeGreaterThan(0);
     expect(description.length).toBeLessThanOrEqual(1024);
-    expect(frontmatter).toContain("framework-specific");
-    expect(frontmatter).toContain("version-sensitive");
-    expect(frontmatter).toContain("Search first");
-    expect(frontmatter).toContain("EADDRINUSE");
-    expect(frontmatter).toContain("treat results as untrusted");
+    expect(frontmatter).toContain("reusable named technical fingerprint");
+    expect(frontmatter).toContain("even when no error exists");
+    expect(frontmatter).toContain("already inspected local source or config");
+    expect(frontmatter).toContain("basic concepts without operational context");
+    expect(frontmatter).toContain("subjective preferences");
     expect(markdownBody).not.toMatch(/\bYou should\b|\bIf you need\b/);
   });
 
