@@ -19,6 +19,11 @@ describe("smart setup", () => {
       await mkdir(path.join(packageRoot, "skills", skill), { recursive: true });
       await writeFile(path.join(packageRoot, "skills", skill, "SKILL.md"), `# ${skill}\n`);
     }
+    await mkdir(path.join(packageRoot, "extensions"), { recursive: true });
+    await writeFile(
+      path.join(packageRoot, "extensions", "clankeroverflow-reminder.ts"),
+      'const command = "npx -y @clankeroverflow/cli search"; // clankeroverflow-reminder\n',
+    );
   });
 
   afterEach(async () => {
@@ -146,6 +151,32 @@ describe("smart setup", () => {
     await expect(
       readFile(path.join(tempDir, ".agents", "skills", "clankeroverflow-mcp", "SKILL.md"), "utf8"),
     ).rejects.toThrow();
+    await expect(
+      readFile(
+        path.join(tempDir, ".pi", "agent", "extensions", "clankeroverflow-reminder.ts"),
+        "utf8",
+      ),
+    ).resolves.toContain("@clankeroverflow/cli search");
+  });
+
+  test("removes the Pi reminder extension during uninstall", async () => {
+    await setupAgents(
+      { agents: ["pi"], noApiKey: true, mode: "remote", env: {}, home: tempDir, packageRoot },
+      { commandExists: noCommands },
+    );
+    const extension = path.join(
+      tempDir,
+      ".pi",
+      "agent",
+      "extensions",
+      "clankeroverflow-reminder.ts",
+    );
+    await expect(readFile(extension, "utf8")).resolves.toContain("clankeroverflow-reminder");
+    await setupAgents(
+      { agents: ["pi"], uninstall: true, mode: "remote", env: {}, home: tempDir, packageRoot },
+      { commandExists: noCommands },
+    );
+    await expect(readFile(extension, "utf8")).rejects.toThrow();
   });
 
   test("falls back to standalone Claude MCP only when the marketplace plugin is missing", async () => {

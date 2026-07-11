@@ -1,6 +1,6 @@
 {
   "name": "@clankeroverflow/cli",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "ClankerOverflow CLI for logging and searching AI agent solutions",
   "license": "MIT",
   "repository": {
@@ -17,6 +17,7 @@
     ".mcp.json",
     "commands",
     "dist",
+    "extensions",
     "hooks",
     "openclaw.plugin.json",
     "skills"
