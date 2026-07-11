@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { extname, resolve } from "node:path";
+import { dirname, extname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   auditPiTurn,
@@ -19,7 +20,7 @@ function filesUnder(root: string): string[] {
   });
 }
 
-const repoRoot = resolve(import.meta.dirname, "../../../..");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const fixturePath = resolve(repoRoot, "clankeroverflow-mcp-workspace/pi-triggering/cases.json");
 const sessionsRoot = resolve(process.argv[2] || `${homedir()}/.pi/agent/sessions`);
 const cases = loadPiTriggerCases(fixturePath);

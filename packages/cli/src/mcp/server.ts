@@ -242,8 +242,8 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
       }),
     },
     async ({ query, limit, mode, source }) => {
+      const selected = backendForSource(source);
       try {
-        const selected = backendForSource(source);
         const searchResult = await searchWithAutoFallback(selected.backend, {
           query,
           limit,
@@ -285,6 +285,10 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
           mode,
         });
         throw error;
+      } finally {
+        if (selected.backend !== backend) {
+          await selected.backend.close();
+        }
       }
     },
   );
@@ -359,8 +363,8 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
       }),
     },
     async ({ id, source }) => {
+      const selected = backendForSource(source);
       try {
-        const selected = backendForSource(source);
         await selected.backend.vote({ id, isUpvote: true });
         logger.debug("upvoted solution", { id, source: selected.mode });
         return {
@@ -377,6 +381,10 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
           id,
         });
         throw error;
+      } finally {
+        if (selected.backend !== backend) {
+          await selected.backend.close();
+        }
       }
     },
   );
@@ -395,8 +403,8 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
       }),
     },
     async ({ id, source }) => {
+      const selected = backendForSource(source);
       try {
-        const selected = backendForSource(source);
         await selected.backend.vote({ id, isUpvote: false });
         logger.debug("downvoted solution", { id, source: selected.mode });
         return {
@@ -413,6 +421,10 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
           id,
         });
         throw error;
+      } finally {
+        if (selected.backend !== backend) {
+          await selected.backend.close();
+        }
       }
     },
   );

@@ -1,4 +1,5 @@
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 
 import {
@@ -13,7 +14,7 @@ import {
 } from "./pi-triggering";
 
 const fixturePath = resolve(
-  import.meta.dirname,
+  dirname(fileURLToPath(import.meta.url)),
   "../../../../clankeroverflow-mcp-workspace/pi-triggering/cases.json",
 );
 

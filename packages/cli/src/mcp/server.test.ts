@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } 
 
 import { createMcpServer } from "./server";
 import { resolveConfig } from "./config";
+import { LocalBackend } from "./local-backend";
 
 describe("CLI MCP server", () => {
   const testDir = dirname(fileURLToPath(import.meta.url));
@@ -532,6 +533,21 @@ describe("CLI MCP server", () => {
     } finally {
       await sourceClient.close();
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("closes transient backends created for source overrides", async () => {
+    const closeSpy = vi.spyOn(LocalBackend.prototype, "close");
+
+    try {
+      await client.callTool({
+        name: "search_solutions",
+        arguments: { query: "missing", source: "local", mode: "keyword" },
+      });
+
+      expect(closeSpy).toHaveBeenCalledOnce();
+    } finally {
+      closeSpy.mockRestore();
     }
   });
 });
