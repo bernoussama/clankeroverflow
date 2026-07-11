@@ -1,0 +1,104 @@
+[
+  {
+    "id": "fix-inertia-head-noindex-ssr-off",
+    "problem": "Inertia.js <Head> meta tags are visible after hydration but missing from initial Laravel page source when SSR is disabled.",
+    "solution": "When Inertia SSR is off, <Head> updates are client-side only and crawlers that inspect initial HTML will not see them. Put crawler-critical directives such as noindex in the Laravel Blade shell or emit an X-Robots-Tag response header from the route/controller. Re-enable Inertia SSR only if the page's full head/body needs server rendering.",
+    "tags": ["inertia", "laravel", "seo", "ssr"]
+  },
+  {
+    "id": "fix-stripe-workers-construct-event-async",
+    "problem": "Stripe webhook signature verification fails or crashes on Cloudflare Workers because sync stripe-node verification expects Node crypto APIs.",
+    "solution": "On Web Crypto runtimes such as Cloudflare Workers, keep the raw request body unchanged and use stripe.webhooks.constructEventAsync with the stripe-signature header. Avoid JSON parsing before verification and avoid the sync constructEvent path that depends on Node crypto.",
+    "tags": ["stripe", "cloudflare-workers", "webcrypto", "webhooks"]
+  },
+  {
+    "id": "fix-prisma-neon-direct-url",
+    "problem": "Prisma db pull or migrations time out against Neon when using the pooled PgBouncer connection string.",
+    "solution": "Use the pooled Neon URL for Prisma Client runtime traffic and a direct non-pooler URL for Prisma schema operations via datasource directUrl. Run prisma from the workspace package that owns schema.prisma so the correct env file is loaded. Add a longer connect_timeout only after confirming directUrl is used.",
+    "tags": ["prisma", "neon", "postgres", "pnpm"]
+  },
+  {
+    "id": "fix-eaddrinuse-ci-time-wait",
+    "problem": "Intermittent EADDRINUSE in CI persists even after killing all processes on the fixed dev-server port.",
+    "solution": "If no process owns the port, the collision is often a TIME_WAIT socket. Prefer binding the CI server to port 0 and passing the selected port to tests. If a fixed port is required, add graceful shutdown and readiness checks rather than relying on kill-port loops.",
+    "tags": ["node", "ci", "eaddrinuse", "github-actions"]
+  },
+  {
+    "id": "fix-ts2307-pnpm-workspace-dep",
+    "problem": "TS2307 Cannot find module for a pnpm workspace package that exists and works at runtime.",
+    "solution": "Declare the sibling package as a real workspace dependency in the consuming package using workspace:*, run pnpm install, and ensure the dependency exposes types that actually exist. TypeScript paths can help editor aliases, but they do not create the package dependency edge that node16, nodenext, and bundler resolution expect.",
+    "tags": ["typescript", "pnpm", "monorepo", "tsconfig"]
+  },
+  {
+    "id": "fix-better-auth-org-invite-session",
+    "problem": "Better Auth organization invitation acceptance throws Cannot read properties of undefined reading session even though the user is logged in.",
+    "solution": "For organization invitation acceptance, call the Better Auth organization client/server helper with the authenticated request context instead of a detached server action context. Ensure the auth handler and organization plugin share the same base URL, cookies, and headers so session lookup happens against the incoming request.",
+    "tags": ["better-auth", "nextjs", "organizations", "session"]
+  },
+  {
+    "id": "fix-hono-workers-cpu-image-upload",
+    "problem": "Cloudflare Workers CPU time exceeded only on an image upload route in a Hono app.",
+    "solution": "Do not run CPU-heavy image transforms inside the request on a Worker. Stream uploads to object storage or queue the transform, then process with Workers Queues, Images, or a service designed for CPU-bound work. Use waitUntil only for bounded follow-up work; it does not make CPU limits disappear.",
+    "tags": ["hono", "cloudflare-workers", "uploads", "queues"]
+  },
+  {
+    "id": "fix-stripe-webhook-raw-body-production",
+    "problem": "Stripe webhook signature verification works in staging but fails in production after body parsing or proxy changes.",
+    "solution": "Verify the exact raw bytes Stripe sent. Disable JSON/body parsing before signature verification, read the raw body once, and make sure production proxies do not decompress or rewrite the payload. In Next.js route handlers use request.text or arrayBuffer before parsing.",
+    "tags": ["stripe", "webhooks", "nextjs", "raw-body"]
+  },
+  {
+    "id": "fix-react19-external-store-render-update",
+    "problem": "After upgrading to React 19, an external store emits Cannot update a component while rendering a different component warnings.",
+    "solution": "Do not notify subscribers synchronously while rendering or while computing getSnapshot. useSyncExternalStore expects getSnapshot to be pure and cached. Move store notifications to event handlers/effects, return stable snapshots, and avoid setState from selector evaluation.",
+    "tags": ["react", "react-19", "use-sync-external-store", "state"]
+  },
+  {
+    "id": "fix-trpc-react-query-stale-after-mutation",
+    "problem": "tRPC React Query procedures show stale data for several seconds after mutation invalidation in production.",
+    "solution": "Invalidate the exact query key created by the tRPC client and await the invalidation before closing optimistic UI. Check staleTime, gcTime, SSR hydration, and any route cache above React Query. Mutations that update server state but leave a cached loader response will look stale even when React Query invalidates.",
+    "tags": ["trpc", "react-query", "nextjs", "cache"]
+  },
+  {
+    "id": "fix-react-query-v5-optimistic-rollback",
+    "problem": "React Query v5 optimistic update does not roll back because the mutation error path never receives the onMutate context.",
+    "solution": "Return rollback context from onMutate, snapshot the old query data before writing the optimistic value, and restore it in onError using the context argument. In v5, verify mutationFn rejects instead of swallowing errors, otherwise onError will not fire.",
+    "tags": ["react-query", "tanstack-query", "optimistic-updates", "v5"]
+  },
+  {
+    "id": "fix-neon-branch-first-query-timeout",
+    "problem": "The first query against a newly created Neon preview branch times out even though branch creation succeeded.",
+    "solution": "Treat branch creation as eventually ready. Poll a lightweight direct connection query with retry/backoff before running migrations or tests, and separate connection timeout from application query timeout. Do not assume the branch is query-ready when the API create call returns.",
+    "tags": ["neon", "preview-environments", "postgres", "ci"]
+  },
+  {
+    "id": "fix-pnpm-err-module-not-found-turbo-build",
+    "problem": "ERR_MODULE_NOT_FOUND appears only in a turbo production build for a pnpm workspace package that works in dev.",
+    "solution": "Make each imported workspace package a declared workspace:* dependency of the consumer and ensure its package exports point at built files or source files that the build tool can include. Turbo task order should build dependency packages before consumers.",
+    "tags": ["pnpm", "turbo", "node", "monorepo"]
+  },
+  {
+    "id": "fix-nextjs-dark-mode-hydration-fouc",
+    "problem": "A persisted dark-mode toggle flashes the wrong theme or hydrates with a class mismatch.",
+    "solution": "Bootstrap the theme class before React hydrates using a tiny inline script or a framework theme provider that runs before paint. Store the preference in localStorage, respect prefers-color-scheme for system mode, and apply the class to the same root element on every render.",
+    "tags": ["nextjs", "dark-mode", "hydration", "localstorage"]
+  },
+  {
+    "id": "fix-next-cache-tags-revalidate-miss",
+    "problem": "Next.js cache tag revalidation appears to run but cached component data remains stale.",
+    "solution": "Use the same tag string at fetch/cache creation and revalidation time, call revalidateTag from a server action or route handler, and verify no route-level cache or CDN layer is serving an older response. Cache tags do not invalidate arbitrary client state.",
+    "tags": ["nextjs", "cache", "revalidateTag", "ppr"]
+  },
+  {
+    "id": "fix-sentry-source-map-hidden-build",
+    "problem": "Sentry stack traces are unsymbolicated after deploying a hidden-source-map build.",
+    "solution": "Upload source maps from the exact build artifact with matching release and dist values, then delete or block public source map serving if needed. A release mismatch makes Sentry accept uploads but fail to symbolicate events.",
+    "tags": ["sentry", "source-maps", "release", "javascript"]
+  },
+  {
+    "id": "fix-oauth-cookie-samesite-preview",
+    "problem": "OAuth callback works locally but loses session cookies on preview deployment.",
+    "solution": "Set the cookie domain, secure flag, SameSite mode, and callback URL to match the preview hostname. Cross-site provider redirects generally require secure cookies and a SameSite setting that survives the callback flow.",
+    "tags": ["oauth", "cookies", "preview", "auth"]
+  }
+]

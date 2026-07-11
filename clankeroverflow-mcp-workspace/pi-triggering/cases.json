@@ -1,0 +1,299 @@
+{
+  "metadata": {
+    "name": "Pi ClankerOverflow trigger policy",
+    "source": "sanitized patterns from local Pi coding-agent sessions",
+    "notes": "Balanced policy fixtures; no private paths, credentials, or repository names."
+  },
+  "cases": [
+    {
+      "id": "wxt-econnreset",
+      "policy_label": "must_search_failure",
+      "prompt": "WXT dev server crashes with ECONNRESET on Vite 7 and Node 22."
+    },
+    {
+      "id": "tls-leaf-signature",
+      "policy_label": "must_search_failure",
+      "prompt": "Request failed with UNABLE_TO_VERIFY_LEAF_SIGNATURE."
+    },
+    {
+      "id": "sigpipe-141",
+      "policy_label": "must_search_failure",
+      "prompt": "CLI exits 141 with cat: write error: Broken pipe."
+    },
+    {
+      "id": "mise-rust-path",
+      "policy_label": "must_search_failure",
+      "prompt": "mise selects Rust but rustc resolves to the wrong path and does not work."
+    },
+    {
+      "id": "astro-route-404",
+      "policy_label": "must_search_failure",
+      "prompt": "Astro content collection post is missing and its generated route returns 404."
+    },
+    {
+      "id": "fuse-eio",
+      "policy_label": "must_search_failure",
+      "prompt": "FUSE tests fail: open O_CREAT O_EXCL returns Input/output error."
+    },
+    {
+      "id": "provider-protocol",
+      "policy_label": "must_search_failure",
+      "prompt": "API returns error: Provider not available. Use Command Code provider."
+    },
+    {
+      "id": "invalid-thread-uuid",
+      "policy_label": "must_search_failure",
+      "prompt": "API validation error: Invalid UUID at threadId."
+    },
+    {
+      "id": "bubbletea-space",
+      "policy_label": "must_search_failure",
+      "prompt": "Bubble Tea textarea space key does not work after adding a key handler."
+    },
+    {
+      "id": "package-export",
+      "policy_label": "must_search_failure",
+      "prompt": "Build failed: No matching export in package.json for import version."
+    },
+    {
+      "id": "android-launch",
+      "policy_label": "must_search_failure",
+      "prompt": "Android Studio refuses to launch after the runtime update."
+    },
+    {
+      "id": "gpu-wayland",
+      "policy_label": "must_search_failure",
+      "prompt": "Hyprland still uses the NVIDIA GPU even after configuring the integrated renderer."
+    },
+    {
+      "id": "stripe-workers",
+      "policy_label": "must_search_failure",
+      "prompt": "Stripe webhook verification fails only on Cloudflare Workers."
+    },
+    {
+      "id": "neon-timeout",
+      "policy_label": "must_search_failure",
+      "prompt": "Neon branch creation succeeds but the first query times out."
+    },
+    {
+      "id": "inertia-ssr",
+      "policy_label": "must_search_failure",
+      "prompt": "Inertia SSR meta tag is missing from initial HTML and does not show in page source."
+    },
+    {
+      "id": "prisma-p2002",
+      "policy_label": "must_search_failure",
+      "prompt": "Prisma insert failed with P2002 in production."
+    },
+    {
+      "id": "ts2307-workspace",
+      "policy_label": "must_search_failure",
+      "prompt": "pnpm workspace build failed with TS2307 for a sibling package."
+    },
+    {
+      "id": "vite-container",
+      "policy_label": "must_search_failure",
+      "prompt": "Vite works locally but does not work from the host when run in Docker."
+    },
+    {
+      "id": "udev-remove",
+      "policy_label": "must_search_failure",
+      "prompt": "udev remove rule does not work for a USB device and systemd user service."
+    },
+    {
+      "id": "oauth-runtime",
+      "policy_label": "must_search_failure",
+      "prompt": "OAuth callback fails only in the edge runtime after deployment."
+    },
+
+    {
+      "id": "behavior-nvidia-persistence",
+      "policy_label": "must_search_behavior",
+      "prompt": "Will nvidia-run still work if I disable nvidia-persistenced for PRIME render offload?"
+    },
+    {
+      "id": "behavior-d3cold",
+      "policy_label": "must_search_behavior",
+      "prompt": "Does disabling nvidia-persistenced allow the NVIDIA GPU to enter D3cold?"
+    },
+    {
+      "id": "behavior-next-origins",
+      "policy_label": "must_search_behavior",
+      "prompt": "Does Next.js allowedDevOrigins affect LAN authentication?"
+    },
+    {
+      "id": "behavior-udev-remove",
+      "policy_label": "must_search_behavior",
+      "prompt": "Does udev retain ATTR values during a remove event?"
+    },
+    {
+      "id": "behavior-auth-origins",
+      "policy_label": "must_search_behavior",
+      "prompt": "Does Better Auth trustedOrigins accept IP address origins?"
+    },
+    {
+      "id": "behavior-workers-node",
+      "policy_label": "must_search_behavior",
+      "prompt": "Will Cloudflare Workers support this Node.js API?"
+    },
+    {
+      "id": "behavior-prisma-neon",
+      "policy_label": "must_search_behavior",
+      "prompt": "Does Prisma retry Neon cold-start connection failures?"
+    },
+    {
+      "id": "behavior-stripe-raw-body",
+      "policy_label": "must_search_behavior",
+      "prompt": "Does Stripe require the raw body for webhook verification?"
+    },
+    {
+      "id": "behavior-next-cache",
+      "policy_label": "must_search_behavior",
+      "prompt": "Will Next.js cache this route after deployment?"
+    },
+    {
+      "id": "behavior-systemd-udev",
+      "policy_label": "must_search_behavior",
+      "prompt": "Can a udev remove rule start a systemd user service?"
+    },
+    {
+      "id": "implementation-stripe-workers",
+      "policy_label": "must_search_implementation",
+      "prompt": "Implement Stripe webhook verification on Cloudflare Workers."
+    },
+    {
+      "id": "implementation-better-auth",
+      "policy_label": "must_search_implementation",
+      "prompt": "Configure Better Auth trustedOrigins for LAN development."
+    },
+    {
+      "id": "implementation-next-ssr",
+      "policy_label": "must_search_implementation",
+      "prompt": "Set up Next.js SSR caching for this route."
+    },
+    {
+      "id": "implementation-prisma-neon",
+      "policy_label": "must_search_implementation",
+      "prompt": "Integrate Prisma with a Neon serverless database."
+    },
+    {
+      "id": "implementation-oauth-edge",
+      "policy_label": "must_search_implementation",
+      "prompt": "Build an OAuth callback for the Cloudflare edge runtime."
+    },
+    {
+      "id": "implementation-udev-systemd",
+      "policy_label": "must_search_implementation",
+      "prompt": "Configure a udev rule to start a systemd user service."
+    },
+    {
+      "id": "implementation-vite-docker",
+      "policy_label": "must_search_implementation",
+      "prompt": "Configure Vite for development inside Docker."
+    },
+    {
+      "id": "implementation-inertia-ssr",
+      "policy_label": "must_search_implementation",
+      "prompt": "Enable Inertia SSR meta rendering."
+    },
+    {
+      "id": "implementation-nvidia-offload",
+      "policy_label": "must_search_implementation",
+      "prompt": "Configure NVIDIA PRIME render offload with D3cold power management."
+    },
+    {
+      "id": "implementation-astro-deploy",
+      "policy_label": "must_search_implementation",
+      "prompt": "Deploy Astro SSR to Cloudflare Workers."
+    },
+
+    { "id": "rust-cursor", "policy_label": "must_not_search", "prompt": "what is Cursor in Rust?" },
+    {
+      "id": "refcell-rc",
+      "policy_label": "must_not_search",
+      "prompt": "explain RefCell versus Rc with a small example"
+    },
+    {
+      "id": "write-readme",
+      "policy_label": "must_not_search",
+      "prompt": "write a README with the above instructions"
+    },
+    { "id": "commit", "policy_label": "must_not_search", "prompt": "commit the current changes" },
+    {
+      "id": "stash",
+      "policy_label": "must_not_search",
+      "prompt": "stash these files and switch branches"
+    },
+    {
+      "id": "git-blame",
+      "policy_label": "must_not_search",
+      "prompt": "git blame the usage section in the README"
+    },
+    {
+      "id": "rename",
+      "policy_label": "must_not_search",
+      "prompt": "rename the helper to formatResult"
+    },
+    {
+      "id": "typo",
+      "policy_label": "must_not_search",
+      "prompt": "fix the typo in the button label"
+    },
+    {
+      "id": "library-choice",
+      "policy_label": "must_not_search",
+      "prompt": "which should I choose, SWR or React Query?"
+    },
+    {
+      "id": "model-default",
+      "policy_label": "must_not_search",
+      "prompt": "make the new model the default"
+    },
+    {
+      "id": "dark-toggle",
+      "policy_label": "must_not_search",
+      "prompt": "add a dark mode toggle to settings"
+    },
+    {
+      "id": "billing-rule",
+      "policy_label": "must_not_search",
+      "prompt": "implement the internal annual discount calculation"
+    },
+    {
+      "id": "security-review",
+      "policy_label": "must_not_search",
+      "prompt": "review this function for security issues"
+    },
+    {
+      "id": "syntax-string",
+      "policy_label": "must_not_search",
+      "prompt": "fix the unterminated string you just introduced"
+    },
+    {
+      "id": "syntax-import",
+      "policy_label": "must_not_search",
+      "prompt": "move the Go import before the declarations"
+    },
+    { "id": "shell-alias", "policy_label": "must_not_search", "prompt": "add an alias for ls -la" },
+    {
+      "id": "port-change",
+      "policy_label": "must_not_search",
+      "prompt": "change the local development port to 4000"
+    },
+    {
+      "id": "prose-edit",
+      "policy_label": "must_not_search",
+      "prompt": "rewrite this paragraph to be clearer"
+    },
+    {
+      "id": "extract-function",
+      "policy_label": "must_not_search",
+      "prompt": "extract this pure calculation into a helper function"
+    },
+    {
+      "id": "branch-name",
+      "policy_label": "must_not_search",
+      "prompt": "create a branch named fix-bottlenecks"
+    }
+  ]
+}

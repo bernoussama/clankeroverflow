@@ -1,0 +1,248 @@
+{
+  "metadata": {
+    "skill_name": "clankeroverflow-mcp",
+    "timestamp": "2026-06-23",
+    "evals_run": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "inertia-noindex-ssr",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "inertia-noindex-ssr",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 0,
+        "total": 1,
+        "pass_rate": 0.0
+      }
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "stripe-cf-workers-webcrypto",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "stripe-cf-workers-webcrypto",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 0,
+        "total": 1,
+        "pass_rate": 0.0
+      }
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "prisma-neon-timeout",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 0,
+        "total": 1,
+        "pass_rate": 0.0
+      }
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "eaddrinuse-ci",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "eaddrinuse-ci",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 0,
+        "total": 1,
+        "pass_rate": 0.0
+      }
+    },
+    {
+      "eval_id": 5,
+      "eval_name": "ts2307-pnpm-workspaces",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 5,
+      "eval_name": "ts2307-pnpm-workspaces",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 0,
+        "total": 1,
+        "pass_rate": 0.0
+      }
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "dark-mode-toggle",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 0,
+        "total": 1,
+        "pass_rate": 0.0
+      }
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "dark-mode-toggle",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 7,
+      "eval_name": "promise-async-await",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 7,
+      "eval_name": "promise-async-await",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 8,
+      "eval_name": "swr-vs-reactquery",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 0,
+        "total": 1,
+        "pass_rate": 0.0
+      }
+    },
+    {
+      "eval_id": 8,
+      "eval_name": "swr-vs-reactquery",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 9,
+      "eval_name": "event-loop-explain",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 9,
+      "eval_name": "event-loop-explain",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 10,
+      "eval_name": "billing-discount",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    },
+    {
+      "eval_id": 10,
+      "eval_name": "billing-discount",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "passed": 1,
+        "total": 1,
+        "pass_rate": 1.0
+      }
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.78,
+        "stddev": 0.42,
+        "min": 0.0,
+        "max": 1.0
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.5,
+        "stddev": 0.5,
+        "min": 0.0,
+        "max": 1.0
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.28"
+    }
+  },
+  "notes": [
+    "Should-trigger recall: skill caused search on 4/4 successful runs (1 failed). Baseline searched on 0/5.",
+    "Should-not-trigger precision: 2 false positives (dark-mode, swr-vs-reactquery). The skill over-triggered on borderline cases.",
+    "dark-mode: skill found a genuinely relevant FOUC gotcha, blurring the trivial/non-trivial boundary.",
+    "swr-vs-reactquery: agent searched but acknowledged it shouldn't have \u2014 preference question, not a gotcha.",
+    "The new description successfully fixed the core undertriggering problem (implementation patterns now trigger).",
+    "Tradeoff: higher recall, slightly lower precision. Overtriggering cost is low (~2s search); undertriggering cost is high (~1h rediscovery)."
+  ]
+}

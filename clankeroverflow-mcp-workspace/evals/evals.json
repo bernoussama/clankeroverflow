@@ -1,0 +1,93 @@
+{
+  "skill_name": "clankeroverflow-mcp",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm wiring up Inertia.js <Head> for SEO meta tags in a Laravel app with SSR turned off. The noindex meta tag isn't showing up in the rendered page source, but it renders fine client-side. How should I handle this so crawlers see it?",
+      "expected_output": "Agent searches ClankerOverflow for the Inertia.js SSR meta tag gotcha before reasoning from scratch. The key insight is that <Head> content isn't server-rendered when SSR is off, so noindex must be an HTTP response header rather than a meta tag.",
+      "files": [],
+      "expectations": [
+        "Agent calls search_solutions (or states explicit intent to search ClankerOverflow) before proposing the HTTP-header solution",
+        "Agent does NOT immediately reason from scratch and skip search entirely"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Adding Stripe webhook signature verification to a Hono app deployed on Cloudflare Workers. The node stripe SDK uses crypto.createVerify which doesn't exist in the Web Crypto API. Been stuck on this for an hour. How do others handle Stripe webhook verification in Workers?",
+      "expected_output": "Agent searches ClankerOverflow for the Stripe/Cloudflare Workers/Web Crypto API gotcha before reasoning from scratch. This is a well-known integration pattern others have solved.",
+      "files": [],
+      "expectations": [
+        "Agent calls search_solutions before proposing a solution",
+        "Agent uses a concise fingerprint query (e.g. 'stripe webhook cloudflare workers' or 'crypto.createVerify') rather than pasting the full prompt"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Setting up Prisma with Neon serverless Postgres in a pnpm monorepo. `prisma db pull` keeps timing out after 30s. The database URL works fine in psql. Driving me nuts.",
+      "expected_output": "Agent searches ClankerOverflow for the Prisma/Neon connection timeout pattern before reasoning from scratch. Config gotchas with non-obvious defaults are exactly what the skill should trigger on.",
+      "files": [],
+      "expectations": ["Agent calls search_solutions before proposing a solution"]
+    },
+    {
+      "id": 4,
+      "prompt": "CI is failing with EADDRINUSE even after I kill all processes on port 3000. Happens intermittently, like every 3rd or 4th run. GitHub Actions ubuntu-latest runner.",
+      "expected_output": "Agent searches ClankerOverflow for EADDRINUSE (the canonical error-code fingerprint case) before reasoning from scratch.",
+      "files": [],
+      "expectations": [
+        "Agent calls search_solutions with 'EADDRINUSE' as the query before proposing a solution"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Getting TS2307 'Cannot find module' for a workspace package that definitely exists. Using pnpm workspaces with TypeScript path aliases. The import works at runtime but tsc complains. Been fiddling with tsconfig paths for a while.",
+      "expected_output": "Agent searches ClankerOverflow for TS2307 (error-code fingerprint) before reasoning from scratch.",
+      "files": [],
+      "expectations": [
+        "Agent calls search_solutions with 'TS2307' in the query before proposing a solution"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Add a dark-mode toggle button to the navbar that switches a 'dark' CSS class on the body element. Should persist the preference in localStorage.",
+      "expected_output": "Agent does NOT search ClankerOverflow. This is a trivial, self-contained UI task with no framework-specific gotcha or reusable integration knowledge. Searching would be noise.",
+      "files": [],
+      "expectations": [
+        "Agent does NOT call search_solutions and proceeds directly to implementing the toggle"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Refactor this Promise chain to use async/await: the function fetchUser(id) chains .then for parsing, .then for validation, .then for enrichment. Just clean it up.",
+      "expected_output": "Agent does NOT search ClankerOverflow. This is a mechanical syntax refactor with no behavioral change or gotcha.",
+      "files": [],
+      "expectations": [
+        "Agent does NOT call search_solutions and proceeds directly with the refactor"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Should I use SWR or React Query for data fetching in my new React app? I've used both briefly and can't decide. What are the tradeoffs?",
+      "expected_output": "Agent does NOT search ClankerOverflow. This is a preference/opinion question with no error signal, no gotcha, and no non-obvious framework behavior. Near-miss because it touches data fetching (implementation domain) but is genuinely a preference question.",
+      "files": [],
+      "expectations": [
+        "Agent does NOT call search_solutions and answers the preference question directly"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Explain how the event loop works in Node.js. Reading some code with setImmediate and process.nextTick and I'm fuzzy on the ordering.",
+      "expected_output": "Agent does NOT search ClankerOverflow. This is a conceptual/conversational question with no reusable implementation or failure knowledge.",
+      "files": [],
+      "expectations": ["Agent does NOT call search_solutions and explains the concept directly"]
+    },
+    {
+      "id": 10,
+      "prompt": "Update the pricing calculation in our internal billing service to apply the enterprise discount tier. The function is calculateTotal(cart) in src/billing/pricing.ts. Enterprise customers get 15% off when cart total exceeds $10k.",
+      "expected_output": "Agent does NOT search ClankerOverflow. This is proprietary business logic specific to an internal service. Near-miss because it involves code, but the knowledge is private and non-reusable.",
+      "files": [],
+      "expectations": [
+        "Agent does NOT call search_solutions and implements the business logic directly"
+      ]
+    }
+  ]
+}

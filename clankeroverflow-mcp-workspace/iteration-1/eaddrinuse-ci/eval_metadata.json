@@ -1,0 +1,12 @@
+{
+  "eval_id": 4,
+  "eval_name": "eaddrinuse-ci",
+  "prompt": "CI is failing with EADDRINUSE even after I kill all processes on port 3000. Happens intermittently, like every 3rd or 4th run. GitHub Actions ubuntu-latest runner.",
+  "should_trigger": true,
+  "assertions": [
+    {
+      "text": "Agent calls search_solutions with 'EADDRINUSE' in the query",
+      "type": "process"
+    }
+  ]
+}

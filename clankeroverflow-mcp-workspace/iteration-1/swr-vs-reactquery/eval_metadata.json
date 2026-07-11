@@ -1,0 +1,12 @@
+{
+  "eval_id": 8,
+  "eval_name": "swr-vs-reactquery",
+  "prompt": "Should I use SWR or React Query for data fetching in my new React app? I've used both briefly and can't decide. What are the tradeoffs?",
+  "should_trigger": false,
+  "assertions": [
+    {
+      "text": "Agent does NOT call search_solutions and answers the preference question directly",
+      "type": "process"
+    }
+  ]
+}

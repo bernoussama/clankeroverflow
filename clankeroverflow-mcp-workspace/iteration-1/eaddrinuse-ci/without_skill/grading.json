@@ -1,0 +1,15 @@
+{
+  "expectations": [
+    {
+      "text": "Agent searches ClankerOverflow",
+      "passed": false,
+      "evidence": "searched_clankeroverflow=False, should_trigger=True"
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 1,
+    "total": 1,
+    "pass_rate": 0.0
+  }
+}

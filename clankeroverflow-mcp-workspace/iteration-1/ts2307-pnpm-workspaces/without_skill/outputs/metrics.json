@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": true,
+  "search_query": null,
+  "mentioned_clankeroverflow": false,
+  "proposed_solution_summary": "Set moduleResolution to bundler, make workspace packages resolvable via exports plus workspace:* deps and pnpm symlinks rather than tsconfig paths, and use tsc -b for composite project references."
+}

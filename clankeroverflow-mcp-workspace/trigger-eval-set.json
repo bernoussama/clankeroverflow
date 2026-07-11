@@ -1,0 +1,82 @@
+[
+  {
+    "query": "I'm setting up Better Auth with the organization plugin in a Next.js 15 app router project. Getting this error when a user tries to accept an invitation: 'Cannot read properties of undefined (reading session)'. The user is definitely logged in. Using pnpm.",
+    "should_trigger": true
+  },
+  {
+    "query": "Deploying a Hono app to Cloudflare Workers and the wrangler dev server keeps crashing with 'Worker's CPU time limit exceeded' but only when I hit the /upload endpoint that processes images. Works fine locally with wrangler dev --local.",
+    "should_trigger": true
+  },
+  {
+    "query": "We need to add Stripe checkout to our Next.js app. Already have the webhook endpoint set up but the signature verification keeps failing in production even though it works in our staging environment. Using the stripe-node SDK.",
+    "should_trigger": true
+  },
+  {
+    "query": "prisma migrate deploy is hanging in our CI pipeline. It connects fine when I run it locally against the same Neon database. The DATABASE_URL has pgbouncer=true and connection_limit=1. This only started after we moved to Neon serverless postgres.",
+    "should_trigger": true
+  },
+  {
+    "query": "Our Sentry error rate spiked after we upgraded to React 19. Seeing a lot of 'Cannot update a component while rendering a different component' warnings that weren't there before. We use useSyncExternalStore in a custom store.",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to set up server-side rendering for our Inertia.js Vue app running on Laravel. The pages render fine client-side but Google Search Console shows all pages as 'not indexed' because the meta tags aren't in the initial HTML.",
+    "should_trigger": true
+  },
+  {
+    "query": "Getting ERR_MODULE_NOT_FOUND when running our turbo monorepo build. The package is definitely in the workspace and the import works in dev mode. Only the production build fails. Using pnpm workspaces with turbo.",
+    "should_trigger": true
+  },
+  {
+    "query": "Our tRPC procedures are returning stale data in production. We added query invalidation after mutations but the client still shows old results for about 5-10 seconds. Using @trpc/react-query with Next.js.",
+    "should_trigger": true
+  },
+  {
+    "query": "Trying to implement optimistic updates with React Query v5 useMutation but the rollback isn't working when the mutation fails. The UI stays in the optimistic state instead of reverting. onMutate works but onError doesn't fire.",
+    "should_trigger": true
+  },
+  {
+    "query": "Setting up Neon database branching for our preview environments. The branch gets created fine but the first query after creation times out. I think it's a cold start issue but the connection_timeout parameter in the connection string doesn't seem to help.",
+    "should_trigger": true
+  },
+  {
+    "query": "Add a loading spinner to the submit button on our contact form. Should show while the form is submitting and hide when it's done. Also disable the button during submission to prevent double clicks.",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to change the primary brand color from blue to green across the whole app. We're using Tailwind and the color is defined in the tailwind.config.js. Just want to make sure I catch all the places it's used.",
+    "should_trigger": false
+  },
+  {
+    "query": "Should we use Zod or Yup for form validation in our new React Native app? I've used both in web projects but not sure which is better for React Native. Looking for pros and cons.",
+    "should_trigger": false
+  },
+  {
+    "query": "Can you explain the difference between useMemo and useCallback in React? I keep mixing them up. When should I use one over the other?",
+    "should_trigger": false
+  },
+  {
+    "query": "Refactor the getUserPermissions function to use early returns instead of the nested if-else chain. It's getting hard to read with 4 levels of nesting. No logic changes, just cleaner control flow.",
+    "should_trigger": false
+  },
+  {
+    "query": "Update the email template for our weekly digest to include the user's first name in the greeting. Currently it just says 'Hello,' and we want it to say 'Hello, Sarah,'. The name comes from the user profile.",
+    "should_trigger": false
+  },
+  {
+    "query": "I'm thinking about whether we should switch from REST to GraphQL for our mobile app backend. What are the main tradeoffs? Our team knows REST well but I keep hearing GraphQL is better for mobile.",
+    "should_trigger": false
+  },
+  {
+    "query": "Write a unit test for the formatCurrency function. It takes a number and returns a string with the currency symbol and proper decimal places. Should handle 0, negative numbers, and large numbers.",
+    "should_trigger": false
+  },
+  {
+    "query": "Can you review this React component and tell me if the useEffect cleanup is correct? I want to make sure there are no memory leaks when the component unmounts. It subscribes to a WebSocket and I'm clearing the interval in the return.",
+    "should_trigger": false
+  },
+  {
+    "query": "Our intern pushed some code that has inconsistent naming - some functions are camelCase and some are snake_case. Can you standardize all the function names in utils.js to camelCase to match our ESLint config?",
+    "should_trigger": false
+  }
+]

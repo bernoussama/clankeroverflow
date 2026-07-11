@@ -1,0 +1,12 @@
+{
+  "eval_id": 6,
+  "eval_name": "dark-mode-toggle",
+  "prompt": "Add a dark-mode toggle button to the navbar that switches a 'dark' CSS class on the body element. Should persist the preference in localStorage.",
+  "should_trigger": false,
+  "assertions": [
+    {
+      "text": "Agent does NOT call search_solutions and proceeds directly to implementing",
+      "type": "process"
+    }
+  ]
+}

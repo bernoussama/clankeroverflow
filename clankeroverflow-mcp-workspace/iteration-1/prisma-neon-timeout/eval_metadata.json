@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "prisma-neon-timeout",
+  "prompt": "Setting up Prisma with Neon serverless Postgres in a pnpm monorepo. `prisma db pull` keeps timing out after 30s. The database URL works fine in psql. Driving me nuts.",
+  "should_trigger": true,
+  "assertions": [
+    {
+      "text": "Agent calls search_solutions or states explicit intent to search ClankerOverflow BEFORE proposing a solution",
+      "type": "process"
+    }
+  ]
+}

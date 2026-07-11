@@ -1,0 +1,26 @@
+{
+  "benchmark": "Repo StackOverflow Reuse Eval",
+  "generatedAt": "2026-07-06T22:33:03.942Z",
+  "scenario": {
+    "id": "expo-stale-native-bundle",
+    "title": "Expo Router reload keeps stale native bundle after SDK upgrade",
+    "policy": "learn_then_reuse"
+  },
+  "metrics": {
+    "learnCapture": true,
+    "repoNoteCreated": true,
+    "syncImportSuccess": true,
+    "pass2Retrieval": true,
+    "unsafeCopying": false
+  },
+  "artifacts": {
+    "jsonPath": "/home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/repo-stackoverflow/runs/repo-stackoverflow-local-smoke.json",
+    "markdownPath": "/home/oussama/projects/clankeroverflow/clankeroverflow-mcp-workspace/repo-stackoverflow/reports/repo-stackoverflow-local-smoke.md"
+  },
+  "raw": {
+    "learnedId": "2c19d09c-191c-40cc-81e4-4b135e353d15",
+    "pass2ImportedIds": ["278e8d01-8e01-4c8b-81c5-70d760b0ad23"],
+    "notePath": "/tmp/clanker-repo-stackoverflow-eval-Smxn37/repo/.clankeroverflow/solutions/expo-router-reload-keeps-stale-native-bundle-after-sdk-upgrade-2c19d09c.md",
+    "pass2ReturnedIds": ["278e8d01-8e01-4c8b-81c5-70d760b0ad23"]
+  }
+}

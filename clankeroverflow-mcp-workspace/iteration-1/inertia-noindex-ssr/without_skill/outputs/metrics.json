@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": false,
+  "search_query": null,
+  "mentioned_clankeroverflow": false,
+  "proposed_solution_summary": "With SSR off, render robots meta server-side in Blade layout or enable Inertia SSR."
+}

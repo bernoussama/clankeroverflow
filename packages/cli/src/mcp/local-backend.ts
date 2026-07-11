@@ -472,6 +472,10 @@ export class LocalBackend implements SolutionBackend {
     ensureLocalSemanticSchema(this.db);
   }
 
+  close(): void {
+    this.db.close();
+  }
+
   async log(input: LogSolutionInput): Promise<{ id: string; warning?: string }> {
     const id = randomUUID();
     const timestamp = nowIso();

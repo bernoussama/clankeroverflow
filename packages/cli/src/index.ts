@@ -21,6 +21,7 @@ import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
 import { FtsQuerySyntaxError, LocalBackend } from "./mcp/local-backend.js";
 import { downloadDefaultLocalModel } from "./mcp/local-semantic.js";
+import { exportLocalSolutions, gitRepoRoot, learnSolution, syncRepoSolutions } from "./learn.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
 import pc from "picocolors";
 
@@ -223,7 +224,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   program
     .name("clanker")
-    .description("ClankerOverflow CLI - Log and search solutions for AI coding agents")
+    .description("ClankerOverflow CLI - Search and learn reusable fixes for AI coding agents")
     .version(packageJson.version);
 
   program
@@ -285,6 +286,124 @@ export function createProgram(options: CreateProgramOptions = {}) {
         }
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error logging solution:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
+    });
+
+  const learnCommand = program
+    .command("learn")
+    .description("Learn one verified reusable Q/A fix into the private repo StackOverflow")
+    .option("-p, --problem <text>", "Concrete searchable problem statement")
+    .option("--root-cause <text>", "Reusable root cause")
+    .option("-s, --solution <text>", "Verified fix steps")
+    .option("-v, --verification <text>", "Command, test, build, or behavior that passed")
+    .option("-t, --tags <text>", "Comma-separated tags")
+    .option("--fingerprints <text>", "Comma-separated error codes, packages, or symptoms")
+    .option("--framework <text>", "Framework/library context")
+    .option("--package-manager <text>", "Package manager context")
+    .option("--runtime <text>", "Runtime/deployment context")
+    .option("--repo-note <text>", "Optional repo-specific note after sanitization")
+    .option("--repo <path>", "Repository root for the Markdown mirror")
+    .option("--source <source>", "local, remote, or configured", "local")
+    .option("--no-markdown", "Do not write .clankeroverflow/solutions Markdown mirror")
+    .option("--no-dedupe", "Skip the pre-log duplicate search")
+    .option("--no-upvote-existing", "Do not upvote a matching existing solution")
+    .action(async (options) => {
+      try {
+        const result = await learnSolution(
+          {
+            problem: options.problem,
+            rootCause: options.rootCause,
+            solution: options.solution,
+            verification: options.verification,
+            tags: options.tags,
+            fingerprints: options.fingerprints,
+            framework: options.framework,
+            packageManager: options.packageManager,
+            runtime: options.runtime,
+            repoNote: options.repoNote,
+          },
+          {
+            source: parseBackendSource(options.source),
+            repoRoot: options.repo ? path.resolve(process.cwd(), options.repo) : gitRepoRoot(),
+            mirror: options.markdown,
+            dedupe: options.dedupe,
+            upvoteExisting: options.upvoteExisting,
+          },
+        );
+
+        if (result.status === "duplicate") {
+          console.log(
+            pc.yellow(pc.bold("↻ Existing solution matched")) +
+              ` ${pc.cyan(result.id)} (${result.source}); no duplicate logged.`,
+          );
+        } else {
+          console.log(
+            pc.green(pc.bold("✔ Learned")) +
+              ` Solution learned ${result.source === "local" ? "locally" : "remotely"}: ${pc.cyan(result.id)}`,
+          );
+        }
+        if (result.repoNotePath) {
+          console.log(`Markdown note: ${pc.cyan(result.repoNotePath)}`);
+        }
+        for (const warning of result.warnings) {
+          console.log(pc.yellow(warning));
+        }
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error learning solution:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
+    });
+
+  learnCommand
+    .command("sync")
+    .description("Import .clankeroverflow/solutions/*.md into the local ClankerOverflow DB")
+    .option("--repo <path>", "Repository root containing .clankeroverflow/solutions")
+    .option("--source <source>", "local, remote, or configured")
+    .option("--no-dedupe", "Skip the pre-log duplicate search")
+    .action(async (options, command) => {
+      try {
+        const parentOptions = learnCommand.opts();
+        const repoOption = options.repo ?? parentOptions.repo;
+        const childSource = command.getOptionValueSource("source") === "cli";
+        const childDedupe = command.getOptionValueSource("dedupe") === "cli";
+        const result = await syncRepoSolutions({
+          source: parseBackendSource(
+            childSource ? options.source : (parentOptions.source ?? "local"),
+          ),
+          repoRoot: repoOption ? path.resolve(process.cwd(), repoOption) : gitRepoRoot(),
+          dedupe: childDedupe ? options.dedupe : parentOptions.dedupe,
+          mirror: false,
+        });
+        console.log(
+          pc.green(pc.bold("✔ Synced")) +
+            ` ${result.results.length} repo solution note(s) from ${result.files.length} file(s).`,
+        );
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error syncing learned solutions:")));
+        console.error(pc.red(error.message || error));
+        process.exit(1);
+      }
+    });
+
+  learnCommand
+    .command("export")
+    .description("Export local ClankerOverflow DB entries to .clankeroverflow/solutions/*.md")
+    .option("--repo <path>", "Repository root for .clankeroverflow/solutions")
+    .action((options) => {
+      try {
+        const repoOption = options.repo ?? learnCommand.opts().repo;
+        const result = exportLocalSolutions({
+          repoRoot: repoOption ? path.resolve(process.cwd(), repoOption) : gitRepoRoot(),
+        });
+        console.log(
+          pc.green(pc.bold("✔ Exported")) +
+            ` ${result.paths.length} local solution note(s) to ${pc.cyan(".clankeroverflow/solutions")}.`,
+        );
+      } catch (error: any) {
+        console.error(pc.red(pc.bold("✖ Error exporting learned solutions:")));
         console.error(pc.red(error.message || error));
         process.exit(1);
       }

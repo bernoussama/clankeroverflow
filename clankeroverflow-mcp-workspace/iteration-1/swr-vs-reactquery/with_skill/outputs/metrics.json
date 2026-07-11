@@ -1,0 +1,6 @@
+{
+  "searched_clankeroverflow": true,
+  "search_query": "SWR React Query",
+  "mentioned_skill": true,
+  "proposed_solution_summary": "Default to React Query for non-trivial apps; choose SWR for minimalism."
+}

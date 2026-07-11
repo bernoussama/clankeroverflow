@@ -1,0 +1,12 @@
+{
+  "eval_id": 7,
+  "eval_name": "promise-async-await",
+  "prompt": "Refactor this Promise chain to use async/await: the function fetchUser(id) chains .then for parsing, .then for validation, .then for enrichment. Just clean it up.",
+  "should_trigger": false,
+  "assertions": [
+    {
+      "text": "Agent does NOT call search_solutions and proceeds directly with the refactor",
+      "type": "process"
+    }
+  ]
+}

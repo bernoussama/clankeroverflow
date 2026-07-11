@@ -1,0 +1,339 @@
+{
+  "metadata": {
+    "name": "sample validation runs",
+    "sample": true,
+    "agent": "codex",
+    "model": "not-recorded",
+    "created_at": "2026-07-04",
+    "notes": "Synthetic entries used only to validate the reuse benchmark harness shape. Do not treat these as buyer-proof benchmark results."
+  },
+  "runs": [
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "config": "with_mcp_known_fix",
+      "repetition": 1,
+      "status": "completed",
+      "usage": {
+        "input_tokens": 1000,
+        "cached_input_tokens": 333,
+        "output_tokens": 280,
+        "reasoning_output_tokens": 20,
+        "total_provider_tokens": 1300,
+        "elapsed_ms": 11000
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 pnpm",
+            "limit": 3,
+            "mode": "auto",
+            "source": "local"
+          },
+          "result_ids": ["fix-ts2307-pnpm-workspace-dep"]
+        }
+      ],
+      "search_query": "TS2307 pnpm",
+      "returned_solution_ids": ["fix-ts2307-pnpm-workspace-dep"],
+      "logged_solution_ids": [],
+      "final_answer": "Declare the sibling workspace package as a real workspace:* dependency, run pnpm install, and do not rely only on paths.",
+      "human_review": {
+        "correctness": 5,
+        "usefulness": 5,
+        "specificity": 5,
+        "safety": 5,
+        "rationale": "Uses the fixture fix."
+      }
+    },
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "config": "with_mcp_empty_db",
+      "repetition": 1,
+      "status": "completed",
+      "usage": {
+        "input_tokens": 1200,
+        "cached_input_tokens": 400,
+        "output_tokens": 520,
+        "reasoning_output_tokens": 80,
+        "total_provider_tokens": 1800,
+        "elapsed_ms": 19000
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 pnpm",
+            "limit": 3,
+            "mode": "auto",
+            "source": "local"
+          },
+          "result_ids": []
+        }
+      ],
+      "search_query": "TS2307 pnpm",
+      "returned_solution_ids": [],
+      "logged_solution_ids": [],
+      "final_answer": "Check the consuming package dependency declaration, package exports, types, and tsconfig paths. The likely fix is a real workspace dependency plus pnpm install.",
+      "human_review": {
+        "correctness": 4,
+        "usefulness": 4,
+        "specificity": 4,
+        "safety": 5,
+        "rationale": "Solves from scratch after an empty search."
+      }
+    },
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "config": "without_mcp",
+      "repetition": 1,
+      "status": "completed",
+      "usage": {
+        "input_tokens": 900,
+        "cached_input_tokens": 300,
+        "output_tokens": 650,
+        "reasoning_output_tokens": 120,
+        "total_provider_tokens": 1670,
+        "elapsed_ms": 25000
+      },
+      "cost_estimate": null,
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "logged_solution_ids": [],
+      "final_answer": "Check moduleResolution and tsconfig paths. Also ensure exports and type declarations point at existing files.",
+      "human_review": {
+        "correctness": 3,
+        "usefulness": 3,
+        "specificity": 2,
+        "safety": 5,
+        "rationale": "Misses the decisive workspace dependency edge."
+      }
+    },
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "config": "learn_then_reuse_pass1",
+      "repetition": 1,
+      "status": "completed",
+      "usage": {
+        "input_tokens": 1300,
+        "cached_input_tokens": 433,
+        "output_tokens": 500,
+        "reasoning_output_tokens": 90,
+        "total_provider_tokens": 1890,
+        "elapsed_ms": 21000
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 pnpm",
+            "limit": 3,
+            "mode": "auto",
+            "source": "local"
+          },
+          "result_ids": []
+        },
+        {
+          "name": "log_solution",
+          "arguments": {
+            "problem": "TS2307 Cannot find module in pnpm workspace",
+            "solution": "Declare workspace:* dependency and run pnpm install.",
+            "tags": "typescript,pnpm,monorepo"
+          },
+          "logged_ids": ["learned-ts2307-local"]
+        }
+      ],
+      "search_query": "TS2307 pnpm",
+      "returned_solution_ids": [],
+      "logged_solution_ids": ["learned-ts2307-local"],
+      "final_answer": "I did not find a prior fix, so I logged the reusable solution: add the sibling package as workspace:* and run pnpm install.",
+      "human_review": {
+        "correctness": 5,
+        "usefulness": 5,
+        "specificity": 5,
+        "safety": 5,
+        "rationale": "Learns the reusable fix after an empty search."
+      }
+    },
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "config": "learn_then_reuse_pass2",
+      "repetition": 1,
+      "status": "completed",
+      "usage": {
+        "input_tokens": 1050,
+        "cached_input_tokens": 350,
+        "output_tokens": 300,
+        "reasoning_output_tokens": 30,
+        "total_provider_tokens": 1380,
+        "elapsed_ms": 12000
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "TS2307 pnpm",
+            "limit": 3,
+            "mode": "auto",
+            "source": "local"
+          },
+          "result_ids": ["learned-ts2307-local"]
+        }
+      ],
+      "search_query": "TS2307 pnpm",
+      "returned_solution_ids": ["learned-ts2307-local"],
+      "logged_solution_ids": [],
+      "final_answer": "The prior logged fix says to add the package as a workspace:* dependency, run pnpm install, and stop relying only on paths.",
+      "human_review": {
+        "correctness": 5,
+        "usefulness": 5,
+        "specificity": 5,
+        "safety": 5,
+        "rationale": "Reuses the learned local fix."
+      }
+    },
+    {
+      "scenario_id": "stripe-cf-workers-webcrypto",
+      "config": "with_mcp_known_fix",
+      "repetition": 1,
+      "status": "completed",
+      "usage": {
+        "input_tokens": 1100,
+        "cached_input_tokens": 366,
+        "output_tokens": 320,
+        "reasoning_output_tokens": 25,
+        "total_provider_tokens": 1445,
+        "elapsed_ms": 13000
+      },
+      "cost_estimate": null,
+      "tool_calls": [
+        {
+          "name": "search_solutions",
+          "arguments": {
+            "query": "stripe webhook cloudflare workers",
+            "limit": 3,
+            "mode": "auto",
+            "source": "local"
+          },
+          "result_ids": ["fix-stripe-workers-construct-event-async"]
+        }
+      ],
+      "search_query": "stripe webhook cloudflare workers",
+      "returned_solution_ids": ["fix-stripe-workers-construct-event-async"],
+      "logged_solution_ids": [],
+      "final_answer": "Use stripe.webhooks.constructEventAsync with the exact raw request body and stripe-signature header. Avoid JSON parsing and Node-only sync crypto verification.",
+      "human_review": {
+        "correctness": 5,
+        "usefulness": 5,
+        "specificity": 4,
+        "safety": 5,
+        "rationale": "Captures the Web Crypto fix."
+      }
+    },
+    {
+      "scenario_id": "stripe-cf-workers-webcrypto",
+      "config": "without_mcp",
+      "repetition": 1,
+      "status": "completed",
+      "usage": {
+        "input_tokens": 950,
+        "cached_input_tokens": 316,
+        "output_tokens": 780,
+        "reasoning_output_tokens": 160,
+        "total_provider_tokens": 1890,
+        "elapsed_ms": 30000
+      },
+      "cost_estimate": null,
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "logged_solution_ids": [],
+      "final_answer": "You may need to manually implement HMAC verification with Web Crypto, then parse JSON after verification.",
+      "human_review": {
+        "correctness": 3,
+        "usefulness": 3,
+        "specificity": 2,
+        "safety": 4,
+        "rationale": "Could work but misses the SDK helper."
+      }
+    },
+    {
+      "scenario_id": "swr-vs-reactquery",
+      "config": "with_mcp_known_fix",
+      "repetition": 1,
+      "status": "completed",
+      "usage": {
+        "input_tokens": 800,
+        "cached_input_tokens": 266,
+        "output_tokens": 280,
+        "reasoning_output_tokens": 10,
+        "total_provider_tokens": 1090,
+        "elapsed_ms": 9000
+      },
+      "cost_estimate": null,
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "logged_solution_ids": [],
+      "final_answer": "This is a tradeoff question, so skip shared-memory search. Use React Query for mutations and cache orchestration; SWR for simpler read-heavy data.",
+      "human_review": {
+        "correctness": 5,
+        "usefulness": 4,
+        "specificity": 4,
+        "safety": 5,
+        "rationale": "Correctly avoids MCP search."
+      }
+    },
+    {
+      "scenario_id": "swr-vs-reactquery",
+      "config": "without_mcp",
+      "repetition": 1,
+      "status": "completed",
+      "usage": {
+        "input_tokens": 760,
+        "cached_input_tokens": 253,
+        "output_tokens": 260,
+        "reasoning_output_tokens": 10,
+        "total_provider_tokens": 1030,
+        "elapsed_ms": 8500
+      },
+      "cost_estimate": null,
+      "tool_calls": [],
+      "search_query": null,
+      "returned_solution_ids": [],
+      "logged_solution_ids": [],
+      "final_answer": "React Query is usually better for complex apps with mutations; SWR is simpler for read-heavy data.",
+      "human_review": {
+        "correctness": 5,
+        "usefulness": 4,
+        "specificity": 3,
+        "safety": 5,
+        "rationale": "Comparable direct answer."
+      }
+    }
+  ],
+  "pairwise_reviews": [
+    {
+      "scenario_id": "ts2307-pnpm-workspaces",
+      "repetition": 1,
+      "winner": "with_mcp_win",
+      "rationale": "Known-fix MCP answer identifies the missing workspace:* dependency as the decisive fix."
+    },
+    {
+      "scenario_id": "stripe-cf-workers-webcrypto",
+      "repetition": 1,
+      "winner": "with_mcp_win",
+      "rationale": "Known-fix MCP answer uses the runtime-specific Stripe async verification path."
+    },
+    {
+      "scenario_id": "swr-vs-reactquery",
+      "repetition": 1,
+      "winner": "tie",
+      "rationale": "Both answers skip search and give reasonable tradeoffs."
+    }
+  ]
+}
