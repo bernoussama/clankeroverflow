@@ -18,6 +18,7 @@
     "eval:mcp-product-proof:record": "tsx packages/cli/src/evals/record-codex-product-proof.ts",
     "eval:mcp-product-proof:record:claude": "tsx packages/cli/src/evals/record-claude-product-proof.ts",
     "eval:repo-stackoverflow": "tsx packages/cli/src/evals/repo-stackoverflow.ts",
+    "eval:memory-retrieval": "tsx clankeroverflow-mcp-workspace/retrieval-memory/run.ts",
     "eval:pi-triggering": "tsx packages/cli/src/evals/pi-triggering-run.ts",
     "benchmark:local-embeddings": "tsx packages/cli/benchmarks/local-embeddings/run.ts",
     "benchmark:hosted-retrieval": "pnpm --filter @clankeroverflow/db benchmark:hosted-retrieval",
@@ -32,7 +33,9 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "check": "pnpm run lint && pnpm run format"
+    "check": "pnpm run lint && pnpm run format",
+    "test:memory-retrieval": "vitest run clankeroverflow-mcp-workspace/retrieval-memory --exclude '**/transformers.integration.test.ts'",
+    "test:memory-retrieval:integration": "MEMORY_RERANKER_INTEGRATION=1 vitest run clankeroverflow-mcp-workspace/retrieval-memory/transformers.integration.test.ts"
   },
   "dependencies": {
     "@clankeroverflow/env": "workspace:*"
@@ -40,6 +43,7 @@
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",
     "@cloudflare/workers-types": "catalog:",
+    "@huggingface/transformers": "3.8.1",
     "@types/node": "^22.19.19",
     "oxfmt": "^0.26.0",
     "oxlint": "^1.67.0",

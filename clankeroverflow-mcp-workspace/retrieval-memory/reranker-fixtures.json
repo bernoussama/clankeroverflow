@@ -1,0 +1,37 @@
+[
+  {
+    "queryId": "vite-container-host-direct-reuse",
+    "solutionId": "vite-container-host-canonical",
+    "score": 0.98
+  },
+  {
+    "queryId": "vite-container-host-different-version",
+    "solutionId": "vite-container-host-wrong-version",
+    "score": 0.91
+  },
+  {
+    "queryId": "stripe-workers-raw-body-direct-reuse",
+    "solutionId": "stripe-workers-raw-body-canonical",
+    "score": 0.97
+  },
+  {
+    "queryId": "stripe-workers-raw-body-stale-or-reverted",
+    "solutionId": "stripe-workers-raw-body-stale-reverted",
+    "score": 0.95
+  },
+  {
+    "queryId": "prisma-neon-direct-url-same-error-different-root-cause",
+    "solutionId": "prisma-neon-direct-url-alternate-root",
+    "score": 0.96
+  },
+  {
+    "queryId": "node-eaddrinuse-timewait-no-useful-memory",
+    "solutionId": "node-eaddrinuse-timewait-canonical",
+    "score": 0.02
+  },
+  {
+    "queryId": "systemd-user-environment-related-adaptation",
+    "solutionId": "systemd-user-environment-adaptation-plan",
+    "score": 0.89
+  }
+]
