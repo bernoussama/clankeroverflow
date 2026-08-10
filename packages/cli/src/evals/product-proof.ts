@@ -864,8 +864,6 @@ export async function runHostedSmoke(query: string): Promise<HostedSmokeResult> 
       query,
       limit: 1,
       mode: "auto",
-      allowHybridFallback: Boolean(config.apiKey),
-      fallbackUnavailableReason: "CLANKER_API_KEY is required for hosted hybrid fallback",
     });
     return {
       query,

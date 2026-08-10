@@ -27,11 +27,11 @@ The benchmark turns the cross-paper pattern into a conservative memory contract:
 4. Preserve history with typed `related_to`, `adapts`, `supersedes`, `reverts`, and `conflicts_with` relations. Inactive memories leave active retrieval but remain auditable; privacy deletion is the hard-delete exception.
 5. Compute confidence from captured evidence and constraints, not from similarity or votes. Keep usefulness votes separate from factual confidence.
 6. Record repository identity, commit/range, dependency and runtime versions, toolchain, package manager, OS/architecture, files, commands, and error fingerprints as structured constraints.
-7. Emit an explanation trace for every candidate decision: lexical and semantic rank, fusion/reranker scores, matched fingerprints, constraint checks, status, confidence, and relationship evidence.
+7. Emit an explanation trace for every candidate decision: lexical rank, matched fingerprints, constraint checks, status, confidence, and relationship evidence.
 8. Store reusable task plans as `memoryKind: plan`, and adapt them to the current environment rather than treating them as cached answers.
 
 ## Current-state gap analysis
 
-The production solution table remains intentionally flat: problem, solution, tags, score, timestamps, and user identity are the durable fields. The current local retrieval path already supports keyword, semantic, hybrid, and reciprocal-rank fusion retrieval. This phase therefore keeps production storage and retrieval unchanged and adds the isolated `retrieval-memory/` benchmark as a safety/design pressure test.
+The production solution table remains intentionally flat: problem, solution, tags, score, timestamps, and user identity are the durable fields. The v2 local retrieval path uses exact-first and tiered SQLite FTS5 keyword retrieval. The isolated `retrieval-memory/` benchmark keeps the richer safety labels as a pressure test without changing production storage.
 
 The benchmark's structured fixtures model the target richer contract without claiming that production already stores it. Its negative cases are designed to expose the risks that a similarity-only production change would need to address: stale/reverted fixes, wrong versions, same-error root causes, incompatible platforms, lexical distractors, and cases where abstention is the correct answer.

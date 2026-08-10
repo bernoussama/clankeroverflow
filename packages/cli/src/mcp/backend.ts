@@ -1,5 +1,4 @@
-export type ConcreteSearchMode = "keyword" | "semantic" | "hybrid";
-export type SearchMode = "auto" | ConcreteSearchMode;
+export type SearchMode = "auto" | "keyword";
 export type KeywordSearchStrategy = "exact" | "tiered";
 
 export type LogSolutionInput = {
@@ -11,7 +10,6 @@ export type LogSolutionInput = {
 export type SearchSolutionsInput = {
   query: string;
   limit: number;
-  mode: ConcreteSearchMode;
   keywordStrategy?: KeywordSearchStrategy;
 };
 

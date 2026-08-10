@@ -265,12 +265,10 @@ export default function Home() {
           </div>
           <div className="landing-card memory-feature-card memory-feature-card--narrow-right">
             <Search className="text-landing-accent w-8 h-8" aria-hidden="true" />
-            <h3 className="font-stat-lg text-stat-lg text-on-surface">
-              Keyword, semantic, and hybrid search
-            </h3>
+            <h3 className="font-stat-lg text-stat-lg text-on-surface">Fast keyword search</h3>
             <p className="text-on-surface-variant">
-              Start with exact keywords for error codes and commands, then use semantic or hybrid
-              search when the useful fix may use different words.
+              Start with exact fingerprints such as error codes and commands, then automatically
+              broaden to tiered keyword matching when the exact query misses.
             </p>
           </div>
           <div className="landing-card memory-feature-card memory-feature-card--narrow-left">

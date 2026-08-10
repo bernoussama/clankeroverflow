@@ -8,30 +8,8 @@ import type {
   VoteSolutionInput,
 } from "./backend";
 import { openLocalDb, type LocalDb } from "./local-db";
-import {
-  createLocalEmbedder,
-  embeddingFingerprintForConfig,
-  ensureLocalSemanticSchema,
-  ensureVecTable,
-  getLocalSemanticStatus,
-  getSolutionsNeedingEmbedding,
-  insertEmbedding,
-  queryEmbeddingText,
-  solutionContentHash,
-  solutionEmbeddingText,
-  type LocalSemanticConfig,
-} from "./local-semantic";
-
-export class LocalSemanticSearchNotConfiguredError extends Error {
-  constructor() {
-    super(
-      "Local semantic search is not configured yet. Use keyword or hybrid mode for local SQLite search.",
-    );
-  }
-}
 
 type SearchRow = SolutionResult & { rank: number };
-type Embedder = { embed(text: string): Promise<Buffer> };
 
 function nowIso() {
   return new Date().toISOString();
@@ -372,31 +350,6 @@ export function localRelaxedFtsQuery(query: string) {
   return [...new Set([...phrases, ...(terms ?? [])])].join(" OR ");
 }
 
-export function reciprocalRankFusion(
-  lists: Array<{ weight: number; results: SolutionResult[] }>,
-  limit: number,
-) {
-  const k = 60;
-  const scores = new Map<string, { result: SolutionResult; score: number; bestRank: number }>();
-  for (const list of lists) {
-    list.results.forEach((result, index) => {
-      const rank = index + 1;
-      const existing = scores.get(result.id);
-      const score = list.weight / (k + rank);
-      if (existing) {
-        existing.score += score;
-        existing.bestRank = Math.min(existing.bestRank, rank);
-      } else {
-        scores.set(result.id, { result, score, bestRank: rank });
-      }
-    });
-  }
-  return [...scores.values()]
-    .sort((a, b) => b.score - a.score || b.result.score - a.result.score || a.bestRank - b.bestRank)
-    .slice(0, limit)
-    .map((entry) => entry.result);
-}
-
 function searchLocalKeywordExpression(db: LocalDb, query: string, limit: number) {
   if (!query) return [];
 
@@ -435,41 +388,11 @@ export function searchLocalKeyword(db: LocalDb, queryText: string, limit: number
   return [...exact, ...relaxed.filter((result) => !seen.has(result.id))].slice(0, limit);
 }
 
-export function searchLocalSemantic(db: LocalDb, embedding: Buffer, limit: number) {
-  const rows = db
-    .prepare(
-      `SELECT solution_id, distance
-       FROM solution_vec
-       WHERE embedding MATCH ? AND k = ?`,
-    )
-    .all(embedding, Math.max(limit, 1)) as Array<{ solution_id: string; distance: number }>;
-  if (!rows.length) return [];
-  const ids = rows.map((row) => row.solution_id);
-  const placeholders = ids.map(() => "?").join(",");
-  const hydrated = db
-    .prepare(
-      `SELECT id, problem, solution, tags, score
-       FROM solution
-       WHERE id IN (${placeholders})`,
-    )
-    .all(...ids) as SolutionResult[];
-  const byId = new Map(hydrated.map((row) => [row.id, row]));
-  return ids.map((id) => byId.get(id)).filter((row): row is SolutionResult => Boolean(row));
-}
-
 export class LocalBackend implements SolutionBackend {
   private db: LocalDb;
-  private semantic?: LocalSemanticConfig;
-  private embedder?: Embedder;
 
-  constructor(
-    dbPath: string,
-    options: { semantic?: LocalSemanticConfig; embedder?: Embedder } = {},
-  ) {
+  constructor(dbPath: string) {
     this.db = openLocalDb(dbPath);
-    this.semantic = options.semantic;
-    this.embedder = options.embedder;
-    ensureLocalSemanticSchema(this.db);
   }
 
   close(): void {
@@ -480,7 +403,6 @@ export class LocalBackend implements SolutionBackend {
     const id = randomUUID();
     const timestamp = nowIso();
     const tags = input.tags ?? null;
-    let warning: string | undefined;
 
     const insert = this.db.transaction(() => {
       const info = this.db
@@ -499,41 +421,12 @@ export class LocalBackend implements SolutionBackend {
     });
 
     insert.immediate();
-    if (this.semantic?.enabled) {
-      try {
-        await this.embedSolution(id, input.problem, input.solution, tags);
-      } catch (error) {
-        warning = `Solution logged, but local semantic indexing failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`;
-      }
-    }
-    return { id, warning };
+    return { id };
   }
 
   async search(input: SearchSolutionsInput): Promise<SolutionResult[]> {
     if (!input.query.trim()) {
       throw new Error("search query must not be empty");
-    }
-    if (input.mode === "semantic" && !this.semantic?.enabled) {
-      throw new LocalSemanticSearchNotConfiguredError();
-    }
-
-    if (input.mode === "semantic") {
-      return this.searchSemantic(input.query, input.limit);
-    }
-    if (input.mode === "hybrid" && this.semantic?.enabled) {
-      const [keywordResults, semanticResults] = await Promise.all([
-        searchLocalKeywordRelaxed(this.db, input.query, Math.max(input.limit, 20)),
-        this.searchSemantic(input.query, Math.max(input.limit, 20)),
-      ]);
-      return reciprocalRankFusion(
-        [
-          { weight: 1.25, results: keywordResults },
-          { weight: 1, results: semanticResults },
-        ],
-        input.limit,
-      );
     }
     return input.keywordStrategy === "exact"
       ? searchLocalKeywordExact(this.db, input.query, input.limit)
@@ -548,70 +441,12 @@ export class LocalBackend implements SolutionBackend {
     return searchLocalKeyword(this.db, queryText, limit);
   }
 
-  private async searchSemantic(queryText: string, limit: number) {
-    if (!this.semantic?.enabled) throw new LocalSemanticSearchNotConfiguredError();
-    await ensureVecTable(this.db, this.semantic.dimensions);
-    const embedder = await this.resolveEmbedder();
-    const embedding = await embedder.embed(queryEmbeddingText(queryText));
-    return searchLocalSemantic(this.db, embedding, limit);
-  }
-
-  async embedPending(options: { force?: boolean; limit?: number } = {}) {
-    if (!this.semantic?.enabled) throw new LocalSemanticSearchNotConfiguredError();
-    await ensureVecTable(this.db, this.semantic.dimensions);
-    if (options.force) {
-      this.db.prepare("DELETE FROM solution_embedding").run();
-      this.db.prepare("DELETE FROM solution_vec").run();
-    }
-    const fingerprint = embeddingFingerprintForConfig(this.semantic);
-    const rows = getSolutionsNeedingEmbedding(this.db, this.semantic, {
-      fingerprint,
-      limit: options.limit,
-    });
-    for (const row of rows) {
-      await this.embedSolution(row.id, row.problem, row.solution, row.tags, fingerprint);
-    }
-    return { embedded: rows.length };
-  }
-
   async status() {
-    const semantic = this.semantic ?? {
-      enabled: false,
-      modelId: "disabled",
-      modelPath: "",
-      dimensions: 384,
-    };
-    return getLocalSemanticStatus(this.db, semantic);
-  }
-
-  private async embedSolution(
-    id: string,
-    problem: string,
-    solution: string,
-    tags: string | null,
-    fingerprint = this.semantic?.enabled ? embeddingFingerprintForConfig(this.semantic) : "",
-  ) {
-    if (!this.semantic?.enabled) return;
-    await ensureVecTable(this.db, this.semantic.dimensions);
-    const embedder = await this.resolveEmbedder();
-    const text = solutionEmbeddingText({ problem, solution, tags });
-    const embedding = await embedder.embed(text);
-    insertEmbedding(this.db, {
-      solutionId: id,
-      model: this.semantic.modelId,
-      fingerprint,
-      contentHash: solutionContentHash({ problem, solution, tags }),
-      dimensions: this.semantic.dimensions,
-      embedding,
-      embeddedAt: nowIso(),
-    });
-  }
-
-  private async resolveEmbedder() {
-    if (this.embedder) return this.embedder;
-    if (!this.semantic?.enabled) throw new LocalSemanticSearchNotConfiguredError();
-    this.embedder = await createLocalEmbedder(this.semantic);
-    return this.embedder;
+    const totalSolutions = (
+      this.db.prepare("SELECT COUNT(*) AS count FROM solution").get() as { count: number }
+    ).count;
+    const integrity = this.db.pragma("integrity_check", { simple: true });
+    return { totalSolutions, integrity: integrity === "ok", fts5: true };
   }
 
   async vote(input: VoteSolutionInput): Promise<void> {

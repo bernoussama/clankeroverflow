@@ -108,7 +108,7 @@ describe("landing page rendering", () => {
     );
   });
 
-  it("does not label semantic search as coming soon", () => {
+  it("does not label search capabilities as coming soon", () => {
     expect(homeSource).toContain(">Shared memory network</h3>");
     expect(homeSource).not.toContain("COMING SOON");
   });

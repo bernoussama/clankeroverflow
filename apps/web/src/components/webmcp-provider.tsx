@@ -23,7 +23,7 @@ interface ModelContext {
   provideContext: (tools: WebMCPTool[]) => Promise<void>;
 }
 
-type SearchMode = "auto" | "keyword" | "semantic" | "hybrid";
+type SearchMode = "auto" | "keyword";
 type ConcreteSearchMode = Exclude<SearchMode, "auto">;
 
 declare global {
@@ -35,7 +35,7 @@ declare global {
 const searchSolutionsTool: WebMCPTool = {
   name: "search_solutions",
   description:
-    "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Default auto mode tries exact keyword search, then hybrid after a miss, then tiered keyword retrieval if hybrid is unavailable. Use the smallest distinctive keyword fingerprint and tags as relevance signals.",
+    "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Default auto mode tries exact keyword search, then tiered keyword retrieval after a miss. Use the smallest distinctive keyword fingerprint and tags as relevance signals.",
   inputSchema: {
     type: "object",
     properties: {
@@ -46,10 +46,10 @@ const searchSolutionsTool: WebMCPTool = {
       },
       mode: {
         type: "string",
-        enum: ["auto", "keyword", "semantic", "hybrid"],
+        enum: ["auto", "keyword"],
         default: "auto",
         description:
-          "auto: exact keyword, then hybrid on a miss, then tiered keyword if hybrid is unavailable; keyword uses exact-first relaxed-fill retrieval",
+          "auto: exact keyword, then tiered keyword on a miss; keyword runs tiered retrieval directly",
       },
     },
     required: ["query"],
@@ -58,21 +58,24 @@ const searchSolutionsTool: WebMCPTool = {
     const query = String(args.query ?? "").trim();
     if (!query) return { results: [], message: "Query is required" };
     const rawMode = String(args.mode ?? "auto");
-    const mode: SearchMode = ["auto", "keyword", "semantic", "hybrid"].includes(rawMode)
+    if (rawMode === "semantic" || rawMode === "hybrid") {
+      return { results: [], message: `${rawMode} search was removed in v2; use auto or keyword.` };
+    }
+    const mode: SearchMode = ["auto", "keyword"].includes(rawMode)
       ? (rawMode as SearchMode)
       : "auto";
 
     try {
-      const search = (searchMode: ConcreteSearchMode, keywordStrategy?: "exact" | "tiered") =>
+      const search = (keywordStrategy: "exact" | "tiered") =>
         trpcClient.solutions.search.query({
           query,
           limit: 10,
-          mode: searchMode,
-          ...(keywordStrategy ? { keywordStrategy } : {}),
+          mode: "keyword",
+          keywordStrategy,
         });
 
       if (mode !== "auto") {
-        const results = await search(mode, mode === "keyword" ? "tiered" : undefined);
+        const results = await search("tiered");
         return {
           results,
           attempts: [
@@ -85,7 +88,7 @@ const searchSolutionsTool: WebMCPTool = {
         };
       }
 
-      const keywordResults = await search("keyword", "exact");
+      const keywordResults = await search("exact");
       const attempts: Array<{
         mode: ConcreteSearchMode;
         keywordStrategy?: "exact" | "tiered";
@@ -96,28 +99,13 @@ const searchSolutionsTool: WebMCPTool = {
         return { results: keywordResults, attempts };
       }
 
-      try {
-        const hybridResults = await search("hybrid");
-        attempts.push({ mode: "hybrid", resultCount: hybridResults.length });
-        return { results: hybridResults, attempts };
-      } catch (error) {
-        attempts.push({
-          mode: "hybrid",
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-        const relaxedResults = await search("keyword", "tiered");
-        attempts.push({
-          mode: "keyword",
-          keywordStrategy: "tiered",
-          resultCount: relaxedResults.length,
-        });
-        return {
-          results: relaxedResults,
-          attempts,
-          message:
-            "Keyword search returned no results and hybrid fallback was unavailable. Try one smaller or sharper keyword query before debugging from scratch.",
-        };
-      }
+      const relaxedResults = await search("tiered");
+      attempts.push({
+        mode: "keyword",
+        keywordStrategy: "tiered",
+        resultCount: relaxedResults.length,
+      });
+      return { results: relaxedResults, attempts };
     } catch (error) {
       return {
         results: [],

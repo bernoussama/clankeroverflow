@@ -47,14 +47,14 @@ describe("memory retrieval metrics", () => {
       developmentCases.map((retrievalCase) => [
         retrievalCase.id,
         {
-          method: "structured" as const,
+          method: "keyword" as const,
           ranking: retrievalCase.relevantSolutionIds,
           scores: new Map(retrievalCase.relevantSolutionIds.map((id) => [id, 0.8])),
           traces: [],
         },
       ]),
     );
-    const calibration = calibrateAbstention("structured", developmentCases, raw);
+    const calibration = calibrateAbstention("keyword", developmentCases, raw);
     expect(calibration.tunedOnSplit).toBe("development");
     expect(calibration.threshold).toBeGreaterThanOrEqual(0);
     expect(calibration.threshold).toBeLessThanOrEqual(1);
@@ -79,8 +79,8 @@ describe("memory retrieval metrics", () => {
     expect(summary.metrics.positiveCases).toBeGreaterThan(0);
     expect(summary.metrics.safeReusePrecisionAt1.value).toBeGreaterThanOrEqual(0);
     expect(summary.metrics.abstentionF1.value).toBeGreaterThanOrEqual(0);
-    const fingerprint = repeatabilityFingerprint(new Map([["structured", results]]));
+    const fingerprint = repeatabilityFingerprint(new Map([["keyword", results]]));
     expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
-    expect(fingerprint).toBe(repeatabilityFingerprint(new Map([["structured", results]])));
+    expect(fingerprint).toBe(repeatabilityFingerprint(new Map([["keyword", results]])));
   });
 });

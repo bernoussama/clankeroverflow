@@ -46,7 +46,6 @@ Good enrichment fields are safe identifiers, counts, modes, and workflow states:
 - `query_length`
 - `result_count`
 - `failure_step`
-- `vector_index_enqueued`
 
 Do not emit a second request-path log line when a request wide event exists. Add fields to `ctx.requestLog` instead.
 

@@ -158,15 +158,9 @@ export type BenchmarkDataset = {
   cases: RetrievalCase[];
 };
 
-export type RetrievalMethod = "keyword" | "embedding" | "hybrid" | "reranker" | "structured";
+export type RetrievalMethod = "keyword";
 
-export const RETRIEVAL_METHODS: RetrievalMethod[] = [
-  "keyword",
-  "embedding",
-  "hybrid",
-  "reranker",
-  "structured",
-];
+export const RETRIEVAL_METHODS: RetrievalMethod[] = ["keyword"];
 
 export type ConstraintCheck = {
   name: string;
@@ -177,9 +171,6 @@ export type ConstraintCheck = {
 export type ExplanationTrace = {
   solutionId: string;
   lexicalRank: number | null;
-  semanticRank: number | null;
-  fusionScore: number | null;
-  rerankerScore: number | null;
   matchedFingerprints: string[];
   constraintChecks: ConstraintCheck[];
   status: MemoryStatus;
@@ -243,13 +234,7 @@ export type MethodRun = {
   split: Split;
   candidatePoolSize: number;
   latency: LatencySummary;
-  model: {
-    embedding: string;
-    reranker: string;
-    rerankerRevision: string;
-    cacheDir: string;
-    offline: boolean;
-  };
+  implementation: "LocalBackend SQLite FTS5 tiered keyword search";
   calibration: ThresholdCalibration;
   metrics: RetrievalMetrics;
   categoryMetrics: Record<CaseCategory, RetrievalMetrics>;

@@ -17,7 +17,6 @@ import {
   writePersistedConfig,
   type ClankerMode,
 } from "./mcp/config";
-import { defaultLocalModelPath } from "./mcp/local-semantic";
 import { installHooks, type HookInstallOptions } from "./hooks/install";
 
 const execFileAsync = promisify(execFile);
@@ -49,8 +48,6 @@ export type SetupOptions = {
   local?: boolean;
   mode?: ClankerMode;
   localDb?: string;
-  localModelPath?: string;
-  localSemantic?: boolean;
   packageRoot?: string;
   serverUrl?: string;
   skill?: SkillSelection;
@@ -78,8 +75,6 @@ type Context = {
   dryRun: boolean;
   local: boolean;
   localDb?: string;
-  localModelPath?: string;
-  localSemantic: boolean;
   runCommand: NonNullable<SetupDependencies["runCommand"]>;
 };
 
@@ -605,7 +600,7 @@ async function resolveSetupMode(options: SetupOptions, deps: SetupDependencies) 
     throw new Error("--local cannot be combined with --mode remote.");
   }
   if (options.mode) return options.mode;
-  if (options.local || options.localSemantic) return "local" as const;
+  if (options.local) return "local" as const;
   if (options.uninstall) return "remote" as const;
 
   const isInteractive = deps.stdinIsTTY ?? Boolean(process.stdin.isTTY);
@@ -631,10 +626,6 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
   const configEnv = {
     ...env,
     ...(options.localDb ? { CLANKER_LOCAL_DB: options.localDb } : {}),
-    ...(options.localModelPath ? { CLANKER_LOCAL_MODEL_PATH: options.localModelPath } : {}),
-    ...(options.localSemantic !== undefined
-      ? { CLANKER_LOCAL_SEMANTIC: options.localSemantic ? "1" : "0" }
-      : {}),
     ...(options.serverUrl ? { CLANKER_SERVER_URL: options.serverUrl } : {}),
   } as NodeJS.ProcessEnv;
   const resolvedConfig = options.uninstall ? undefined : resolveConfig(configEnv, { home });
@@ -653,11 +644,6 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
     dryRun: Boolean(options.dryRun),
     local: mode === "local",
     localDb: options.localDb ?? resolvedConfig?.localDbPath,
-    localModelPath:
-      options.localModelPath ??
-      resolvedConfig?.localSemantic.modelPath ??
-      (options.localSemantic ? defaultLocalModelPath(env as NodeJS.ProcessEnv) : undefined),
-    localSemantic: options.localSemantic ?? resolvedConfig?.localSemantic.enabled ?? true,
     runCommand: deps.runCommand ?? defaultRunCommand,
   };
   const results: SetupResult[] = [];
@@ -668,8 +654,6 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
   if (!uninstall && resolvedConfig) {
     const persisted = toPersistedConfig(resolvedConfig, mode);
     persisted.local.databasePath = ctx.localDb ?? persisted.local.databasePath;
-    persisted.local.semantic = ctx.localSemantic;
-    persisted.local.modelPath = ctx.localModelPath ?? persisted.local.modelPath;
     persisted.remote.serverUrl = serverUrl;
     const configPath = ctx.dryRun
       ? resolvedConfig.configPath

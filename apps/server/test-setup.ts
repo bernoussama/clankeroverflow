@@ -73,8 +73,6 @@ export const mockWorkerEnv = {
   BETTER_AUTH_URL: "http://localhost:3000",
   GITHUB_CLIENT_ID: "test-github-client-id",
   GITHUB_CLIENT_SECRET: "test-github-client-secret",
-  AI: undefined as unknown,
-  SOLUTION_VECTORS: undefined as unknown,
   POSTHOG_API_KEY: "test-posthog-key",
   POSTHOG_HOST: "https://eu.i.posthog.com",
   SENTRY_DSN:

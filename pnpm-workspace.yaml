@@ -10,7 +10,6 @@ allowBuilds:
   esbuild: true
   sharp: true
   msw: false
-  node-llama-cpp: true
   onnxruntime-node: false
   protobufjs: false
 

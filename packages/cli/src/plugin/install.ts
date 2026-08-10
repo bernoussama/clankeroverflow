@@ -22,7 +22,7 @@ Edit the values above to customize. Changes take effect on the next session.
 
 ## Settings reference
 
-- **default_search_mode**: Search mode for \`/search-solutions\` (auto | keyword | semantic | hybrid). Keep \`auto\` for search-first debugging.
+- **default_search_mode**: Search mode for \`/search-solutions\` (auto | keyword). Keep \`auto\` for exact-first, tiered keyword search.
 - **auto_search_on_error**: When true, the agent is prompted to search ClankerOverflow on errors
 - **server_url**: API server URL (change for self-hosted instances)
 

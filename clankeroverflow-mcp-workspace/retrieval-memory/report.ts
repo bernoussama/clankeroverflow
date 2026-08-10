@@ -111,15 +111,15 @@ export function formatReport(run: BenchmarkRun) {
     run.methods
       .map(
         (method) =>
-          `- **${method.split}/${method.method}**: cold start ${method.latency.coldStartMs.toFixed(2)} ms; warm median ${method.latency.warmMedianMs.toFixed(2)} ms; warm p95 ${method.latency.warmP95Ms.toFixed(2)} ms; embedding model \`${method.model.embedding}\`; reranker \`${method.model.reranker}@${method.model.rerankerRevision}\`; cache \`${method.model.cacheDir}\`; offline=${method.model.offline}.`,
+          `- **${method.split}/${method.method}**: cold start ${method.latency.coldStartMs.toFixed(2)} ms; warm median ${method.latency.warmMedianMs.toFixed(2)} ms; warm p95 ${method.latency.warmP95Ms.toFixed(2)} ms; implementation: ${method.implementation}.`,
       )
       .join("\n"),
     "",
     "## Interpretation guardrails",
     "",
-    "- Structured filters hard-reject low-confidence or inactive/reverted memories, repository mismatches, non-overlapping dependency/runtime/platform constraints, and contradictory root-cause keys. Missing metadata stays eligible but is marked unknown in traces; matching fingerprints receive a deterministic boost.",
-    "- The reranker comparison is a pinned Transformers.js path when requested; routine runs use the committed cached fixture adapter so tests and offline reports do not silently download a model.",
-    "- The benchmark keeps provenance for stale and rejected memories and reports their rejection reasons; it does not delete them or change production storage/retrieval.",
+    "- The keyword baseline does not enforce the fixture constraints. The reported constraint-violation, stale-fix, wrong-version, wrong-root-cause, unsafe-return, and abstention metrics quantify that risk.",
+    "- This v2 suite intentionally covers keyword retrieval only and keeps those safety labels as regression evidence.",
+    "- The benchmark keeps provenance for stale and rejected memories; it does not delete them or change production storage/retrieval.",
     "",
     "## Warnings",
     "",

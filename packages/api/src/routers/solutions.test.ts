@@ -198,7 +198,7 @@ describe("solutionsRouter", () => {
     });
   });
 
-  test("search semantic without authentication returns UNAUTHORIZED", async () => {
+  test("removed semantic and hybrid modes return a v2 migration error", async () => {
     const caller = createCaller({
       auth: null as any,
       db,
@@ -206,140 +206,12 @@ describe("solutionsRouter", () => {
       apiKey: null,
     } as any);
 
-    await expect(caller.solutions.search({ query: "x", mode: "semantic" })).rejects.toMatchObject({
-      code: "UNAUTHORIZED",
-    });
-  });
-
-  test("search semantic without AI binding returns PRECONDITION_FAILED when authenticated", async () => {
-    const caller = createCaller({
-      auth: null as any,
-      db,
-      session: mockSession,
-      apiKey: null,
-      ai: null,
-      solutionVectors: null,
-    } as any);
-
-    await expect(caller.solutions.search({ query: "x", mode: "semantic" })).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-    });
-  });
-
-  test("search semantic should return results in vector match order when AI bindings are present", async () => {
-    (db.select as any).mockReturnValueOnce(
-      createSelectChain([
-        { id: "sol_b", problem: "Problem B", solution: "Solution B", score: 0 },
-        { id: "sol_a", problem: "Problem A", solution: "Solution A", score: 0 },
-      ]),
-    );
-
-    const ai = {
-      run: vi.fn(async () => ({ data: [[0.1]] })),
-    };
-    const solutionVectors = {
-      query: vi.fn(async () => ({
-        matches: [
-          { id: "sol_a", score: 0.9 },
-          { id: "sol_b", score: 0.6 },
-        ],
-      })),
-    };
-
-    const caller = createCaller({
-      auth: null as any,
-      db,
-      session: mockSession,
-      apiKey: null,
-      ai,
-      solutionVectors,
-    } as any);
-
-    const result = await caller.solutions.search({
-      query: "Test",
-      mode: "semantic",
-      limit: 2,
-    });
-
-    expect(result.map((row) => row.id)).toEqual(["sol_a", "sol_b"]);
-    expect(ai.run).toHaveBeenCalledTimes(1);
-    expect(solutionVectors.query).toHaveBeenCalledTimes(1);
-  });
-
-  test("search hybrid should prioritize semantic matches before remaining keyword matches", async () => {
-    (db.select as any).mockReturnValueOnce(
-      createSelectChain([
-        { id: "sol_a", problem: "Problem A", solution: "Solution A", score: 0 },
-        { id: "sol_b", problem: "Problem B", solution: "Solution B", score: 0 },
-      ]),
-    );
-    (db.execute as any).mockResolvedValueOnce({
-      rows: [
-        { id: "sol_c", problem: "Problem C", solution: "Solution C", score: 0 },
-        { id: "sol_a", problem: "Problem A", solution: "Solution A", score: 0 },
-      ],
-    });
-
-    const ai = {
-      run: vi.fn(async () => ({ data: [[0.1]] })),
-    };
-    const solutionVectors = {
-      query: vi.fn(async () => ({
-        matches: [
-          { id: "sol_b", score: 0.95 },
-          { id: "sol_a", score: 0.8 },
-        ],
-      })),
-    };
-
-    const caller = createCaller({
-      auth: null as any,
-      db,
-      session: mockSession,
-      apiKey: null,
-      ai,
-      solutionVectors,
-    } as any);
-
-    const result = await caller.solutions.search({
-      query: "Test",
-      mode: "hybrid",
-      limit: 3,
-    });
-
-    expect(result.map((row) => row.id)).toEqual(["sol_b", "sol_a", "sol_c"]);
-    expect(db.execute as any).toHaveBeenCalledTimes(1);
-  });
-
-  test("search should rate limit authenticated semantic requests", async () => {
-    (db.select as any).mockReturnValue(createSelectChain([]));
-
-    const ai = {
-      run: vi.fn(async () => ({ data: [[0.1]] })),
-    };
-    const solutionVectors = {
-      query: vi.fn(async () => ({ matches: [] })),
-    };
-
-    const caller = createCaller({
-      auth: null as any,
-      db,
-      session: mockSession,
-      apiKey: null,
-      ai,
-      solutionVectors,
-      requestIdentity: "ip:203.0.113.11",
-    } as any);
-
-    for (let i = 0; i < 60; i++) {
-      await caller.solutions.search({ query: `Test ${i}`, mode: "semantic" });
+    for (const mode of ["semantic", "hybrid"] as const) {
+      await expect(caller.solutions.search({ query: "x", mode } as any)).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: expect.stringContaining("removed in v2"),
+      });
     }
-
-    await expect(
-      caller.solutions.search({ query: "Test overflow", mode: "semantic" }),
-    ).rejects.toMatchObject({
-      code: "TOO_MANY_REQUESTS",
-    });
   });
 
   test("getById should return solution with vote counts", async () => {
@@ -751,16 +623,12 @@ describe("solutionsRouter", () => {
     expect(db.insert as any).not.toHaveBeenCalled();
   });
 
-  test("log should rate limit anonymous submissions before vector indexing", async () => {
-    const waitUntil = vi.fn();
+  test("log should rate limit anonymous submissions without background indexing", async () => {
     const caller = createCaller({
       auth: null as any,
       db,
       session: null,
       apiKey: null,
-      ai: { run: vi.fn(async () => ({ data: [Array(768).fill(0.1)] })) },
-      solutionVectors: { upsert: vi.fn(async () => undefined) },
-      waitUntil,
       requestIdentity: "ip:203.0.113.12",
     } as any);
 
@@ -779,7 +647,6 @@ describe("solutionsRouter", () => {
     ).rejects.toMatchObject({
       code: "TOO_MANY_REQUESTS",
     });
-    expect(waitUntil).toHaveBeenCalledTimes(10);
   });
 
   test("list should return items and no nextCursor when fewer than limit", async () => {

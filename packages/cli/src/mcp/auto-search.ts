@@ -1,13 +1,7 @@
-import type {
-  ConcreteSearchMode,
-  KeywordSearchStrategy,
-  SearchMode,
-  SolutionBackend,
-  SolutionResult,
-} from "./backend";
+import type { KeywordSearchStrategy, SearchMode, SolutionBackend, SolutionResult } from "./backend";
 
 export type SearchAttempt = {
-  mode: ConcreteSearchMode;
+  mode: "keyword";
   keywordStrategy?: KeywordSearchStrategy;
   resultCount?: number;
   error?: string;
@@ -18,25 +12,19 @@ export type AutoSearchResult = {
   attempts: SearchAttempt[];
 };
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
-
 export async function searchWithAutoFallback(
   backend: Pick<SolutionBackend, "search" | "searchExactKeyword">,
   input: {
     query: string;
     limit: number;
     mode: SearchMode;
-    allowHybridFallback?: boolean;
-    fallbackUnavailableReason?: string;
   },
 ): Promise<AutoSearchResult> {
   if (input.mode !== "auto") {
     const results = await backend.search({
       query: input.query,
       limit: input.limit,
-      mode: input.mode,
+      keywordStrategy: "tiered",
     });
     return {
       results,
@@ -49,7 +37,6 @@ export async function searchWithAutoFallback(
     : await backend.search({
         query: input.query,
         limit: input.limit,
-        mode: "keyword",
         keywordStrategy: "exact",
       });
   const attempts: SearchAttempt[] = [
@@ -59,46 +46,15 @@ export async function searchWithAutoFallback(
     return { results: keywordResults, attempts };
   }
 
-  if (input.allowHybridFallback === false) {
-    attempts.push({
-      mode: "hybrid",
-      error: input.fallbackUnavailableReason ?? "hybrid fallback unavailable",
-    });
-    const relaxedResults = await backend.search({
-      query: input.query,
-      limit: input.limit,
-      mode: "keyword",
-      keywordStrategy: "tiered",
-    });
-    attempts.push({
-      mode: "keyword",
-      keywordStrategy: "tiered",
-      resultCount: relaxedResults.length,
-    });
-    return { results: relaxedResults, attempts };
-  }
-
-  try {
-    const hybridResults = await backend.search({
-      query: input.query,
-      limit: input.limit,
-      mode: "hybrid",
-    });
-    attempts.push({ mode: "hybrid", resultCount: hybridResults.length });
-    return { results: hybridResults, attempts };
-  } catch (error) {
-    attempts.push({ mode: "hybrid", error: errorMessage(error) });
-    const relaxedResults = await backend.search({
-      query: input.query,
-      limit: input.limit,
-      mode: "keyword",
-      keywordStrategy: "tiered",
-    });
-    attempts.push({
-      mode: "keyword",
-      keywordStrategy: "tiered",
-      resultCount: relaxedResults.length,
-    });
-    return { results: relaxedResults, attempts };
-  }
+  const relaxedResults = await backend.search({
+    query: input.query,
+    limit: input.limit,
+    keywordStrategy: "tiered",
+  });
+  attempts.push({
+    mode: "keyword",
+    keywordStrategy: "tiered",
+    resultCount: relaxedResults.length,
+  });
+  return { results: relaxedResults, attempts };
 }

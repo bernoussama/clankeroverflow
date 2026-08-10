@@ -1,5 +1,5 @@
 {
-  "extends": "../config/tsconfig.base.json",
+  "extends": "../../packages/config/tsconfig.base.json",
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -7,5 +7,5 @@
     "strict": true,
     "noEmit": true
   },
-  "include": ["./benchmarks/**/*.ts"]
+  "include": ["./*.ts"]
 }
