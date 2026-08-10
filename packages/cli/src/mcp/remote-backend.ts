@@ -25,7 +25,8 @@ export class RemoteBackend implements SolutionBackend {
   async search(input: SearchSolutionsInput): Promise<SolutionResult[]> {
     return this.trpc.solutions.search.query({
       ...input,
-      ...(input.mode === "keyword" ? { keywordStrategy: input.keywordStrategy ?? "tiered" } : {}),
+      mode: "keyword",
+      keywordStrategy: input.keywordStrategy ?? "tiered",
     });
   }
 

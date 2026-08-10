@@ -60,12 +60,12 @@ describe("WebMCP tool definitions", () => {
       });
     });
 
-    it("auto mode falls back to hybrid after empty keyword results", async () => {
+    it("auto mode runs tiered keyword retrieval after empty exact results", async () => {
       const mocked = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
       mocked
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: "2", problem: "hybrid", solution: "fix", score: 1 }]);
+        .mockResolvedValueOnce([{ id: "2", problem: "tiered", solution: "fix", score: 1 }]);
 
       const result = await tool?.execute({ query: "conceptual miss" });
 
@@ -78,13 +78,14 @@ describe("WebMCP tool definitions", () => {
       expect(mocked).toHaveBeenNthCalledWith(2, {
         query: "conceptual miss",
         limit: 10,
-        mode: "hybrid",
+        mode: "keyword",
+        keywordStrategy: "tiered",
       });
       expect(result).toEqual({
-        results: [{ id: "2", problem: "hybrid", solution: "fix", score: 1 }],
+        results: [{ id: "2", problem: "tiered", solution: "fix", score: 1 }],
         attempts: [
           { mode: "keyword", keywordStrategy: "exact", resultCount: 0 },
-          { mode: "hybrid", resultCount: 1 },
+          { mode: "keyword", keywordStrategy: "tiered", resultCount: 1 },
         ],
       });
     });

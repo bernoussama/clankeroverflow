@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useInfiniteQuery, useQuery, type InfiniteData } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import { authClient } from "@/lib/auth-client";
 import { capturePostHogEvent } from "@/lib/posthog-events";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -29,7 +28,6 @@ import {
 import { trpcClient } from "@/utils/trpc";
 
 type SortOption = "recent" | "top";
-type SearchMode = "keyword" | "semantic" | "hybrid";
 
 const SORT_LABELS: Record<SortOption, string> = {
   recent: "Most Recent",
@@ -43,29 +41,19 @@ export default function SolutionsPage() {
   const initialQuery = searchParams.get("query")?.trim() ?? "";
   const [query, setQuery] = useState(initialQuery);
   const [activeQuery, setActiveQuery] = useState(initialQuery);
-  const [searchMode, setSearchMode] = useState<SearchMode>("keyword");
   const [sort, setSort] = useState<SortOption>("recent");
-  const { data: session } = authClient.useSession();
-  const isAuthenticated = Boolean(session);
-
-  // Auto-fallback to keyword when user selects semantic/hybrid without being logged in
-  useEffect(() => {
-    if (!isAuthenticated && searchMode !== "keyword") {
-      setSearchMode("keyword");
-    }
-  }, [isAuthenticated, searchMode]);
 
   const isSearching = activeQuery.length > 0;
 
   const searchResults = useQuery<SearchResult[]>({
-    queryKey: ["solutions", "search", activeQuery, searchMode],
+    queryKey: ["solutions", "search", activeQuery],
     queryFn: async () =>
       searchResultsSchema.parse(
         await trpcClient.solutions.search.query({
           query: activeQuery,
           limit: PAGE_SIZE,
-          mode: searchMode,
-          ...(searchMode === "keyword" ? { keywordStrategy: "tiered" as const } : {}),
+          mode: "keyword",
+          keywordStrategy: "tiered",
         }),
       ),
     enabled: isSearching,
@@ -103,7 +91,7 @@ export default function SolutionsPage() {
     capturePostHogEvent("solution_search_submitted", {
       has_query: trimmedQuery.length > 0,
       query_length: trimmedQuery.length,
-      search_mode: searchMode,
+      search_mode: "keyword",
       source: "solutions_page",
     });
 
@@ -149,35 +137,6 @@ export default function SolutionsPage() {
             <button type="submit" className="btn-primary h-11 rounded-none px-5 text-sm">
               Search
             </button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-mono text-muted-landing uppercase tracking-wide">
-              Match
-            </span>
-            {(
-              [
-                ["keyword", "Keyword", true],
-                ["semantic", "Semantic", isAuthenticated],
-                ["hybrid", "Hybrid", isAuthenticated],
-              ] as const
-            ).map(([value, label, enabled]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => enabled && setSearchMode(value)}
-                disabled={!enabled}
-                title={!enabled ? "Sign in to use semantic search" : undefined}
-                className={`px-2.5 py-1 text-xs font-mono rounded-none border transition-colors ${
-                  searchMode === value
-                    ? "text-accent-landing border-[var(--landing-accent)]"
-                    : !enabled
-                      ? "text-muted-landing/40 border-transparent cursor-not-allowed"
-                      : "text-muted-landing border-transparent hover:text-accent-landing"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
           </div>
         </form>
 

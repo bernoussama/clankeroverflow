@@ -277,22 +277,12 @@ function resultLooksMatching(
   return matched / problemTerms.length >= 0.6;
 }
 
-async function findDuplicate(
-  backend: Pick<SolutionBackend, "search">,
-  input: LearnInput,
-  config: ServerConfig,
-  source: "local" | "remote",
-) {
+async function findDuplicate(backend: Pick<SolutionBackend, "search">, input: LearnInput) {
   const query = duplicateQuery(input);
   const result = await searchWithAutoFallback(backend, {
     query,
     limit: 3,
     mode: "auto",
-    allowHybridFallback: source === "local" ? config.localSemantic.enabled : Boolean(config.apiKey),
-    fallbackUnavailableReason:
-      source === "local"
-        ? "local semantic search is not configured"
-        : "CLANKER_API_KEY is required for hosted hybrid fallback",
   });
   return result.results.find((candidate) => resultLooksMatching(candidate, input));
 }
@@ -311,7 +301,7 @@ export async function learnSolution(
     });
 
     if (options.dedupe !== false) {
-      const duplicate = await findDuplicate(backend, sanitized, config, source);
+      const duplicate = await findDuplicate(backend, sanitized);
       if (duplicate) {
         if (options.upvoteExisting !== false) {
           await backend.vote({ id: duplicate.id, isUpvote: true }).catch(() => undefined);

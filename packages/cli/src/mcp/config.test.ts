@@ -77,14 +77,46 @@ describe("MCP config", () => {
     expect(resolveConfig({ HOME: home }, { home }).mode).toBe("remote");
   });
 
-  test("keeps local semantic settings available for explicit local-source searches", () => {
-    expect(resolveConfig({ HOME: home }, { home }).localSemantic.enabled).toBe(true);
-    for (const value of ["0", "false", "off"]) {
-      expect(
-        resolveConfig({ HOME: home, CLANKER_LOCAL_SEMANTIC: value }, { home }).localSemantic
-          .enabled,
-      ).toBe(false);
-    }
+  test("migrates v1 config and deletes only the managed model", async () => {
+    const configPath = getConfigPath({ HOME: home }, { home });
+    const managedModel = join(
+      home,
+      ".cache",
+      "clankeroverflow",
+      "models",
+      "bge-small-en-v1.5-q8_0.gguf",
+    );
+    await mkdir(join(home, ".config", "clankeroverflow"), { recursive: true });
+    await mkdir(join(home, ".cache", "clankeroverflow", "models"), { recursive: true });
+    await writeFile(managedModel, "managed model");
+    await writeFile(
+      configPath,
+      JSON.stringify({
+        version: 1,
+        mode: "local",
+        local: {
+          databasePath: "~/solutions.sqlite",
+          semantic: true,
+          modelId: "bge-small-en-v1.5-q8_0",
+          modelPath: managedModel,
+          dimensions: 384,
+        },
+        remote: {
+          serverUrl: "https://api.clankeroverflow.com",
+          webUrl: "https://clankeroverflow.com",
+        },
+      }),
+    );
+
+    const config = resolveConfig({ HOME: home }, { home });
+    expect(config.mode).toBe("local");
+    expect(config.migrationWarnings.join("\n")).toContain("keyword-only v2");
+    expect(config.migrationWarnings.join("\n")).toContain("Deleted the managed v1 embedding model");
+    expect(JSON.parse(await readFile(configPath, "utf8"))).toMatchObject({
+      version: 2,
+      local: { databasePath: "~/solutions.sqlite" },
+    });
+    await expect(readFile(managedModel)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   test("fails closed on malformed or unsupported config", async () => {

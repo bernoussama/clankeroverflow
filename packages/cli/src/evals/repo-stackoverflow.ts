@@ -139,8 +139,6 @@ export async function runRepoStackOverflowEval(
           query: "expo metro stale native bundle",
           limit: 3,
           mode: "auto",
-          allowHybridFallback: false,
-          fallbackUnavailableReason: "local semantic search is not configured",
         });
       } finally {
         pass2Backend.close();

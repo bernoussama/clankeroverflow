@@ -10,7 +10,9 @@ import type {
 export type HostedTrpcClient = {
   solutions: {
     log: { mutate(input: LogSolutionInput): Promise<{ id: string }> };
-    search: { query(input: SearchSolutionsInput): Promise<SolutionResult[]> };
+    search: {
+      query(input: SearchSolutionsInput & { mode: "keyword" }): Promise<SolutionResult[]>;
+    };
     vote: { mutate(input: VoteSolutionInput): Promise<unknown> };
   };
 };

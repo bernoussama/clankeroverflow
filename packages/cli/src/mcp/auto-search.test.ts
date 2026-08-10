@@ -12,18 +12,16 @@ const result = (id: string): SolutionResult => ({
 });
 
 describe("searchWithAutoFallback", () => {
-  test("returns an exact keyword hit without invoking hybrid", async () => {
+  test("returns an exact keyword hit without a second attempt", async () => {
     const backend = {
       search: vi.fn(),
       searchExactKeyword: vi.fn(async () => [result("exact")]),
     } satisfies Pick<SolutionBackend, "search" | "searchExactKeyword">;
-
     const output = await searchWithAutoFallback(backend, {
       query: "EADDRINUSE",
       limit: 1,
       mode: "auto",
     });
-
     expect(output.results[0]?.id).toBe("exact");
     expect(backend.search).not.toHaveBeenCalled();
     expect(output.attempts).toEqual([
@@ -31,66 +29,36 @@ describe("searchWithAutoFallback", () => {
     ]);
   });
 
-  test("runs hybrid after an empty exact probe", async () => {
+  test("runs tiered keyword retrieval after an empty exact probe", async () => {
     const backend = {
       searchExactKeyword: vi.fn(async () => []),
-      search: vi.fn(async (input) => (input.mode === "hybrid" ? [result("hybrid")] : [])),
+      search: vi.fn(async () => [result("tiered")]),
     } satisfies Pick<SolutionBackend, "search" | "searchExactKeyword">;
-
     const output = await searchWithAutoFallback(backend, {
-      query: "address already occupied",
+      query: "address occupied",
       limit: 1,
       mode: "auto",
     });
-    expect(output.results[0]?.id).toBe("hybrid");
+    expect(output.results[0]?.id).toBe("tiered");
     expect(backend.search).toHaveBeenCalledWith({
-      query: "address already occupied",
+      query: "address occupied",
       limit: 1,
-      mode: "hybrid",
-    });
-  });
-
-  test("returns tiered keyword results when hybrid is unavailable", async () => {
-    const backend = {
-      searchExactKeyword: vi.fn(async () => []),
-      search: vi.fn(async (input) =>
-        input.keywordStrategy === "tiered" ? [result("relaxed")] : [],
-      ),
-    } satisfies Pick<SolutionBackend, "search" | "searchExactKeyword">;
-
-    const output = await searchWithAutoFallback(backend, {
-      query: "natural language symptoms",
-      limit: 1,
-      mode: "auto",
-      allowHybridFallback: false,
-      fallbackUnavailableReason: "not configured",
-    });
-    expect(output.results[0]?.id).toBe("relaxed");
-    expect(output.attempts.at(-1)).toEqual({
-      mode: "keyword",
       keywordStrategy: "tiered",
-      resultCount: 1,
     });
+    expect(output.attempts).toEqual([
+      { mode: "keyword", keywordStrategy: "exact", resultCount: 0 },
+      { mode: "keyword", keywordStrategy: "tiered", resultCount: 1 },
+    ]);
   });
 
-  test("returns tiered keyword results after hybrid throws", async () => {
-    const backend = {
-      searchExactKeyword: vi.fn(async () => []),
-      search: vi.fn(async (input) => {
-        if (input.mode === "hybrid") throw new Error("embedding unavailable");
-        return [result("relaxed")];
-      }),
-    } satisfies Pick<SolutionBackend, "search" | "searchExactKeyword">;
-
+  test("explicit keyword mode runs tiered retrieval directly", async () => {
+    const backend = { search: vi.fn(async () => [result("tiered")]) };
     const output = await searchWithAutoFallback(backend, {
-      query: "natural language symptoms",
+      query: "natural language",
       limit: 1,
-      mode: "auto",
+      mode: "keyword",
     });
-    expect(output.results[0]?.id).toBe("relaxed");
-    expect(output.attempts).toContainEqual({
-      mode: "hybrid",
-      error: "embedding unavailable",
-    });
+    expect(output.results[0]?.id).toBe("tiered");
+    expect(output.attempts).toEqual([{ mode: "keyword", resultCount: 1 }]);
   });
 });

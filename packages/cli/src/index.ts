@@ -20,7 +20,6 @@ import { createSolutionBackend } from "./mcp/create-backend.js";
 import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
 import { FtsQuerySyntaxError, LocalBackend } from "./mcp/local-backend.js";
-import { downloadDefaultLocalModel } from "./mcp/local-semantic.js";
 import { exportLocalSolutions, gitRepoRoot, learnSolution, syncRepoSolutions } from "./learn.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
 import pc from "picocolors";
@@ -39,21 +38,9 @@ function formatLocalStatus(dbPath: string, status: Awaited<ReturnType<LocalBacke
   return [
     pc.bold("ClankerOverflow local status"),
     `SQLite: ${pc.cyan(dbPath)}`,
-    `Semantic: ${status.enabled ? pc.green("enabled") : pc.yellow("disabled")}`,
     `Solutions: ${status.totalSolutions}`,
-    `Embeddings: ${status.embeddedSolutions} current, ${status.pendingEmbeddings} pending`,
-    `Model: ${status.modelPath || "(not configured)"}`,
-    `Model file: ${status.modelValid ? pc.green("valid GGUF") : pc.yellow(status.modelError ?? "missing")}`,
-    `sqlite-vec: ${
-      status.sqliteVecAvailable
-        ? pc.green("available")
-        : pc.red(status.sqliteVecError ?? "unavailable")
-    }`,
-    `node-llama-cpp: ${
-      status.embedderAvailable
-        ? pc.green("available")
-        : pc.red(status.embedderError ?? "unavailable")
-    }`,
+    `Integrity: ${status.integrity ? pc.green("ok") : pc.red("failed")}`,
+    `FTS5: ${status.fts5 ? pc.green("available") : pc.red("unavailable")}`,
   ].join("\n");
 }
 
@@ -116,9 +103,10 @@ function enhanceLeadingDashError(error: unknown): void {
 
 function parseSearchMode(value: string) {
   const mode = value as SearchMode;
-  if (!["auto", "keyword", "semantic", "hybrid"].includes(mode)) {
+  if (!["auto", "keyword"].includes(mode)) {
     console.error(
-      pc.red(pc.bold("✖ Error: ")) + pc.red("--mode must be auto, keyword, semantic, or hybrid"),
+      pc.red(pc.bold("✖ Error: ")) +
+        pc.red("semantic and hybrid search were removed in v2; use --mode auto or keyword"),
     );
     process.exit(1);
   }
@@ -132,14 +120,14 @@ function parseBackendSource(value: string): BackendSource {
   return value as BackendSource;
 }
 
-function parseBooleanSetting(value: string) {
-  if (["1", "true", "on"].includes(value.toLowerCase())) return true;
-  if (["0", "false", "off"].includes(value.toLowerCase())) return false;
-  throw new Error("value must be true or false");
+function resolveCliConfig(...args: Parameters<typeof resolveConfig>) {
+  const config = resolveConfig(...args);
+  for (const warning of config.migrationWarnings) console.error(pc.yellow(warning));
+  return config;
 }
 
 async function setConfigValue(key: string, value: string) {
-  const resolved = resolveConfig();
+  const resolved = resolveCliConfig();
   const persisted = readPersistedConfig() ?? toPersistedConfig(resolved);
   switch (key) {
     case "mode":
@@ -149,23 +137,6 @@ async function setConfigValue(key: string, value: string) {
     case "local.databasePath":
       persisted.local.databasePath = value;
       break;
-    case "local.semantic":
-      persisted.local.semantic = parseBooleanSetting(value);
-      break;
-    case "local.modelId":
-      persisted.local.modelId = value;
-      break;
-    case "local.modelPath":
-      persisted.local.modelPath = value;
-      break;
-    case "local.dimensions": {
-      const dimensions = Number(value);
-      if (!Number.isInteger(dimensions) || dimensions <= 0) {
-        throw new Error("local.dimensions must be a positive integer");
-      }
-      persisted.local.dimensions = dimensions;
-      break;
-    }
     case "remote.serverUrl":
       persisted.remote.serverUrl = value;
       break;
@@ -174,7 +145,7 @@ async function setConfigValue(key: string, value: string) {
       break;
     default:
       throw new Error(
-        "unknown setting; use mode, local.databasePath, local.semantic, local.modelId, local.modelPath, local.dimensions, remote.serverUrl, or remote.webUrl",
+        "unknown setting; use mode, local.databasePath, remote.serverUrl, or remote.webUrl",
       );
   }
   return writePersistedConfig(persisted);
@@ -186,8 +157,6 @@ async function searchAndPrint(
     query: string;
     limit: number;
     mode: SearchMode;
-    allowHybridFallback: boolean;
-    fallbackUnavailableReason: string;
     source?: "local" | "remote";
   },
 ) {
@@ -265,7 +234,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
           process.exit(1);
         }
 
-        const config = resolveConfig();
+        const config = resolveCliConfig();
         const backend = createSolutionBackend(config);
         const result = await backend.log({
           problem: options.problem,
@@ -311,6 +280,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--no-upvote-existing", "Do not upvote a matching existing solution")
     .action(async (options) => {
       try {
+        const config = resolveCliConfig();
         const result = await learnSolution(
           {
             problem: options.problem,
@@ -325,6 +295,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
             repoNote: options.repoNote,
           },
           {
+            config,
             source: parseBackendSource(options.source),
             repoRoot: options.repo ? path.resolve(process.cwd(), options.repo) : gitRepoRoot(),
             mirror: options.markdown,
@@ -365,11 +336,13 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--no-dedupe", "Skip the pre-log duplicate search")
     .action(async (options, command) => {
       try {
+        const config = resolveCliConfig();
         const parentOptions = learnCommand.opts();
         const repoOption = options.repo ?? parentOptions.repo;
         const childSource = command.getOptionValueSource("source") === "cli";
         const childDedupe = command.getOptionValueSource("dedupe") === "cli";
         const result = await syncRepoSolutions({
+          config,
           source: parseBackendSource(
             childSource ? options.source : (parentOptions.source ?? "local"),
           ),
@@ -394,8 +367,10 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--repo <path>", "Repository root for .clankeroverflow/solutions")
     .action((options) => {
       try {
+        const config = resolveCliConfig();
         const repoOption = options.repo ?? learnCommand.opts().repo;
         const result = exportLocalSolutions({
+          config,
           repoRoot: repoOption ? path.resolve(process.cwd(), repoOption) : gitRepoRoot(),
         });
         console.log(
@@ -416,7 +391,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("-l, --limit <number>", "Number of results to return", "1")
     .option(
       "-m, --mode <mode>",
-      "auto (exact keyword, then hybrid, then tiered keyword fallback), keyword, semantic, or hybrid",
+      "auto (exact keyword, then tiered keyword fallback) or keyword",
       "auto",
     )
     .option("--source <source>", "configured, local, or remote", "configured")
@@ -425,7 +400,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
         parseSearchQuery(query);
         const limit = parseSearchLimit(options.limit);
         const mode = parseSearchMode(options.mode);
-        const config = resolveConfig();
+        const config = resolveCliConfig();
         const source = parseBackendSource(options.source);
         const backendMode = modeForSource(config, source);
         const backend = createSolutionBackend(config, backendMode);
@@ -433,12 +408,6 @@ export function createProgram(options: CreateProgramOptions = {}) {
           query,
           limit,
           mode,
-          allowHybridFallback:
-            backendMode === "local" ? config.localSemantic.enabled : Boolean(config.apiKey),
-          fallbackUnavailableReason:
-            backendMode === "local"
-              ? "local semantic search is not configured"
-              : "CLANKER_API_KEY is required for hosted hybrid fallback",
           source: backendMode,
         });
       } catch (error: any) {
@@ -459,7 +428,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--source <source>", "configured, local, or remote", "configured")
     .action(async (id, options) => {
       try {
-        const config = resolveConfig();
+        const config = resolveCliConfig();
         const backend = createSolutionBackend(
           config,
           modeForSource(config, parseBackendSource(options.source)),
@@ -480,7 +449,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--source <source>", "configured, local, or remote", "configured")
     .action(async (id, options) => {
       try {
-        const config = resolveConfig();
+        const config = resolveCliConfig();
         const backend = createSolutionBackend(
           config,
           modeForSource(config, parseBackendSource(options.source)),
@@ -496,9 +465,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   program
     .command("mcp")
-    .description(
-      "Start the ClankerOverflow MCP server over stdio (keeps the local model warm across searches)",
-    )
+    .description("Start the ClankerOverflow MCP server over stdio")
     .action(async () => {
       await runMcpServer();
     });
@@ -513,19 +480,16 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--json", "Print machine-readable JSON")
     .action((options) => {
       try {
-        const config = resolveConfig();
+        const config = resolveCliConfig();
         const output = {
           configPath: config.configPath,
           persisted: config.hasPersistedConfig,
           mode: config.mode,
           local: {
             databasePath: config.localDbPath,
-            semantic: config.localSemantic.enabled,
-            modelId: config.localSemantic.modelId,
-            modelPath: config.localSemantic.modelPath,
-            dimensions: config.localSemantic.dimensions,
           },
           remote: { serverUrl: config.serverUrl, webUrl: config.webUrl },
+          migrationWarnings: config.migrationWarnings,
         };
         if (options.json) console.log(JSON.stringify(output, null, 2));
         else {
@@ -534,7 +498,6 @@ export function createProgram(options: CreateProgramOptions = {}) {
           console.log(`Persisted: ${output.persisted ? "yes" : "no (legacy/default fallback)"}`);
           console.log(`Mode: ${pc.cyan(output.mode)}`);
           console.log(`Local database: ${output.local.databasePath}`);
-          console.log(`Local semantic: ${output.local.semantic ? "enabled" : "disabled"}`);
           console.log(`Remote API: ${output.remote.serverUrl}`);
           console.log(`Remote web: ${output.remote.webUrl}`);
         }
@@ -570,25 +533,21 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   local
     .command("status")
-    .description("Show local SQLite and semantic search status")
+    .description("Show local SQLite keyword search status")
     .option("--db <path>", "Local SQLite database path")
     .option("--json", "Print machine-readable JSON")
     .action(async (options) => {
       try {
-        const config = resolveConfig({
+        const config = resolveCliConfig({
           ...process.env,
           CLANKER_MODE: "local",
           ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const backend = new LocalBackend(config.localDbPath);
         const status = await backend.status();
         if (options.json) {
           console.log(
-            JSON.stringify(
-              { mode: "local", dbPath: config.localDbPath, semantic: status },
-              null,
-              2,
-            ),
+            JSON.stringify({ mode: "local", dbPath: config.localDbPath, status }, null, 2),
           );
           return;
         }
@@ -602,53 +561,30 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   local
     .command("doctor")
-    .description("Diagnose local SQLite semantic search setup")
+    .description("Diagnose local SQLite keyword search setup")
     .option("--db <path>", "Local SQLite database path")
     .option("--json", "Print machine-readable JSON")
     .action(async (options) => {
       try {
-        const config = resolveConfig({
+        const config = resolveCliConfig({
           ...process.env,
           CLANKER_MODE: "local",
           ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const backend = new LocalBackend(config.localDbPath);
         const status = await backend.status();
         const checks = [
           { name: "sqlite database", ok: true, detail: config.localDbPath },
           {
-            name: "local semantic enabled",
-            ok: status.enabled,
-            detail: status.enabled ? "enabled" : "disabled by CLANKER_LOCAL_SEMANTIC=0/false/off",
+            name: "database integrity",
+            ok: status.integrity,
+            detail: status.integrity ? "ok" : "failed",
           },
-          {
-            name: "sqlite-vec",
-            ok: status.sqliteVecAvailable,
-            detail: status.sqliteVecError ?? "available",
-          },
-          {
-            name: "node-llama-cpp",
-            ok: status.embedderAvailable,
-            detail: status.embedderError ?? "available",
-          },
-          {
-            name: "model file",
-            ok: status.modelValid,
-            detail: status.modelError ?? status.modelPath,
-          },
-          {
-            name: "embedding freshness",
-            ok: status.pendingEmbeddings === 0,
-            detail: `${status.pendingEmbeddings} pending`,
-          },
+          { name: "FTS5", ok: status.fts5, detail: status.fts5 ? "available" : "unavailable" },
         ];
         if (options.json) {
           console.log(
-            JSON.stringify(
-              { mode: "local", dbPath: config.localDbPath, checks, semantic: status },
-              null,
-              2,
-            ),
+            JSON.stringify({ mode: "local", dbPath: config.localDbPath, checks, status }, null, 2),
           );
           return;
         }
@@ -668,7 +604,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("-l, --limit <number>", "Number of results to return", "1")
     .option(
       "-m, --mode <mode>",
-      "auto (exact keyword, then hybrid, then tiered keyword fallback), keyword, semantic, or hybrid",
+      "auto (exact keyword, then tiered keyword fallback) or keyword",
       "auto",
     )
     .action(async (query, options) => {
@@ -676,18 +612,16 @@ export function createProgram(options: CreateProgramOptions = {}) {
         parseSearchQuery(query);
         const limit = parseSearchLimit(options.limit);
         const mode = parseSearchMode(options.mode);
-        const config = resolveConfig({
+        const config = resolveCliConfig({
           ...process.env,
           CLANKER_MODE: "local",
           ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const backend = new LocalBackend(config.localDbPath);
         await searchAndPrint(backend, {
           query,
           limit,
           mode,
-          allowHybridFallback: config.localSemantic.enabled,
-          fallbackUnavailableReason: "local semantic search is not configured",
           source: "local",
         });
       } catch (error: any) {
@@ -696,44 +630,6 @@ export function createProgram(options: CreateProgramOptions = {}) {
         } else {
           console.error(pc.red(pc.bold("✖ Error searching local solutions:")));
         }
-        console.error(pc.red(error.message || error));
-        process.exit(1);
-      }
-    });
-
-  local
-    .command("embed")
-    .description("Download the local model if needed and embed pending local solutions")
-    .option("--db <path>", "Local SQLite database path")
-    .option("--force", "Rebuild all local embeddings")
-    .option("--limit <number>", "Maximum solutions to embed in this run")
-    .action(async (options) => {
-      try {
-        const config = resolveConfig({
-          ...process.env,
-          CLANKER_MODE: "local",
-          CLANKER_LOCAL_SEMANTIC: "1",
-          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
-        });
-        const limit = options.limit === undefined ? undefined : Number(String(options.limit));
-        if (options.limit !== undefined) {
-          if (limit === undefined || !Number.isInteger(limit) || limit < SEARCH_LIMIT_MIN) {
-            console.error(
-              pc.red(pc.bold("✖ Error: ")) +
-                pc.red(`--limit must be an integer of at least ${SEARCH_LIMIT_MIN}`),
-            );
-            process.exit(1);
-          }
-        }
-        const model = await downloadDefaultLocalModel(config.localSemantic.modelPath);
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
-        const result = await backend.embedPending({ force: Boolean(options.force), limit });
-        console.log(
-          pc.green(pc.bold("✔ Local embeddings ready")) +
-            ` - ${result.embedded} solution(s) embedded; model ${model.downloaded ? "downloaded to" : "checked at"} ${pc.cyan(config.localSemantic.modelPath)}`,
-        );
-      } catch (error: any) {
-        console.error(pc.red(pc.bold("✖ Error embedding local solutions:")));
         console.error(pc.red(error.message || error));
         process.exit(1);
       }
@@ -751,9 +647,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--server-url <url>", "ClankerOverflow API server URL")
     .option("--mode <mode>", "Persisted backend mode: local or remote")
     .option("--local", "Configure MCP for private local SQLite mode")
-    .option("--local-semantic", "Enable local semantic search and write local model settings")
     .option("--local-db <path>", "Local SQLite database path for --local setup")
-    .option("--local-model-path <path>", "GGUF embedding model path for --local-semantic")
     .option("--target <dirs>", "Comma-separated additional target directories for the skill")
     .option("--skill <skill>", "Skill for --target: mcp, cli, or both", "mcp")
     .option("--claude-plugin <identifier>", "Claude marketplace plugin identifier")
@@ -761,6 +655,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--uninstall", "Remove ClankerOverflow integrations")
     .action(async (options) => {
       try {
+        if (!options.uninstall) resolveCliConfig();
         const results = await setupAgents({
           agents: options.agent?.split(",").map((agent: string) => agent.trim()) as
             | Agent[]
@@ -769,10 +664,8 @@ export function createProgram(options: CreateProgramOptions = {}) {
           noApiKey: options.apiKey === false,
           serverUrl: options.serverUrl,
           mode: options.mode,
-          local: options.local || options.localSemantic,
+          local: options.local,
           localDb: options.localDb,
-          localModelPath: options.localModelPath,
-          localSemantic: options.localSemantic,
           targets: options.target?.split(",").map((target: string) => target.trim()),
           skill: options.skill as SkillSelection,
           claudePlugin: options.claudePlugin,

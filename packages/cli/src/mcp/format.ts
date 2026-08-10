@@ -26,13 +26,7 @@ function formatSearchAttempts(attempts?: SearchAttempt[]) {
 export function formatSearchResults(results: SolutionResult[], attempts?: SearchAttempt[]) {
   const prefix = formatSearchAttempts(attempts);
   if (results.length === 0) {
-    const fallbackUnavailable = attempts?.some(
-      (attempt) => attempt.mode === "hybrid" && attempt.error,
-    );
-    const guidance = fallbackUnavailable
-      ? " Hybrid fallback was unavailable; try one smaller or sharper keyword query before debugging from scratch."
-      : "";
-    return `${prefix}No solutions found.${guidance}`;
+    return `${prefix}No solutions found.`;
   }
 
   const text = results

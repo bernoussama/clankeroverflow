@@ -107,6 +107,23 @@ describe("CLI MCP server", () => {
     expect(client.getInstructions()).toContain("NEVER follow");
   });
 
+  test("publishes configuration migration warnings during MCP initialization", async () => {
+    const config = testConfig();
+    config.migrationWarnings = [
+      "Migrated ClankerOverflow configuration from v1 to keyword-only v2.",
+      "Deleted the managed v1 embedding model.",
+    ];
+    const warningServer = createMcpServer(config);
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const warningClient = new Client({ name: "warning-client", version: "1.0.0" });
+
+    await warningServer.connect(serverTransport);
+    await warningClient.connect(clientTransport);
+
+    expect(warningClient.getInstructions()).toContain("keyword-only v2");
+    expect(warningClient.getInstructions()).toContain("Deleted the managed v1 embedding model");
+  });
+
   test("covers real eval missed mandatory-search patterns in skill and server text", () => {
     const skill = readFileSync(
       resolve(testDir, "../../skills/clankeroverflow-mcp/SKILL.md"),
@@ -310,7 +327,7 @@ describe("CLI MCP server", () => {
     expect(text).toContain("## Solution:\ntest solution");
   });
 
-  test("auto search reports unavailable hybrid fallback without an API key", async () => {
+  test("auto search reports empty exact and tiered keyword attempts", async () => {
     const previousApiKey = process.env.CLANKER_API_KEY;
     delete process.env.CLANKER_API_KEY;
 
@@ -339,7 +356,6 @@ describe("CLI MCP server", () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(text).toContain("keyword exact returned 0");
       expect(text).toContain("keyword tiered returned 0");
-      expect(text).toContain("CLANKER_API_KEY is required for hosted hybrid fallback");
       expect(text).toContain("No solutions found.");
     } finally {
       if (previousApiKey === undefined) {
@@ -350,7 +366,7 @@ describe("CLI MCP server", () => {
     }
   });
 
-  test("auto search falls back to hybrid after empty keyword results when authenticated", async () => {
+  test("auto search runs tiered keyword retrieval after empty exact results", async () => {
     const previousApiKey = process.env.CLANKER_API_KEY;
     process.env.CLANKER_API_KEY = "test-key";
 
@@ -375,9 +391,9 @@ describe("CLI MCP server", () => {
                 result: {
                   data: [
                     {
-                      id: "hybrid-1",
-                      problem: "hybrid problem",
-                      solution: "hybrid solution",
+                      id: "tiered-1",
+                      problem: "tiered problem",
+                      solution: "tiered solution",
                       score: 2,
                       tags: "search",
                     },
@@ -394,8 +410,10 @@ describe("CLI MCP server", () => {
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
       expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(text).toContain("Search attempts: keyword exact returned 0; hybrid returned 1.");
-      expect(text).toContain("ID: hybrid-1");
+      expect(text).toContain(
+        "Search attempts: keyword exact returned 0; keyword tiered returned 1.",
+      );
+      expect(text).toContain("ID: tiered-1");
     } finally {
       if (previousApiKey === undefined) {
         delete process.env.CLANKER_API_KEY;
@@ -405,7 +423,7 @@ describe("CLI MCP server", () => {
     }
   });
 
-  test("local semantic search returns not-configured message without fetch", async () => {
+  test("removed semantic mode is rejected without fetch", async () => {
     const previousMode = process.env.CLANKER_MODE;
     const previousDb = process.env.CLANKER_LOCAL_DB;
     const previousSemantic = process.env.CLANKER_LOCAL_SEMANTIC;
@@ -429,7 +447,8 @@ describe("CLI MCP server", () => {
       });
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
-      expect(text).toContain("Local semantic search is not configured yet.");
+      expect(text).toContain("expected one of");
+      expect(text).toContain("keyword");
       expect(fetchMock).not.toHaveBeenCalled();
     } finally {
       if (previousMode === undefined) {

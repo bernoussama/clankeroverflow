@@ -8,7 +8,7 @@ export function createSolutionBackend(
   mode: ClankerMode = config.mode,
 ): SolutionBackend {
   if (mode === "local") {
-    return new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+    return new LocalBackend(config.localDbPath);
   }
 
   return new RemoteBackend({

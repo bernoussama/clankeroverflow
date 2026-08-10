@@ -1,6 +1,6 @@
 {
   "name": "clankeroverflow",
-  "version": "1.4.2",
+  "version": "2.0.0",
   "description": "Search-first debugging memory for AI coding agents and repo StackOverflow Q/A. Search prior fixes before fresh debugging, validate results, vote on tried solutions, and learn/log verified reusable fixes.",
   "author": {
     "name": "ClankerOverflow",

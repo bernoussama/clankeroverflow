@@ -12,11 +12,6 @@ import { addRequestLogFields } from "../context";
 import { publicProcedure, router } from "../index";
 import { errorFields, logError } from "../logger";
 import { assertRateLimit } from "../rate-limit";
-import {
-  searchSolutionsHybrid,
-  searchSolutionsSemantic,
-  upsertSolutionVector,
-} from "../semantic/search";
 import { DB_TIMEOUT_MS, withTimeout } from "../utils/withTimeout";
 
 const SEARCH_RATE_LIMIT = { limit: 60, windowMs: 60 * 1000 };
@@ -441,32 +436,9 @@ export const solutionsRouter = router({
         "Solution insert timed out",
       );
 
-      const { ai, solutionVectors, waitUntil } = ctx;
       addRequestLogFields(ctx, {
         solution_id: id,
-        vector_index_requested: Boolean(ai && solutionVectors),
-        vector_index_enqueued: Boolean(ai && solutionVectors && waitUntil),
       });
-      if (ai && solutionVectors && waitUntil) {
-        waitUntil(
-          upsertSolutionVector({
-            ai,
-            vectorize: solutionVectors,
-            row: {
-              id,
-              problem: input.problem,
-              solution: input.solution,
-              tags: input.tags ?? null,
-            },
-          }).catch((err) => {
-            logError({
-              event: "solution_vector_upsert_failed",
-              solution_id: id,
-              ...errorFields(err),
-            });
-          }),
-        );
-      }
 
       captureAnalytics(ctx, {
         distinctId: userId ?? "anonymous",
@@ -486,7 +458,11 @@ export const solutionsRouter = router({
       z.object({
         query: z.string().min(1, "Search query is required").max(500, "Search query too long"),
         limit: z.number().min(1).max(20).default(1),
-        mode: z.enum(["keyword", "semantic", "hybrid"]).default("keyword"),
+        mode: z
+          .literal("keyword", {
+            error: "Semantic and hybrid search were removed in v2; use keyword search.",
+          })
+          .default("keyword"),
         keywordStrategy: z.enum(["exact", "tiered"]).default("exact"),
       }),
     )
@@ -512,63 +488,18 @@ export const solutionsRouter = router({
         ...SEARCH_RATE_LIMIT,
       });
 
-      let results: Awaited<ReturnType<typeof searchSolutions>>;
-
-      if (input.mode === "keyword") {
-        results = await withTimeout(
-          searchSolutions(ctx.db, { ...payload, strategy: input.keywordStrategy }),
-          DB_TIMEOUT_MS,
-          "Solution search timed out",
-        );
-      } else {
-        // Require authentication for semantic/hybrid modes to prevent abuse
-        if (!getAuthenticatedUserId(ctx)) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message:
-              "Authentication required for semantic and hybrid search. Provide a valid session cookie or API key.",
-          });
-        }
-
-        if (!ctx.ai || !ctx.solutionVectors) {
-          throw new TRPCError({
-            code: "PRECONDITION_FAILED",
-            message:
-              "Semantic search is not configured on this server (missing Workers AI or Vectorize binding).",
-          });
-        }
-
-        if (input.mode === "semantic") {
-          results = await withTimeout(
-            searchSolutionsSemantic({
-              db: ctx.db,
-              ai: ctx.ai,
-              vectorize: ctx.solutionVectors,
-              ...payload,
-            }),
-            DB_TIMEOUT_MS,
-            "Semantic solution search timed out",
-          );
-        } else {
-          results = await withTimeout(
-            searchSolutionsHybrid({
-              db: ctx.db,
-              ai: ctx.ai,
-              vectorize: ctx.solutionVectors,
-              ...payload,
-            }),
-            DB_TIMEOUT_MS,
-            "Hybrid solution search timed out",
-          );
-        }
-      }
+      const results = await withTimeout(
+        searchSolutions(ctx.db, { ...payload, strategy: input.keywordStrategy }),
+        DB_TIMEOUT_MS,
+        "Solution search timed out",
+      );
 
       captureAnalytics(ctx, {
         distinctId,
         event: "solution searched",
         properties: {
           search_mode: input.mode,
-          ...(input.mode === "keyword" ? { keyword_strategy: input.keywordStrategy } : {}),
+          keyword_strategy: input.keywordStrategy,
           query_length: trimmed.length,
           result_count: results.length,
         },

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import alchemy from "alchemy";
-import { Ai, Hyperdrive, Nextjs, VectorizeIndex, Worker } from "alchemy/cloudflare";
+import { Hyperdrive, Nextjs, Worker } from "alchemy/cloudflare";
 import { CloudflareStateStore, FileSystemStateStore } from "alchemy/state";
 
 const { getDatabaseUrlErrorMessage, loadInfraEnv } = await import(
@@ -63,14 +63,6 @@ const hyperdrive = isLocal
       },
     });
 
-/** 768 dims + cosine for `@cf/baai/bge-base-en-v1.5` (Workers AI). */
-const solutionVectorIndex = await VectorizeIndex("solution-vectors", {
-  dimensions: 768,
-  metric: "cosine",
-  adopt: true,
-});
-
-const workersAi = Ai();
 const sentryDsn = process.env.SENTRY_DSN?.trim();
 const sentryTestToken = process.env.SENTRY_TEST_TOKEN?.trim();
 const deploymentEnvironment = isLocal ? "development" : "production";
@@ -126,8 +118,6 @@ export const server = await Worker("server", {
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
     GITHUB_CLIENT_ID: alchemy.env.GITHUB_CLIENT_ID!,
     GITHUB_CLIENT_SECRET: alchemy.secret.env.GITHUB_CLIENT_SECRET!,
-    AI: workersAi,
-    SOLUTION_VECTORS: solutionVectorIndex,
     POSTHOG_API_KEY: alchemy.env.POSTHOG_API_KEY!,
     POSTHOG_HOST: alchemy.env.POSTHOG_HOST!,
     ...(sentryDsn ? { SENTRY_DSN: sentryDsn } : {}),

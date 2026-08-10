@@ -10,7 +10,8 @@ allowBuilds:
   esbuild: true
   sharp: true
   msw: false
-  node-llama-cpp: true
+  onnxruntime-node: false
+  protobufjs: false
 
 overrides:
   kysely: 0.28.17

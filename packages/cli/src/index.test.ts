@@ -13,42 +13,16 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 import { createProgram } from "./index";
 import { LocalBackend } from "./mcp/local-backend";
-import {
-  DEFAULT_LOCAL_MODEL_ID,
-  floatVectorToBuffer,
-  type LocalSemanticConfig,
-} from "./mcp/local-semantic";
 import pc from "picocolors";
-
-vi.mock("node-llama-cpp", () => ({
-  getLlama: vi.fn(async () => ({
-    loadModel: vi.fn(async () => ({
-      trainContextSize: 8,
-      tokenize: (text: string) => Array.from(text).map((char) => char.charCodeAt(0)),
-      createEmbeddingContext: vi.fn(async () => ({
-        getEmbeddingFor: vi.fn(async (input: number[] | string) => {
-          const tokens = Array.isArray(input)
-            ? input
-            : Array.from(input).map((char) => char.charCodeAt(0));
-          const average =
-            tokens.reduce((sum, token) => sum + token, 0) / Math.max(tokens.length, 1);
-          return { vector: average < 100 ? [1, 0, 0, 0] : [0, 1, 0, 0] };
-        }),
-      })),
-    })),
-  })),
-}));
 
 async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
   const previousMode = process.env.CLANKER_MODE;
   const previousDb = process.env.CLANKER_LOCAL_DB;
-  const previousSemantic = process.env.CLANKER_LOCAL_SEMANTIC;
   const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-"));
 
   try {
     process.env.CLANKER_MODE = "local";
     process.env.CLANKER_LOCAL_DB = join(dir, "solutions.sqlite");
-    process.env.CLANKER_LOCAL_SEMANTIC = "0";
     return await run(process.env.CLANKER_LOCAL_DB);
   } finally {
     if (previousMode === undefined) {
@@ -61,21 +35,8 @@ async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
     } else {
       process.env.CLANKER_LOCAL_DB = previousDb;
     }
-    if (previousSemantic === undefined) {
-      delete process.env.CLANKER_LOCAL_SEMANTIC;
-    } else {
-      process.env.CLANKER_LOCAL_SEMANTIC = previousSemantic;
-    }
     rmSync(dir, { recursive: true, force: true });
   }
-}
-
-function vector(values: number[]) {
-  return floatVectorToBuffer(values, values.length);
-}
-
-function writeGguf(modelPath: string) {
-  writeFileSync(modelPath, Buffer.from("GGUFtest-model"));
 }
 
 describe("CLI", () => {
@@ -88,6 +49,7 @@ describe("CLI", () => {
   let previousSemantic: string | undefined;
   let previousApiKey: string | undefined;
   let previousXdgConfigHome: string | undefined;
+  let previousXdgCacheHome: string | undefined;
   let previousHome: string | undefined;
   let previousModelPath: string | undefined;
   let previousModelDimensions: string | undefined;
@@ -99,6 +61,7 @@ describe("CLI", () => {
     previousSemantic = process.env.CLANKER_LOCAL_SEMANTIC;
     previousApiKey = process.env.CLANKER_API_KEY;
     previousXdgConfigHome = process.env.XDG_CONFIG_HOME;
+    previousXdgCacheHome = process.env.XDG_CACHE_HOME;
     previousHome = process.env.HOME;
     previousModelPath = process.env.CLANKER_LOCAL_MODEL_PATH;
     previousModelDimensions = process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
@@ -110,6 +73,7 @@ describe("CLI", () => {
     delete process.env.CLANKER_LOCAL_MODEL_PATH;
     delete process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
     process.env.XDG_CONFIG_HOME = join(testHome, ".config");
+    process.env.XDG_CACHE_HOME = join(testHome, ".cache");
     process.env.HOME = testHome;
 
     consoleLogMock = vi.spyOn(console, "log").mockImplementation(() => {});
@@ -139,6 +103,8 @@ describe("CLI", () => {
     else process.env.CLANKER_API_KEY = previousApiKey;
     if (previousXdgConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = previousXdgConfigHome;
+    if (previousXdgCacheHome === undefined) delete process.env.XDG_CACHE_HOME;
+    else process.env.XDG_CACHE_HOME = previousXdgCacheHome;
     if (previousHome === undefined) delete process.env.HOME;
     else process.env.HOME = previousHome;
     if (previousModelPath === undefined) delete process.env.CLANKER_LOCAL_MODEL_PATH;
@@ -489,15 +455,10 @@ describe("CLI", () => {
       expect(consoleLogMock).toHaveBeenCalledWith(
         expect.stringContaining("keyword tiered returned 0"),
       );
-      expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("CLANKER_API_KEY is required for hosted hybrid fallback"),
-      );
       expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("No solutions found."));
     });
 
-    test("auto mode falls back to hybrid after an empty keyword search when authenticated", async () => {
-      const previousApiKey = process.env.CLANKER_API_KEY;
-      process.env.CLANKER_API_KEY = "test-key";
+    test("auto mode runs tiered keyword search after an empty exact search", async () => {
       const program = createProgram();
       fetchMock
         .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
@@ -508,9 +469,9 @@ describe("CLI", () => {
                 result: {
                   data: [
                     {
-                      id: "hybrid-1",
-                      problem: "hybrid problem",
-                      solution: "hybrid solution",
+                      id: "tiered-1",
+                      problem: "tiered problem",
+                      solution: "tiered solution",
                       score: 1,
                       tags: "search",
                     },
@@ -519,22 +480,15 @@ describe("CLI", () => {
               }),
             ),
         );
-
-      try {
-        await program.parseAsync(["node", "test", "search", "conceptual miss"]);
-      } finally {
-        if (previousApiKey === undefined) {
-          delete process.env.CLANKER_API_KEY;
-        } else {
-          process.env.CLANKER_API_KEY = previousApiKey;
-        }
-      }
+      await program.parseAsync(["node", "test", "search", "conceptual miss"]);
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("Search attempts: keyword exact returned 0; hybrid returned 1."),
+        expect.stringContaining(
+          "Search attempts: keyword exact returned 0; keyword tiered returned 1.",
+        ),
       );
-      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("ID: hybrid-1"));
+      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("ID: tiered-1"));
     });
 
     test("rejects an empty search query", async () => {
@@ -665,11 +619,11 @@ describe("CLI", () => {
           "test",
           "log",
           "--problem",
-          "Local sqlite vector extension fails to load",
+          "Local SQLite FTS search fails to find a logged solution",
           "--solution",
-          "Install the Node native dependency inside the same runtime image",
+          "Open the same database path and rebuild the FTS index",
           "--tags",
-          "sqlite-vec,docker",
+          "sqlite,fts5",
         ]);
         consoleLogMock.mockClear();
 
@@ -678,7 +632,7 @@ describe("CLI", () => {
           "node",
           "test",
           "search",
-          "sqlite-vec",
+          "fts5",
           "--mode",
           "keyword",
           "--limit",
@@ -686,10 +640,8 @@ describe("CLI", () => {
         ]);
 
         expect(fetchMock).not.toHaveBeenCalled();
-        expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("sqlite vector"));
-        expect(consoleLogMock).toHaveBeenCalledWith(
-          expect.stringContaining("Tags: sqlite-vec,docker"),
-        );
+        expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("SQLite FTS"));
+        expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("Tags: sqlite,fts5"));
       });
     });
 
@@ -750,9 +702,9 @@ describe("CLI", () => {
         delete process.env.CLANKER_MODE;
         const backend = new LocalBackend(dbPath);
         await backend.log({
-          problem: "Explicit local sqlite vector search",
+          problem: "Explicit local SQLite FTS search",
           solution: "Read the local SQLite database instead of the hosted API",
-          tags: "sqlite-vec,local",
+          tags: "sqlite,fts5,local",
         });
         consoleLogMock.mockClear();
 
@@ -773,89 +725,13 @@ describe("CLI", () => {
 
         expect(fetchMock).not.toHaveBeenCalled();
         expect(consoleLogMock).toHaveBeenCalledWith(
-          expect.stringContaining("Explicit local sqlite vector search"),
+          expect.stringContaining("Explicit local SQLite FTS search"),
         );
       } finally {
         if (previousMode === undefined) {
           delete process.env.CLANKER_MODE;
         } else {
           process.env.CLANKER_MODE = previousMode;
-        }
-        rmSync(dir, { recursive: true, force: true });
-      }
-    });
-
-    test("local search supports semantic mode with embedded local rows", async () => {
-      const previousMode = process.env.CLANKER_MODE;
-      const previousModelPath = process.env.CLANKER_LOCAL_MODEL_PATH;
-      const previousDimensions = process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
-      const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-semantic-search-"));
-      const dbPath = join(dir, "solutions.sqlite");
-      const modelPath = join(dir, "model.gguf");
-      writeGguf(modelPath);
-      try {
-        delete process.env.CLANKER_MODE;
-        process.env.CLANKER_LOCAL_MODEL_PATH = modelPath;
-        process.env.CLANKER_LOCAL_MODEL_DIMENSIONS = "4";
-        const semantic: LocalSemanticConfig = {
-          enabled: true,
-          modelId: DEFAULT_LOCAL_MODEL_ID,
-          modelPath,
-          dimensions: 4,
-        };
-        const backend = new LocalBackend(dbPath, {
-          semantic,
-          embedder: {
-            embed: async (text: string) =>
-              /aaa/.test(text) ? vector([1, 0, 0, 0]) : vector([0, 1, 0, 0]),
-          },
-        });
-        await backend.log({
-          problem: "aaa semantic local hit",
-          solution: "aaa matching vector",
-          tags: "semantic",
-        });
-        await backend.log({
-          problem: "zzz semantic local miss",
-          solution: "zzz other vector",
-          tags: "semantic",
-        });
-        consoleLogMock.mockClear();
-
-        const program = createProgram();
-        await program.parseAsync([
-          "node",
-          "test",
-          "local",
-          "search",
-          "aaa",
-          "--db",
-          dbPath,
-          "--mode",
-          "semantic",
-          "--limit",
-          "1",
-        ]);
-
-        expect(fetchMock).not.toHaveBeenCalled();
-        expect(consoleLogMock).toHaveBeenCalledWith(
-          expect.stringContaining("aaa semantic local hit"),
-        );
-      } finally {
-        if (previousMode === undefined) {
-          delete process.env.CLANKER_MODE;
-        } else {
-          process.env.CLANKER_MODE = previousMode;
-        }
-        if (previousModelPath === undefined) {
-          delete process.env.CLANKER_LOCAL_MODEL_PATH;
-        } else {
-          process.env.CLANKER_LOCAL_MODEL_PATH = previousModelPath;
-        }
-        if (previousDimensions === undefined) {
-          delete process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
-        } else {
-          process.env.CLANKER_LOCAL_MODEL_DIMENSIONS = previousDimensions;
         }
         rmSync(dir, { recursive: true, force: true });
       }
@@ -975,6 +851,55 @@ describe("CLI", () => {
         else process.env.CLANKER_API_KEY = previousApiKey;
         rmSync(dir, { recursive: true, force: true });
       }
+    });
+
+    test("surfaces v1 cleanup warnings in JSON mode and on stderr", async () => {
+      const configDir = join(process.env.XDG_CONFIG_HOME!, "clankeroverflow");
+      const configPath = join(configDir, "config.json");
+      const modelPath = join(
+        testHome,
+        ".cache",
+        "clankeroverflow",
+        "models",
+        "bge-small-en-v1.5-q8_0.gguf",
+      );
+      mkdirSync(configDir, { recursive: true });
+      mkdirSync(join(modelPath, ".."), { recursive: true });
+      writeFileSync(modelPath, "legacy model");
+      writeFileSync(
+        configPath,
+        JSON.stringify({
+          version: 1,
+          mode: "remote",
+          local: {
+            databasePath: "~/solutions.sqlite",
+            semantic: true,
+            modelId: "bge-small-en-v1.5-q8_0",
+            modelPath,
+            dimensions: 384,
+          },
+          remote: {
+            serverUrl: "https://api.clankeroverflow.com",
+            webUrl: "https://clankeroverflow.com",
+          },
+        }),
+      );
+
+      const program = createProgram();
+      await program.parseAsync(["node", "test", "config", "show", "--json"]);
+
+      const shown = JSON.parse(String(consoleLogMock.mock.calls[0]?.[0]));
+      expect(shown.migrationWarnings).toEqual([
+        "Migrated ClankerOverflow configuration from v1 to keyword-only v2.",
+        expect.stringContaining("Deleted the managed v1 embedding model"),
+      ]);
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        expect.stringContaining("Migrated ClankerOverflow configuration from v1"),
+      );
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        expect.stringContaining("Deleted the managed v1 embedding model"),
+      );
+      expect(existsSync(modelPath)).toBe(false);
     });
   });
 

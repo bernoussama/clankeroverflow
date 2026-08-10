@@ -86,7 +86,7 @@ describe("smart setup", () => {
     ).resolves.toContain("clankeroverflow-mcp");
   });
 
-  test("configures local semantic MCP environment without an API key", async () => {
+  test("configures keyword-only local MCP without an API key", async () => {
     await setupAgents(
       {
         agents: ["cursor"],
@@ -94,8 +94,6 @@ describe("smart setup", () => {
         home: tempDir,
         local: true,
         localDb: "/tmp/clanker.sqlite",
-        localModelPath: "/tmp/bge.gguf",
-        localSemantic: true,
         packageRoot,
       },
       { commandExists: noCommands, stdinIsTTY: false },
@@ -108,8 +106,6 @@ describe("smart setup", () => {
         mode: "local",
         local: expect.objectContaining({
           databasePath: "/tmp/clanker.sqlite",
-          semantic: true,
-          modelPath: "/tmp/bge.gguf",
         }),
       }),
     );

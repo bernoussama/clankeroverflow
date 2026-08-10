@@ -63,11 +63,11 @@ describe("WebMCP tool definitions", () => {
       });
     });
 
-    it("auto mode falls back to hybrid after empty keyword results", async () => {
+    it("auto mode runs tiered keyword retrieval after empty exact results", async () => {
       const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
       mockFn
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: "2", problem: "hybrid", solution: "fix", score: 1 }]);
+        .mockResolvedValueOnce([{ id: "2", problem: "tiered", solution: "fix", score: 1 }]);
 
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
       const result = await tool?.execute({ query: "conceptual miss" });
@@ -81,37 +81,29 @@ describe("WebMCP tool definitions", () => {
       expect(mockFn).toHaveBeenNthCalledWith(2, {
         query: "conceptual miss",
         limit: 10,
-        mode: "hybrid",
+        mode: "keyword",
+        keywordStrategy: "tiered",
       });
       expect(result).toEqual({
-        results: [{ id: "2", problem: "hybrid", solution: "fix", score: 1 }],
+        results: [{ id: "2", problem: "tiered", solution: "fix", score: 1 }],
         attempts: [
           { mode: "keyword", keywordStrategy: "exact", resultCount: 0 },
-          { mode: "hybrid", resultCount: 1 },
+          { mode: "keyword", keywordStrategy: "tiered", resultCount: 1 },
         ],
       });
     });
 
-    it("auto mode reports fallback failure without dropping keyword miss context", async () => {
+    it("reports a v2 migration message for removed modes", async () => {
       const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
-      mockFn
-        .mockResolvedValueOnce([])
-        .mockRejectedValueOnce(new Error("Authentication required"))
-        .mockResolvedValueOnce([]);
 
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
-      const result = await tool?.execute({ query: "conceptual miss" });
+      const result = await tool?.execute({ query: "conceptual miss", mode: "semantic" });
 
       expect(result).toEqual({
         results: [],
-        attempts: [
-          { mode: "keyword", keywordStrategy: "exact", resultCount: 0 },
-          { mode: "hybrid", error: "Authentication required" },
-          { mode: "keyword", keywordStrategy: "tiered", resultCount: 0 },
-        ],
-        message:
-          "Keyword search returned no results and hybrid fallback was unavailable. Try one smaller or sharper keyword query before debugging from scratch.",
+        message: "semantic search was removed in v2; use auto or keyword.",
       });
+      expect(mockFn).not.toHaveBeenCalled();
     });
 
     it("returns empty results when query is blank", async () => {

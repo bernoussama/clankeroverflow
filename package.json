@@ -18,9 +18,10 @@
     "eval:mcp-product-proof:record": "tsx packages/cli/src/evals/record-codex-product-proof.ts",
     "eval:mcp-product-proof:record:claude": "tsx packages/cli/src/evals/record-claude-product-proof.ts",
     "eval:repo-stackoverflow": "tsx packages/cli/src/evals/repo-stackoverflow.ts",
+    "eval:memory-retrieval": "tsx clankeroverflow-mcp-workspace/retrieval-memory/run.ts",
+    "prepare:stackoverflow-realworld": "tsx clankeroverflow-mcp-workspace/stackoverflow-realworld/prepare.ts",
+    "eval:stackoverflow-realworld": "tsx clankeroverflow-mcp-workspace/stackoverflow-realworld/run.ts",
     "eval:pi-triggering": "tsx packages/cli/src/evals/pi-triggering-run.ts",
-    "benchmark:local-embeddings": "tsx packages/cli/benchmarks/local-embeddings/run.ts",
-    "benchmark:hosted-retrieval": "pnpm --filter @clankeroverflow/db benchmark:hosted-retrieval",
     "db:push": "turbo run db:push --filter=@clankeroverflow/db",
     "db:generate": "turbo run db:generate --filter=@clankeroverflow/db",
     "db:migrate": "turbo run db:migrate --filter=@clankeroverflow/db",
@@ -32,7 +33,9 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "check": "pnpm run lint && pnpm run format"
+    "check": "pnpm run lint && pnpm run format",
+    "test:memory-retrieval": "vitest run clankeroverflow-mcp-workspace/retrieval-memory",
+    "test:stackoverflow-realworld": "vitest run clankeroverflow-mcp-workspace/stackoverflow-realworld"
   },
   "dependencies": {
     "@clankeroverflow/env": "workspace:*"

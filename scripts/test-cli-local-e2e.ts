@@ -1,7 +1,5 @@
 import { spawn } from "node:child_process";
 
-const MODEL_VOLUME =
-  process.env.CLANKER_LOCAL_E2E_MODEL_VOLUME || "clankeroverflow_cli_e2e_model_cache";
 const DEFAULT_NODE_IMAGES = ["node:22-bookworm-slim", "node:24-bookworm-slim"];
 const NODE_IMAGES = (process.env.CLANKER_LOCAL_E2E_NODE_IMAGES?.split(",") ?? DEFAULT_NODE_IMAGES)
   .map((image) => image.trim())
@@ -35,7 +33,6 @@ async function run(cmd: string[]) {
   }
 }
 
-await run(["docker", "volume", "create", MODEL_VOLUME]);
 for (const nodeImage of NODE_IMAGES) {
   const image = imageName(nodeImage);
   console.log(`[local-mode-e2e] building ${image} from ${nodeImage}`);
@@ -51,14 +48,5 @@ for (const nodeImage of NODE_IMAGES) {
     ".",
   ]);
   console.log(`[local-mode-e2e] running ${image}`);
-  await run([
-    "docker",
-    "run",
-    "--rm",
-    "-e",
-    "XDG_CACHE_HOME=/model-cache",
-    "-v",
-    `${MODEL_VOLUME}:/model-cache`,
-    image,
-  ]);
+  await run(["docker", "run", "--rm", image]);
 }

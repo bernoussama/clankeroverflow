@@ -9,8 +9,10 @@ const solutionPageSource = readFileSync(
 );
 
 describe("solutions page performance defaults", () => {
-  it("defaults search to keyword mode to avoid implicit semantic latency", () => {
-    expect(solutionsPageSource).toContain('useState<SearchMode>("keyword")');
+  it("uses only tiered keyword search", () => {
+    expect(solutionsPageSource).toContain('mode: "keyword"');
+    expect(solutionsPageSource).toContain('keywordStrategy: "tiered"');
+    expect(solutionsPageSource).not.toContain("SearchMode");
   });
 
   it("does not prefetch every visible solution detail route", () => {

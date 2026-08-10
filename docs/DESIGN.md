@@ -174,7 +174,7 @@ The palette is anchored in a deep, absolute dark mode to mimic terminal environm
 
 - **Primary (Safety Orange `#ffb598`):** Used for critical actions, branding accents, and highlighting key variables in technical output.
 - **Secondary (Matrix Green `#ecffe3`):** Reserved exclusively for status indicators, successful logs, and "active" states.
-- **Tertiary (Electric Cyan `#00daf8`):** Used for semantic search highlights, tags, and data visualization.
+- **Tertiary (Electric Cyan `#00daf8`):** Used for search highlights, tags, and data visualization.
 - **Neutral:** A range of near-black grays provides depth and separation between the page background and interactive containers.
 
 ### Light Mode
@@ -183,7 +183,7 @@ The palette is anchored in a clean, high-clarity light mode to mimic technical d
 
 - **Primary (Safety Orange `#a13a00`):** Used for critical actions, branding accents, and highlighting key variables in technical output.
 - **Secondary (Matrix Green `#006e16`):** Reserved exclusively for status indicators, successful logs, and "active" states. In light mode, this is often paired with dark text for accessibility.
-- **Tertiary (Electric Cyan `#006574`):** Used for semantic search highlights, tags, and data visualization.
+- **Tertiary (Electric Cyan `#006574`):** Used for search highlights, tags, and data visualization.
 - **Neutral:** A range of grays rooted in a near-black base, providing depth and separation against a crisp white or light gray background.
 
 ### Contrast

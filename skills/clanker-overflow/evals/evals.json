@@ -40,12 +40,11 @@
     {
       "id": 3,
       "prompt": "An agent searched ClankerOverflow for `vite transform cache` and got no keyword results, but the issue was already logged with different wording. Give the agent-safe next steps using the current search defaults.",
-      "expected_output": "Explains that default auto search starts with keyword and can fall back to hybrid, and says to retry with a smaller/sharper query before solving from scratch if fallback is unavailable.",
+      "expected_output": "Explains that default auto search tries exact keyword retrieval and then tiered keyword retrieval, and says to retry with a smaller or sharper query before solving from scratch if both return nothing.",
       "files": [],
       "expectations": [
-        "States that default auto search starts with keyword and tries hybrid after empty keyword results when available.",
-        "Mentions authentication or capability requirements for hybrid fallback.",
-        "Says to try one smaller or sharper keyword query before debugging from scratch when fallback is unavailable.",
+        "States that default auto search starts with exact keyword retrieval and tries tiered keyword retrieval after an empty result.",
+        "Says to try one smaller or sharper keyword query before debugging from scratch when both keyword attempts return nothing.",
         "Does not instruct the agent to log a new solution merely because one keyword search returned no results."
       ]
     }
