@@ -113,7 +113,7 @@ The real decision. Workers have no filesystem, so "just markdown files" needs a 
 
 - **Local mode:** a directory. The default is `<repo>/.clankeroverflow/kb/` (committed, shared via the repo), with the option `~/.local/share/clankeroverflow/kb/` (personal). This replaces `solutions.sqlite`.
 - **Hosted mode: our own primitives on R2.** Markdown content lives in R2, and Postgres holds refs and the search index. See the next section.
-- **Later: GitHub mirror.** Teams that want their knowledge base in their own repo get a one-way export or mirror. It is not a storage backend.
+- **Later: two-way GitHub sync.** V1 ships a one-way export. Two-way sync is deferred, but the v1 data model is designed so it can be added without migration (see "Two-way GitHub sync (later)").
 
 ### Why R2 rather than Cloudflare Artifacts
 
@@ -140,7 +140,7 @@ Each object carries `customMetadata` (`docId`, `rev`, `contentHash`, `author`), 
 **3. Refs and index (Postgres).**
 
 - `kb_document(team_id, doc_id, path, rev, content_hash, frontmatter jsonb, body, search_vector, updated_at)` is the current state and the search index in one row. It has a unique key on `(team_id, path)`.
-- `kb_change(team_id, seq bigserial, doc_id, path, rev, op, author, agent, session, message, created_at)` is the append-only change log. It feeds the activity view, the generated `log.md`, and the sync cursor.
+- `kb_change(team_id, seq bigserial, doc_id, path, rev, op, source, external_ref, author, agent, session, message, created_at)` is the append-only change log. `source` is `api | cli | web | github`, and `external_ref` holds a git commit SHA once GitHub sync exists. Both are written from day one so that sync can be added later without a migration. It feeds the activity view, the generated `log.md`, and the sync cursor.
 
 **4. Write = compare-and-swap.** Each update carries `base_rev`, the revision the writer last read.
 
@@ -167,7 +167,7 @@ Locking is per document, so no team-wide lock or Durable Object is needed. Creat
 
 - Compare `kb_document` against the `docs/` tree, and repair missing or out-of-date copies from the latest revision.
 - Delete orphaned revisions older than a day.
-- Optionally run `clanker kb export --git`, which replays `kb_change` into a git repo for teams that want a GitHub mirror.
+- Optionally run `clanker kb export --git`, which replays `kb_change` into a git repo, one commit per change, for teams that want a GitHub mirror.
 
 R2 event notifications are not needed in v1, because all writes go through our API and the bucket is private.
 
@@ -202,6 +202,8 @@ The biggest quality lever. Karpathy's core point is that a new source updates ex
 3. The agent chooses between `update` on an existing path (merge a new root cause, add a variant, bump `last_verified`) and `create` with a justification.
 4. On write, the server validates frontmatter against the schema. It reuses `assertReusableSolution` and the secret and path scrubbing from `learn.ts`, and commits through the compare-and-swap write described under Storage. The rendered `index.md` and `log.md` pick up the change automatically.
 
+**Docs go live straight away as `draft`** (decided). Drafts are searchable right away but rank below `verified` docs, and search results show the status so agents know to validate before applying. A draft becomes `verified` after its first independent confirmation, meaning a `kb_confirm(worked: true)` from a different user, agent session, or repo than the author. An author can't verify their own doc.
+
 `kb_confirm(path, worked, note)` replaces up and downvotes. It increments `confirmations` or records a failure note, and after N failures flips `status` to `stale`.
 
 `clanker kb lint` (CLI and scheduled hosted job): finds duplicates (title and signature similarity), stale docs (`last_verified` older than X, or depending on an upgraded package version), orphans, broken links, missing frontmatter, and contradictions (optionally checked by an LLM).
@@ -221,7 +223,7 @@ Keep the old tool names as thin aliases for one CLI minor version, since the ski
 
 ## Teams model (hosted)
 
-New tables in `packages/db`: `team`, `team_member (role: owner | editor | reader)`, `team_kb (r2_prefix, jurisdiction: default | eu, review_policy: auto | human)`, plus the `kb_document` and `kb_change` tables described under Storage. Scope API keys to a team. Area-level permissions come later. V1 is all-or-nothing per team.
+New tables in `packages/db`: `team`, `team_member (role: owner | editor | reader)`, `team_kb (r2_prefix, jurisdiction: default | eu, review_policy: auto | human, github_repo?, github_sync_mode: off | export | two_way)`. The `review_policy` default is `auto`: docs go live as drafts, as decided above. `human` is an opt-in for teams that want approval first., plus the `kb_document` and `kb_change` tables described under Storage. Scope API keys to a team. Area-level permissions come later. V1 is all-or-nothing per team.
 
 ## What gets deleted
 
@@ -232,6 +234,16 @@ Once the markdown backend matches or beats current retrieval in evals:
 - the hybrid and auto-fallback search modes (`auto-search.ts`)
 - eventually `solution` and `solution_vote`, after migration
 
+## Two-way GitHub sync (later)
+
+Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sketch, so v1 choices don't block it:
+
+- **Outbound:** each `kb_change` becomes a commit pushed to the team's repo by a GitHub App. The resulting SHA is stored in `external_ref`.
+- **Inbound:** a GitHub push webhook goes to a Queue. For each changed `.md` file, the consumer finds the doc by its frontmatter `id` (or by path for new files), and treats the revision recorded at the last synced commit as `base_rev`. Then it goes through the same compare-and-swap write with `source: github`.
+- **Conflicts:** if both sides changed the same doc since the last sync, the API version stays current. The GitHub version is saved as a new revision on a `conflict` branch of the doc, and the bot opens a PR or issue in the repo for a human to resolve. We never auto-merge markdown.
+- **Loop prevention:** commits made by our bot carry a trailer (`Clanker-Change: <seq>`) and are ignored by the inbound handler.
+- **Hard parts that justify deferring it:** GitHub App auth and installation, renames versus delete-and-create detection, force-pushes, files without frontmatter `id`, and keeping `AGENTS.md` and non-doc files out of the index.
+
 ## Phases
 
 1. **Spec freeze.** Answer the open questions below and lock the frontmatter schema and `AGENTS.md` template.
@@ -239,7 +251,8 @@ Once the markdown backend matches or beats current retrieval in evals:
 3. **Write quality.** Dedupe gate, generated index and log, `kb confirm`, `kb lint`.
 4. **Teams plus hosted storage on R2.** Team tables, the `kb_document` and `kb_change` tables, the R2 layout, the compare-and-swap write API, `clanker kb pull` and `push` sync with conflict files, a starter template copied into each new team's prefix, and the daily reconciler. The git export and GitHub mirror come after.
 5. **Web app.** Replace the public solutions feed with a team KB viewer (tree by area, search, doc page, lint report, activity from `kb_change`, history and diffs), using the existing design system in `apps/web/src/index.css`. This is where the earlier UI redesign happens.
-6. **Cleanup.** Remove the vector stack and the old tables. Optionally add option B (managed storage plus remote MCP).
+6. **Cleanup.** Remove the vector stack and the old tables.
+7. **Two-way GitHub sync.** Per the sketch above.
 
 ## Risks
 
@@ -248,13 +261,17 @@ Once the markdown backend matches or beats current retrieval in evals:
 - **Write noise** from agents logging trivia. The dedupe gate, `status: draft` until confirmed, and an optional `review_policy: human` limit this.
 - **Positioning.** Mosaic (YC, "shared memory for your team's agents") and ExtraContext are in this space. The differentiators are markdown in your own git repo, the compile/dedupe/lint discipline, and an open-source local mode.
 
+## Decisions
+
+- **Hosted storage:** our own primitives on R2, not Cloudflare Artifacts (cost).
+- **GitHub:** one-way export in v1. Two-way sync is wanted but deferred, and the v1 schema already supports it.
+- **Review:** agent-written docs go live straight away as `draft`. One independent confirmation makes them `verified`.
+
 ## Open questions
 
 1. **Public corpus.** Does the global public ClankerOverflow survive as a "public" team KB that anyone can read, or does the product become teams-only?
-2. **Git export.** Is a one-way `clanker kb export --git` and GitHub mirror enough for teams that want git, or do some need two-way GitHub sync? Two-way sync means handling merges from outside our API.
-3. **Review policy default.** Should agent-written docs go live right away as `draft` and become `verified` after an independent confirmation, or wait for human approval (`review_policy: human`)?
-4. **Area taxonomy.** Free-form, a fixed starter set (`backend`, `frontend`, `infra`, `data`, `finance`, `product`, `ops`), or defined per team in `AGENTS.md`?
-5. **Scope of content.** Only verified fixes (current product), or also decisions, how-tos, and gotchas (a general team wiki)? A broader scope means more value but more noise.
-6. **Repo-local vs. team-wide.** Should a repo's `.clankeroverflow/kb/` and the team KB both be searched, and if so with what precedence?
-7. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP plus a git clone enough for the agents you care about?
-8. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
+2. **Area taxonomy.** Free-form, a fixed starter set (`backend`, `frontend`, `infra`, `data`, `finance`, `product`, `ops`), or defined per team in `AGENTS.md`?
+3. **Scope of content.** Only verified fixes (current product), or also decisions, how-tos, and gotchas (a general team wiki)? A broader scope means more value but more noise.
+4. **Repo-local vs. team-wide.** Should a repo's `.clankeroverflow/kb/` and the team KB both be searched, and if so with what precedence?
+5. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
+6. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
