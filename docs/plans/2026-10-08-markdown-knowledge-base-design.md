@@ -113,9 +113,46 @@ The real decision. Workers have no filesystem, so "just markdown files" needs a 
 
 - **Local mode:** a directory. The default is `<repo>/.clankeroverflow/kb/` (committed, shared via the repo), with the option `~/.local/share/clankeroverflow/kb/` (personal). This replaces `solutions.sqlite`.
 - **Hosted mode, option A: the team's own git repo (recommended starting point).** A team connects a GitHub repo, e.g. `acme/agent-kb`. The local MCP keeps a clone, pulls on start or every N minutes, searches locally, and writes by committing (direct push or a PR, per team setting). The hosted service handles team auth, the web viewer, lint jobs, and webhooks. Benefits: zero lock-in, review through PRs, history for free, and no storage cost. Cost: GitHub auth and merge conflicts (rare, since there's one file per doc).
-- **Hosted mode, option B: managed storage.** R2 objects at `teams/{teamId}/{path}.md` plus a D1 FTS5 index per team, with a hosted remote MCP endpoint (Streamable HTTP) on the existing Worker. Benefits: works for agents with no local process and for non-GitHub teams. Cost: we own sync, conflict handling, and backups, and must offer export.
+- **Hosted mode, option B: managed git on [Cloudflare Artifacts](https://developers.cloudflare.com/artifacts/).** One Artifacts repo per team. This replaces the earlier R2 idea, because R2 would force us to rebuild versioning and history ourselves. See the Artifacts section below.
 
-Recommendation: build the backend interface so both fit, ship local plus option A first, and add option B when a customer needs a remote-only MCP.
+Recommendation: build the backend interface so all three fit. Ship local mode first, then Artifacts as the managed default, with GitHub as an import or mirror for teams that want their own repo.
+
+### Cloudflare Artifacts for managed storage
+
+Artifacts is a versioned file system that speaks git. It entered open beta on 2026-10-01, is available on Workers Paid only, and billing starts 2026-10-14. What it provides that we need:
+
+- **Standard git remotes.** Anyone with a token can `git clone`, edit in an editor or Obsidian, and push. Export is just `git clone`.
+- **A Workers binding** for `create`, `get`, `import` (from GitHub), `fork`, `log`, `readTree`, `readFile`, and repo-scoped `read` or `write` tokens with a TTL.
+- **Push events** delivered to a Queue (`cf.artifacts.repo.pushed`, with the before and after SHAs and the commit list), which drive reindexing.
+- **Forking a baseline repo**, which gives new teams a starter `AGENTS.md`, area folders, and an index.
+- **Git notes**, which can record agent provenance (agent, session, model) without touching the docs.
+- **US or EU data localization**.
+
+What it does not provide:
+
+- **Search.** We still need a derived full-text index.
+- **A write-file method.** Writes from a Worker go through `isomorphic-git` with an in-memory filesystem: shallow fetch, commit, push.
+- **Contention handling.** The docs warn against using one shared repo as a queue for many agents.
+
+Limits: 1 GB per repo, 32 MB per file, 2,000 git requests per 10 seconds per repo, and 1 TB per account (can be raised). All are far above a markdown knowledge base.
+
+Pricing: $0.15 per 1,000 operations after 10,000 free per month, and $0.50 per GB-month after 1 GB free. Operations include create, push, pull, and clone. It is not documented whether binding reads (`readFile`, `log`, `readTree`) are billed operations, so the spike must confirm this. Storage is negligible: about 1,000 docs at 5 KB each, plus history, is about 20–50 MB per team. **Operations are the cost driver**, at about 33 times R2's write price. Keep Artifacts off the read path:
+
+- **Reads (`kb_search`, `kb_read`, `kb_browse`)** are served from the derived index, which stores frontmatter, body, and the generated index pages. They never touch Artifacts.
+- **Writes** go MCP → Worker API → a **Durable Object per team**. The Durable Object serializes writes, runs the dedupe gate and validation, regenerates the affected `index.md` in the same commit, and pushes once. This avoids the contention the Artifacts docs warn about.
+- **Push events** → Queue → indexer Worker, which diffs the changed paths and upserts the index. Pushes made directly by humans with `git push` reach the index through the same events.
+- **Local clones** (`clanker kb clone` mints a read token) fetch only when the index reports a new head SHA, never on a timer.
+
+Rough cost for 100 teams, each making 500 agent writes and 2,000 change-triggered fetches per month: about 250,000 operations, roughly $36 per month, plus about $2 of storage. Polling every few minutes instead would push this into the hundreds of dollars.
+
+Where the derived index lives: **Postgres** (already holds users, API keys, and the new team tables, and `packages/db/src/search.ts` already has full-text search) or **D1 FTS5** per team (better isolation and real BM25, but one more system). Lean Postgres for v1.
+
+Spike before committing:
+
+1. Measure which calls count as billed operations.
+2. Measure `isomorphic-git` shallow fetch, commit, and push CPU time and latency in a Worker and in a Durable Object.
+3. Confirm the push event fires for pushes made through the Worker and reaches the indexer within seconds.
+4. Test `import` from a private GitHub repo.
 
 ## Write path: compile, don't append
 
@@ -163,7 +200,7 @@ Once the markdown backend matches or beats current retrieval in evals:
 1. **Spec freeze.** Answer the open questions below and lock the frontmatter schema and `AGENTS.md` template.
 2. **Local markdown backend.** Add `MarkdownBackend` implementing the existing `SolutionBackend` interface in `packages/cli/src/mcp`, using MiniSearch, the new `kb_*` tools, and `clanker kb migrate`, which converts `solutions.sqlite` and `.clankeroverflow/solutions/*.md` using the existing export code. Run the `repo-stackoverflow` and `product-proof` evals against the SQLite FTS and hybrid baselines. **Exit criterion:** recall at 5 is no worse than hybrid.
 3. **Write quality.** Dedupe gate, generated index and log, `kb confirm`, `kb lint`.
-4. **Teams plus git-backed hosted (option A).** Team tables, GitHub app or token, clone and sync in the CLI, PR write policy.
+4. **Teams plus managed storage on Artifacts.** Run the spike above, then build the team tables, one Artifacts repo per team forked from a baseline, the per-team Durable Object writer, the push-event indexer, and `clanker kb clone`. GitHub import and mirroring come after.
 5. **Web app.** Replace the public solutions feed with a team KB viewer (tree by area, search, doc page, lint report, activity from `log.md`), using the existing design system in `apps/web/src/index.css`. This is where the earlier UI redesign happens.
 6. **Cleanup.** Remove the vector stack and the old tables. Optionally add option B (managed storage plus remote MCP).
 
@@ -177,7 +214,7 @@ Once the markdown backend matches or beats current retrieval in evals:
 ## Open questions
 
 1. **Public corpus.** Does the global public ClankerOverflow survive as a "public" team KB that anyone can read, or does the product become teams-only?
-2. **Storage of record.** Team-owned git repo (A), managed R2 (B), or both from day one?
+2. **Storage of record.** Artifacts as the managed default (B), with GitHub as an import or mirror (A)? Are we OK depending on a product in beta with Workers Paid as a requirement?
 3. **Write policy default.** Direct commit or PR? Should agent-written docs start as `draft` until a human or a second agent confirms them?
 4. **Area taxonomy.** Free-form, a fixed starter set (`backend`, `frontend`, `infra`, `data`, `finance`, `product`, `ops`), or defined per team in `AGENTS.md`?
 5. **Scope of content.** Only verified fixes (current product), or also decisions, how-tos, and gotchas (a general team wiki)? A broader scope means more value but more noise.
