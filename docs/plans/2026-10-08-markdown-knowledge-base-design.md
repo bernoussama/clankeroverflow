@@ -23,6 +23,7 @@ The knowledge base holds general team memory: fixes, decisions, how-tos, gotchas
 - No embeddings or vector store. Re-add as an optional reranker only if evals show a gap.
 - No knowledge graph and no automatic entity extraction.
 - No ingestion of external raw sources (Slack, Notion, docs). V1 covers knowledge that agents and humans write directly.
+- No first-class swarm tools. V1 documents a folder convention and uses `kb_append`. Starting, assigning, and collecting a swarm comes later.
 
 ## Core idea: folders for ownership, frontmatter for meaning
 
@@ -240,6 +241,21 @@ Dreaming is a hosted agent we run on a schedule, on our model bill. It is not a 
 
 Writes go through the same compare-and-swap path, with `source: dream` and `status: draft`, so a dream never marks its own output `verified`. It only runs for teams with changes since the last dream, and each run has a token cap. Unchanged knowledge bases cost nothing.
 
+### Swarm folders
+
+V1 has a folder convention and no new tools. `AGENTS.md` documents it, and agents use `kb_search`, `kb_read`, and `kb_append`.
+
+```txt
+swarms/{name}/
+  README.md        # goal and rules, including how to measure
+  findings.md      # one fact per line, including what was ruled out
+  questions.md     # agents ask each other; answers are indented lines
+```
+
+`kb_append` adds a line, so two agents can write the same file without a conflict. When the swarm ends, the lead agent adds one `[[swarms/{name}/README]]` link to `MEMORY.md`. The folder stays, so a later session can reuse it.
+
+First-class swarms, with tools to start one, assign agents, and collect the result, come later. The folder layout stays the same, so those tools do not require a migration.
+
 ## MCP tool surface
 
 | Tool | Replaces | Purpose |
@@ -287,6 +303,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 6. **Web app.** Replace the public solutions feed with a team KB viewer (tree by area, search, doc page, lint report, activity from `kb_change`, history and diffs), using the existing design system in `apps/web/src/index.css`. This is where the earlier UI redesign happens.
 7. **Cleanup.** Remove the vector stack and the old tables.
 8. **Two-way GitHub sync.** Per the sketch above.
+9. **First-class swarms.** Tools to start a swarm, assign agents, and collect the result, on top of the v1 folder convention.
 
 ## Risks
 
@@ -308,6 +325,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Dreaming:** hosted, on our model bill. A scheduled job adds and cleans memory. It does not run inside the user's agent. Output is always `draft`, runs only after new changes, and each run has a token cap.
 - **Personal memory:** a free, open-source layer in the CLI at `~/.local/share/clankeroverflow/kb/`. It is searched alongside repo and team memory, and hits are labeled by layer. Writes ask when the destination is unclear. Hosted personal memory is a possible later product, not part of v1.
 - **Provenance:** every entry records the agent, the session id, and a one-line message. Storing the transcript is optional and off by default. A stored transcript is a separate linked file, not part of the entry line, and search does not index it.
+- **Swarms:** a folder convention in v1 (`swarms/{name}/` with `README.md`, `findings.md`, and `questions.md`), written with `kb_append`. First-class swarm tools come later.
 
 ## Open questions
 
