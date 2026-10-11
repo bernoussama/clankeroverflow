@@ -124,9 +124,17 @@ Either way the markdown files are the source of truth, and the index is a dispos
 
 The real decision. Workers have no filesystem, so "just markdown files" needs a concrete home in hosted mode.
 
-- **Local mode:** a directory. The default is `<repo>/.clankeroverflow/kb/` (committed, shared via the repo), with the option `~/.local/share/clankeroverflow/kb/` (personal). This replaces `solutions.sqlite`.
+- **Local mode:** two directories, both free and open source. `<repo>/.clankeroverflow/kb/` is shared through the repo. `~/.local/share/clankeroverflow/kb/` is personal and stays on the machine. This replaces `solutions.sqlite`. See Personal memory below.
 - **Hosted mode: our own primitives on R2.** Markdown content lives in R2, and Postgres holds refs and the search index. See the next section.
 - **Later: two-way GitHub sync.** V1 clients are the MCP and CLI, not a git remote. V1 ships a one-way export. Two-way sync stays deferred, but the v1 data model is designed so it can be added without migration (see "Two-way GitHub sync (later)").
+
+### Personal memory
+
+The CLI ships a personal knowledge base as a free, open-source layer. It uses the same files and tools as a team knowledge base, but it lives at `~/.local/share/clankeroverflow/kb/` and is never uploaded. Preferences and private notes go there. Shared fixes and team notes go to the repo or the hosted team knowledge base.
+
+Search covers every layer that is configured and labels each hit with where it came from: personal, repo, or team. When a write could belong to more than one layer, the agent asks. It does not guess.
+
+Hosted personal memory, one private knowledge base per user with the same search and dreaming as teams, is a possible later product. V1 does not build it. The local personal directory is the same format, so it can be uploaded later without a migration.
 
 ### Why R2 rather than Cloudflare Artifacts
 
@@ -296,6 +304,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Access in v1:** our MCP and CLI only. Agents reach hosted memory through those tools. We do not serve the git protocol, and we do not pull two-way GitHub sync forward. Agents that only know how to `git clone` an Agent Memory Repo cannot connect until a later step.
 - **Content:** general team memory, with verified debugging fixes as the headline. Notes cover decisions, how-tos, gotchas, processes, and saved queries. Marketing and the first evals stay on fixes.
 - **Dreaming:** hosted, on our model bill. A scheduled job adds and cleans memory. It does not run inside the user's agent. Output is always `draft`, runs only after new changes, and each run has a token cap.
+- **Personal memory:** a free, open-source layer in the CLI at `~/.local/share/clankeroverflow/kb/`. It is searched alongside repo and team memory, and hits are labeled by layer. Writes ask when the destination is unclear. Hosted personal memory is a possible later product, not part of v1.
 
 ## Open questions
 
