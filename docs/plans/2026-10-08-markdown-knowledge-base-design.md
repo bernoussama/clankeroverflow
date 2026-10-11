@@ -135,7 +135,7 @@ The real decision. Workers have no filesystem, so "just markdown files" needs a 
 
 The CLI ships a personal knowledge base as a free, open-source layer. It uses the same files and tools as a team knowledge base, but it lives at `~/.local/share/clankeroverflow/kb/` and is never uploaded. Preferences and private notes go there. Shared fixes and team notes go to the repo or the hosted team knowledge base.
 
-Search covers every layer that is configured and labels each hit with where it came from: personal, repo, or team. When a write could belong to more than one layer, the agent asks. It does not guess.
+Search covers every layer that is configured and labels each hit with where it came from: personal, repo, or team. When a repo hit and a team hit score close together, the repo hit ranks first, because it is specific to the code being edited. When a write could belong to more than one layer, the agent asks. It does not guess.
 
 Hosted personal memory, one private knowledge base per user with the same search and dreaming as teams, is a possible later product. V1 does not build it. The local personal directory is the same format, so it can be uploaded later without a migration.
 
@@ -328,9 +328,9 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Swarms:** a folder convention in v1 (`swarms/{name}/` with `README.md`, `findings.md`, and `questions.md`), written with `kb_append`. First-class swarm tools come later.
 - **Public corpus:** shut it down. Do not migrate hosted solutions. Nobody uses them or depends on them. Anonymous public search goes away with the `solution` and `solution_vote` tables.
 - **Areas:** free-form folder names, at most 2 levels deep. No allowed list. Lint reports near-duplicate names and does not reject them.
+- **Search layers:** search the repo knowledge base and the team knowledge base together. Label every hit. When the scores are close, the repo hit ranks first. Writes still ask when the destination layer is unclear.
 
 ## Open questions
 
-1. **Repo-local vs. team-wide.** Should a repo's `.clankeroverflow/kb/` and the team KB both be searched, and if so with what precedence?
-2. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
-3. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
+1. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
+2. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
