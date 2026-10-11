@@ -219,7 +219,16 @@ The biggest quality lever. Karpathy's core point is that a new source updates ex
 
 `kb_confirm(path, worked, note)` replaces up and downvotes. It increments `confirmations` or records a failure note, and after N failures flips `status` to `stale`.
 
-`clanker kb lint` (CLI and scheduled hosted job): finds duplicates (title and signature similarity), stale docs (`last_verified` older than X, or depending on an upgraded package version), orphans, broken links, missing frontmatter, and contradictions (optionally checked by an LLM).
+`clanker kb lint` (CLI and scheduled hosted job): finds duplicates (title and signature similarity), stale docs (`last_verified` older than X, or depending on an upgraded package version), orphans, broken links, and missing frontmatter. Lint is deterministic and does not call a model.
+
+### Dreaming
+
+Dreaming is a hosted agent we run on a schedule, on our model bill. It is not a command the user's agent runs. It has two jobs, matching Agent Memory Repo:
+
+- **Add memory.** Read recent `kb_change` rows and spot patterns worth saving as new note lines or fix drafts.
+- **Clean memory.** Merge duplicates, remove outdated entries, and use `source` metadata to resolve contradictions.
+
+Writes go through the same compare-and-swap path, with `source: dream` and `status: draft`, so a dream never marks its own output `verified`. It only runs for teams with changes since the last dream, and each run has a token cap. Unchanged knowledge bases cost nothing.
 
 ## MCP tool surface
 
@@ -264,15 +273,17 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 2. **Local markdown backend.** Add `MarkdownBackend` implementing the existing `SolutionBackend` interface in `packages/cli/src/mcp`, using MiniSearch, the new `kb_*` tools, and `clanker kb migrate`, which converts `solutions.sqlite` and `.clankeroverflow/solutions/*.md` using the existing export code. Run the `repo-stackoverflow` and `product-proof` evals against the SQLite FTS and hybrid baselines. **Exit criterion:** recall at 5 is no worse than hybrid.
 3. **Write quality.** Dedupe gate, generated index and log, `kb confirm`, `kb lint`.
 4. **Teams plus hosted storage on R2.** Team tables, the `kb_document` and `kb_change` tables, the R2 layout, the compare-and-swap write API, `clanker kb pull` and `push` sync with conflict files, a starter template copied into each new team's prefix, and the daily reconciler. The git export and GitHub mirror come after.
-5. **Web app.** Replace the public solutions feed with a team KB viewer (tree by area, search, doc page, lint report, activity from `kb_change`, history and diffs), using the existing design system in `apps/web/src/index.css`. This is where the earlier UI redesign happens.
-6. **Cleanup.** Remove the vector stack and the old tables.
-7. **Two-way GitHub sync.** Per the sketch above.
+5. **Hosted dreaming.** Scheduled dreamer on our model bill, gated on recent changes and a per-run token cap. Output is always `draft`.
+6. **Web app.** Replace the public solutions feed with a team KB viewer (tree by area, search, doc page, lint report, activity from `kb_change`, history and diffs), using the existing design system in `apps/web/src/index.css`. This is where the earlier UI redesign happens.
+7. **Cleanup.** Remove the vector stack and the old tables.
+8. **Two-way GitHub sync.** Per the sketch above.
 
 ## Risks
 
 - **Retrieval regressions on paraphrased queries** ("page is stale after update" vs. "cache tags not invalidating"). BM25 has no synonyms. Mitigations: `aliases` written at authoring time, the agent retrying with reformulated queries (agentic search), and `kb_browse`. Optional later: an LLM reranker over the top 20.
 - **Taxonomy drift** (teams invent `backend/` and `back-end/`). Mitigations: `AGENTS.md` lists the allowed areas and tags, and lint flags unknown ones.
 - **Write noise** from agents logging trivia. The dedupe gate, `status: draft` until confirmed, and an optional `review_policy: human` limit this.
+- **Dreaming cost.** Model calls are on our bill and grow with active teams. Mitigations: skip teams with no changes since the last dream, cap tokens per run, and record spend per team so a paid cap can be added later without a redesign.
 - **Positioning.** Mosaic (YC, "shared memory for your team's agents"), ExtraContext, and Cognition's Agent Memory Repo are in this space. We build on the open Agent Memory Repo format. The differentiators are hosted team search, duplicate checks before writing, permissions, a web UI, scheduled dreaming, and an open-source local mode.
 
 ## Decisions
@@ -284,6 +295,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **File format:** both kinds. General notes use their bullet format (`MEMORY.md`, `[[path]]` links, `[key: value]` metadata per line, written with `kb_append`). Structured fix documents keep YAML frontmatter so search can filter on tags, error signatures, and status.
 - **Access in v1:** our MCP and CLI only. Agents reach hosted memory through those tools. We do not serve the git protocol, and we do not pull two-way GitHub sync forward. Agents that only know how to `git clone` an Agent Memory Repo cannot connect until a later step.
 - **Content:** general team memory, with verified debugging fixes as the headline. Notes cover decisions, how-tos, gotchas, processes, and saved queries. Marketing and the first evals stay on fixes.
+- **Dreaming:** hosted, on our model bill. A scheduled job adds and cleans memory. It does not run inside the user's agent. Output is always `draft`, runs only after new changes, and each run has a token cap.
 
 ## Open questions
 
