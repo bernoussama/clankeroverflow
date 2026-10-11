@@ -272,7 +272,7 @@ Keep the old tool names as thin aliases for one CLI minor version, since the ski
 
 ## Teams model (hosted)
 
-New tables in `packages/db`: `team`, `team_member (role: owner | editor | reader)`, `team_kb (r2_prefix, jurisdiction: default | eu, review_policy: auto | human, github_repo?, github_sync_mode: off | export | two_way)`. The `review_policy` default is `auto`: docs go live as drafts, as decided above. `human` is an opt-in for teams that want approval first., plus the `kb_document` and `kb_change` tables described under Storage. Scope API keys to a team. Area-level permissions come later. V1 is all-or-nothing per team.
+New tables in `packages/db`: `team`, `team_member (role: owner | editor | reader)`, `team_kb (r2_prefix, jurisdiction: default | eu, review_policy: auto | human, github_repo?, github_sync_mode: off | export | two_way)`. The `review_policy` default is `auto`: docs go live as drafts, as decided above. `human` is an opt-in for teams that want approval first. Also add the `kb_document` and `kb_change` tables described under Storage. Scope API keys to a team. Area-level permissions come later. V1 is all-or-nothing per team.
 
 ## What gets deleted
 
@@ -281,7 +281,7 @@ Once the markdown backend matches or beats current retrieval in evals:
 - `packages/api/src/semantic/*`, the Vectorize and Workers AI bindings in `packages/infra/alchemy.run.ts`
 - `packages/cli/src/mcp/local-semantic.ts`, `node-llama-cpp`, `sqlite-vec`, `benchmarks/local-embeddings`
 - the hybrid and auto-fallback search modes (`auto-search.ts`)
-- eventually `solution` and `solution_vote`, after migration
+- `solution` and `solution_vote`, with no data migration. The public corpus is shut down because nobody depends on it.
 
 ## Two-way GitHub sync (later)
 
@@ -300,7 +300,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 3. **Write quality.** Dedupe gate, generated index and log, `kb confirm`, `kb lint`.
 4. **Teams plus hosted storage on R2.** Team tables, the `kb_document` and `kb_change` tables, the R2 layout, the compare-and-swap write API, `clanker kb pull` and `push` sync with conflict files, a starter template copied into each new team's prefix, and the daily reconciler. The git export and GitHub mirror come after.
 5. **Hosted dreaming.** Scheduled dreamer on our model bill, gated on recent changes and a per-run token cap. Output is always `draft`.
-6. **Web app.** Replace the public solutions feed with a team KB viewer (tree by area, search, doc page, lint report, activity from `kb_change`, history and diffs), using the existing design system in `apps/web/src/index.css`. This is where the earlier UI redesign happens.
+6. **Web app.** A team knowledge-base viewer (tree by area, search, doc page, lint report, activity from `kb_change`, history and diffs), using the existing design system in `apps/web/src/index.css`. There is no public solutions feed to preserve. This is where the earlier UI redesign happens.
 7. **Cleanup.** Remove the vector stack and the old tables.
 8. **Two-way GitHub sync.** Per the sketch above.
 9. **First-class swarms.** Tools to start a swarm, assign agents, and collect the result, on top of the v1 folder convention.
@@ -326,11 +326,11 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Personal memory:** a free, open-source layer in the CLI at `~/.local/share/clankeroverflow/kb/`. It is searched alongside repo and team memory, and hits are labeled by layer. Writes ask when the destination is unclear. Hosted personal memory is a possible later product, not part of v1.
 - **Provenance:** every entry records the agent, the session id, and a one-line message. Storing the transcript is optional and off by default. A stored transcript is a separate linked file, not part of the entry line, and search does not index it.
 - **Swarms:** a folder convention in v1 (`swarms/{name}/` with `README.md`, `findings.md`, and `questions.md`), written with `kb_append`. First-class swarm tools come later.
+- **Public corpus:** shut it down. Do not migrate hosted solutions. Nobody uses them or depends on them. Anonymous public search goes away with the `solution` and `solution_vote` tables.
 
 ## Open questions
 
-1. **Public corpus.** Does the global public ClankerOverflow survive as a "public" team KB that anyone can read, or does the product become teams-only?
-2. **Area taxonomy.** Free-form, a fixed starter set (`backend`, `frontend`, `infra`, `data`, `finance`, `product`, `ops`), or defined per team in `AGENTS.md`?
-3. **Repo-local vs. team-wide.** Should a repo's `.clankeroverflow/kb/` and the team KB both be searched, and if so with what precedence?
-4. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
-5. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
+1. **Area taxonomy.** Free-form, a fixed starter set (`backend`, `frontend`, `infra`, `data`, `finance`, `product`, `ops`), or defined per team in `AGENTS.md`?
+2. **Repo-local vs. team-wide.** Should a repo's `.clankeroverflow/kb/` and the team KB both be searched, and if so with what precedence?
+3. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
+4. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
