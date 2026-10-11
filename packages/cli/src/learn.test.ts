@@ -15,7 +15,8 @@ import {
   type LearnInput,
 } from "./learn";
 import { resolveConfig } from "./mcp/config";
-import { LocalBackend } from "./mcp/local-backend";
+import { KnowledgeBase } from "./kb/knowledge-base";
+import { MarkdownBackend } from "./kb/markdown-backend";
 
 function localConfig(dir: string, dbName = "solutions.sqlite") {
   return resolveConfig(
@@ -99,7 +100,7 @@ describe("learn workflow", () => {
       expect(parsed.rootCause).toContain("Metro kept the old native module graph");
       expect(parsed.verification).toContain("pnpm expo start --clear");
 
-      const backend = new LocalBackend(config.localDbPath);
+      const backend = new MarkdownBackend(KnowledgeBase.open({ home: config.home }), "personal");
       const results = await backend.search({
         query: "expo metro stale native bundle",
         limit: 1,
@@ -153,7 +154,10 @@ describe("learn workflow", () => {
       expect(synced.files).toHaveLength(1);
       expect(synced.results[0]?.status).toBe("logged");
 
-      const importedBackend = new LocalBackend(importedConfig.localDbPath);
+      const importedBackend = new MarkdownBackend(
+        KnowledgeBase.open({ home: importedConfig.home }),
+        "personal",
+      );
       const importedResults = await importedBackend.search({
         query: "expo metro stale native bundle",
         limit: 1,
@@ -179,7 +183,7 @@ describe("learn workflow", () => {
 
   test("closes its backend on success, duplicate, and validation error paths", async () => {
     const dir = mkdtempSync(join(tmpdir(), "clanker-learn-close-"));
-    const close = vi.spyOn(LocalBackend.prototype, "close");
+    const close = vi.spyOn(MarkdownBackend.prototype, "close");
     try {
       const config = localConfig(dir);
       await learnSolution(expoInput, { config, mirror: false, dedupe: false });

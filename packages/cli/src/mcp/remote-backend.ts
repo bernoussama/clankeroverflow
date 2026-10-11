@@ -18,26 +18,30 @@ export class RemoteBackend implements SolutionBackend {
     // The hosted backend owns no persistent client-side resources.
   }
 
-  async log(input: LogSolutionInput): Promise<{ id: string }> {
-    return this.trpc.solutions.log.mutate(input);
+  async log(input: LogSolutionInput): Promise<{ id: string; warning?: string }> {
+    const tags = (input.tags ?? "")
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+    const result = await this.trpc.kb.write.mutate({
+      title: input.problem,
+      problem: input.problem,
+      solution: input.solution,
+      tags,
+      force: false,
+    });
+    return { id: result.id, warning: result.warning };
   }
 
   async search(input: SearchSolutionsInput): Promise<SolutionResult[]> {
-    return this.trpc.solutions.search.query({
-      ...input,
-      ...(input.mode === "keyword" ? { keywordStrategy: input.keywordStrategy ?? "tiered" } : {}),
-    });
+    return this.trpc.kb.search.query({ query: input.query, limit: input.limit });
   }
 
   async searchExactKeyword(input: { query: string; limit: number }) {
-    return this.trpc.solutions.search.query({
-      ...input,
-      mode: "keyword",
-      keywordStrategy: "exact",
-    });
+    return this.search({ query: input.query, limit: input.limit, mode: "keyword" });
   }
 
   async vote(input: VoteSolutionInput): Promise<void> {
-    await this.trpc.solutions.vote.mutate(input);
+    await this.trpc.kb.confirm.mutate({ path: input.id, worked: input.isUpvote });
   }
 }

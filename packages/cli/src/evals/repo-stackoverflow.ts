@@ -3,9 +3,10 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { KnowledgeBase } from "../kb/knowledge-base.js";
+import { MarkdownBackend } from "../kb/markdown-backend.js";
 import { searchWithAutoFallback } from "../mcp/auto-search.js";
 import { resolveConfig } from "../mcp/config.js";
-import { LocalBackend } from "../mcp/local-backend.js";
 import { learnSolution, syncRepoSolutions, type LearnInput } from "../learn.js";
 
 export type RepoStackOverflowEvalResult = {
@@ -132,7 +133,10 @@ export async function runRepoStackOverflowEval(
       mirror: false,
       dedupe: false,
     });
-    const pass2Backend = new LocalBackend(pass2Config.localDbPath);
+    const pass2Backend = new MarkdownBackend(
+      KnowledgeBase.open({ home: pass2Config.home }),
+      "personal",
+    );
     const pass2Search = await (async () => {
       try {
         return await searchWithAutoFallback(pass2Backend, {

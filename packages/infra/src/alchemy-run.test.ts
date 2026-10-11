@@ -70,17 +70,17 @@ describe("infra worker config", () => {
     expect(alchemyRunSource).toContain("COMMIT_SHA: commitSha");
   });
 
-  it("keeps remote semantic search bindings out of basic local Wrangler dev", () => {
-    expect(alchemyRunSource).toContain("AI: workersAi");
-    expect(alchemyRunSource).toContain("SOLUTION_VECTORS: solutionVectorIndex");
+  it("stores team markdown in R2 instead of Vectorize", () => {
+    expect(alchemyRunSource).toContain('R2Bucket("knowledge"');
+    expect(alchemyRunSource).toContain("KB_BUCKET: knowledgeBucket");
+    expect(alchemyRunSource).not.toContain("SOLUTION_VECTORS");
+    expect(alchemyRunSource).not.toContain("VectorizeIndex");
     expect(serverWranglerSource).not.toContain("[ai]");
     expect(serverWranglerSource).not.toContain("[[vectorize]]");
   });
 
-  it("isolates disposable retrieval infrastructure from production resources", () => {
-    expect(retrievalBenchmarkSource).toContain('alchemy("clankeroverflow-retrieval-benchmark"');
-    expect(retrievalBenchmarkSource).toContain('VectorizeIndex("benchmark-vectors"');
-    expect(retrievalBenchmarkSource).not.toContain("adopt:");
-    expect(retrievalBenchmarkSource).not.toContain("domains:");
+  it("retires the disposable vector retrieval benchmark", () => {
+    expect(retrievalBenchmarkSource).toContain("hosted vector retrieval benchmark was removed");
+    expect(retrievalBenchmarkSource).not.toContain("VectorizeIndex");
   });
 });

@@ -22,6 +22,7 @@ import { formatSearchResults } from "./mcp/format.js";
 import { FtsQuerySyntaxError, LocalBackend } from "./mcp/local-backend.js";
 import { downloadDefaultLocalModel } from "./mcp/local-semantic.js";
 import { KnowledgeBase } from "./kb/knowledge-base.js";
+import { migrateLocalKnowledge } from "./kb/migrate.js";
 import { exportLocalSolutions, gitRepoRoot, learnSolution, syncRepoSolutions } from "./learn.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
 import pc from "picocolors";
@@ -453,9 +454,43 @@ export function createProgram(options: CreateProgramOptions = {}) {
       }
     });
 
-  program
+  const kbCommand = program
     .command("kb")
-    .description("Search and write the local markdown knowledge base")
+    .description("Search and write the local markdown knowledge base");
+
+  kbCommand
+    .command("init")
+    .description("Write AGENTS.md and MEMORY.md into the local knowledge base")
+    .action(() => {
+      const knowledgeBase = KnowledgeBase.open();
+      knowledgeBase.init();
+      console.log("Knowledge base template is ready.");
+    });
+
+  kbCommand
+    .command("lint")
+    .description("Report duplicates, stale docs, broken links, and near-duplicate areas")
+    .action(() => {
+      const issues = KnowledgeBase.open().lint();
+      if (!issues.length) {
+        console.log("No knowledge base lint issues.");
+        return;
+      }
+      for (const issue of issues) console.log(`${issue.code} ${issue.path}: ${issue.message}`);
+    });
+
+  kbCommand
+    .command("migrate")
+    .description("Copy solutions.sqlite and repo solution markdown into the knowledge base")
+    .action(() => {
+      const config = resolveConfig();
+      const imported = migrateLocalKnowledge(KnowledgeBase.open({ home: config.home }), {
+        sqlitePath: config.localDbPath,
+      });
+      console.log(`Imported ${imported.imported} documents into the knowledge base.`);
+    });
+
+  kbCommand
     .command("search")
     .argument("<query>", "The search query")
     .option("-l, --limit <number>", "Number of results to return", "5")

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@clankeroverflow/auth": "workspace:*",
+    "@clankeroverflow/kb": "workspace:*",
     "@clankeroverflow/db": "workspace:*",
     "@clankeroverflow/env": "workspace:*",
     "@trpc/server": "catalog:",

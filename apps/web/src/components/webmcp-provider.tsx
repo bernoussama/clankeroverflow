@@ -24,7 +24,6 @@ interface ModelContext {
 }
 
 type SearchMode = "auto" | "keyword" | "semantic" | "hybrid";
-type ConcreteSearchMode = Exclude<SearchMode, "auto">;
 
 declare global {
   interface Navigator {
@@ -63,61 +62,11 @@ const searchSolutionsTool: WebMCPTool = {
       : "auto";
 
     try {
-      const search = (searchMode: ConcreteSearchMode, keywordStrategy?: "exact" | "tiered") =>
-        trpcClient.solutions.search.query({
-          query,
-          limit: 10,
-          mode: searchMode,
-          ...(keywordStrategy ? { keywordStrategy } : {}),
-        });
-
-      if (mode !== "auto") {
-        const results = await search(mode, mode === "keyword" ? "tiered" : undefined);
-        return {
-          results,
-          attempts: [
-            {
-              mode,
-              ...(mode === "keyword" ? { keywordStrategy: "tiered" as const } : {}),
-              resultCount: results.length,
-            },
-          ],
-        };
-      }
-
-      const keywordResults = await search("keyword", "exact");
-      const attempts: Array<{
-        mode: ConcreteSearchMode;
-        keywordStrategy?: "exact" | "tiered";
-        resultCount?: number;
-        error?: string;
-      }> = [{ mode: "keyword", keywordStrategy: "exact", resultCount: keywordResults.length }];
-      if (keywordResults.length > 0) {
-        return { results: keywordResults, attempts };
-      }
-
-      try {
-        const hybridResults = await search("hybrid");
-        attempts.push({ mode: "hybrid", resultCount: hybridResults.length });
-        return { results: hybridResults, attempts };
-      } catch (error) {
-        attempts.push({
-          mode: "hybrid",
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-        const relaxedResults = await search("keyword", "tiered");
-        attempts.push({
-          mode: "keyword",
-          keywordStrategy: "tiered",
-          resultCount: relaxedResults.length,
-        });
-        return {
-          results: relaxedResults,
-          attempts,
-          message:
-            "Keyword search returned no results and hybrid fallback was unavailable. Try one smaller or sharper keyword query before debugging from scratch.",
-        };
-      }
+      const results = await trpcClient.kb.search.query({ query, limit: 10 });
+      return {
+        results,
+        attempts: [{ mode: mode === "auto" ? "keyword" : mode, resultCount: results.length }],
+      };
     } catch (error) {
       return {
         results: [],
@@ -152,8 +101,13 @@ const browseSolutionsTool: WebMCPTool = {
     const limit = Math.min(Math.max(Number(args.limit ?? 10), 1), 20);
 
     try {
-      const result = await trpcClient.solutions.list.query({ limit, sort });
-      return { items: result.items, hasMore: Boolean(result.nextCursor) };
+      const catalog = await trpcClient.kb.browse.query({});
+      return {
+        items: [{ id: "catalog", problem: catalog, solution: "", tags: null, score: 0 }],
+        hasMore: false,
+        sort,
+        limit,
+      };
     } catch (error) {
       return {
         items: [],
@@ -182,8 +136,8 @@ const getSolutionTool: WebMCPTool = {
     if (!id) return { message: "Solution ID is required" };
 
     try {
-      const solution = await trpcClient.solutions.getById.query({ id });
-      return solution;
+      const document = await trpcClient.kb.read.query({ path: id });
+      return document;
     } catch (error) {
       return {
         message: `Failed to load solution: ${error instanceof Error ? error.message : "Unknown error"}`,

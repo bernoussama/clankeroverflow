@@ -8,9 +8,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
+import { KnowledgeBase } from "./kb/knowledge-base";
+import { MarkdownBackend } from "./kb/markdown-backend";
 import { createProgram } from "./index";
 import { LocalBackend } from "./mcp/local-backend";
 import {
@@ -43,12 +45,14 @@ async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
   const previousMode = process.env.CLANKER_MODE;
   const previousDb = process.env.CLANKER_LOCAL_DB;
   const previousSemantic = process.env.CLANKER_LOCAL_SEMANTIC;
+  const previousHome = process.env.HOME;
   const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-"));
 
   try {
     process.env.CLANKER_MODE = "local";
     process.env.CLANKER_LOCAL_DB = join(dir, "solutions.sqlite");
     process.env.CLANKER_LOCAL_SEMANTIC = "0";
+    process.env.HOME = dir;
     return await run(process.env.CLANKER_LOCAL_DB);
   } finally {
     if (previousMode === undefined) {
@@ -65,6 +69,11 @@ async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
       delete process.env.CLANKER_LOCAL_SEMANTIC;
     } else {
       process.env.CLANKER_LOCAL_SEMANTIC = previousSemantic;
+    }
+    if (previousHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = previousHome;
     }
     rmSync(dir, { recursive: true, force: true });
   }
@@ -193,7 +202,7 @@ describe("CLI", () => {
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
       expect(fetchCallUrl).toMatch(/^https:\/\/api\.clankeroverflow\.com\/trpc/);
-      expect(fetchCallUrl).toContain("solutions.log");
+      expect(fetchCallUrl).toContain("kb.write");
       expect(consoleLogMock).toHaveBeenCalledWith(
         pc.green(pc.bold("✔ Success!")) +
           ` Solution logged: ${pc.cyan(pc.underline("https://clankeroverflow.com/solution/123"))}`,
@@ -294,7 +303,10 @@ describe("CLI", () => {
           expect(note).toContain("Expo Router reload keeps stale native bundle");
           expect(note).toContain("## Verification");
 
-          const backend = new LocalBackend(dbPath);
+          const backend = new MarkdownBackend(
+            KnowledgeBase.open({ home: dirname(dbPath) }),
+            "personal",
+          );
           const results = await backend.search({
             query: "expo metro stale native bundle",
             limit: 1,
@@ -378,7 +390,10 @@ describe("CLI", () => {
           expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("Exported"));
           expect(existsSync(join(exportRepo, ".clankeroverflow", "solutions"))).toBe(true);
 
-          const backend = new LocalBackend(dbPath);
+          const backend = new MarkdownBackend(
+            KnowledgeBase.open({ home: dirname(dbPath) }),
+            "personal",
+          );
           const results = await backend.search({
             query: "expo metro stale native bundle",
             limit: 2,
@@ -435,7 +450,7 @@ describe("CLI", () => {
         ]);
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(String(fetchMock.mock.calls[0]?.[0])).toContain("solutions.log");
+        expect(String(fetchMock.mock.calls[0]?.[0])).toContain("kb.write");
       } finally {
         rmSync(repo, { recursive: true, force: true });
       }
@@ -467,7 +482,7 @@ describe("CLI", () => {
 
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
-      expect(fetchCallUrl).toContain("solutions.search");
+      expect(fetchCallUrl).toContain("kb.search");
       expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("⚠ UNTRUSTED CONTENT:"));
       expect(consoleLogMock).toHaveBeenCalledWith(
         expect.stringContaining(
@@ -871,7 +886,7 @@ describe("CLI", () => {
       await program.parseAsync(["node", "test", "upvote", "123"]);
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
-      expect(fetchCallUrl).toContain("solutions.vote");
+      expect(fetchCallUrl).toContain("kb.confirm");
       expect(consoleLogMock).toHaveBeenCalledWith(
         pc.green(pc.bold("▲ Upvoted")) + ` solution ${pc.cyan("123")}`,
       );
@@ -885,7 +900,7 @@ describe("CLI", () => {
       await program.parseAsync(["node", "test", "downvote", "123"]);
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
-      expect(fetchCallUrl).toContain("solutions.vote");
+      expect(fetchCallUrl).toContain("kb.confirm");
       expect(consoleLogMock).toHaveBeenCalledWith(
         pc.red(pc.bold("▼ Downvoted")) + ` solution ${pc.cyan("123")}`,
       );
@@ -928,7 +943,7 @@ describe("CLI", () => {
         const program = createProgram();
         await program.parseAsync(["node", "test", "upvote", "remote-1", "--source", "remote"]);
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(fetchMock.mock.calls[0][0].toString()).toContain("solutions.vote");
+        expect(fetchMock.mock.calls[0][0].toString()).toContain("kb.confirm");
       });
     });
   });

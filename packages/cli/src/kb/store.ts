@@ -1,5 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, relative } from "node:path";
 
 import { formatFixDocument, formatNoteEntry, parseDocument } from "./document";
@@ -153,6 +161,7 @@ export class MarkdownStore {
       notes: scrubbed.fields.notes ?? "",
     };
     writeAtomic(join(this.root, path), formatFixDocument(document));
+    this.record(existing ? "update" : "create", path, title);
     return { status: "written" as const, document, warnings: scrubbed.warnings };
   }
 
@@ -169,29 +178,69 @@ export class MarkdownStore {
     }
     const body = readFileSync(loaded.absolutePath, "utf8").replace(/\s*$/, "");
     writeAtomic(loaded.absolutePath, `${body}\n${line}\n`);
+    this.record("append", path, entry.text);
     return this.read(path)!;
   }
 
-  confirm(path: string, worked: boolean) {
+  confirm(path: string, worked: boolean, actor?: string) {
     const loaded = this.read(path);
     if (!loaded || loaded.document.kind !== "fix") {
       throw new Error(`No fix document at ${path}.`);
     }
     const document = { ...loaded.document };
-    if (worked) {
+    const self = Boolean(actor && (document.authors ?? []).includes(actor));
+    if (worked && !self) {
       document.confirmations += 1;
       if (document.status === "draft") document.status = "verified";
-    } else {
+      document.lastVerified = new Date().toISOString().slice(0, 10);
+    } else if (!worked) {
       document.confirmations = Math.max(0, document.confirmations - 1);
       if (document.confirmations === 0) document.status = "stale";
     }
     document.updated = new Date().toISOString().slice(0, 10);
     writeAtomic(loaded.absolutePath, formatFixDocument(document));
+    this.record("confirm", path, worked ? "worked" : "failed");
     return document;
+  }
+
+  writeText(path: string, body: string) {
+    writeAtomic(join(this.root, path), body.endsWith("\n") ? body : `${body}\n`);
+    this.record("create", path, path);
   }
 
   delete(path: string) {
     rmSync(join(this.root, path), { force: true });
+    this.record("delete", path, "deleted");
+  }
+
+  changes() {
+    const file = join(this.root, ".changes.jsonl");
+    try {
+      return readFileSync(file, "utf8")
+        .split("\n")
+        .filter(Boolean)
+        .map(
+          (line) =>
+            JSON.parse(line) as {
+              seq: number;
+              path: string;
+              op: string;
+              message: string;
+              createdAt: string;
+            },
+        );
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      throw error;
+    }
+  }
+
+  private record(op: string, path: string, message: string) {
+    const seq = this.changes().length + 1;
+    appendFileSync(
+      join(this.root, ".changes.jsonl"),
+      `${JSON.stringify({ seq, path, op, source: "cli", message, createdAt: new Date().toISOString() })}\n`,
+    );
   }
 }
 

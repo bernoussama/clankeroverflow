@@ -19,6 +19,7 @@ import * as Sentry from "@sentry/cloudflare";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 
+import { handleHostedMcp, teamChanges } from "./hosted-mcp";
 import { createRequestResourceLifecycle } from "./request-lifecycle";
 import { withRequestLogging, type RequestLogEvent } from "./request-logging";
 
@@ -238,6 +239,29 @@ app.post("/internal/sentry-test", (c) => {
   });
 
   return c.json({ eventId, ok: true });
+});
+
+app.use("/mcp", withNoStore);
+app.use("/mcp", withRequestServices);
+app.all("/mcp", async (c) => {
+  const apiKey = c.req.header("x-clanker-api-key");
+  if (!apiKey) return c.text("A team API key is required.", 401);
+  const verified = await c.get("auth").api.verifyApiKey({ body: { key: apiKey } });
+  const teamId = verified?.key?.referenceId;
+  if (!verified?.valid || !teamId) return c.text("Invalid API key.", 401);
+  return handleHostedMcp(c.req.raw, teamId);
+});
+
+app.use("/kb/*", withNoStore);
+app.use("/kb/*", withRequestServices);
+app.get("/kb/changes", async (c) => {
+  const apiKey = c.req.header("x-clanker-api-key");
+  if (!apiKey) return c.text("A team API key is required.", 401);
+  const verified = await c.get("auth").api.verifyApiKey({ body: { key: apiKey } });
+  const teamId = verified?.key?.referenceId;
+  if (!verified?.valid || !teamId) return c.text("Invalid API key.", 401);
+  const since = Number(c.req.query("since") ?? "0");
+  return c.json({ changes: teamChanges(teamId, Number.isFinite(since) ? since : 0) });
 });
 
 app.use(

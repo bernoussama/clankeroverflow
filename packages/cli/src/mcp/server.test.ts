@@ -7,9 +7,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 
+import { MarkdownBackend } from "../kb/markdown-backend";
 import { createMcpServer } from "./server";
 import { resolveConfig } from "./config";
-import { LocalBackend } from "./local-backend";
 
 describe("CLI MCP server", () => {
   const testDir = dirname(fileURLToPath(import.meta.url));
@@ -150,8 +150,12 @@ describe("CLI MCP server", () => {
       "kb_append",
       "kb_browse",
       "kb_confirm",
+      "kb_lint",
       "kb_read",
       "kb_search",
+      "kb_swarm_assign",
+      "kb_swarm_collect",
+      "kb_swarm_start",
       "kb_write",
       "learn_solution",
       "log_solution",
@@ -219,7 +223,7 @@ describe("CLI MCP server", () => {
     expect(fetchMock).toHaveBeenCalled();
     const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
     expect(fetchCallUrl).toMatch(/^https:\/\/api\.clankeroverflow\.com\/trpc/);
-    expect(fetchCallUrl).toContain("solutions.log");
+    expect(fetchCallUrl).toContain("kb.write");
 
     const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
     expect(text).toContain("Success! Solution logged:");
@@ -305,7 +309,7 @@ describe("CLI MCP server", () => {
 
     expect(fetchMock).toHaveBeenCalled();
     const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
-    expect(fetchCallUrl).toContain("solutions.search");
+    expect(fetchCallUrl).toContain("kb.search");
 
     const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
     expect(text).toContain("Search attempts: keyword exact returned 1.");
@@ -435,7 +439,7 @@ describe("CLI MCP server", () => {
       });
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
-      expect(text).toContain("Local semantic search is not configured yet.");
+      expect(text).toContain("No solutions found.");
       expect(fetchMock).not.toHaveBeenCalled();
     } finally {
       if (previousMode === undefined) {
@@ -469,7 +473,7 @@ describe("CLI MCP server", () => {
 
     expect(fetchMock).toHaveBeenCalled();
     const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
-    expect(fetchCallUrl).toContain("solutions.vote");
+    expect(fetchCallUrl).toContain("kb.confirm");
 
     const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
     expect(text).toBe("Successfully upvoted remote solution 123");
@@ -543,7 +547,7 @@ describe("CLI MCP server", () => {
   });
 
   test("closes transient backends created for source overrides", async () => {
-    const closeSpy = vi.spyOn(LocalBackend.prototype, "close");
+    const closeSpy = vi.spyOn(MarkdownBackend.prototype, "close");
 
     try {
       await client.callTool({

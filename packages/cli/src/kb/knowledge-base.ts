@@ -1,6 +1,9 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+import { mkdirSync, writeFileSync } from "node:fs";
+
+import { lintDocuments, renderLog, starterFiles } from "@clankeroverflow/kb";
 import { findRepoRoot } from "../learn";
 import { searchDocuments } from "./search";
 import { MarkdownStore } from "./store";
@@ -96,16 +99,42 @@ export class KnowledgeBase {
     });
   }
 
+  writeText(layer: KbLayer, path: string, body: string) {
+    this.storeFor(layer).writeText(path, body);
+  }
+
   append(layer: KbLayer, path: string, entry: NoteEntry) {
     return this.storeFor(layer).append(path, entry);
   }
 
-  confirm(layer: KbLayer, path: string, worked: boolean) {
-    return this.storeFor(layer).confirm(path, worked);
+  confirm(layer: KbLayer, path: string, worked: boolean, actor?: string) {
+    return this.storeFor(layer).confirm(path, worked, actor);
   }
 
   count() {
     return this.stores.reduce((total, store) => total + store.list().length, 0);
+  }
+
+  lint() {
+    return lintDocuments(this.stores.flatMap((store) => store.list()));
+  }
+
+  log() {
+    return renderLog(
+      this.stores.flatMap((store) =>
+        store.changes().map((change) => ({ ...change, source: "cli" })),
+      ),
+    );
+  }
+
+  init() {
+    for (const store of this.stores) {
+      for (const file of starterFiles()) {
+        if (store.read(file.path)) continue;
+        mkdirSync(store.root, { recursive: true });
+        writeFileSync(join(store.root, file.path), file.body);
+      }
+    }
   }
 }
 

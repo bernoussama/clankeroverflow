@@ -1,6 +1,6 @@
 # Markdown Knowledge Base Design
 
-Status: local markdown knowledge base is implemented. On 2026-10-11, markdown search reached recall@5 of 0.92 on the 100-query local-embeddings corpus, matching bge hybrid (0.92) and ahead of SQLite FTS keyword (0.89). The retrieval gate passes. Vector deletion stays in the cleanup phase because hosted search still uses that stack.
+Status: the knowledge base phases are implemented. On 2026-10-11, markdown search reached recall@5 of 0.92 on the 100-query local-embeddings corpus, matching bge hybrid (0.92) and ahead of SQLite FTS keyword (0.89). Hosted Workers AI, Vectorize, and the public `solution` tables are removed. Local SQLite remains only so `clanker kb migrate` can read an existing database.
 
 ## Goal
 

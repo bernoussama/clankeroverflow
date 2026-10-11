@@ -5,6 +5,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { searchWithAutoFallback } from "./mcp/auto-search";
 import type { SolutionBackend } from "./mcp/backend";
 import { modeForSource, resolveConfig, type BackendSource, type ServerConfig } from "./mcp/config";
+import { KnowledgeBase } from "./kb/knowledge-base";
 import { createSolutionBackend } from "./mcp/create-backend";
 import { openLocalDb } from "./mcp/local-db";
 
@@ -403,6 +404,29 @@ export function exportLocalSolutions(
   const config = options.config ?? resolveConfig();
   const repoRoot = options.repoRoot === undefined ? findRepoRoot() : options.repoRoot;
   if (!repoRoot) throw new Error("No git repository root found for Markdown export.");
+  const knowledgeBase = KnowledgeBase.open({ home: config.home });
+  const markdownRows = knowledgeBase
+    .storeFor("personal")
+    .list()
+    .flatMap((loaded) => (loaded.document.kind === "fix" ? [loaded.document] : []));
+  if (markdownRows.length) {
+    const paths = markdownRows.map((document) => {
+      const parsed = parseStructuredSolution(document.solution);
+      return writeLearnMarkdown(repoRoot, document.id, {
+        problem: document.problem || document.title,
+        rootCause: parsed.rootCause || document.rootCause,
+        solution: parsed.solution || document.solution,
+        verification: parsed.verification || document.verification,
+        repoNote: parsed.repoNote,
+        framework: parsed.framework,
+        runtime: parsed.runtime,
+        packageManager: parsed.packageManager,
+        fingerprints: parsed.fingerprints,
+        tags: document.tags.join(",") || "clankeroverflow",
+      });
+    });
+    return { rows: markdownRows, paths };
+  }
   const db = openLocalDb(config.localDbPath);
   try {
     const rows = db

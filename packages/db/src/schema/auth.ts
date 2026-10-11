@@ -100,16 +100,13 @@ export const deviceCode = pgTable(
   ],
 );
 
-import { solution, solutionVote } from "./solutions";
 import { apikey } from "./api-keys";
 
 export const userRelations = relations(user, ({ many }) => ({
   session: many(session),
   account: many(account),
-  solutions: many(solution),
   apiKeys: many(apikey),
   deviceCodes: many(deviceCode),
-  votes: many(solutionVote),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

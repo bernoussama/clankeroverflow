@@ -52,6 +52,7 @@ export type ConfigPathOptions = {
 
 export type ServerConfig = {
   mode: ClankerMode;
+  home: string;
   configPath: string;
   hasPersistedConfig: boolean;
   localDbPath: string;
@@ -169,6 +170,7 @@ export function resolveConfig(
 
   return {
     mode,
+    home,
     configPath,
     hasPersistedConfig: Boolean(persisted),
     localDbPath,
