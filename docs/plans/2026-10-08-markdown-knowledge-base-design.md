@@ -31,7 +31,7 @@ The proposed "folders by department or topic" works well for **ownership and bro
 
 Proposal:
 
-- **Folders (areas)** are shallow (at most 2 levels) and answer "who owns this, and who can see it". They map to departments or teams within a company and later to permissions.
+- **Folders (areas)** are shallow (at most 2 levels) and answer "who owns this, and who can see it". Names are free-form. There is no allowed list. They map to departments or topics and later to permissions.
 - **Frontmatter** answers "what is this about". Fields like `tags`, `type`, `stack`, and `error_signatures` can hold several values and drive filtering and ranking.
 - **Links** use Agent Memory Repo's `[[path]]` form, starting from the memory root. Omit `.md`. Keep information in one place and link to it elsewhere.
 
@@ -308,7 +308,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 ## Risks
 
 - **Retrieval regressions on paraphrased queries** ("page is stale after update" vs. "cache tags not invalidating"). BM25 has no synonyms. Mitigations: `aliases` written at authoring time, the agent retrying with reformulated queries (agentic search), and `kb_browse`. Optional later: an LLM reranker over the top 20.
-- **Taxonomy drift** (teams invent `backend/` and `back-end/`). Mitigations: `AGENTS.md` lists the allowed areas and tags, and lint flags unknown ones.
+- **Taxonomy drift** (teams invent `backend/` and `back-end/`). Names stay free-form. Lint reports near-duplicate folder names and does not block the write. Dreaming can propose a merge as a draft.
 - **Write noise** from agents logging trivia. The dedupe gate, `status: draft` until confirmed, and an optional `review_policy: human` limit this.
 - **Dreaming cost.** Model calls are on our bill and grow with active teams. Mitigations: skip teams with no changes since the last dream, cap tokens per run, and record spend per team so a paid cap can be added later without a redesign.
 - **Positioning.** Mosaic (YC, "shared memory for your team's agents"), ExtraContext, and Cognition's Agent Memory Repo are in this space. We build on the open Agent Memory Repo format. The differentiators are hosted team search, duplicate checks before writing, permissions, a web UI, scheduled dreaming, and an open-source local mode.
@@ -327,10 +327,10 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Provenance:** every entry records the agent, the session id, and a one-line message. Storing the transcript is optional and off by default. A stored transcript is a separate linked file, not part of the entry line, and search does not index it.
 - **Swarms:** a folder convention in v1 (`swarms/{name}/` with `README.md`, `findings.md`, and `questions.md`), written with `kb_append`. First-class swarm tools come later.
 - **Public corpus:** shut it down. Do not migrate hosted solutions. Nobody uses them or depends on them. Anonymous public search goes away with the `solution` and `solution_vote` tables.
+- **Areas:** free-form folder names, at most 2 levels deep. No allowed list. Lint reports near-duplicate names and does not reject them.
 
 ## Open questions
 
-1. **Area taxonomy.** Free-form, a fixed starter set (`backend`, `frontend`, `infra`, `data`, `finance`, `product`, `ops`), or defined per team in `AGENTS.md`?
-2. **Repo-local vs. team-wide.** Should a repo's `.clankeroverflow/kb/` and the team KB both be searched, and if so with what precedence?
-3. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
-4. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
+1. **Repo-local vs. team-wide.** Should a repo's `.clankeroverflow/kb/` and the team KB both be searched, and if so with what precedence?
+2. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
+3. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
