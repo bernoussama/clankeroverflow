@@ -34,7 +34,7 @@ declare global {
 const searchSolutionsTool: WebMCPTool = {
   name: "search_solutions",
   description:
-    "Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Default auto mode tries exact keyword search, then hybrid after a miss, then tiered keyword retrieval if hybrid is unavailable. Use the smallest distinctive keyword fingerprint and tags as relevance signals.",
+    "Search the markdown knowledge base before fresh debugging. Use the smallest distinctive keyword fingerprint and tags as relevance signals.",
   inputSchema: {
     type: "object",
     properties: {
@@ -48,7 +48,7 @@ const searchSolutionsTool: WebMCPTool = {
         enum: ["auto", "keyword", "semantic", "hybrid"],
         default: "auto",
         description:
-          "auto: exact keyword, then hybrid on a miss, then tiered keyword if hybrid is unavailable; keyword uses exact-first relaxed-fill retrieval",
+          "Search uses the markdown knowledge base.",
       },
     },
     required: ["query"],

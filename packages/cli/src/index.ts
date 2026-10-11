@@ -20,7 +20,6 @@ import { createSolutionBackend } from "./mcp/create-backend.js";
 import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
 import { FtsQuerySyntaxError, LocalBackend } from "./mcp/local-backend.js";
-import { downloadDefaultLocalModel } from "./mcp/local-semantic.js";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
@@ -41,25 +40,12 @@ function sanitizeForTerminal(text: string): string {
   return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x80-\x9F]/g, "");
 }
 
-function formatLocalStatus(dbPath: string, status: Awaited<ReturnType<LocalBackend["status"]>>) {
+function formatLocalStatus(dbPath: string, status: { totalSolutions: number }) {
   return [
     pc.bold("ClankerOverflow local status"),
-    `SQLite: ${pc.cyan(dbPath)}`,
-    `Semantic: ${status.enabled ? pc.green("enabled") : pc.yellow("disabled")}`,
-    `Solutions: ${status.totalSolutions}`,
-    `Embeddings: ${status.embeddedSolutions} current, ${status.pendingEmbeddings} pending`,
-    `Model: ${status.modelPath || "(not configured)"}`,
-    `Model file: ${status.modelValid ? pc.green("valid GGUF") : pc.yellow(status.modelError ?? "missing")}`,
-    `sqlite-vec: ${
-      status.sqliteVecAvailable
-        ? pc.green("available")
-        : pc.red(status.sqliteVecError ?? "unavailable")
-    }`,
-    `node-llama-cpp: ${
-      status.embedderAvailable
-        ? pc.green("available")
-        : pc.red(status.embedderError ?? "unavailable")
-    }`,
+    `Legacy SQLite: ${pc.cyan(dbPath)}`,
+    `Legacy rows: ${status.totalSolutions}`,
+    "Search uses the markdown knowledge base.",
   ].join("\n");
 }
 
@@ -706,7 +692,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
           CLANKER_MODE: "local",
           ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const backend = new LocalBackend(config.localDbPath);
         const status = await backend.status();
         if (options.json) {
           console.log(
@@ -738,34 +724,19 @@ export function createProgram(options: CreateProgramOptions = {}) {
           CLANKER_MODE: "local",
           ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const backend = new LocalBackend(config.localDbPath);
         const status = await backend.status();
         const checks = [
-          { name: "sqlite database", ok: true, detail: config.localDbPath },
+          { name: "legacy sqlite database", ok: true, detail: config.localDbPath },
           {
-            name: "local semantic enabled",
-            ok: status.enabled,
-            detail: status.enabled ? "enabled" : "disabled by CLANKER_LOCAL_SEMANTIC=0/false/off",
+            name: "markdown search",
+            ok: true,
+            detail: "Embeddings were removed. Search uses the markdown knowledge base.",
           },
           {
-            name: "sqlite-vec",
-            ok: status.sqliteVecAvailable,
-            detail: status.sqliteVecError ?? "available",
-          },
-          {
-            name: "node-llama-cpp",
-            ok: status.embedderAvailable,
-            detail: status.embedderError ?? "available",
-          },
-          {
-            name: "model file",
-            ok: status.modelValid,
-            detail: status.modelError ?? status.modelPath,
-          },
-          {
-            name: "embedding freshness",
-            ok: status.pendingEmbeddings === 0,
-            detail: `${status.pendingEmbeddings} pending`,
+            name: "legacy rows",
+            ok: true,
+            detail: `${status.totalSolutions} rows available to clanker kb migrate`,
           },
         ];
         if (options.json) {
@@ -807,7 +778,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
           CLANKER_MODE: "local",
           ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const backend = new LocalBackend(config.localDbPath);
         await searchAndPrint(backend, {
           query,
           limit,
@@ -829,40 +800,11 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   local
     .command("embed")
-    .description("Download the local model if needed and embed pending local solutions")
-    .option("--db <path>", "Local SQLite database path")
-    .option("--force", "Rebuild all local embeddings")
-    .option("--limit <number>", "Maximum solutions to embed in this run")
-    .action(async (options) => {
-      try {
-        const config = resolveConfig({
-          ...process.env,
-          CLANKER_MODE: "local",
-          CLANKER_LOCAL_SEMANTIC: "1",
-          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
-        });
-        const limit = options.limit === undefined ? undefined : Number(String(options.limit));
-        if (options.limit !== undefined) {
-          if (limit === undefined || !Number.isInteger(limit) || limit < SEARCH_LIMIT_MIN) {
-            console.error(
-              pc.red(pc.bold("✖ Error: ")) +
-                pc.red(`--limit must be an integer of at least ${SEARCH_LIMIT_MIN}`),
-            );
-            process.exit(1);
-          }
-        }
-        const model = await downloadDefaultLocalModel(config.localSemantic.modelPath);
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
-        const result = await backend.embedPending({ force: Boolean(options.force), limit });
-        console.log(
-          pc.green(pc.bold("✔ Local embeddings ready")) +
-            ` - ${result.embedded} solution(s) embedded; model ${model.downloaded ? "downloaded to" : "checked at"} ${pc.cyan(config.localSemantic.modelPath)}`,
-        );
-      } catch (error: any) {
-        console.error(pc.red(pc.bold("✖ Error embedding local solutions:")));
-        console.error(pc.red(error.message || error));
-        process.exit(1);
-      }
+    .description("Embeddings were removed. Search uses the markdown knowledge base.")
+    .action(() => {
+      console.log(
+        "Embeddings were removed. Use `clanker kb search` for the markdown knowledge base.",
+      );
     });
 
   program

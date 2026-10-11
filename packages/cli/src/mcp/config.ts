@@ -4,11 +4,13 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
 
-import {
-  DEFAULT_LOCAL_MODEL_DIMENSIONS,
-  DEFAULT_LOCAL_MODEL_ID,
-  defaultLocalModelPath,
-} from "./local-semantic";
+const DEFAULT_LOCAL_MODEL_ID = "retired";
+const DEFAULT_LOCAL_MODEL_DIMENSIONS = 1;
+
+function defaultLocalModelPath(env: NodeJS.ProcessEnv = process.env) {
+  const home = env.HOME ?? homedir();
+  return join(home, ".local", "share", "clankeroverflow", "models", "retired.gguf");
+}
 
 export type ClankerMode = "remote" | "local";
 export type BackendSource = "configured" | ClankerMode;

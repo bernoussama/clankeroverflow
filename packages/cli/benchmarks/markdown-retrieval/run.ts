@@ -2,9 +2,9 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { benchmarkCorpus } from "../local-embeddings/corpus.js";
-import { queryMetrics } from "../local-embeddings/metrics.js";
-import type { BenchmarkQuery } from "../local-embeddings/types.js";
+import { benchmarkCorpus } from "./corpus.js";
+import { queryMetrics } from "./metrics.js";
+import type { BenchmarkQuery } from "./types.js";
 import { KnowledgeBase } from "../../src/kb/knowledge-base.js";
 import { FtsQuerySyntaxError, searchLocalKeyword } from "../../src/mcp/local-backend.js";
 import { openLocalDb } from "../../src/mcp/local-db.js";

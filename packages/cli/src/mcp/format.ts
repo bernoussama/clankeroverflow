@@ -9,10 +9,7 @@ function formatSearchAttempts(attempts?: SearchAttempt[]) {
 
   const summary = attempts
     .map((attempt) => {
-      const label =
-        attempt.mode === "keyword" && attempt.keywordStrategy
-          ? `keyword ${attempt.keywordStrategy}`
-          : attempt.mode;
+      const label = attempt.mode;
       if (attempt.error) {
         return `${label} unavailable (${attempt.error})`;
       }
@@ -26,9 +23,7 @@ function formatSearchAttempts(attempts?: SearchAttempt[]) {
 export function formatSearchResults(results: SolutionResult[], attempts?: SearchAttempt[]) {
   const prefix = formatSearchAttempts(attempts);
   if (results.length === 0) {
-    const fallbackUnavailable = attempts?.some(
-      (attempt) => attempt.mode === "hybrid" && attempt.error,
-    );
+    const fallbackUnavailable = attempts?.some((attempt) => attempt.error);
     const guidance = fallbackUnavailable
       ? " Hybrid fallback was unavailable; try one smaller or sharper keyword query before debugging from scratch."
       : "";
