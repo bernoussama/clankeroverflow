@@ -1,6 +1,6 @@
 # Markdown Knowledge Base Design
 
-Status: v1 hosted storage reloads from Postgres. On 2026-10-11, markdown search reached recall@5 of 0.92, matching bge hybrid. `clanker kb pull` and `kb push` sync a local copy, and the daily dreamer skips teams with no new changes. Local SQLite remains only so `clanker kb migrate` can read an existing database.
+Status: markdown search is the only retriever. On 2026-10-11, recall@5 was 0.92, matching bge hybrid, so Workers AI, Vectorize, `node-llama-cpp`, and `sqlite-vec` are removed. Local SQLite remains only so `clanker kb migrate` can read an existing database.
 
 ## Goal
 
