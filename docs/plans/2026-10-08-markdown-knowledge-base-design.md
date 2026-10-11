@@ -1,6 +1,6 @@
 # Markdown Knowledge Base Design
 
-Status: draft for discussion. Open questions are collected at the end.
+Status: decisions closed. Implementation has not started.
 
 ## Goal
 
@@ -281,7 +281,7 @@ New tables in `packages/db`: `team`, `team_member (role: owner | editor | reader
 
 ## What gets deleted
 
-Once the markdown backend matches or beats current retrieval in evals:
+Decided: delete the semantic stack when the markdown backend matches current retrieval. The gate is recall at 5 no worse than hybrid on the `repo-stackoverflow` and `product-proof` evals. The backend interface stays, so a reranker can be added later if real queries show a gap. Until the gate passes, the vector code stays in place and is not on the new search path.
 
 - `packages/api/src/semantic/*`, the Vectorize and Workers AI bindings in `packages/infra/alchemy.run.ts`
 - `packages/cli/src/mcp/local-semantic.ts`, `node-llama-cpp`, `sqlite-vec`, `benchmarks/local-embeddings`
@@ -300,7 +300,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 
 ## Phases
 
-1. **Spec freeze.** Answer the open questions below and lock the frontmatter schema and `AGENTS.md` template.
+1. **Spec freeze.** Lock the frontmatter schema and the `AGENTS.md` template from the decisions in this doc.
 2. **Local markdown backend.** Add `MarkdownBackend` implementing the existing `SolutionBackend` interface in `packages/cli/src/mcp`, using MiniSearch, the new `kb_*` tools, and `clanker kb migrate`, which converts `solutions.sqlite` and `.clankeroverflow/solutions/*.md` using the existing export code. Run the `repo-stackoverflow` and `product-proof` evals against the SQLite FTS and hybrid baselines. **Exit criterion:** recall at 5 is no worse than hybrid.
 3. **Write quality.** Dedupe gate, generated index and log, `kb confirm`, `kb lint`.
 4. **Teams plus hosted storage on R2.** Team tables, the `kb_document` and `kb_change` tables, the R2 layout, the compare-and-swap write API, `clanker kb pull` and `push` sync with conflict files, a starter template copied into each new team's prefix, the daily reconciler, and the hosted Streamable HTTP MCP. The git export and GitHub mirror come after.
@@ -334,7 +334,4 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Public corpus:** shut it down. Do not migrate hosted solutions. Nobody uses them or depends on them. Anonymous public search goes away with the `solution` and `solution_vote` tables.
 - **Areas:** free-form folder names, at most 2 levels deep. No allowed list. Lint reports near-duplicate names and does not reject them.
 - **Search layers:** search the repo knowledge base and the team knowledge base together. Label every hit. When the scores are close, the repo hit ranks first. Writes still ask when the destination layer is unclear.
-
-## Open questions
-
-1. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
+- **Vectors:** delete Workers AI, Vectorize, `node-llama-cpp`, and `sqlite-vec` once markdown search reaches recall at 5 no worse than hybrid. Do not keep embeddings as a reranker in v1. The backend interface stays so one can be added later.
