@@ -228,7 +228,8 @@ The biggest quality lever. Karpathy's core point is that a new source updates ex
 | `kb_search(query, area?, tags?, type?, status?, limit?)` | `search_solutions` | Ranked hits with snippets |
 | `kb_browse(area?)` | (new) | Return `index.md` for the root or an area |
 | `kb_read(path \| id)` | resources `clankeroverflow://repo/solutions/{id}` | Full document |
-| `kb_write(draft, mode: create \| update, path?)` | `learn_solution`, `log_solution` | Write with dedupe gate |
+| `kb_write(draft, mode: create \| update, path?)` | `learn_solution`, `log_solution` | Write a fix document, with the dedupe gate |
+| `kb_append(path, entry)` | (new) | Append one note line, so concurrent edits to the same file do not conflict |
 | `kb_confirm(path, worked, note?)` | `upvote_solution`, `downvote_solution` | Feedback |
 | `clanker_status` | same | Mode, KB root, doc count, index freshness |
 
