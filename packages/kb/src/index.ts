@@ -1,5 +1,12 @@
 export { renderIndex, renderLog, type CatalogChange } from "./catalog";
-export { formatFixDocument, formatNoteDocument, formatNoteEntry, parseDocument } from "./document";
+export {
+  documentHeadings,
+  documentText,
+  formatFixDocument,
+  formatNoteDocument,
+  formatNoteEntry,
+  parseDocument,
+} from "./document";
 export { MemoryObjectStore, TeamKnowledge, snapshotTeam } from "./engine";
 export type {
   ChangeOp,
