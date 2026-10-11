@@ -126,7 +126,7 @@ The real decision. Workers have no filesystem, so "just markdown files" needs a 
 
 - **Local mode:** a directory. The default is `<repo>/.clankeroverflow/kb/` (committed, shared via the repo), with the option `~/.local/share/clankeroverflow/kb/` (personal). This replaces `solutions.sqlite`.
 - **Hosted mode: our own primitives on R2.** Markdown content lives in R2, and Postgres holds refs and the search index. See the next section.
-- **Later: two-way GitHub sync.** V1 ships a one-way export. Two-way sync is deferred, but the v1 data model is designed so it can be added without migration (see "Two-way GitHub sync (later)").
+- **Later: two-way GitHub sync.** V1 clients are the MCP and CLI, not a git remote. V1 ships a one-way export. Two-way sync stays deferred, but the v1 data model is designed so it can be added without migration (see "Two-way GitHub sync (later)").
 
 ### Why R2 rather than Cloudflare Artifacts
 
@@ -282,6 +282,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Review:** agent-written docs go live straight away as `draft`. One independent confirmation makes them `verified`.
 - **Standard:** build on top of [Agent Memory Repo](https://cognition.com/agent-memory-repo) rather than competing with it. ClankerOverflow hosts team memory in that open format and sells what the standard leaves out: search beyond grep, duplicate checks before writing, team permissions, a web UI, and scheduled dreaming.
 - **File format:** both kinds. General notes use their bullet format (`MEMORY.md`, `[[path]]` links, `[key: value]` metadata per line, written with `kb_append`). Structured fix documents keep YAML frontmatter so search can filter on tags, error signatures, and status.
+- **Access in v1:** our MCP and CLI only. Agents reach hosted memory through those tools. We do not serve the git protocol, and we do not pull two-way GitHub sync forward. Agents that only know how to `git clone` an Agent Memory Repo cannot connect until a later step.
 
 ## Open questions
 
