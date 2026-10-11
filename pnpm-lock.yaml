@@ -294,6 +294,9 @@ importers:
       hono:
         specifier: 'catalog:'
         version: 4.12.23
+      pg:
+        specifier: 'catalog:'
+        version: 8.21.0
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

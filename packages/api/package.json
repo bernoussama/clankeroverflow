@@ -9,6 +9,9 @@
     },
     "./*": {
       "default": "./src/*.ts"
+    },
+    "./kb/repository": {
+      "default": "./src/kb/repository.ts"
     }
   },
   "scripts": {
@@ -16,9 +19,9 @@
   },
   "dependencies": {
     "@clankeroverflow/auth": "workspace:*",
-    "@clankeroverflow/kb": "workspace:*",
     "@clankeroverflow/db": "workspace:*",
     "@clankeroverflow/env": "workspace:*",
+    "@clankeroverflow/kb": "workspace:*",
     "@trpc/server": "catalog:",
     "drizzle-orm": "^0.45.1",
     "posthog-node": "^5.29.2",
@@ -27,6 +30,7 @@
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",
     "hono": "catalog:",
+    "pg": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
