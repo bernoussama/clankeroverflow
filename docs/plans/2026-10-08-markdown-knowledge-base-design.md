@@ -66,7 +66,9 @@ The layout follows [Agent Memory Repo](https://cognition.com/agent-memory-repo).
 - Payments and website share a 2026-10-15 launch deadline; see [[team/structure]] [source: session/01JDEF; added: 2026-09-04]
 ```
 
-Recommended metadata keys: `source` (agent, session id, and a short message, not a transcript) and `added` (`YYYY-MM-DD`).
+Recommended metadata keys: `source` and `added` (`YYYY-MM-DD`). `source` is the agent name, the session id, and a one-line message, for example `[source: claude-code/01JABC "pnpm workspace TS2307"; added: 2026-10-11]`.
+
+Transcripts are optional and off by default. When the user opts in, the transcript is stored as its own file, `transcripts/{sessionId}.md` locally or the same path in R2, and the entry links to it. The line itself stays one fact. Search does not index transcripts. Dreaming may read a linked transcript when it is checking a contradiction. A personal transcript stays on the machine unless that user uploads it. A team transcript is visible to the team.
 
 **Fix documents** keep YAML frontmatter so search can filter on structured fields. This extends `formatLearnMarkdown` / `parseLearnMarkdown` in `packages/cli/src/learn.ts`, so existing exports migrate without loss. Links inside them use `[[path]]`.
 
@@ -305,6 +307,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Content:** general team memory, with verified debugging fixes as the headline. Notes cover decisions, how-tos, gotchas, processes, and saved queries. Marketing and the first evals stay on fixes.
 - **Dreaming:** hosted, on our model bill. A scheduled job adds and cleans memory. It does not run inside the user's agent. Output is always `draft`, runs only after new changes, and each run has a token cap.
 - **Personal memory:** a free, open-source layer in the CLI at `~/.local/share/clankeroverflow/kb/`. It is searched alongside repo and team memory, and hits are labeled by layer. Writes ask when the destination is unclear. Hosted personal memory is a possible later product, not part of v1.
+- **Provenance:** every entry records the agent, the session id, and a one-line message. Storing the transcript is optional and off by default. A stored transcript is a separate linked file, not part of the entry line, and search does not index it.
 
 ## Open questions
 
