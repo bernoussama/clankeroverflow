@@ -21,8 +21,12 @@ import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
 import { FtsQuerySyntaxError, LocalBackend } from "./mcp/local-backend.js";
 import { downloadDefaultLocalModel } from "./mcp/local-semantic.js";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+
 import { KnowledgeBase } from "./kb/knowledge-base.js";
 import { migrateLocalKnowledge } from "./kb/migrate.js";
+import { httpTeamRemote, pullTeam, pushTeam } from "./kb/sync.js";
 import { exportLocalSolutions, gitRepoRoot, learnSolution, syncRepoSolutions } from "./learn.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
 import pc from "picocolors";
@@ -488,6 +492,69 @@ export function createProgram(options: CreateProgramOptions = {}) {
         sqlitePath: config.localDbPath,
       });
       console.log(`Imported ${imported.imported} documents into the knowledge base.`);
+    });
+
+  kbCommand
+    .command("pull")
+    .description("Download team knowledge base changes into a local directory")
+    .option("--root <dir>", "Directory for the team copy")
+    .action(async (options: { root?: string }) => {
+      const config = resolveConfig();
+      if (!config.apiKey) {
+        console.error(pc.red("CLANKER_API_KEY is required to pull the team knowledge base."));
+        process.exit(1);
+      }
+      const root = options.root ?? join(config.home, ".local", "share", "clankeroverflow", "team");
+      const result = await pullTeam(
+        root,
+        httpTeamRemote({ serverUrl: config.serverUrl, apiKey: config.apiKey }),
+      );
+      console.log(`Pulled ${result.pulled} documents. Conflicts: ${result.conflicts.length}.`);
+    });
+
+  kbCommand
+    .command("push")
+    .description("Upload local team markdown with compare-and-swap")
+    .option("--root <dir>", "Directory for the team copy")
+    .action(async (options: { root?: string }) => {
+      const config = resolveConfig();
+      if (!config.apiKey) {
+        console.error(pc.red("CLANKER_API_KEY is required to push the team knowledge base."));
+        process.exit(1);
+      }
+      const root = options.root ?? join(config.home, ".local", "share", "clankeroverflow", "team");
+      const knowledgeBase = KnowledgeBase.open({ home: config.home, teamRoot: root });
+      const files = knowledgeBase
+        .files()
+        .filter((loaded) => loaded.layer === "team")
+        .map((loaded) => ({
+          path: loaded.document.path,
+          markdown: readFileSync(loaded.absolutePath, "utf8"),
+        }));
+      const result = await pushTeam(
+        root,
+        httpTeamRemote({ serverUrl: config.serverUrl, apiKey: config.apiKey }),
+        files,
+      );
+      console.log(`Pushed ${result.pushed} documents. Conflicts: ${result.conflicts.length}.`);
+    });
+
+  kbCommand
+    .command("export")
+    .description("Write a one-way markdown export, including generated index.md and log.md")
+    .option("--dir <dir>", "Export directory")
+    .action((options: { dir?: string }) => {
+      const config = resolveConfig();
+      const knowledgeBase = KnowledgeBase.open({ home: config.home });
+      const dir = options.dir ?? join(config.home, ".local", "share", "clankeroverflow", "export");
+      for (const loaded of knowledgeBase.files()) {
+        const file = join(dir, loaded.layer, loaded.document.path);
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, readFileSync(loaded.absolutePath, "utf8"));
+      }
+      writeFileSync(join(dir, "index.md"), `${knowledgeBase.browse()}\n`);
+      writeFileSync(join(dir, "log.md"), `${knowledgeBase.log()}\n`);
+      console.log(`Exported the knowledge base to ${dir}.`);
     });
 
   kbCommand

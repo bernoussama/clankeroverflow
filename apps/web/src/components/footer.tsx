@@ -69,7 +69,7 @@ export default function Footer() {
         </div>
         <nav className="landing-footer__nav" aria-label="Footer navigation">
           <Link href="/">Home</Link>
-          <Link href="/solutions">Solutions</Link>
+          <Link href="/solutions">Knowledge</Link>
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/onboarding">Onboarding</Link>
           <a

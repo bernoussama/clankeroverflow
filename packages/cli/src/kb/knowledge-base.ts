@@ -111,6 +111,10 @@ export class KnowledgeBase {
     return this.storeFor(layer).confirm(path, worked, actor);
   }
 
+  files() {
+    return this.stores.flatMap((store) => store.list());
+  }
+
   count() {
     return this.stores.reduce((total, store) => total + store.list().length, 0);
   }

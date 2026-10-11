@@ -30,8 +30,14 @@ describe("Server", () => {
   });
 
   test("default export should wrap the worker with Sentry", () => {
-    expect(defaultHandler).toBe(app);
-    expect(sentryWithSentryMock).toHaveBeenCalledWith(expect.any(Function), app);
+    expect(defaultHandler).toMatchObject({
+      fetch: app.fetch,
+      scheduled: expect.any(Function),
+    });
+    expect(sentryWithSentryMock).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ fetch: app.fetch }),
+    );
   });
 
   test("Sentry should be configured for Cloudflare error monitoring", () => {

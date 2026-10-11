@@ -7,6 +7,9 @@ upload_source_maps = true
 [dev]
 port = 3000
 
+[triggers]
+crons = ["0 5 * * *"]
+
 # Non-secret bindings for local `wrangler dev`. Copy apps/server/.env to .dev.vars for secrets
 # (GITHUB_CLIENT_SECRET, BETTER_AUTH_SECRET) or use `wrangler secret put`.
 #

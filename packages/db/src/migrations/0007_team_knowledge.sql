@@ -31,6 +31,7 @@ CREATE TABLE "kb_document" (
   "body" text NOT NULL,
   "markdown" text NOT NULL,
   "deleted" boolean DEFAULT false NOT NULL,
+  "searchable" boolean DEFAULT true NOT NULL,
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
   CONSTRAINT "kb_document_team_id_doc_id_pk" PRIMARY KEY("team_id","doc_id")
 );--> statement-breakpoint

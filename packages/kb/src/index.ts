@@ -1,6 +1,6 @@
 export { renderIndex, renderLog, type CatalogChange } from "./catalog";
 export { formatFixDocument, formatNoteDocument, formatNoteEntry, parseDocument } from "./document";
-export { TeamKnowledge, MemoryObjectStore } from "./engine";
+export { MemoryObjectStore, TeamKnowledge, snapshotTeam } from "./engine";
 export type {
   ChangeOp,
   ChangeSource,
@@ -8,9 +8,11 @@ export type {
   ReviewPolicy,
   StoredDoc,
   TeamChange,
+  TeamSnapshot,
   TeamWriteInput,
   TeamWriteResult,
 } from "./engine";
+export { exportTree } from "./export-tree";
 export { planDream } from "./dream";
 export {
   CHANGE_TRAILER,

@@ -64,6 +64,7 @@ export const kbDocument = pgTable(
     body: text("body").notNull(),
     markdown: text("markdown").notNull(),
     deleted: boolean("deleted").notNull().default(false),
+    searchable: boolean("searchable").notNull().default(true),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [

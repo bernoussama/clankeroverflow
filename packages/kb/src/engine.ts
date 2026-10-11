@@ -149,6 +149,24 @@ function sameFix(left: KbDocument, right: KbDocument) {
   );
 }
 
+export type TeamSnapshot = {
+  reviewPolicy: ReviewPolicy;
+  dreamCursor: number;
+  dreamTokens: number;
+  docs: StoredDoc[];
+  changes: TeamChange[];
+};
+
+export function snapshotTeam(team: TeamKnowledge): TeamSnapshot {
+  return {
+    reviewPolicy: team.reviewPolicy,
+    dreamCursor: team.dreamCursor,
+    dreamTokens: team.dreamTokens,
+    docs: [...team.docs.values()],
+    changes: [...team.changes],
+  };
+}
+
 export class TeamKnowledge {
   readonly docs = new Map<string, StoredDoc>();
   readonly changes: TeamChange[] = [];
