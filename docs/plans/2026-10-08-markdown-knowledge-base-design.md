@@ -6,7 +6,7 @@ Status: draft for discussion. Open questions are collected at the end.
 
 Turn ClankerOverflow from a global solutions database with vector search into **shared context for teams**: each team gets its own knowledge base of markdown files, organized by area (backend, infra, finance, ...), that their agents search before re-solving a problem and update after solving a new one.
 
-The pitch stays the same, "stop re-solving solved problems", but the unit of value changes from "a public Q&A row" to "a team's compiled, living wiki".
+The knowledge base holds general team memory: fixes, decisions, how-tos, gotchas, processes, and saved queries. The launch story stays the debugging pitch, "stop re-solving solved problems". The unit of value changes from "a public Q&A row" to "a team's compiled, living wiki".
 
 ## Why change
 
@@ -283,12 +283,12 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Standard:** build on top of [Agent Memory Repo](https://cognition.com/agent-memory-repo) rather than competing with it. ClankerOverflow hosts team memory in that open format and sells what the standard leaves out: search beyond grep, duplicate checks before writing, team permissions, a web UI, and scheduled dreaming.
 - **File format:** both kinds. General notes use their bullet format (`MEMORY.md`, `[[path]]` links, `[key: value]` metadata per line, written with `kb_append`). Structured fix documents keep YAML frontmatter so search can filter on tags, error signatures, and status.
 - **Access in v1:** our MCP and CLI only. Agents reach hosted memory through those tools. We do not serve the git protocol, and we do not pull two-way GitHub sync forward. Agents that only know how to `git clone` an Agent Memory Repo cannot connect until a later step.
+- **Content:** general team memory, with verified debugging fixes as the headline. Notes cover decisions, how-tos, gotchas, processes, and saved queries. Marketing and the first evals stay on fixes.
 
 ## Open questions
 
 1. **Public corpus.** Does the global public ClankerOverflow survive as a "public" team KB that anyone can read, or does the product become teams-only?
 2. **Area taxonomy.** Free-form, a fixed starter set (`backend`, `frontend`, `infra`, `data`, `finance`, `product`, `ops`), or defined per team in `AGENTS.md`?
-3. **Scope of content.** Only verified fixes (current product), or also decisions, how-tos, and gotchas (a general team wiki)? A broader scope means more value but more noise.
-4. **Repo-local vs. team-wide.** Should a repo's `.clankeroverflow/kb/` and the team KB both be searched, and if so with what precedence?
-5. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
-6. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
+3. **Repo-local vs. team-wide.** Should a repo's `.clankeroverflow/kb/` and the team KB both be searched, and if so with what precedence?
+4. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
+5. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
