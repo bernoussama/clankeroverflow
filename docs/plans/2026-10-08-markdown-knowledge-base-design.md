@@ -270,6 +270,11 @@ First-class swarms, with tools to start one, assign agents, and collect the resu
 
 Keep the old tool names as thin aliases for one CLI minor version, since the skill triggers and evals in `clankeroverflow-mcp-workspace/` depend on them.
 
+Two transports share this tool surface in v1:
+
+- **Local MCP** in the CLI, over stdio. It searches personal, repo, and team memory.
+- **Hosted MCP** on the Worker, over Streamable HTTP, authenticated with an API key. It searches and writes the team knowledge base only. Personal and repo files stay on the machine, so a hosted session does not see them.
+
 ## Teams model (hosted)
 
 New tables in `packages/db`: `team`, `team_member (role: owner | editor | reader)`, `team_kb (r2_prefix, jurisdiction: default | eu, review_policy: auto | human, github_repo?, github_sync_mode: off | export | two_way)`. The `review_policy` default is `auto`: docs go live as drafts, as decided above. `human` is an opt-in for teams that want approval first. Also add the `kb_document` and `kb_change` tables described under Storage. Scope API keys to a team. Area-level permissions come later. V1 is all-or-nothing per team.
@@ -298,7 +303,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 1. **Spec freeze.** Answer the open questions below and lock the frontmatter schema and `AGENTS.md` template.
 2. **Local markdown backend.** Add `MarkdownBackend` implementing the existing `SolutionBackend` interface in `packages/cli/src/mcp`, using MiniSearch, the new `kb_*` tools, and `clanker kb migrate`, which converts `solutions.sqlite` and `.clankeroverflow/solutions/*.md` using the existing export code. Run the `repo-stackoverflow` and `product-proof` evals against the SQLite FTS and hybrid baselines. **Exit criterion:** recall at 5 is no worse than hybrid.
 3. **Write quality.** Dedupe gate, generated index and log, `kb confirm`, `kb lint`.
-4. **Teams plus hosted storage on R2.** Team tables, the `kb_document` and `kb_change` tables, the R2 layout, the compare-and-swap write API, `clanker kb pull` and `push` sync with conflict files, a starter template copied into each new team's prefix, and the daily reconciler. The git export and GitHub mirror come after.
+4. **Teams plus hosted storage on R2.** Team tables, the `kb_document` and `kb_change` tables, the R2 layout, the compare-and-swap write API, `clanker kb pull` and `push` sync with conflict files, a starter template copied into each new team's prefix, the daily reconciler, and the hosted Streamable HTTP MCP. The git export and GitHub mirror come after.
 5. **Hosted dreaming.** Scheduled dreamer on our model bill, gated on recent changes and a per-run token cap. Output is always `draft`.
 6. **Web app.** A team knowledge-base viewer (tree by area, search, doc page, lint report, activity from `kb_change`, history and diffs), using the existing design system in `apps/web/src/index.css`. There is no public solutions feed to preserve. This is where the earlier UI redesign happens.
 7. **Cleanup.** Remove the vector stack and the old tables.
@@ -320,7 +325,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Review:** agent-written docs go live straight away as `draft`. One independent confirmation makes them `verified`.
 - **Standard:** build on top of [Agent Memory Repo](https://cognition.com/agent-memory-repo) rather than competing with it. ClankerOverflow hosts team memory in that open format and sells what the standard leaves out: search beyond grep, duplicate checks before writing, team permissions, a web UI, and scheduled dreaming.
 - **File format:** both kinds. General notes use their bullet format (`MEMORY.md`, `[[path]]` links, `[key: value]` metadata per line, written with `kb_append`). Structured fix documents keep YAML frontmatter so search can filter on tags, error signatures, and status.
-- **Access in v1:** our MCP and CLI only. Agents reach hosted memory through those tools. We do not serve the git protocol, and we do not pull two-way GitHub sync forward. Agents that only know how to `git clone` an Agent Memory Repo cannot connect until a later step.
+- **Access in v1:** a local stdio MCP in the CLI, and a hosted Streamable HTTP MCP on the Worker. Both use the same tools. The hosted MCP sees only the team knowledge base. We do not serve the git protocol, and we do not pull two-way GitHub sync forward. Agents that only know how to `git clone` an Agent Memory Repo cannot connect until a later step.
 - **Content:** general team memory, with verified debugging fixes as the headline. Notes cover decisions, how-tos, gotchas, processes, and saved queries. Marketing and the first evals stay on fixes.
 - **Dreaming:** hosted, on our model bill. A scheduled job adds and cleans memory. It does not run inside the user's agent. Output is always `draft`, runs only after new changes, and each run has a token cap.
 - **Personal memory:** a free, open-source layer in the CLI at `~/.local/share/clankeroverflow/kb/`. It is searched alongside repo and team memory, and hits are labeled by layer. Writes ask when the destination is unclear. Hosted personal memory is a possible later product, not part of v1.
@@ -332,5 +337,4 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 
 ## Open questions
 
-1. **Remote MCP.** Is a hosted Streamable HTTP MCP needed in v1, or is the local MCP talking to the hosted API (plus local sync) enough for the agents you care about?
-2. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
+1. **Vectors.** Comfortable deleting the semantic stack if evals pass, or keep it as an opt-in reranker?
