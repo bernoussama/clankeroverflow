@@ -14,7 +14,6 @@ import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } 
 import { KnowledgeBase } from "./kb/knowledge-base";
 import { MarkdownBackend } from "./kb/markdown-backend";
 import { createProgram } from "./index";
-import { LocalBackend } from "./mcp/local-backend";
 import pc from "picocolors";
 
 async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
@@ -715,17 +714,21 @@ describe("CLI", () => {
       });
     });
 
-    test("local search reads the explicit local database without CLANKER_MODE", async () => {
+    test("local search reads the markdown knowledge base without CLANKER_MODE", async () => {
       const previousMode = process.env.CLANKER_MODE;
+      const previousHome = process.env.HOME;
       const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-search-"));
-      const dbPath = join(dir, "solutions.sqlite");
       try {
         delete process.env.CLANKER_MODE;
-        const backend = new LocalBackend(dbPath);
+        process.env.HOME = dir;
+        const backend = new MarkdownBackend(
+          KnowledgeBase.open({ home: dir, cwd: dir }),
+          "personal",
+        );
         await backend.log({
-          problem: "Explicit local sqlite vector search",
-          solution: "Read the local SQLite database instead of the hosted API",
-          tags: "sqlite-vec,local",
+          problem: "Explicit local markdown search",
+          solution: "Read the local markdown knowledge base instead of the hosted API",
+          tags: "markdown,local",
         });
         consoleLogMock.mockClear();
 
@@ -735,9 +738,7 @@ describe("CLI", () => {
           "test",
           "local",
           "search",
-          "sqlite",
-          "--db",
-          dbPath,
+          "markdown",
           "--mode",
           "keyword",
           "--limit",
@@ -746,13 +747,18 @@ describe("CLI", () => {
 
         expect(fetchMock).not.toHaveBeenCalled();
         expect(consoleLogMock).toHaveBeenCalledWith(
-          expect.stringContaining("Explicit local sqlite vector search"),
+          expect.stringContaining("Explicit local markdown search"),
         );
       } finally {
         if (previousMode === undefined) {
           delete process.env.CLANKER_MODE;
         } else {
           process.env.CLANKER_MODE = previousMode;
+        }
+        if (previousHome === undefined) {
+          delete process.env.HOME;
+        } else {
+          process.env.HOME = previousHome;
         }
         rmSync(dir, { recursive: true, force: true });
       }

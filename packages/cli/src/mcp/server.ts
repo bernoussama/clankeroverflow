@@ -21,7 +21,6 @@ import type { SolutionBackend } from "./backend.js";
 import { modeForSource, resolveConfig, type ServerConfig } from "./config.js";
 import { createSolutionBackend } from "./create-backend.js";
 import { formatSearchResults } from "./format.js";
-import { FtsQuerySyntaxError } from "./local-backend.js";
 
 const logger = new McpLogger({ name: packageJson.name });
 
@@ -263,14 +262,6 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
           ],
         };
       } catch (error) {
-        if (error instanceof FtsQuerySyntaxError) {
-          logger.warn("Invalid FTS5 search syntax", {
-            error: error.message,
-            query,
-            mode,
-          });
-          return { content: [{ type: "text" as const, text: error.message }] };
-        }
         logger.error("search_solutions failed", {
           error: error instanceof Error ? error.message : String(error),
           query,
@@ -288,8 +279,7 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
   server.registerTool(
     "clanker_status",
     {
-      description:
-        "Report ClankerOverflow MCP mode and the markdown knowledge base.",
+      description: "Report ClankerOverflow MCP mode and the markdown knowledge base.",
       inputSchema: z.object({}),
     },
     async () => {

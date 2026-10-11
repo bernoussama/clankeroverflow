@@ -7,7 +7,6 @@ import type { SolutionBackend } from "./mcp/backend";
 import { modeForSource, resolveConfig, type BackendSource, type ServerConfig } from "./mcp/config";
 import { KnowledgeBase } from "./kb/knowledge-base";
 import { createSolutionBackend } from "./mcp/create-backend";
-import { openLocalDb } from "./mcp/local-db";
 
 export const DEFAULT_REPO_SOLUTIONS_DIR = ".clankeroverflow/solutions";
 
@@ -40,15 +39,6 @@ export type LearnResult = {
   repoNotePath?: string;
   warnings: string[];
   duplicateIds: string[];
-};
-
-type LocalSolutionRow = {
-  id: string;
-  problem: string;
-  solution: string;
-  tags: string | null;
-  created_at: string;
-  updated_at: string;
 };
 
 function requireText(value: string | undefined, label: string) {
@@ -409,52 +399,22 @@ export function exportLocalSolutions(
     .storeFor("personal")
     .list()
     .flatMap((loaded) => (loaded.document.kind === "fix" ? [loaded.document] : []));
-  if (markdownRows.length) {
-    const paths = markdownRows.map((document) => {
-      const parsed = parseStructuredSolution(document.solution);
-      return writeLearnMarkdown(repoRoot, document.id, {
-        problem: document.problem || document.title,
-        rootCause: parsed.rootCause || document.rootCause,
-        solution: parsed.solution || document.solution,
-        verification: parsed.verification || document.verification,
-        repoNote: parsed.repoNote,
-        framework: parsed.framework,
-        runtime: parsed.runtime,
-        packageManager: parsed.packageManager,
-        fingerprints: parsed.fingerprints,
-        tags: document.tags.join(",") || "clankeroverflow",
-      });
+  const paths = markdownRows.map((document) => {
+    const parsed = parseStructuredSolution(document.solution);
+    return writeLearnMarkdown(repoRoot, document.id, {
+      problem: document.problem || document.title,
+      rootCause: parsed.rootCause || document.rootCause,
+      solution: parsed.solution || document.solution,
+      verification: parsed.verification || document.verification,
+      repoNote: parsed.repoNote,
+      framework: parsed.framework,
+      runtime: parsed.runtime,
+      packageManager: parsed.packageManager,
+      fingerprints: parsed.fingerprints,
+      tags: document.tags.join(",") || "clankeroverflow",
     });
-    return { rows: markdownRows, paths };
-  }
-  const db = openLocalDb(config.localDbPath);
-  try {
-    const rows = db
-      .prepare(
-        `SELECT id, problem, solution, tags, created_at, updated_at
-         FROM solution
-         ORDER BY updated_at DESC`,
-      )
-      .all() as LocalSolutionRow[];
-    const paths = rows.map((row) => {
-      const parsed = parseStructuredSolution(row.solution);
-      return writeLearnMarkdown(repoRoot, row.id, {
-        problem: row.problem,
-        rootCause: parsed.rootCause,
-        solution: parsed.solution,
-        verification: parsed.verification,
-        repoNote: parsed.repoNote,
-        framework: parsed.framework,
-        runtime: parsed.runtime,
-        packageManager: parsed.packageManager,
-        fingerprints: parsed.fingerprints,
-        tags: row.tags ?? "clankeroverflow",
-      });
-    });
-    return { rows, paths };
-  } finally {
-    db.close();
-  }
+  });
+  return { rows: markdownRows, paths };
 }
 
 export function gitRepoRoot(start = process.cwd()) {

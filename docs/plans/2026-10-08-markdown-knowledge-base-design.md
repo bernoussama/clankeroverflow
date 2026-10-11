@@ -1,6 +1,6 @@
 # Markdown Knowledge Base Design
 
-Status: markdown search is the only retriever. On 2026-10-11, recall@5 was 0.92, matching bge hybrid, so Workers AI, Vectorize, `node-llama-cpp`, and `sqlite-vec` are removed. Local SQLite remains only so `clanker kb migrate` can read an existing database.
+Status: markdown search is the only retriever. On 2026-10-11, recall@5 was 0.92, matching bge hybrid, so Workers AI, Vectorize, `node-llama-cpp`, `sqlite-vec`, and the local `solutions.sqlite` store are removed. `clanker kb migrate` copies `.clankeroverflow/solutions/*.md` into the markdown knowledge base.
 
 ## Goal
 
@@ -288,7 +288,7 @@ New tables in `packages/db`: `team`, `team_member (role: owner | editor | reader
 Decided: delete the semantic stack when the markdown backend matches current retrieval. The gate is recall at 5 no worse than hybrid on the `repo-stackoverflow` and `product-proof` evals. The backend interface stays, so a reranker can be added later if real queries show a gap. Until the gate passes, the vector code stays in place and is not on the new search path.
 
 - `packages/api/src/semantic/*`, the Vectorize and Workers AI bindings in `packages/infra/alchemy.run.ts`
-- `packages/cli/src/mcp/local-semantic.ts`, `node-llama-cpp`, `sqlite-vec`, `benchmarks/local-embeddings`
+- `packages/cli/src/mcp/local-semantic.ts`, `packages/cli/src/mcp/local-db.ts`, `packages/cli/src/mcp/local-backend.ts`, `node-llama-cpp`, `sqlite-vec`, `better-sqlite3`, `benchmarks/local-embeddings`
 - the hybrid and auto-fallback search modes (`auto-search.ts`)
 - `solution` and `solution_vote`, with no data migration. The public corpus is shut down because nobody depends on it.
 
@@ -305,7 +305,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 ## Phases
 
 1. **Spec freeze.** Lock the frontmatter schema and the `AGENTS.md` template from the decisions in this doc.
-2. **Local markdown backend.** Add `MarkdownBackend` implementing the existing `SolutionBackend` interface in `packages/cli/src/mcp`, using MiniSearch, the new `kb_*` tools, and `clanker kb migrate`, which converts `solutions.sqlite` and `.clankeroverflow/solutions/*.md` using the existing export code. Run retrieval against the SQLite FTS and hybrid baselines. **Exit criterion:** recall at 5 is no worse than hybrid. Measured on the 100-query local-embeddings corpus: markdown 0.92, keyword 0.89, bge hybrid 0.92. `clanker kb migrate` and switching local `SolutionBackend` off SQLite are still open; `kb_*` is additive.
+2. **Local markdown backend.** Add `MarkdownBackend` implementing the existing `SolutionBackend` interface in `packages/cli/src/mcp`, using MiniSearch, the new `kb_*` tools, and `clanker kb migrate`, which copies `.clankeroverflow/solutions/*.md` into the knowledge base. **Exit criterion:** recall at 5 is no worse than hybrid. Measured on the 100-query corpus: markdown 0.92, keyword 0.89, bge hybrid 0.92. Local `SolutionBackend` now searches markdown, and the SQLite engine is removed.
 3. **Write quality.** Dedupe gate, generated index and log, `kb confirm`, `kb lint`.
 4. **Teams plus hosted storage on R2.** Team tables, the `kb_document` and `kb_change` tables, the R2 layout, the compare-and-swap write API, `clanker kb pull` and `push` sync with conflict files, a starter template copied into each new team's prefix, the daily reconciler, and the hosted Streamable HTTP MCP. The git export and GitHub mirror come after.
 5. **Hosted dreaming.** Scheduled dreamer on our model bill, gated on recent changes and a per-run token cap. Output is always `draft`.

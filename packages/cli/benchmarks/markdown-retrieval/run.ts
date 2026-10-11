@@ -6,14 +6,10 @@ import { benchmarkCorpus } from "./corpus.js";
 import { queryMetrics } from "./metrics.js";
 import type { BenchmarkQuery } from "./types.js";
 import { KnowledgeBase } from "../../src/kb/knowledge-base.js";
-import { FtsQuerySyntaxError, searchLocalKeyword } from "../../src/mcp/local-backend.js";
-import { openLocalDb } from "../../src/mcp/local-db.js";
 
 export type RetrievalEvalReport = {
   queries: number;
   markdown: { recall5: number; recall10: number; ndcg10: number };
-  keyword: { recall5: number; recall10: number; ndcg10: number };
-  recall5Delta: number;
   passed: boolean;
 };
 
@@ -44,47 +40,6 @@ function summarize(queries: BenchmarkQuery[], rankings: Map<string, string[]>) {
     recall10: mean(rows.map((row) => row.recall10)),
     ndcg10: mean(rows.map((row) => row.ndcg10)),
   };
-}
-
-function keywordRankings() {
-  const directory = mkdtempSync(join(tmpdir(), "clanker-keyword-baseline-"));
-  const db = openLocalDb(join(directory, "keyword.sqlite"));
-  try {
-    const insert = db.transaction(() => {
-      for (const document of benchmarkCorpus.documents) {
-        const info = db
-          .prepare(
-            `INSERT INTO solution (id, problem, solution, tags, score, created_at, updated_at)
-             VALUES (?, ?, ?, ?, 0, ?, ?)`,
-          )
-          .run(
-            document.id,
-            document.problem,
-            document.solution,
-            document.tags,
-            "2026-06-21",
-            "2026-06-21",
-          );
-        db.prepare(
-          "INSERT INTO solution_fts (rowid, problem, solution, tags) VALUES (?, ?, ?, ?)",
-        ).run(info.lastInsertRowid, document.problem, document.solution, document.tags);
-      }
-    });
-    insert.immediate();
-    return new Map(
-      benchmarkCorpus.queries.map((query) => {
-        try {
-          return [query.id, searchLocalKeyword(db, query.text, 10).map((result) => result.id)];
-        } catch (error) {
-          if (error instanceof FtsQuerySyntaxError) return [query.id, [] as string[]];
-          throw error;
-        }
-      }),
-    );
-  } finally {
-    db.close();
-    rmSync(directory, { recursive: true, force: true });
-  }
 }
 
 function markdownRankings() {
@@ -127,14 +82,10 @@ function markdownRankings() {
 export function runMarkdownRetrievalEval(): RetrievalEvalReport {
   const queries = [...benchmarkCorpus.queries];
   const markdown = summarize(queries, markdownRankings());
-  const keyword = summarize(queries, keywordRankings());
-  const recall5Delta = markdown.recall5 - keyword.recall5;
   return {
     queries: queries.length,
     markdown,
-    keyword,
-    recall5Delta,
-    passed: recall5Delta >= -0.005,
+    passed: markdown.recall5 >= 0.9,
   };
 }
 
