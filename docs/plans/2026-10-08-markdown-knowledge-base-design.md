@@ -259,13 +259,14 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Retrieval regressions on paraphrased queries** ("page is stale after update" vs. "cache tags not invalidating"). BM25 has no synonyms. Mitigations: `aliases` written at authoring time, the agent retrying with reformulated queries (agentic search), and `kb_browse`. Optional later: an LLM reranker over the top 20.
 - **Taxonomy drift** (teams invent `backend/` and `back-end/`). Mitigations: `AGENTS.md` lists the allowed areas and tags, and lint flags unknown ones.
 - **Write noise** from agents logging trivia. The dedupe gate, `status: draft` until confirmed, and an optional `review_policy: human` limit this.
-- **Positioning.** Mosaic (YC, "shared memory for your team's agents") and ExtraContext are in this space. The differentiators are markdown in your own git repo, the compile/dedupe/lint discipline, and an open-source local mode.
+- **Positioning.** Mosaic (YC, "shared memory for your team's agents"), ExtraContext, and Cognition's Agent Memory Repo are in this space. We build on the open Agent Memory Repo format. The differentiators are hosted team search, duplicate checks before writing, permissions, a web UI, scheduled dreaming, and an open-source local mode.
 
 ## Decisions
 
 - **Hosted storage:** our own primitives on R2, not Cloudflare Artifacts (cost).
 - **GitHub:** one-way export in v1. Two-way sync is wanted but deferred, and the v1 schema already supports it.
 - **Review:** agent-written docs go live straight away as `draft`. One independent confirmation makes them `verified`.
+- **Standard:** build on top of [Agent Memory Repo](https://cognition.com/agent-memory-repo) rather than competing with it. ClankerOverflow hosts team memory in that open format and sells what the standard leaves out: search beyond grep, duplicate checks before writing, team permissions, a web UI, and scheduled dreaming. The exact file format (entry point, links, per-line metadata) is still being decided.
 
 ## Open questions
 
