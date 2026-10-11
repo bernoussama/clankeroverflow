@@ -32,30 +32,43 @@ Proposal:
 
 - **Folders (areas)** are shallow (at most 2 levels) and answer "who owns this, and who can see it". They map to departments or teams within a company and later to permissions.
 - **Frontmatter** answers "what is this about". Fields like `tags`, `type`, `stack`, and `error_signatures` can hold several values and drive filtering and ranking.
-- **Links** (`[[other-doc]]` or relative links) express relationships, as in Karpathy's wiki and Obsidian.
+- **Links** use Agent Memory Repo's `[[path]]` form, starting from the memory root. Omit `.md`. Keep information in one place and link to it elsewhere.
 
 ### Layout
 
+The layout follows [Agent Memory Repo](https://cognition.com/agent-memory-repo). `MEMORY.md` is the short entry point every session loads. Area catalogs stay generated so the entry point does not grow into a full index.
+
 ```txt
 <kb-root>/
-  AGENTS.md            # schema and conventions agents must follow when writing (Karpathy's "schema" layer)
-  index.md             # generated catalog: one line per doc, grouped by area
-  log.md               # append-only: "## [2026-10-08] update | backend/pnpm-ts2307 | by codex"
+  MEMORY.md            # short, curated: what every session needs, plus [[links]]
+  AGENTS.md            # schema and conventions agents must follow when writing
+  log.md               # generated from the change log, never hand-edited
   backend/
-    index.md           # generated per-area catalog
+    index.md           # generated catalog for this area
     pnpm-workspace-ts2307.md
     nextjs-cache-tags-stale.md
   infra/
     cloudflare-hyperdrive-pool-exhaustion.md
   finance/
     stripe-webhook-retry-idempotency.md
+  team/
+    structure.md       # general notes, not a fix doc
 ```
 
-`index.md` files are generated, never hand-edited, so they can't drift.
+`index.md` and `log.md` are generated. `MEMORY.md` is hand-curated and kept short. Agents update its index links when they add a page worth finding from the entry point.
 
-### Document format
+### Two document kinds
 
-This extends the format `formatLearnMarkdown` / `parseLearnMarkdown` in `packages/cli/src/learn.ts` already produce, so existing exports migrate without loss.
+**Notes** use the Agent Memory Repo bullet format. One fact per line, with open metadata at the end. `kb_append(path, entry)` adds a line so two agents can update the same file without rewriting it.
+
+```md
+- John coordinates the billing launch [source: session/01JABC; added: 2026-09-03]
+- Payments and website share a 2026-10-15 launch deadline; see [[team/structure]] [source: session/01JDEF; added: 2026-09-04]
+```
+
+Recommended metadata keys: `source` (agent, session id, and a short message, not a transcript) and `added` (`YYYY-MM-DD`).
+
+**Fix documents** keep YAML frontmatter so search can filter on structured fields. This extends `formatLearnMarkdown` / `parseLearnMarkdown` in `packages/cli/src/learn.ts`, so existing exports migrate without loss. Links inside them use `[[path]]`.
 
 ```md
 ---
@@ -266,7 +279,8 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 - **Hosted storage:** our own primitives on R2, not Cloudflare Artifacts (cost).
 - **GitHub:** one-way export in v1. Two-way sync is wanted but deferred, and the v1 schema already supports it.
 - **Review:** agent-written docs go live straight away as `draft`. One independent confirmation makes them `verified`.
-- **Standard:** build on top of [Agent Memory Repo](https://cognition.com/agent-memory-repo) rather than competing with it. ClankerOverflow hosts team memory in that open format and sells what the standard leaves out: search beyond grep, duplicate checks before writing, team permissions, a web UI, and scheduled dreaming. The exact file format (entry point, links, per-line metadata) is still being decided.
+- **Standard:** build on top of [Agent Memory Repo](https://cognition.com/agent-memory-repo) rather than competing with it. ClankerOverflow hosts team memory in that open format and sells what the standard leaves out: search beyond grep, duplicate checks before writing, team permissions, a web UI, and scheduled dreaming.
+- **File format:** both kinds. General notes use their bullet format (`MEMORY.md`, `[[path]]` links, `[key: value]` metadata per line, written with `kb_append`). Structured fix documents keep YAML frontmatter so search can filter on tags, error signatures, and status.
 
 ## Open questions
 
