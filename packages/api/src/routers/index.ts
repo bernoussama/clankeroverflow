@@ -1,4 +1,5 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
+import { kbRouter } from "./kb";
 import { solutionsRouter } from "./solutions";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -57,6 +58,7 @@ export const appRouter = router({
     };
   }),
   cliAuth: cliAuthRouter,
+  kb: kbRouter,
   solutions: solutionsRouter,
 });
 export type AppRouter = typeof appRouter;

@@ -29,9 +29,9 @@ describe("packages/db package metadata", () => {
     expect(authSchemaSource).not.toContain("accounts: many(account)");
   });
 
-  it("keeps solution list and keyword search projections targeted", () => {
-    expect(listSource).toContain(".select(solutionListColumns)");
+  it("keeps knowledge base list and keyword search projections targeted", () => {
+    expect(listSource).toContain(".select(kbListColumns)");
+    expect(searchSource).toContain(".select(");
     expect(searchSource).not.toMatch(/SELECT\s+\*/);
-    expect(searchSource).not.toContain('"updated_at" AS "updatedAt"');
   });
 });

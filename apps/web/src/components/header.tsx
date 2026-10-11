@@ -7,7 +7,7 @@ import MobileNav from "./mobile-nav";
 export default function Header() {
   const links = [
     { to: "/", label: "Home" },
-    { to: "/solutions", label: "Solutions" },
+    { to: "/solutions", label: "Knowledge" },
     { to: "/dashboard", label: "Dashboard" },
   ] as const;
 

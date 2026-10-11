@@ -1,16 +1,14 @@
 import type { Context as HonoContext } from "hono";
 
+import type { TeamKnowledge } from "@clankeroverflow/kb";
 import type { Auth } from "@clankeroverflow/auth";
 import type { Database } from "@clankeroverflow/db";
 
-import type { WorkersAiBinding } from "./semantic/embeddings";
 import type { PostHogClient } from "./posthog";
-import type { SolutionVectorizeBinding } from "./semantic/search";
 
 /** Bindings read from `c.env` on the API worker (see wrangler / Alchemy). */
 type ApiWorkerEnv = {
-  AI?: WorkersAiBinding;
-  SOLUTION_VECTORS?: SolutionVectorizeBinding;
+  KB_BUCKET?: unknown;
 };
 
 function getRequestIdentity(headers: Headers) {
@@ -85,9 +83,6 @@ export async function createContext({ context }: CreateContextOptions) {
       })
     : null;
 
-  const ai = env?.AI as WorkersAiBinding | undefined;
-  const solutionVectors = env?.SOLUTION_VECTORS as SolutionVectorizeBinding | undefined;
-
   if (session?.user) {
     posthog?.identify({
       distinctId: session.user.id,
@@ -119,15 +114,13 @@ export async function createContext({ context }: CreateContextOptions) {
     session,
     apiKey,
     env,
-    ai,
-    solutionVectors,
     waitUntil: getWaitUntil(context),
     requestIdentity: getRequestIdentity(context.req.raw.headers),
     requestLog,
   };
 }
 
-/** tRPC context; `ai` / `solutionVectors` / `waitUntil` are only set on the Cloudflare Worker. */
+/** tRPC context. `waitUntil` is only set on the Cloudflare Worker. */
 export type Context = {
   auth: Auth;
   db: Database;
@@ -135,8 +128,7 @@ export type Context = {
   session: Awaited<ReturnType<Auth["api"]["getSession"]>>;
   apiKey: VerifiedApiKey | null;
   env?: ApiWorkerEnv;
-  ai?: WorkersAiBinding;
-  solutionVectors?: SolutionVectorizeBinding;
+  kb?: TeamKnowledge;
   waitUntil?: (p: Promise<unknown>) => void;
   requestIdentity?: string;
   requestLog?: RequestLogFields;

@@ -1,17 +1,22 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 
-import type {
-  LogSolutionInput,
-  SearchSolutionsInput,
-  SolutionResult,
-  VoteSolutionInput,
-} from "./backend";
+import type { SolutionResult } from "./backend";
 
 export type HostedTrpcClient = {
-  solutions: {
-    log: { mutate(input: LogSolutionInput): Promise<{ id: string }> };
-    search: { query(input: SearchSolutionsInput): Promise<SolutionResult[]> };
-    vote: { mutate(input: VoteSolutionInput): Promise<unknown> };
+  kb: {
+    write: {
+      mutate(input: {
+        title: string;
+        problem: string;
+        solution: string;
+        tags: string[];
+        force: boolean;
+      }): Promise<{ id: string; warning?: string }>;
+    };
+    search: {
+      query(input: { query: string; limit: number }): Promise<SolutionResult[]>;
+    };
+    confirm: { mutate(input: { path: string; worked: boolean }): Promise<unknown> };
   };
 };
 

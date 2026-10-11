@@ -8,47 +8,26 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
+import { KnowledgeBase } from "./kb/knowledge-base";
+import { MarkdownBackend } from "./kb/markdown-backend";
 import { createProgram } from "./index";
-import { LocalBackend } from "./mcp/local-backend";
-import {
-  DEFAULT_LOCAL_MODEL_ID,
-  floatVectorToBuffer,
-  type LocalSemanticConfig,
-} from "./mcp/local-semantic";
 import pc from "picocolors";
-
-vi.mock("node-llama-cpp", () => ({
-  getLlama: vi.fn(async () => ({
-    loadModel: vi.fn(async () => ({
-      trainContextSize: 8,
-      tokenize: (text: string) => Array.from(text).map((char) => char.charCodeAt(0)),
-      createEmbeddingContext: vi.fn(async () => ({
-        getEmbeddingFor: vi.fn(async (input: number[] | string) => {
-          const tokens = Array.isArray(input)
-            ? input
-            : Array.from(input).map((char) => char.charCodeAt(0));
-          const average =
-            tokens.reduce((sum, token) => sum + token, 0) / Math.max(tokens.length, 1);
-          return { vector: average < 100 ? [1, 0, 0, 0] : [0, 1, 0, 0] };
-        }),
-      })),
-    })),
-  })),
-}));
 
 async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
   const previousMode = process.env.CLANKER_MODE;
   const previousDb = process.env.CLANKER_LOCAL_DB;
   const previousSemantic = process.env.CLANKER_LOCAL_SEMANTIC;
+  const previousHome = process.env.HOME;
   const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-"));
 
   try {
     process.env.CLANKER_MODE = "local";
     process.env.CLANKER_LOCAL_DB = join(dir, "solutions.sqlite");
     process.env.CLANKER_LOCAL_SEMANTIC = "0";
+    process.env.HOME = dir;
     return await run(process.env.CLANKER_LOCAL_DB);
   } finally {
     if (previousMode === undefined) {
@@ -66,16 +45,13 @@ async function withLocalCliEnv<T>(run: (dbPath: string) => Promise<T>) {
     } else {
       process.env.CLANKER_LOCAL_SEMANTIC = previousSemantic;
     }
+    if (previousHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = previousHome;
+    }
     rmSync(dir, { recursive: true, force: true });
   }
-}
-
-function vector(values: number[]) {
-  return floatVectorToBuffer(values, values.length);
-}
-
-function writeGguf(modelPath: string) {
-  writeFileSync(modelPath, Buffer.from("GGUFtest-model"));
 }
 
 describe("CLI", () => {
@@ -193,7 +169,7 @@ describe("CLI", () => {
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
       expect(fetchCallUrl).toMatch(/^https:\/\/api\.clankeroverflow\.com\/trpc/);
-      expect(fetchCallUrl).toContain("solutions.log");
+      expect(fetchCallUrl).toContain("kb.write");
       expect(consoleLogMock).toHaveBeenCalledWith(
         pc.green(pc.bold("✔ Success!")) +
           ` Solution logged: ${pc.cyan(pc.underline("https://clankeroverflow.com/solution/123"))}`,
@@ -294,7 +270,10 @@ describe("CLI", () => {
           expect(note).toContain("Expo Router reload keeps stale native bundle");
           expect(note).toContain("## Verification");
 
-          const backend = new LocalBackend(dbPath);
+          const backend = new MarkdownBackend(
+            KnowledgeBase.open({ home: dirname(dbPath) }),
+            "personal",
+          );
           const results = await backend.search({
             query: "expo metro stale native bundle",
             limit: 1,
@@ -378,7 +357,10 @@ describe("CLI", () => {
           expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("Exported"));
           expect(existsSync(join(exportRepo, ".clankeroverflow", "solutions"))).toBe(true);
 
-          const backend = new LocalBackend(dbPath);
+          const backend = new MarkdownBackend(
+            KnowledgeBase.open({ home: dirname(dbPath) }),
+            "personal",
+          );
           const results = await backend.search({
             query: "expo metro stale native bundle",
             limit: 2,
@@ -435,7 +417,7 @@ describe("CLI", () => {
         ]);
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(String(fetchMock.mock.calls[0]?.[0])).toContain("solutions.log");
+        expect(String(fetchMock.mock.calls[0]?.[0])).toContain("kb.write");
       } finally {
         rmSync(repo, { recursive: true, force: true });
       }
@@ -467,7 +449,7 @@ describe("CLI", () => {
 
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
-      expect(fetchCallUrl).toContain("solutions.search");
+      expect(fetchCallUrl).toContain("kb.search");
       expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("⚠ UNTRUSTED CONTENT:"));
       expect(consoleLogMock).toHaveBeenCalledWith(
         expect.stringContaining(
@@ -478,20 +460,12 @@ describe("CLI", () => {
 
     test("handles no solutions found with auto fallback guidance when unauthenticated", async () => {
       const program = createProgram();
-      fetchMock
-        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
-        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })));
+      fetchMock.mockImplementationOnce(
+        async () => new Response(JSON.stringify({ result: { data: [] } })),
+      );
       await program.parseAsync(["node", "test", "search", "none"]);
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("keyword exact returned 0"),
-      );
-      expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("keyword tiered returned 0"),
-      );
-      expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("CLANKER_API_KEY is required for hosted hybrid fallback"),
-      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("keyword returned 0"));
       expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("No solutions found."));
     });
 
@@ -499,26 +473,24 @@ describe("CLI", () => {
       const previousApiKey = process.env.CLANKER_API_KEY;
       process.env.CLANKER_API_KEY = "test-key";
       const program = createProgram();
-      fetchMock
-        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
-        .mockImplementationOnce(
-          async () =>
-            new Response(
-              JSON.stringify({
-                result: {
-                  data: [
-                    {
-                      id: "hybrid-1",
-                      problem: "hybrid problem",
-                      solution: "hybrid solution",
-                      score: 1,
-                      tags: "search",
-                    },
-                  ],
-                },
-              }),
-            ),
-        );
+      fetchMock.mockImplementationOnce(
+        async () =>
+          new Response(
+            JSON.stringify({
+              result: {
+                data: [
+                  {
+                    id: "md-1",
+                    problem: "markdown problem",
+                    solution: "markdown solution",
+                    score: 1,
+                    tags: "search",
+                  },
+                ],
+              },
+            }),
+          ),
+      );
 
       try {
         await program.parseAsync(["node", "test", "search", "conceptual miss"]);
@@ -530,11 +502,11 @@ describe("CLI", () => {
         }
       }
 
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(consoleLogMock).toHaveBeenCalledWith(
-        expect.stringContaining("Search attempts: keyword exact returned 0; hybrid returned 1."),
+        expect.stringContaining("Search attempts: keyword returned 1."),
       );
-      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("ID: hybrid-1"));
+      expect(consoleLogMock).toHaveBeenCalledWith(expect.stringContaining("ID: md-1"));
     });
 
     test("rejects an empty search query", async () => {
@@ -742,17 +714,21 @@ describe("CLI", () => {
       });
     });
 
-    test("local search reads the explicit local database without CLANKER_MODE", async () => {
+    test("local search reads the markdown knowledge base without CLANKER_MODE", async () => {
       const previousMode = process.env.CLANKER_MODE;
+      const previousHome = process.env.HOME;
       const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-search-"));
-      const dbPath = join(dir, "solutions.sqlite");
       try {
         delete process.env.CLANKER_MODE;
-        const backend = new LocalBackend(dbPath);
+        process.env.HOME = dir;
+        const backend = new MarkdownBackend(
+          KnowledgeBase.open({ home: dir, cwd: dir }),
+          "personal",
+        );
         await backend.log({
-          problem: "Explicit local sqlite vector search",
-          solution: "Read the local SQLite database instead of the hosted API",
-          tags: "sqlite-vec,local",
+          problem: "Explicit local markdown search",
+          solution: "Read the local markdown knowledge base instead of the hosted API",
+          tags: "markdown,local",
         });
         consoleLogMock.mockClear();
 
@@ -762,9 +738,7 @@ describe("CLI", () => {
           "test",
           "local",
           "search",
-          "sqlite",
-          "--db",
-          dbPath,
+          "markdown",
           "--mode",
           "keyword",
           "--limit",
@@ -773,7 +747,7 @@ describe("CLI", () => {
 
         expect(fetchMock).not.toHaveBeenCalled();
         expect(consoleLogMock).toHaveBeenCalledWith(
-          expect.stringContaining("Explicit local sqlite vector search"),
+          expect.stringContaining("Explicit local markdown search"),
         );
       } finally {
         if (previousMode === undefined) {
@@ -781,88 +755,15 @@ describe("CLI", () => {
         } else {
           process.env.CLANKER_MODE = previousMode;
         }
-        rmSync(dir, { recursive: true, force: true });
-      }
-    });
-
-    test("local search supports semantic mode with embedded local rows", async () => {
-      const previousMode = process.env.CLANKER_MODE;
-      const previousModelPath = process.env.CLANKER_LOCAL_MODEL_PATH;
-      const previousDimensions = process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
-      const dir = mkdtempSync(join(tmpdir(), "clanker-cli-local-semantic-search-"));
-      const dbPath = join(dir, "solutions.sqlite");
-      const modelPath = join(dir, "model.gguf");
-      writeGguf(modelPath);
-      try {
-        delete process.env.CLANKER_MODE;
-        process.env.CLANKER_LOCAL_MODEL_PATH = modelPath;
-        process.env.CLANKER_LOCAL_MODEL_DIMENSIONS = "4";
-        const semantic: LocalSemanticConfig = {
-          enabled: true,
-          modelId: DEFAULT_LOCAL_MODEL_ID,
-          modelPath,
-          dimensions: 4,
-        };
-        const backend = new LocalBackend(dbPath, {
-          semantic,
-          embedder: {
-            embed: async (text: string) =>
-              /aaa/.test(text) ? vector([1, 0, 0, 0]) : vector([0, 1, 0, 0]),
-          },
-        });
-        await backend.log({
-          problem: "aaa semantic local hit",
-          solution: "aaa matching vector",
-          tags: "semantic",
-        });
-        await backend.log({
-          problem: "zzz semantic local miss",
-          solution: "zzz other vector",
-          tags: "semantic",
-        });
-        consoleLogMock.mockClear();
-
-        const program = createProgram();
-        await program.parseAsync([
-          "node",
-          "test",
-          "local",
-          "search",
-          "aaa",
-          "--db",
-          dbPath,
-          "--mode",
-          "semantic",
-          "--limit",
-          "1",
-        ]);
-
-        expect(fetchMock).not.toHaveBeenCalled();
-        expect(consoleLogMock).toHaveBeenCalledWith(
-          expect.stringContaining("aaa semantic local hit"),
-        );
-      } finally {
-        if (previousMode === undefined) {
-          delete process.env.CLANKER_MODE;
+        if (previousHome === undefined) {
+          delete process.env.HOME;
         } else {
-          process.env.CLANKER_MODE = previousMode;
-        }
-        if (previousModelPath === undefined) {
-          delete process.env.CLANKER_LOCAL_MODEL_PATH;
-        } else {
-          process.env.CLANKER_LOCAL_MODEL_PATH = previousModelPath;
-        }
-        if (previousDimensions === undefined) {
-          delete process.env.CLANKER_LOCAL_MODEL_DIMENSIONS;
-        } else {
-          process.env.CLANKER_LOCAL_MODEL_DIMENSIONS = previousDimensions;
+          process.env.HOME = previousHome;
         }
         rmSync(dir, { recursive: true, force: true });
       }
     });
-  });
 
-  describe("vote commands", () => {
     test("successfully upvotes", async () => {
       const program = createProgram();
       fetchMock.mockImplementationOnce(
@@ -871,7 +772,7 @@ describe("CLI", () => {
       await program.parseAsync(["node", "test", "upvote", "123"]);
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
-      expect(fetchCallUrl).toContain("solutions.vote");
+      expect(fetchCallUrl).toContain("kb.confirm");
       expect(consoleLogMock).toHaveBeenCalledWith(
         pc.green(pc.bold("▲ Upvoted")) + ` solution ${pc.cyan("123")}`,
       );
@@ -885,7 +786,7 @@ describe("CLI", () => {
       await program.parseAsync(["node", "test", "downvote", "123"]);
       expect(fetchMock).toHaveBeenCalled();
       const fetchCallUrl = fetchMock.mock.calls[0][0].toString();
-      expect(fetchCallUrl).toContain("solutions.vote");
+      expect(fetchCallUrl).toContain("kb.confirm");
       expect(consoleLogMock).toHaveBeenCalledWith(
         pc.red(pc.bold("▼ Downvoted")) + ` solution ${pc.cyan("123")}`,
       );
@@ -928,7 +829,7 @@ describe("CLI", () => {
         const program = createProgram();
         await program.parseAsync(["node", "test", "upvote", "remote-1", "--source", "remote"]);
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(fetchMock.mock.calls[0][0].toString()).toContain("solutions.vote");
+        expect(fetchMock.mock.calls[0][0].toString()).toContain("kb.confirm");
       });
     });
   });

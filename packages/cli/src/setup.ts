@@ -17,7 +17,6 @@ import {
   writePersistedConfig,
   type ClankerMode,
 } from "./mcp/config";
-import { defaultLocalModelPath } from "./mcp/local-semantic";
 import { installHooks, type HookInstallOptions } from "./hooks/install";
 
 const execFileAsync = promisify(execFile);
@@ -653,10 +652,7 @@ export async function setupAgents(options: SetupOptions = {}, deps: SetupDepende
     dryRun: Boolean(options.dryRun),
     local: mode === "local",
     localDb: options.localDb ?? resolvedConfig?.localDbPath,
-    localModelPath:
-      options.localModelPath ??
-      resolvedConfig?.localSemantic.modelPath ??
-      (options.localSemantic ? defaultLocalModelPath(env as NodeJS.ProcessEnv) : undefined),
+    localModelPath: options.localModelPath ?? resolvedConfig?.localSemantic.modelPath,
     localSemantic: options.localSemantic ?? resolvedConfig?.localSemantic.enabled ?? true,
     runCommand: deps.runCommand ?? defaultRunCommand,
   };

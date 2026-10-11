@@ -19,7 +19,7 @@
     "eval:mcp-product-proof:record:claude": "tsx packages/cli/src/evals/record-claude-product-proof.ts",
     "eval:repo-stackoverflow": "tsx packages/cli/src/evals/repo-stackoverflow.ts",
     "eval:pi-triggering": "tsx packages/cli/src/evals/pi-triggering-run.ts",
-    "benchmark:local-embeddings": "tsx packages/cli/benchmarks/local-embeddings/run.ts",
+    "benchmark:markdown-retrieval": "tsx packages/cli/benchmarks/markdown-retrieval/run.ts",
     "benchmark:hosted-retrieval": "pnpm --filter @clankeroverflow/db benchmark:hosted-retrieval",
     "db:push": "turbo run db:push --filter=@clankeroverflow/db",
     "db:generate": "turbo run db:generate --filter=@clankeroverflow/db",

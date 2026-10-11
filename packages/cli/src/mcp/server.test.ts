@@ -7,9 +7,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 
+import { MarkdownBackend } from "../kb/markdown-backend";
 import { createMcpServer } from "./server";
 import { resolveConfig } from "./config";
-import { LocalBackend } from "./local-backend";
 
 describe("CLI MCP server", () => {
   const testDir = dirname(fileURLToPath(import.meta.url));
@@ -147,6 +147,16 @@ describe("CLI MCP server", () => {
     expect(toolNames).toEqual([
       "clanker_status",
       "downvote_solution",
+      "kb_append",
+      "kb_browse",
+      "kb_confirm",
+      "kb_lint",
+      "kb_read",
+      "kb_search",
+      "kb_swarm_assign",
+      "kb_swarm_collect",
+      "kb_swarm_start",
+      "kb_write",
       "learn_solution",
       "log_solution",
       "search_solutions",
@@ -213,7 +223,7 @@ describe("CLI MCP server", () => {
     expect(fetchMock).toHaveBeenCalled();
     const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
     expect(fetchCallUrl).toMatch(/^https:\/\/api\.clankeroverflow\.com\/trpc/);
-    expect(fetchCallUrl).toContain("solutions.log");
+    expect(fetchCallUrl).toContain("kb.write");
 
     const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
     expect(text).toContain("Success! Solution logged:");
@@ -299,10 +309,10 @@ describe("CLI MCP server", () => {
 
     expect(fetchMock).toHaveBeenCalled();
     const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
-    expect(fetchCallUrl).toContain("solutions.search");
+    expect(fetchCallUrl).toContain("kb.search");
 
     const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
-    expect(text).toContain("Search attempts: keyword exact returned 1.");
+    expect(text).toContain("Search attempts: keyword returned 1.");
     expect(text).toContain("UNTRUSTED CONTENT");
     expect(text).toContain("# Problem: test problem");
     expect(text).toContain("ID: 123");
@@ -326,9 +336,9 @@ describe("CLI MCP server", () => {
       await unauthenticatedServer.connect(unauthenticatedServerTransport);
       await unauthenticatedClient.connect(unauthenticatedClientTransport);
 
-      fetchMock
-        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
-        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })));
+      fetchMock.mockImplementationOnce(
+        async () => new Response(JSON.stringify({ result: { data: [] } })),
+      );
 
       const result = await unauthenticatedClient.callTool({
         name: "search_solutions",
@@ -336,10 +346,8 @@ describe("CLI MCP server", () => {
       });
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(text).toContain("keyword exact returned 0");
-      expect(text).toContain("keyword tiered returned 0");
-      expect(text).toContain("CLANKER_API_KEY is required for hosted hybrid fallback");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(text).toContain("keyword returned 0");
       expect(text).toContain("No solutions found.");
     } finally {
       if (previousApiKey === undefined) {
@@ -366,26 +374,24 @@ describe("CLI MCP server", () => {
       await authenticatedServer.connect(authenticatedServerTransport);
       await authenticatedClient.connect(authenticatedClientTransport);
 
-      fetchMock
-        .mockImplementationOnce(async () => new Response(JSON.stringify({ result: { data: [] } })))
-        .mockImplementationOnce(
-          async () =>
-            new Response(
-              JSON.stringify({
-                result: {
-                  data: [
-                    {
-                      id: "hybrid-1",
-                      problem: "hybrid problem",
-                      solution: "hybrid solution",
-                      score: 2,
-                      tags: "search",
-                    },
-                  ],
-                },
-              }),
-            ),
-        );
+      fetchMock.mockImplementationOnce(
+        async () =>
+          new Response(
+            JSON.stringify({
+              result: {
+                data: [
+                  {
+                    id: "md-1",
+                    problem: "markdown problem",
+                    solution: "markdown solution",
+                    score: 2,
+                    tags: "search",
+                  },
+                ],
+              },
+            }),
+          ),
+      );
 
       const result = await authenticatedClient.callTool({
         name: "search_solutions",
@@ -393,9 +399,9 @@ describe("CLI MCP server", () => {
       });
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(text).toContain("Search attempts: keyword exact returned 0; hybrid returned 1.");
-      expect(text).toContain("ID: hybrid-1");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(text).toContain("Search attempts: keyword returned 1.");
+      expect(text).toContain("ID: md-1");
     } finally {
       if (previousApiKey === undefined) {
         delete process.env.CLANKER_API_KEY;
@@ -429,7 +435,7 @@ describe("CLI MCP server", () => {
       });
 
       const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
-      expect(text).toContain("Local semantic search is not configured yet.");
+      expect(text).toContain("No solutions found.");
       expect(fetchMock).not.toHaveBeenCalled();
     } finally {
       if (previousMode === undefined) {
@@ -463,7 +469,7 @@ describe("CLI MCP server", () => {
 
     expect(fetchMock).toHaveBeenCalled();
     const fetchCallUrl = fetchMock.mock.calls[0]![0]!.toString();
-    expect(fetchCallUrl).toContain("solutions.vote");
+    expect(fetchCallUrl).toContain("kb.confirm");
 
     const text = (result.content as Array<{ type: string; text: string }>)[0]!.text;
     expect(text).toBe("Successfully upvoted remote solution 123");
@@ -537,7 +543,7 @@ describe("CLI MCP server", () => {
   });
 
   test("closes transient backends created for source overrides", async () => {
-    const closeSpy = vi.spyOn(LocalBackend.prototype, "close");
+    const closeSpy = vi.spyOn(MarkdownBackend.prototype, "close");
 
     try {
       await client.callTool({

@@ -4,13 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import type { LocalDb } from "../mcp/local-db";
-import { openLocalDb } from "../mcp/local-db";
-import {
-  searchLocalKeyword,
-  searchLocalKeywordExact,
-  type FtsQuerySyntaxError,
-} from "../mcp/local-backend";
+import { KnowledgeBase } from "../kb/knowledge-base";
 import { createSolutionBackend } from "../mcp/create-backend";
 import { resolveConfig } from "../mcp/config";
 import { searchWithAutoFallback } from "../mcp/auto-search";
@@ -566,58 +560,43 @@ export function gradePairs(input: BenchmarkInput, runGrades: RunGrade[]): PairGr
     .sort((a, b) => a.scenarioId.localeCompare(b.scenarioId) || a.repetition - b.repetition);
 }
 
-export function seedFixtureDb(db: LocalDb, fixtures: FixtureSolution[]) {
-  const timestamp = "2026-01-01T00:00:00.000Z";
-  const insertSolution = db.prepare(
-    `INSERT INTO solution (id, problem, solution, tags, score, created_at, updated_at)
-     VALUES (?, ?, ?, ?, 0, ?, ?)`,
-  );
-  const insertFts = db.prepare(
-    `INSERT INTO solution_fts (rowid, problem, solution, tags)
-     VALUES (?, ?, ?, ?)`,
-  );
-  const insert = db.transaction(() => {
-    for (const fixture of fixtures) {
-      const tags = fixture.tags.join(",");
-      const info = insertSolution.run(
-        fixture.id,
-        fixture.problem,
-        fixture.solution,
-        tags,
-        timestamp,
-        timestamp,
-      );
-      insertFts.run(info.lastInsertRowid, fixture.problem, fixture.solution, tags);
-    }
-  });
-  insert.immediate();
+export function seedFixtureKnowledge(home: string, fixtures: FixtureSolution[]) {
+  const knowledgeBase = KnowledgeBase.open({ home, cwd: home });
+  for (const fixture of fixtures) {
+    knowledgeBase.writeFix(
+      "personal",
+      {
+        id: fixture.id,
+        title: fixture.problem,
+        problem: fixture.problem,
+        solution: fixture.solution,
+        tags: fixture.tags,
+      },
+      { dedupe: false },
+    );
+  }
 }
 
 export function validateFixtureRetrieval(input: Pick<BenchmarkInput, "scenarios" | "fixtures">) {
   const dir = mkdtempSync(join(tmpdir(), "clanker-product-proof-"));
-  const dbPath = join(dir, "fixtures.sqlite");
-  const db = openLocalDb(dbPath);
   try {
-    seedFixtureDb(db, input.fixtures);
+    seedFixtureKnowledge(dir, input.fixtures);
+    const knowledgeBase = KnowledgeBase.open({ home: dir, cwd: dir });
     const rows: FixturePreflight[] = [];
     for (const scenario of input.scenarios) {
       if (!scenario.fixture_solution_ids.length) continue;
       for (const fingerprint of scenario.acceptable_query_fingerprints) {
         try {
-          const exactResultIds = searchLocalKeywordExact(db, fingerprint, 5).map(
-            (result) => result.id,
-          );
-          const tieredResultIds = searchLocalKeyword(db, fingerprint, 5).map((result) => result.id);
-          const passed = scenario.fixture_solution_ids.some((id) => tieredResultIds.includes(id));
+          const resultIds = knowledgeBase.search(fingerprint, { limit: 5 }).map((hit) => hit.id);
+          const passed = scenario.fixture_solution_ids.some((id) => resultIds.includes(id));
           rows.push({
             scenarioId: scenario.id,
             fingerprint,
             expectedSolutionIds: scenario.fixture_solution_ids,
-            exactResultIds,
-            tieredResultIds,
+            exactResultIds: resultIds,
+            tieredResultIds: resultIds,
             passed,
-            usedFallback:
-              passed && !scenario.fixture_solution_ids.some((id) => exactResultIds.includes(id)),
+            usedFallback: false,
           });
         } catch (error) {
           rows.push({
@@ -635,7 +614,6 @@ export function validateFixtureRetrieval(input: Pick<BenchmarkInput, "scenarios"
     }
     return rows;
   } finally {
-    db.close();
     rmSync(dir, { recursive: true, force: true });
   }
 }
@@ -1288,8 +1266,7 @@ async function main() {
 const entrypoint = process.argv[1] ? pathToFileURL(process.argv[1]).href : "";
 if (import.meta.url === entrypoint) {
   main().catch((error: unknown) => {
-    const typedError = error as FtsQuerySyntaxError | Error;
-    console.error(typedError.message);
+    console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });
 }

@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@clankeroverflow/api": "workspace:*",
+    "@clankeroverflow/kb": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@clankeroverflow/auth": "workspace:*",
     "@clankeroverflow/db": "workspace:*",
     "@clankeroverflow/env": "workspace:*",
@@ -18,7 +20,8 @@
     "@sentry/cloudflare": "^10.53.1",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",
-    "hono": "catalog:"
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@clankeroverflow/config": "workspace:*",

@@ -1,3 +1,3 @@
 export * from "./auth";
-export * from "./solutions";
+export * from "./knowledge";
 export * from "./api-keys";

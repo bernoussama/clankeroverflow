@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
@@ -35,8 +36,11 @@ describe("Database Integration", () => {
   });
 
   afterEach(async () => {
-    await db.delete(schema.solutionVote);
-    await db.delete(schema.solution);
+    await db.delete(schema.kbChange);
+    await db.delete(schema.kbDocument);
+    await db.delete(schema.teamKb);
+    await db.delete(schema.teamMember);
+    await db.delete(schema.team);
     await db.delete(schema.apikey);
     await db.delete(schema.account);
     await db.delete(schema.session);
@@ -72,33 +76,32 @@ describe("Database Integration", () => {
     expect(result?.name).toBe("Test User");
   });
 
-  test("can create a solution and link to user", async () => {
+  test("can create a team document for a user", async () => {
     const userId = "user-2";
     await db.insert(schema.user).values({
       id: userId,
-      name: "Solution User",
-      email: "sol@example.com",
+      name: "Knowledge User",
+      email: "kb@example.com",
+    });
+    await db.insert(schema.team).values({ id: "team-1", name: "Team", slug: "team" });
+    await db.insert(schema.teamMember).values({ teamId: "team-1", userId, role: "owner" });
+    await db.insert(schema.kbDocument).values({
+      teamId: "team-1",
+      docId: "doc-1",
+      path: "backend/ts2307.md",
+      rev: 1,
+      contentHash: "abc",
+      frontmatter: { title: "TS2307" },
+      body: "Cannot find module",
+      markdown: "# TS2307",
     });
 
-    const solutionId = "sol-1";
-    await db.insert(schema.solution).values({
-      id: solutionId,
-      problem: "Test problem",
-      solution: "Test solution",
-      userId,
-      tags: "test",
-    });
+    const [result] = await db
+      .select()
+      .from(schema.kbDocument)
+      .where(eq(schema.kbDocument.docId, "doc-1"));
 
-    const result = await db.query.solution.findFirst({
-      where: (s, { eq }) => eq(s.id, solutionId),
-      with: {
-        user: true,
-      },
-    });
-
-    expect(result).toBeDefined();
-    expect(result?.problem).toBe("Test problem");
-    expect(result?.user?.name).toBe("Solution User");
+    expect(result?.path).toBe("backend/ts2307.md");
   });
 
   test("can create api key for user", async () => {

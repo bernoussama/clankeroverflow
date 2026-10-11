@@ -13,12 +13,12 @@ import {
   loadBenchmarkInput,
   renderMarkdownReport,
   validateFixtureRetrieval,
-  seedFixtureDb,
+  seedFixtureKnowledge,
   type FixtureSolution,
   type Scenario,
 } from "./product-proof";
-import { openLocalDb } from "../mcp/local-db";
-import { LocalBackend } from "../mcp/local-backend";
+import { KnowledgeBase } from "../kb/knowledge-base";
+import { MarkdownBackend } from "../kb/markdown-backend";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const productProofDir = resolve(testDir, "../../../../clankeroverflow-mcp-workspace/product-proof");
@@ -174,25 +174,21 @@ describe("product-proof MCP eval harness", () => {
       fixture_solution_ids: [fixture.id],
       acceptable_query_fingerprints: ["vite container page cannot be reached from host"],
       expected_key_facts: ["0.0.0.0", "--host"],
-      rubric_notes: "Exact keyword should miss, tiered keyword should recover.",
+      rubric_notes: "Markdown search should return the seeded fixture.",
     };
 
     const [result] = validateFixtureRetrieval({ scenarios: [scenario], fixtures: [fixture] });
 
     expect(result?.passed).toBe(true);
-    expect(result?.usedFallback).toBe(true);
+    expect(result?.usedFallback).toBe(false);
     expect(result?.tieredResultIds).toContain(fixture.id);
   });
 
-  test("learned reuse can log into an empty local DB and retrieve the learned solution", async () => {
+  test("learned reuse can log into an empty local knowledge base and retrieve the learned solution", async () => {
     const dir = mkdtempSync(join(tmpdir(), "clanker-learned-reuse-"));
-    const dbPath = join(dir, "solutions.sqlite");
     try {
-      const db = openLocalDb(dbPath);
-      seedFixtureDb(db, []);
-      db.close();
-
-      const backend = new LocalBackend(dbPath);
+      seedFixtureKnowledge(dir, []);
+      const backend = new MarkdownBackend(KnowledgeBase.open({ home: dir, cwd: dir }), "personal");
       const logged = await backend.log({
         problem: "TS2307 Cannot find module in pnpm workspace",
         solution: "Declare the sibling package as a workspace:* dependency and run pnpm install.",

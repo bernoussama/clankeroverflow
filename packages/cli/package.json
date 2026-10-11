@@ -29,29 +29,24 @@
   "scripts": {
     "test": "vitest run",
     "build": "tsdown && node dist/plugin/generate-plugin-json.mjs",
-    "check-types": "tsc -b && tsc -p benchmarks/local-embeddings/tsconfig.json --noEmit",
+    "check-types": "tsc -b && tsc -p benchmarks/markdown-retrieval/tsconfig.json --noEmit",
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@clankeroverflow/kb": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@trpc/client": "^11.7.2",
-    "better-sqlite3": "12.10.0",
     "commander": "^12.0.0",
     "mcplog": "^0.0.5",
     "picocolors": "^1.1.1",
-    "sqlite-vec": "^0.1.9",
     "yocto-spinner": "^1.2.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {
     "@clankeroverflow/api": "workspace:*",
-    "@types/better-sqlite3": "7.6.13",
     "@types/node": "^22.13.14",
     "tsdown": "^0.22.1",
     "typescript": "^5",
     "vitest": "4.0.7"
-  },
-  "optionalDependencies": {
-    "node-llama-cpp": "3.18.1"
   }
 }

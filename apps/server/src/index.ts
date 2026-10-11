@@ -19,6 +19,7 @@ import * as Sentry from "@sentry/cloudflare";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 
+import { handleHostedMcp, openHostedTeam, runScheduledDreams } from "./hosted-mcp";
 import { createRequestResourceLifecycle } from "./request-lifecycle";
 import { withRequestLogging, type RequestLogEvent } from "./request-logging";
 
@@ -240,6 +241,75 @@ app.post("/internal/sentry-test", (c) => {
   return c.json({ eventId, ok: true });
 });
 
+async function requireTeamId(c: Context<AppEnv>) {
+  const apiKey = c.req.header("x-clanker-api-key");
+  if (!apiKey) return null;
+  const verified = await c.get("auth").api.verifyApiKey({ body: { key: apiKey } });
+  if (!verified?.valid || !verified.key?.referenceId) return null;
+  return verified.key.referenceId;
+}
+
+app.use("/mcp", withNoStore);
+app.use("/mcp", withRequestServices);
+app.all("/mcp", async (c) => {
+  const apiKey = c.req.header("x-clanker-api-key");
+  if (!apiKey) return c.text("A team API key is required.", 401);
+  const verified = await c.get("auth").api.verifyApiKey({ body: { key: apiKey } });
+  const teamId = verified?.key?.referenceId;
+  if (!verified?.valid || !teamId) return c.text("Invalid API key.", 401);
+  return handleHostedMcp(c.req.raw, c.get("db"), c.env, teamId);
+});
+
+app.use("/kb/*", withNoStore);
+app.use("/kb/*", withRequestServices);
+app.get("/kb/changes", async (c) => {
+  const apiKey = c.req.header("x-clanker-api-key");
+  if (!apiKey) return c.text("A team API key is required.", 401);
+  const verified = await c.get("auth").api.verifyApiKey({ body: { key: apiKey } });
+  const teamId = verified?.key?.referenceId;
+  if (!verified?.valid || !teamId) return c.text("Invalid API key.", 401);
+  const since = Number(c.req.query("since") ?? "0");
+  const session = await openHostedTeam(c.get("db"), c.env, teamId);
+  if (session.created) await session.commit();
+  return c.json({
+    changes: session.team.changesSince(Number.isFinite(since) ? since : 0),
+  });
+});
+
+app.get("/kb/documents", async (c) => {
+  const teamId = await requireTeamId(c);
+  if (!teamId) return c.text("A team API key is required.", 401);
+  const session = await openHostedTeam(c.get("db"), c.env, teamId);
+  const path = c.req.query("path") ?? "";
+  const doc = session.team.read(path);
+  if (!doc) return c.json({ message: "Document not found" }, 404);
+  return c.json({ path: doc.path, rev: doc.rev, markdown: doc.markdown });
+});
+
+app.put("/kb/documents", async (c) => {
+  const teamId = await requireTeamId(c);
+  if (!teamId) return c.text("A team API key is required.", 401);
+  const body = await c.req.json<{ path?: string; markdown?: string; baseRev?: number | null }>();
+  if (!body.path || !body.markdown) return c.text("path and markdown are required.", 400);
+  const session = await openHostedTeam(c.get("db"), c.env, teamId);
+  const result = await session.team.write({
+    path: body.path,
+    markdown: body.markdown,
+    baseRev: body.baseRev ?? null,
+    source: "cli",
+    author: teamId,
+    force: body.baseRev !== null && body.baseRev !== undefined,
+  });
+  if (result.status === "conflict") {
+    return c.json(
+      { status: "conflict", markdown: result.currentMarkdown, rev: result.currentRev },
+      409,
+    );
+  }
+  await session.commit();
+  return c.json(result);
+});
+
 app.use(
   "/trpc/*",
   trpcServer({
@@ -274,4 +344,30 @@ app.onError((err, c) => {
   return c.text("Internal Server Error", 500);
 });
 
-export default Sentry.withSentry((env) => sentryOptionsForEnv(env as SentryBindings), app);
+const worker = {
+  fetch: app.fetch,
+  async scheduled(
+    _event: unknown,
+    env: { DATABASE_URL?: string; HYPERDRIVE?: { connectionString?: string } },
+    ctx: { waitUntil?: (promise: Promise<unknown>) => void },
+  ) {
+    const previous = process.env.DATABASE_URL;
+    const connection = env.DATABASE_URL ?? env.HYPERDRIVE?.connectionString;
+    if (connection) process.env.DATABASE_URL = connection;
+    const task = (async () => {
+      const opened = await createDb();
+      try {
+        await runScheduledDreams(opened.db, env);
+      } finally {
+        await opened.close();
+      }
+    })();
+    ctx.waitUntil?.(task);
+    await task.finally(() => {
+      if (previous === undefined) delete process.env.DATABASE_URL;
+      else process.env.DATABASE_URL = previous;
+    });
+  },
+};
+
+export default Sentry.withSentry((env) => sentryOptionsForEnv(env as SentryBindings), worker);

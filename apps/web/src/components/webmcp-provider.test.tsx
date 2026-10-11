@@ -11,10 +11,10 @@ import { trpcClient } from "@/utils/trpc";
 
 vi.mock("@/utils/trpc", () => ({
   trpcClient: {
-    solutions: {
+    kb: {
       search: { query: vi.fn() },
-      list: { query: vi.fn() },
-      getById: { query: vi.fn() },
+      browse: { query: vi.fn() },
+      read: { query: vi.fn() },
     },
   },
   queryClient: {},
@@ -45,7 +45,7 @@ describe("WebMCP tool definitions", () => {
     });
 
     it("auto mode returns keyword results without fallback when keyword matches", async () => {
-      const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
+      const mockFn = trpcClient.kb.search.query as ReturnType<typeof vi.fn>;
       mockFn.mockResolvedValueOnce([{ id: "1", problem: "test", solution: "fix", score: 0 }]);
 
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
@@ -54,63 +54,40 @@ describe("WebMCP tool definitions", () => {
       expect(mockFn).toHaveBeenCalledWith({
         query: "Next.js cache issue",
         limit: 10,
-        mode: "keyword",
-        keywordStrategy: "exact",
       });
       expect(result).toEqual({
         results: [{ id: "1", problem: "test", solution: "fix", score: 0 }],
-        attempts: [{ mode: "keyword", keywordStrategy: "exact", resultCount: 1 }],
+        attempts: [{ mode: "keyword", resultCount: 1 }],
       });
     });
 
     it("auto mode falls back to hybrid after empty keyword results", async () => {
-      const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
-      mockFn
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: "2", problem: "hybrid", solution: "fix", score: 1 }]);
+      const mockFn = trpcClient.kb.search.query as ReturnType<typeof vi.fn>;
+      mockFn.mockResolvedValueOnce([{ id: "2", problem: "hybrid", solution: "fix", score: 1 }]);
 
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
       const result = await tool?.execute({ query: "conceptual miss" });
 
-      expect(mockFn).toHaveBeenNthCalledWith(1, {
+      expect(mockFn).toHaveBeenCalledWith({
         query: "conceptual miss",
         limit: 10,
-        mode: "keyword",
-        keywordStrategy: "exact",
-      });
-      expect(mockFn).toHaveBeenNthCalledWith(2, {
-        query: "conceptual miss",
-        limit: 10,
-        mode: "hybrid",
       });
       expect(result).toEqual({
         results: [{ id: "2", problem: "hybrid", solution: "fix", score: 1 }],
-        attempts: [
-          { mode: "keyword", keywordStrategy: "exact", resultCount: 0 },
-          { mode: "hybrid", resultCount: 1 },
-        ],
+        attempts: [{ mode: "keyword", resultCount: 1 }],
       });
     });
 
     it("auto mode reports fallback failure without dropping keyword miss context", async () => {
-      const mockFn = trpcClient.solutions.search.query as ReturnType<typeof vi.fn>;
-      mockFn
-        .mockResolvedValueOnce([])
-        .mockRejectedValueOnce(new Error("Authentication required"))
-        .mockResolvedValueOnce([]);
+      const mockFn = trpcClient.kb.search.query as ReturnType<typeof vi.fn>;
+      mockFn.mockResolvedValueOnce([]);
 
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "search_solutions");
       const result = await tool?.execute({ query: "conceptual miss" });
 
       expect(result).toEqual({
         results: [],
-        attempts: [
-          { mode: "keyword", keywordStrategy: "exact", resultCount: 0 },
-          { mode: "hybrid", error: "Authentication required" },
-          { mode: "keyword", keywordStrategy: "tiered", resultCount: 0 },
-        ],
-        message:
-          "Keyword search returned no results and hybrid fallback was unavailable. Try one smaller or sharper keyword query before debugging from scratch.",
+        attempts: [{ mode: "keyword", resultCount: 0 }],
       });
     });
 
@@ -134,24 +111,24 @@ describe("WebMCP tool definitions", () => {
     });
 
     it("clamps limit to valid range", async () => {
-      const mockFn = trpcClient.solutions.list.query as ReturnType<typeof vi.fn>;
+      const mockFn = trpcClient.kb.browse.query as ReturnType<typeof vi.fn>;
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "browse_solutions");
       mockFn.mockResolvedValueOnce({ items: [], nextCursor: null });
 
       await tool?.execute({ limit: 50 });
 
-      expect(mockFn).toHaveBeenCalledWith({ limit: 20, sort: "recent" });
+      expect(mockFn).toHaveBeenCalledWith({});
     });
 
-    it("calls trpcClient.solutions.list.query with correct params", async () => {
-      const mockFn = trpcClient.solutions.list.query as ReturnType<typeof vi.fn>;
+    it("calls trpcClient.kb.browse.query with correct params", async () => {
+      const mockFn = trpcClient.kb.browse.query as ReturnType<typeof vi.fn>;
       mockFn.mockResolvedValueOnce({ items: [], nextCursor: null });
 
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "browse_solutions");
       const result = await tool?.execute({ limit: 10, sort: "recent" });
 
-      expect(mockFn).toHaveBeenCalledWith({ limit: 10, sort: "recent" });
-      expect(result).toEqual({ items: [], hasMore: false });
+      expect(mockFn).toHaveBeenCalledWith({});
+      expect(result).toMatchObject({ hasMore: false });
     });
   });
 
@@ -162,8 +139,8 @@ describe("WebMCP tool definitions", () => {
       expect(schema?.required).toContain("id");
     });
 
-    it("calls trpcClient.solutions.getById.query with the solution id", async () => {
-      const mockFn = trpcClient.solutions.getById.query as ReturnType<typeof vi.fn>;
+    it("calls trpcClient.kb.read.query with the solution id", async () => {
+      const mockFn = trpcClient.kb.read.query as ReturnType<typeof vi.fn>;
       mockFn.mockResolvedValueOnce({
         id: "sol_123",
         problem: "test problem",
@@ -180,7 +157,7 @@ describe("WebMCP tool definitions", () => {
       const tool = WEBMCP_TOOLS.find((candidate) => candidate.name === "get_solution");
       const result = await tool?.execute({ id: "sol_123" });
 
-      expect(mockFn).toHaveBeenCalledWith({ id: "sol_123" });
+      expect(mockFn).toHaveBeenCalledWith({ path: "sol_123" });
       expect(result).toMatchObject({ id: "sol_123" });
     });
   });

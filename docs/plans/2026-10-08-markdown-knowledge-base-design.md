@@ -1,0 +1,341 @@
+# Markdown Knowledge Base Design
+
+Status: markdown search is the only retriever. On 2026-10-11, recall@5 was 0.92, matching bge hybrid, so Workers AI, Vectorize, `node-llama-cpp`, `sqlite-vec`, and the local `solutions.sqlite` store are removed. `clanker kb migrate` copies `.clankeroverflow/solutions/*.md` into the markdown knowledge base.
+
+## Goal
+
+Turn ClankerOverflow from a global solutions database with vector search into **shared context for teams**: each team gets its own knowledge base of markdown files, organized by area (backend, infra, finance, ...), that their agents search before re-solving a problem and update after solving a new one.
+
+The knowledge base holds general team memory: fixes, decisions, how-tos, gotchas, processes, and saved queries. The launch story stays the debugging pitch, "stop re-solving solved problems". The unit of value changes from "a public Q&A row" to "a team's compiled, living wiki".
+
+## Why change
+
+- The current stack carries a lot of machinery for a small corpus: Postgres FTS with trigram tiers, Workers AI embeddings, Vectorize, hybrid fusion, local GGUF embeddings via `node-llama-cpp`, and `sqlite-vec`. Each piece needs its own benchmark, fallback path, and setup step.
+- At team scale (tens to low thousands of documents) the evidence favors simpler retrieval driven by the agent:
+  - Claude Code dropped its embedding index because "agentic search" (glob and grep in a loop) "outperformed everything else by a lot", and it avoided stale indexes and permission problems. ([Pragmatic Engineer](https://newsletter.pragmaticengineer.com/p/building-claude-code-with-boris-cherny))
+  - Letta's agent using only file tools scored 74.0% on LoCoMo, ahead of Mem0's best reported 68.5%. Letta's conclusion was that memory is "more about how agents manage context than the exact retrieval mechanism." ([Letta](https://www.letta.com/blog/benchmarking-ai-agent-memory/))
+  - Anthropic's memory tool is plain file CRUD under `/memories`. ([docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool))
+- Karpathy's [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) describes this exact shape. Knowledge is "compiled once and then kept current" in interlinked markdown, an `index.md` catalog replaces embeddings at moderate scale ("~100 sources, ~hundreds of pages"), and a real search engine (BM25) is added only when the wiki outgrows the index.
+- Markdown is portable, diffable, reviewable in PRs, readable by humans and agents alike, and has no lock-in. That makes it an easy sell to teams.
+
+## Non-goals (v1)
+
+- No embeddings or vector store. Re-add as an optional reranker only if evals show a gap.
+- No knowledge graph and no automatic entity extraction.
+- No ingestion of external raw sources (Slack, Notion, docs). V1 covers knowledge that agents and humans write directly.
+- No first-class swarm tools. V1 documents a folder convention and uses `kb_append`. Starting, assigning, and collecting a swarm comes later.
+
+## Core idea: folders for ownership, frontmatter for meaning
+
+The proposed "folders by department or topic" works well for **ownership and browsing** but poorly as the **only retrieval key**. A Stripe webhook timeout is finance, backend, and infra all at once, and a strict hierarchy forces one arbitrary home and hides the document from the others.
+
+Proposal:
+
+- **Folders (areas)** are shallow (at most 2 levels) and answer "who owns this, and who can see it". Names are free-form. There is no allowed list. They map to departments or topics and later to permissions.
+- **Frontmatter** answers "what is this about". Fields like `tags`, `type`, `stack`, and `error_signatures` can hold several values and drive filtering and ranking.
+- **Links** use Agent Memory Repo's `[[path]]` form, starting from the memory root. Omit `.md`. Keep information in one place and link to it elsewhere.
+
+### Layout
+
+The layout follows [Agent Memory Repo](https://cognition.com/agent-memory-repo). `MEMORY.md` is the short entry point every session loads. Area catalogs stay generated so the entry point does not grow into a full index.
+
+```txt
+<kb-root>/
+  MEMORY.md            # short, curated: what every session needs, plus [[links]]
+  AGENTS.md            # schema and conventions agents must follow when writing
+  log.md               # generated from the change log, never hand-edited
+  backend/
+    index.md           # generated catalog for this area
+    pnpm-workspace-ts2307.md
+    nextjs-cache-tags-stale.md
+  infra/
+    cloudflare-hyperdrive-pool-exhaustion.md
+  finance/
+    stripe-webhook-retry-idempotency.md
+  team/
+    structure.md       # general notes, not a fix doc
+```
+
+`index.md` and `log.md` are generated. `MEMORY.md` is hand-curated and kept short. Agents update its index links when they add a page worth finding from the entry point.
+
+### Two document kinds
+
+**Notes** use the Agent Memory Repo bullet format. One fact per line, with open metadata at the end. `kb_append(path, entry)` adds a line so two agents can update the same file without rewriting it.
+
+```md
+- John coordinates the billing launch [source: session/01JABC; added: 2026-09-03]
+- Payments and website share a 2026-10-15 launch deadline; see [[team/structure]] [source: session/01JDEF; added: 2026-09-04]
+```
+
+Recommended metadata keys: `source` and `added` (`YYYY-MM-DD`). `source` is the agent name, the session id, and a one-line message, for example `[source: claude-code/01JABC "pnpm workspace TS2307"; added: 2026-10-11]`.
+
+Transcripts are optional and off by default. When the user opts in, the transcript is stored as its own file, `transcripts/{sessionId}.md` locally or the same path in R2, and the entry links to it. The line itself stays one fact. Search does not index transcripts. Dreaming may read a linked transcript when it is checking a contradiction. A personal transcript stays on the machine unless that user uploads it. A team transcript is visible to the team.
+
+**Fix documents** keep YAML frontmatter so search can filter on structured fields. This extends `formatLearnMarkdown` / `parseLearnMarkdown` in `packages/cli/src/learn.ts`, so existing exports migrate without loss. Links inside them use `[[path]]`.
+
+```md
+---
+id: 01JABC... # stable; survives renames and moves
+title: pnpm workspace package fails with TS2307
+type: fix # fix | howto | decision | gotcha | reference
+area: backend
+tags: [pnpm, typescript, monorepo]
+aliases: ["Cannot find module '@acme/ui'"]
+error_signatures: ["TS2307: Cannot find module"]
+stack: { runtime: node22, framework: nextjs, package_manager: pnpm }
+status: verified # draft | verified | stale | superseded
+superseded_by: null
+confirmations: 3 # replaces up/down votes
+last_verified: 2026-10-01
+created: 2026-09-12
+updated: 2026-10-01
+authors: [codex, sara]
+related: [backend/tsconfig-paths-vs-exports]
+---
+
+## Problem
+
+## Root Cause
+
+## Fix
+
+## Verification
+
+## Notes
+```
+
+## Search: BM25 plus metadata, fuzzy only on short fields
+
+Fuzzy search on titles and then on bodies is a reasonable instinct, but fuzzy matchers rank long text poorly. Fuse.js caps patterns at 32 characters, by default only looks at roughly the first 60 characters of a field, and scans every document. Fuzzy matching is for typos in short strings. Ranking documents needs BM25.
+
+Pipeline for `kb_search(query, filters)`:
+
+1. **Filter** on frontmatter: `area`, `tags`, `type`, `status` (default excludes `superseded`).
+2. **Exact signature match.** If the query contains a string from `error_signatures` or `aliases` (case-insensitive substring), those docs go first. For debugging, pasting the exact error is the strongest signal.
+3. **BM25** over fields with boosts: `title` 4, `aliases` 3, `error_signatures` 3, `tags` 3, headings 2, body 1. Prefix matching is on for all fields. Fuzzy matching (edit distance about 0.2) is on only for `title`, `tags`, and `aliases`.
+4. **Tiebreak** by `status` (verified first), then `confirmations`, then `last_verified` recency.
+5. **Return** path, title, frontmatter, and a short snippet. The agent then calls `kb_read` for full documents. This follows the Agent Skills pattern: metadata first, body on demand.
+
+Agents can also browse instead of search: `kb_browse(area)` returns the generated `index.md`. With a few hundred docs, an agent reading the index and choosing is often as good as search (Karpathy).
+
+Engine choice:
+
+| Where            | Engine                                                                                                                        | Why                                                                                                         |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Local MCP (Node) | [MiniSearch](https://lucaong.github.io/minisearch/) in memory, rebuilt on file change (mtime or content hash), cached as JSON | BM25+, field boosts, per-field fuzzy and prefix, zero dependencies; thousands of docs index in milliseconds |
+| Hosted (Workers) | Postgres full-text search over the `kb_document` table (see Storage), with weighted `tsvector` columns                        | Already deployed, with search code in `packages/db/src/search.ts`. Rebuildable from R2 at any time          |
+
+Either way the markdown files are the source of truth, and the index is a disposable cache.
+
+## Storage
+
+The real decision. Workers have no filesystem, so "just markdown files" needs a concrete home in hosted mode.
+
+- **Local mode:** two directories, both free and open source. `<repo>/.clankeroverflow/kb/` is shared through the repo. `~/.local/share/clankeroverflow/kb/` is personal and stays on the machine. This replaces `solutions.sqlite`. See Personal memory below.
+- **Hosted mode: our own primitives on R2.** Markdown content lives in R2, and Postgres holds refs and the search index. See the next section.
+- **Later: two-way GitHub sync.** V1 clients are the MCP and CLI, not a git remote. V1 ships a one-way export. Two-way sync stays deferred, but the v1 data model is designed so it can be added without migration (see "Two-way GitHub sync (later)").
+
+### Personal memory
+
+The CLI ships a personal knowledge base as a free, open-source layer. It uses the same files and tools as a team knowledge base, but it lives at `~/.local/share/clankeroverflow/kb/` and is never uploaded. Preferences and private notes go there. Shared fixes and team notes go to the repo or the hosted team knowledge base.
+
+Search covers every layer that is configured and labels each hit with where it came from: personal, repo, or team. When a repo hit and a team hit score close together, the repo hit ranks first, because it is specific to the code being edited. When a write could belong to more than one layer, the agent asks. It does not guess.
+
+Hosted personal memory, one private knowledge base per user with the same search and dreaming as teams, is a possible later product. V1 does not build it. The local personal directory is the same format, so it can be uploaded later without a migration.
+
+### Why R2 rather than Cloudflare Artifacts
+
+[Artifacts](https://developers.cloudflare.com/artifacts/) (managed git, open beta since 2026-10-01) would give us history and `git clone` for free. But it costs $0.15 per 1,000 operations, about 33 times R2's write price. It's a beta product limited to Workers Paid, and it still needs a separate search index and a per-team writer to avoid push contention. Versioned markdown on R2 takes a few small primitives that we control, and it stays inside R2's free tier until well past 1,000 teams (see Cost).
+
+### Hosted storage primitives on R2
+
+The model borrows from git: immutable content objects plus small mutable refs updated with compare-and-swap. R2 holds the objects, and Postgres holds the refs, because it already handles transactions, auth, and search for us.
+
+**1. Objects (R2, immutable).** Every revision of every doc is written once and never changed:
+
+```txt
+kb/{teamId}/revs/{docId}/{rev}.md        # full markdown with frontmatter; rev is a zero-padded integer
+```
+
+**2. Materialized tree (R2, mutable).** The latest version at its human path, for export, backup, and browsing with any S3 tool:
+
+```txt
+kb/{teamId}/docs/backend/pnpm-workspace-ts2307.md
+```
+
+Each object carries `customMetadata` (`docId`, `rev`, `contentHash`, `author`), so if Postgres were lost, the whole ref table could be rebuilt by listing this prefix.
+
+**3. Refs and index (Postgres).**
+
+- `kb_document(team_id, doc_id, path, rev, content_hash, frontmatter jsonb, body, search_vector, updated_at)` is the current state and the search index in one row. It has a unique key on `(team_id, path)`.
+- `kb_change(team_id, seq bigserial, doc_id, path, rev, op, source, external_ref, author, agent, session, message, created_at)` is the append-only change log. `source` is `api | cli | web | github`, and `external_ref` holds a git commit SHA once GitHub sync exists. Both are written from day one so that sync can be added later without a migration. It feeds the activity view, the generated `log.md`, and the sync cursor.
+
+**4. Write = compare-and-swap.** Each update carries `base_rev`, the revision the writer last read.
+
+1. Validate and scrub the content, then run the dedupe gate.
+2. `PUT revs/{docId}/{base_rev+1}.md`. Orphaned revision objects are harmless, and a sweep cleans them up.
+3. In one Postgres transaction:
+   - `UPDATE kb_document SET rev = base_rev + 1, ... WHERE doc_id = $1 AND rev = base_rev`. If zero rows change, return **409 Conflict** with the current content, and the agent merges and retries.
+   - `INSERT` into `kb_change`.
+4. `PUT docs/{path}.md`, the materialized copy. If this fails, the reconciler repairs it from the latest revision.
+
+Locking is per document, so no team-wide lock or Durable Object is needed. Creates rely on the unique path constraint. Moves update `path` and emit a `move` change. Deletes are soft: a `delete` change plus a tombstone, with the revisions kept.
+
+**5. No hot files.** `index.md` and `log.md` are rendered on read from `kb_document` and `kb_change`, never stored as shared objects that every write must rewrite. In the R2 export they are regenerated in a batch.
+
+**6. History and revert.** `kb_history(path)` lists revisions from `kb_change`. A revert writes the old content as a new revision. The web UI computes diffs on demand.
+
+**7. Sync for local copies** (`clanker kb pull` and `clanker kb push`, and the MCP on start):
+
+- `GET /kb/changes?since={seq}` returns the changed docs. The client downloads only those, through the Worker, and stores `{ cursor, path → rev }` in `.clankeroverflow/kb/.sync.json`.
+- Push sends each locally changed file with its `base_rev`. On a 409 the client writes `name.conflict.md` next to the file for an agent or human to resolve.
+- Sync is triggered by events (MCP start, and before writes), not polled on a timer.
+
+**8. Reconciler and backup.** Daily cron:
+
+- Compare `kb_document` against the `docs/` tree, and repair missing or out-of-date copies from the latest revision.
+- Delete orphaned revisions older than a day.
+- Optionally run `clanker kb export --git`, which replays `kb_change` into a git repo, one commit per change, for teams that want a GitHub mirror.
+
+R2 event notifications are not needed in v1, because all writes go through our API and the bucket is private.
+
+**Other R2 features we use:**
+
+- Jurisdictional buckets for EU teams.
+- Lifecycle rules that move revisions older than 90 days to Infrequent Access, if storage ever matters.
+- Conditional `put` (`onlyIf`) as a second guard on the materialized copy.
+
+### Cost
+
+R2 Standard pricing: $0.015 per GB-month, $4.50 per million Class A (write) operations, and $0.36 per million Class B (read) operations. The monthly free tier covers 10 GB, 1 million Class A, and 10 million Class B operations. Egress is free.
+
+Assume each team makes 500 writes a month, each write costing 2 Class A operations, and each team syncs about 2,000 times a month, reading a few changed files each time. Storage is about 50 MB per team, including history.
+
+| Teams  | Class A (writes) | Class B (reads)   | Storage | Monthly R2 cost | Artifacts, same load |
+| ------ | ---------------- | ----------------- | ------- | --------------- | -------------------- |
+| 100    | 100,000          | about 1 million   | 5 GB    | $0 (free tier)  | about $38            |
+| 1,000  | 1 million        | about 10 million  | 50 GB   | about $0.60     | about $400           |
+| 10,000 | 10 million       | about 100 million | 500 GB  | about $80       | about $4,000         |
+
+Search and reads hit Postgres, not R2, so the real marginal cost is Postgres storage for doc bodies (about 5 MB per team) and Worker requests. The real cost of R2 is engineering: we build sync, conflicts, history, and export ourselves, and we lose `git clone` as a native interface. The export to git covers the main use case.
+
+## Write path: compile, don't append
+
+The biggest quality lever. Karpathy's core point is that a new source updates existing pages instead of piling up duplicates.
+
+`kb_write` flow:
+
+1. The agent submits a draft (title, frontmatter, body).
+2. The server runs `kb_search` on the title plus error signatures. If strong matches exist, it returns them with `status: possible_duplicate` and doesn't write.
+3. The agent chooses between `update` on an existing path (merge a new root cause, add a variant, bump `last_verified`) and `create` with a justification.
+4. On write, the server validates frontmatter against the schema. It reuses `assertReusableSolution` and the secret and path scrubbing from `learn.ts`, and commits through the compare-and-swap write described under Storage. The rendered `index.md` and `log.md` pick up the change automatically.
+
+**Docs go live straight away as `draft`** (decided). Drafts are searchable right away but rank below `verified` docs, and search results show the status so agents know to validate before applying. A draft becomes `verified` after its first independent confirmation, meaning a `kb_confirm(worked: true)` from a different user, agent session, or repo than the author. An author can't verify their own doc.
+
+`kb_confirm(path, worked, note)` replaces up and downvotes. It increments `confirmations` or records a failure note, and after N failures flips `status` to `stale`.
+
+`clanker kb lint` (CLI and scheduled hosted job): finds duplicates (title and signature similarity), stale docs (`last_verified` older than X, or depending on an upgraded package version), orphans, broken links, and missing frontmatter. Lint is deterministic and does not call a model.
+
+### Dreaming
+
+Dreaming is a hosted agent we run on a schedule, on our model bill. It is not a command the user's agent runs. It has two jobs, matching Agent Memory Repo:
+
+- **Add memory.** Read recent `kb_change` rows and spot patterns worth saving as new note lines or fix drafts.
+- **Clean memory.** Merge duplicates, remove outdated entries, and use `source` metadata to resolve contradictions.
+
+Writes go through the same compare-and-swap path, with `source: dream` and `status: draft`, so a dream never marks its own output `verified`. It only runs for teams with changes since the last dream, and each run has a token cap. Unchanged knowledge bases cost nothing.
+
+### Swarm folders
+
+V1 has a folder convention and no new tools. `AGENTS.md` documents it, and agents use `kb_search`, `kb_read`, and `kb_append`.
+
+```txt
+swarms/{name}/
+  README.md        # goal and rules, including how to measure
+  findings.md      # one fact per line, including what was ruled out
+  questions.md     # agents ask each other; answers are indented lines
+```
+
+`kb_append` adds a line, so two agents can write the same file without a conflict. When the swarm ends, the lead agent adds one `[[swarms/{name}/README]]` link to `MEMORY.md`. The folder stays, so a later session can reuse it.
+
+First-class swarms, with tools to start one, assign agents, and collect the result, come later. The folder layout stays the same, so those tools do not require a migration.
+
+## MCP tool surface
+
+| Tool                                                     | Replaces                                          | Purpose                                                                    |
+| -------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------- |
+| `kb_search(query, area?, tags?, type?, status?, limit?)` | `search_solutions`                                | Ranked hits with snippets                                                  |
+| `kb_browse(area?)`                                       | (new)                                             | Return `index.md` for the root or an area                                  |
+| `kb_read(path \| id)`                                    | resources `clankeroverflow://repo/solutions/{id}` | Full document                                                              |
+| `kb_write(draft, mode: create \| update, path?)`         | `learn_solution`, `log_solution`                  | Write a fix document, with the dedupe gate                                 |
+| `kb_append(path, entry)`                                 | (new)                                             | Append one note line, so concurrent edits to the same file do not conflict |
+| `kb_confirm(path, worked, note?)`                        | `upvote_solution`, `downvote_solution`            | Feedback                                                                   |
+| `clanker_status`                                         | same                                              | Mode, KB root, doc count, index freshness                                  |
+
+Keep the old tool names as thin aliases for one CLI minor version, since the skill triggers and evals in `clankeroverflow-mcp-workspace/` depend on them.
+
+Two transports share this tool surface in v1:
+
+- **Local MCP** in the CLI, over stdio. It searches personal, repo, and team memory.
+- **Hosted MCP** on the Worker, over Streamable HTTP, authenticated with an API key. It searches and writes the team knowledge base only. Personal and repo files stay on the machine, so a hosted session does not see them.
+
+## Teams model (hosted)
+
+New tables in `packages/db`: `team`, `team_member (role: owner | editor | reader)`, `team_kb (r2_prefix, jurisdiction: default | eu, review_policy: auto | human, github_repo?, github_sync_mode: off | export | two_way)`. The `review_policy` default is `auto`: docs go live as drafts, as decided above. `human` is an opt-in for teams that want approval first. Also add the `kb_document` and `kb_change` tables described under Storage. Scope API keys to a team. Area-level permissions come later. V1 is all-or-nothing per team.
+
+## What gets deleted
+
+Decided: delete the semantic stack when the markdown backend matches current retrieval. The gate is recall at 5 no worse than hybrid on the `repo-stackoverflow` and `product-proof` evals. The backend interface stays, so a reranker can be added later if real queries show a gap. Until the gate passes, the vector code stays in place and is not on the new search path.
+
+- `packages/api/src/semantic/*`, the Vectorize and Workers AI bindings in `packages/infra/alchemy.run.ts`
+- `packages/cli/src/mcp/local-semantic.ts`, `packages/cli/src/mcp/local-db.ts`, `packages/cli/src/mcp/local-backend.ts`, `node-llama-cpp`, `sqlite-vec`, `better-sqlite3`, `benchmarks/local-embeddings`
+- the hybrid and auto-fallback search modes (`auto-search.ts`)
+- `solution` and `solution_vote`, with no data migration. The public corpus is shut down because nobody depends on it.
+
+## Two-way GitHub sync (later)
+
+Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sketch, so v1 choices don't block it:
+
+- **Outbound:** each `kb_change` becomes a commit pushed to the team's repo by a GitHub App. The resulting SHA is stored in `external_ref`.
+- **Inbound:** a GitHub push webhook goes to a Queue. For each changed `.md` file, the consumer finds the doc by its frontmatter `id` (or by path for new files), and treats the revision recorded at the last synced commit as `base_rev`. Then it goes through the same compare-and-swap write with `source: github`.
+- **Conflicts:** if both sides changed the same doc since the last sync, the API version stays current. The GitHub version is saved as a new revision on a `conflict` branch of the doc, and the bot opens a PR or issue in the repo for a human to resolve. We never auto-merge markdown.
+- **Loop prevention:** commits made by our bot carry a trailer (`Clanker-Change: <seq>`) and are ignored by the inbound handler.
+- **Hard parts that justify deferring it:** GitHub App auth and installation, renames versus delete-and-create detection, force-pushes, files without frontmatter `id`, and keeping `AGENTS.md` and non-doc files out of the index.
+
+## Phases
+
+1. **Spec freeze.** Lock the frontmatter schema and the `AGENTS.md` template from the decisions in this doc.
+2. **Local markdown backend.** Add `MarkdownBackend` implementing the existing `SolutionBackend` interface in `packages/cli/src/mcp`, using MiniSearch, the new `kb_*` tools, and `clanker kb migrate`, which copies `.clankeroverflow/solutions/*.md` into the knowledge base. **Exit criterion:** recall at 5 is no worse than hybrid. Measured on the 100-query corpus: markdown 0.92, keyword 0.89, bge hybrid 0.92. Local `SolutionBackend` now searches markdown, and the SQLite engine is removed.
+3. **Write quality.** Dedupe gate, generated index and log, `kb confirm`, `kb lint`.
+4. **Teams plus hosted storage on R2.** Team tables, the `kb_document` and `kb_change` tables, the R2 layout, the compare-and-swap write API, `clanker kb pull` and `push` sync with conflict files, a starter template copied into each new team's prefix, the daily reconciler, and the hosted Streamable HTTP MCP. The git export and GitHub mirror come after.
+5. **Hosted dreaming.** Scheduled dreamer on our model bill, gated on recent changes and a per-run token cap. Output is always `draft`.
+6. **Web app.** A team knowledge-base viewer (tree by area, search, doc page, lint report, activity from `kb_change`, history and diffs), using the existing design system in `apps/web/src/index.css`. There is no public solutions feed to preserve. This is where the earlier UI redesign happens.
+7. **Cleanup.** Remove the vector stack and the old tables.
+8. **Two-way GitHub sync.** Per the sketch above.
+9. **First-class swarms.** Tools to start a swarm, assign agents, and collect the result, on top of the v1 folder convention.
+
+## Risks
+
+- **Retrieval regressions on paraphrased queries** ("page is stale after update" vs. "cache tags not invalidating"). BM25 has no synonyms. Mitigations: `aliases` written at authoring time, the agent retrying with reformulated queries (agentic search), and `kb_browse`. Optional later: an LLM reranker over the top 20.
+- **Taxonomy drift** (teams invent `backend/` and `back-end/`). Names stay free-form. Lint reports near-duplicate folder names and does not block the write. Dreaming can propose a merge as a draft.
+- **Write noise** from agents logging trivia. The dedupe gate, `status: draft` until confirmed, and an optional `review_policy: human` limit this.
+- **Dreaming cost.** Model calls are on our bill and grow with active teams. Mitigations: skip teams with no changes since the last dream, cap tokens per run, and record spend per team so a paid cap can be added later without a redesign.
+- **Positioning.** Mosaic (YC, "shared memory for your team's agents"), ExtraContext, and Cognition's Agent Memory Repo are in this space. We build on the open Agent Memory Repo format. The differentiators are hosted team search, duplicate checks before writing, permissions, a web UI, scheduled dreaming, and an open-source local mode.
+
+## Decisions
+
+- **Hosted storage:** our own primitives on R2, not Cloudflare Artifacts (cost).
+- **GitHub:** one-way export in v1. Two-way sync is wanted but deferred, and the v1 schema already supports it.
+- **Review:** agent-written docs go live straight away as `draft`. One independent confirmation makes them `verified`.
+- **Standard:** build on top of [Agent Memory Repo](https://cognition.com/agent-memory-repo) rather than competing with it. ClankerOverflow hosts team memory in that open format and sells what the standard leaves out: search beyond grep, duplicate checks before writing, team permissions, a web UI, and scheduled dreaming.
+- **File format:** both kinds. General notes use their bullet format (`MEMORY.md`, `[[path]]` links, `[key: value]` metadata per line, written with `kb_append`). Structured fix documents keep YAML frontmatter so search can filter on tags, error signatures, and status.
+- **Access in v1:** a local stdio MCP in the CLI, and a hosted Streamable HTTP MCP on the Worker. Both use the same tools. The hosted MCP sees only the team knowledge base. We do not serve the git protocol, and we do not pull two-way GitHub sync forward. Agents that only know how to `git clone` an Agent Memory Repo cannot connect until a later step.
+- **Content:** general team memory, with verified debugging fixes as the headline. Notes cover decisions, how-tos, gotchas, processes, and saved queries. Marketing and the first evals stay on fixes.
+- **Dreaming:** hosted, on our model bill. A scheduled job adds and cleans memory. It does not run inside the user's agent. Output is always `draft`, runs only after new changes, and each run has a token cap.
+- **Personal memory:** a free, open-source layer in the CLI at `~/.local/share/clankeroverflow/kb/`. It is searched alongside repo and team memory, and hits are labeled by layer. Writes ask when the destination is unclear. Hosted personal memory is a possible later product, not part of v1.
+- **Provenance:** every entry records the agent, the session id, and a one-line message. Storing the transcript is optional and off by default. A stored transcript is a separate linked file, not part of the entry line, and search does not index it.
+- **Swarms:** a folder convention in v1 (`swarms/{name}/` with `README.md`, `findings.md`, and `questions.md`), written with `kb_append`. First-class swarm tools come later.
+- **Public corpus:** shut it down. Do not migrate hosted solutions. Nobody uses them or depends on them. Anonymous public search goes away with the `solution` and `solution_vote` tables.
+- **Areas:** free-form folder names, at most 2 levels deep. No allowed list. Lint reports near-duplicate names and does not reject them.
+- **Search layers:** search the repo knowledge base and the team knowledge base together. Label every hit. When the scores are close, the repo hit ranks first. Writes still ask when the destination layer is unclear.
+- **Vectors:** delete Workers AI, Vectorize, `node-llama-cpp`, and `sqlite-vec` once markdown search reaches recall at 5 no worse than hybrid. Do not keep embeddings as a reranker in v1. The backend interface stays so one can be added later.

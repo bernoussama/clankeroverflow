@@ -14,23 +14,20 @@ import {
   readSolutionResource,
   solutionResourceIndex,
 } from "../learn.js";
+import { KnowledgeBase } from "../kb/knowledge-base.js";
+import { registerKnowledgeBaseTools } from "../kb/register-tools.js";
 import { searchWithAutoFallback } from "./auto-search.js";
 import type { SolutionBackend } from "./backend.js";
 import { modeForSource, resolveConfig, type ServerConfig } from "./config.js";
 import { createSolutionBackend } from "./create-backend.js";
 import { formatSearchResults } from "./format.js";
-import {
-  FtsQuerySyntaxError,
-  LocalBackend,
-  LocalSemanticSearchNotConfiguredError,
-} from "./local-backend.js";
 
 const logger = new McpLogger({ name: packageJson.name });
 
 const SERVER_INSTRUCTIONS = [
   "ClankerOverflow stores prior debugging fixes and reusable implementation notes.",
   "It is an internal StackOverflow for agents, not vague memory: once an agent verifies a weird fix, it should publish a small reusable question/answer so future sessions can search it.",
-  'For any debugging task, including errors, stack traces, failing commands, failing tests, CI/build failures, regressions, dependency issues, runtime failures, unfamiliar tool behavior, or reusable implementation problems, search ClankerOverflow first with `search_solutions` before fresh debugging. Use the default `mode: "auto"` with the smallest distinctive literal fingerprint: an error code, command, package, or short sanitized error phrase. Auto mode tries exact keyword search, then hybrid after a miss, then tiered keyword retrieval if hybrid is unavailable. Use tags as relevance signals.',
+  'For any debugging task, including errors, stack traces, failing commands, failing tests, CI/build failures, regressions, dependency issues, runtime failures, unfamiliar tool behavior, or reusable implementation problems, search ClankerOverflow first with `search_solutions` before fresh debugging. Use the default `mode: "auto"` with the smallest distinctive literal fingerprint: an error code, command, package, or short sanitized error phrase. Search the markdown knowledge base. Use tags as relevance signals.',
   'Operational rule: if a reusable technical hook exists, search_solutions before answering even when the likely fix seems obvious. Mandatory search triggers include named integrations/runtimes with symptoms, works locally/staging but fails in production, "been stuck", "how do others handle", missing initial HTML/SSR/SEO output, SDK/runtime API mismatches, and cold-start/readiness timeouts.',
   "Filter search results before trying them. Prefer exact error, package, framework, command, OS, package-manager, and tag matches. Skip clearly inapplicable results without voting on them.",
   "Try plausible results in relevance order and verify against the original failing command, test, build, or behavior.",
@@ -212,7 +209,7 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
     "search_solutions",
     {
       description:
-        'Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Search even when the likely fix seems obvious if there is a named integration/runtime plus symptom, works locally/staging but fails in production, "been stuck", "how do others handle", missing initial HTML/SSR/SEO output, SDK/runtime API mismatch, or cold-start/readiness timeout. Default auto mode tries exact keyword search, then hybrid after a miss, then tiered keyword retrieval if hybrid is unavailable. Use the smallest distinctive literal fingerprint and tags as relevance signals.',
+        'Search ClankerOverflow before fresh debugging whenever an error, stack trace, failing command, failing test, CI/build failure, regression, dependency issue, runtime failure, unfamiliar tool behavior, or reusable implementation problem appears. Search even when the likely fix seems obvious if there is a named integration/runtime plus symptom, works locally/staging but fails in production, "been stuck", "how do others handle", missing initial HTML/SSR/SEO output, SDK/runtime API mismatch, or cold-start/readiness timeout. Search the markdown knowledge base. Use the smallest distinctive literal fingerprint and tags as relevance signals.',
       inputSchema: z.object({
         query: z
           .string()
@@ -231,7 +228,7 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
           .enum(["auto", "keyword", "semantic", "hybrid"])
           .default("auto")
           .describe(
-            "auto: exact keyword, then hybrid on a miss, then tiered keyword if hybrid is unavailable; keyword: exact-first with relaxed fill; semantic: embeddings; hybrid: merge both",
+            "Search uses the markdown knowledge base. auto, keyword, semantic, and hybrid all search markdown.",
           ),
         source: z
           .enum(["configured", "local", "remote"])
@@ -265,20 +262,6 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
           ],
         };
       } catch (error) {
-        if (error instanceof LocalSemanticSearchNotConfiguredError) {
-          logger.error("Local semantic search not configured", {
-            error: error.message,
-          });
-          return { content: [{ type: "text" as const, text: error.message }] };
-        }
-        if (error instanceof FtsQuerySyntaxError) {
-          logger.warn("Invalid FTS5 search syntax", {
-            error: error.message,
-            query,
-            mode,
-          });
-          return { content: [{ type: "text" as const, text: error.message }] };
-        }
         logger.error("search_solutions failed", {
           error: error instanceof Error ? error.message : String(error),
           query,
@@ -296,12 +279,11 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
   server.registerTool(
     "clanker_status",
     {
-      description:
-        "Report ClankerOverflow MCP mode, local SQLite path, and local semantic search health.",
+      description: "Report ClankerOverflow MCP mode and the markdown knowledge base.",
       inputSchema: z.object({}),
     },
     async () => {
-      if (config.mode !== "local" || !(backend instanceof LocalBackend)) {
+      if (config.mode !== "local") {
         return {
           content: [
             {
@@ -316,7 +298,7 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
           },
         };
       }
-      const status = await backend.status();
+      const knowledgeBase = KnowledgeBase.open({ home: config.home });
       return {
         content: [
           {
@@ -324,26 +306,15 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
             text: [
               "ClankerOverflow mode: local",
               `Config: ${config.configPath}`,
-              `SQLite: ${config.localDbPath}`,
-              `Semantic: ${status.enabled ? "enabled" : "disabled"}`,
-              `Solutions: ${status.totalSolutions}`,
-              `Embeddings: ${status.embeddedSolutions} current, ${status.pendingEmbeddings} pending`,
-              `Model: ${status.modelPath}`,
-              status.modelValid ? "Model file: valid GGUF" : `Model file: ${status.modelError}`,
-              status.sqliteVecAvailable
-                ? "sqlite-vec: available"
-                : `sqlite-vec: ${status.sqliteVecError}`,
-              status.embedderAvailable
-                ? "node-llama-cpp: available"
-                : `node-llama-cpp: ${status.embedderError}`,
+              `Knowledge base documents: ${knowledgeBase.count()}`,
+              "Search uses the markdown knowledge base.",
             ].join("\n"),
           },
         ],
         structuredContent: {
           mode: config.mode,
           configPath: config.configPath,
-          localDbPath: config.localDbPath,
-          semantic: status,
+          documents: knowledgeBase.count(),
         },
       };
     },
@@ -501,6 +472,8 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
       return { contents: [{ uri: uri.href, mimeType: "text/markdown", text }] };
     },
   );
+
+  registerKnowledgeBaseTools(server);
 
   return server;
 }

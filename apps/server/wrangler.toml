@@ -7,12 +7,15 @@ upload_source_maps = true
 [dev]
 port = 3000
 
+[triggers]
+crons = ["0 5 * * *"]
+
 # Non-secret bindings for local `wrangler dev`. Copy apps/server/.env to .dev.vars for secrets
 # (GITHUB_CLIENT_SECRET, BETTER_AUTH_SECRET) or use `wrangler secret put`.
 #
-# Keep basic `wrangler dev` local-only so auth and keyword search work without
-# waiting for Cloudflare's remote binding proxy. Production Alchemy deploys
-# still attach Workers AI and Vectorize for semantic and hybrid search.
+# Keep basic `wrangler dev` local-only so auth works without waiting for
+# Cloudflare's remote binding proxy. Production Alchemy deploys attach the
+# team knowledge base R2 bucket. Embeddings and Vectorize are not used.
 
 [observability]
 enabled = false

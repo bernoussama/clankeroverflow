@@ -50,6 +50,13 @@
       "when": 1782072000000,
       "tag": "0006_unicode_search",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782075600000,
+      "tag": "0007_team_knowledge",
+      "breakpoints": true
     }
   ]
 }

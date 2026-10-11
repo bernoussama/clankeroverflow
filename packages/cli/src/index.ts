@@ -19,8 +19,12 @@ import {
 import { createSolutionBackend } from "./mcp/create-backend.js";
 import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
-import { FtsQuerySyntaxError, LocalBackend } from "./mcp/local-backend.js";
-import { downloadDefaultLocalModel } from "./mcp/local-semantic.js";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+
+import { KnowledgeBase, personalKbRoot } from "./kb/knowledge-base.js";
+import { migrateLocalKnowledge } from "./kb/migrate.js";
+import { httpTeamRemote, pullTeam, pushTeam } from "./kb/sync.js";
 import { exportLocalSolutions, gitRepoRoot, learnSolution, syncRepoSolutions } from "./learn.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
 import pc from "picocolors";
@@ -35,25 +39,12 @@ function sanitizeForTerminal(text: string): string {
   return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x80-\x9F]/g, "");
 }
 
-function formatLocalStatus(dbPath: string, status: Awaited<ReturnType<LocalBackend["status"]>>) {
+function formatLocalStatus(home: string, status: { documents: number }) {
   return [
     pc.bold("ClankerOverflow local status"),
-    `SQLite: ${pc.cyan(dbPath)}`,
-    `Semantic: ${status.enabled ? pc.green("enabled") : pc.yellow("disabled")}`,
-    `Solutions: ${status.totalSolutions}`,
-    `Embeddings: ${status.embeddedSolutions} current, ${status.pendingEmbeddings} pending`,
-    `Model: ${status.modelPath || "(not configured)"}`,
-    `Model file: ${status.modelValid ? pc.green("valid GGUF") : pc.yellow(status.modelError ?? "missing")}`,
-    `sqlite-vec: ${
-      status.sqliteVecAvailable
-        ? pc.green("available")
-        : pc.red(status.sqliteVecError ?? "unavailable")
-    }`,
-    `node-llama-cpp: ${
-      status.embedderAvailable
-        ? pc.green("available")
-        : pc.red(status.embedderError ?? "unavailable")
-    }`,
+    `Knowledge base: ${pc.cyan(personalKbRoot(home))}`,
+    `Documents: ${status.documents}`,
+    "Search uses the markdown knowledge base.",
   ].join("\n");
 }
 
@@ -442,13 +433,127 @@ export function createProgram(options: CreateProgramOptions = {}) {
           source: backendMode,
         });
       } catch (error: any) {
-        if (error instanceof FtsQuerySyntaxError) {
-          console.error(pc.red(pc.bold("✖ Invalid search syntax:")));
-        } else {
-          console.error(pc.red(pc.bold("✖ Error searching solutions:")));
-        }
+        console.error(pc.red(pc.bold("✖ Error searching solutions:")));
         console.error(pc.red(error.message || error));
         process.exit(1);
+      }
+    });
+
+  const kbCommand = program
+    .command("kb")
+    .description("Search and write the local markdown knowledge base");
+
+  kbCommand
+    .command("init")
+    .description("Write AGENTS.md and MEMORY.md into the local knowledge base")
+    .action(() => {
+      const knowledgeBase = KnowledgeBase.open();
+      knowledgeBase.init();
+      console.log("Knowledge base template is ready.");
+    });
+
+  kbCommand
+    .command("lint")
+    .description("Report duplicates, stale docs, broken links, and near-duplicate areas")
+    .action(() => {
+      const issues = KnowledgeBase.open().lint();
+      if (!issues.length) {
+        console.log("No knowledge base lint issues.");
+        return;
+      }
+      for (const issue of issues) console.log(`${issue.code} ${issue.path}: ${issue.message}`);
+    });
+
+  kbCommand
+    .command("migrate")
+    .description("Copy repo solution markdown into the knowledge base")
+    .action(() => {
+      const config = resolveConfig();
+      const imported = migrateLocalKnowledge(KnowledgeBase.open({ home: config.home }));
+      console.log(`Imported ${imported.imported} documents into the knowledge base.`);
+    });
+
+  kbCommand
+    .command("pull")
+    .description("Download team knowledge base changes into a local directory")
+    .option("--root <dir>", "Directory for the team copy")
+    .action(async (options: { root?: string }) => {
+      const config = resolveConfig();
+      if (!config.apiKey) {
+        console.error(pc.red("CLANKER_API_KEY is required to pull the team knowledge base."));
+        process.exit(1);
+      }
+      const root = options.root ?? join(config.home, ".local", "share", "clankeroverflow", "team");
+      const result = await pullTeam(
+        root,
+        httpTeamRemote({ serverUrl: config.serverUrl, apiKey: config.apiKey }),
+      );
+      console.log(`Pulled ${result.pulled} documents. Conflicts: ${result.conflicts.length}.`);
+    });
+
+  kbCommand
+    .command("push")
+    .description("Upload local team markdown with compare-and-swap")
+    .option("--root <dir>", "Directory for the team copy")
+    .action(async (options: { root?: string }) => {
+      const config = resolveConfig();
+      if (!config.apiKey) {
+        console.error(pc.red("CLANKER_API_KEY is required to push the team knowledge base."));
+        process.exit(1);
+      }
+      const root = options.root ?? join(config.home, ".local", "share", "clankeroverflow", "team");
+      const knowledgeBase = KnowledgeBase.open({ home: config.home, teamRoot: root });
+      const files = knowledgeBase
+        .files()
+        .filter((loaded) => loaded.layer === "team")
+        .map((loaded) => ({
+          path: loaded.document.path,
+          markdown: readFileSync(loaded.absolutePath, "utf8"),
+        }));
+      const result = await pushTeam(
+        root,
+        httpTeamRemote({ serverUrl: config.serverUrl, apiKey: config.apiKey }),
+        files,
+      );
+      console.log(`Pushed ${result.pushed} documents. Conflicts: ${result.conflicts.length}.`);
+    });
+
+  kbCommand
+    .command("export")
+    .description("Write a one-way markdown export, including generated index.md and log.md")
+    .option("--dir <dir>", "Export directory")
+    .action((options: { dir?: string }) => {
+      const config = resolveConfig();
+      const knowledgeBase = KnowledgeBase.open({ home: config.home });
+      const dir = options.dir ?? join(config.home, ".local", "share", "clankeroverflow", "export");
+      for (const loaded of knowledgeBase.files()) {
+        const file = join(dir, loaded.layer, loaded.document.path);
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, readFileSync(loaded.absolutePath, "utf8"));
+      }
+      writeFileSync(join(dir, "index.md"), `${knowledgeBase.browse()}\n`);
+      writeFileSync(join(dir, "log.md"), `${knowledgeBase.log()}\n`);
+      console.log(`Exported the knowledge base to ${dir}.`);
+    });
+
+  kbCommand
+    .command("search")
+    .argument("<query>", "The search query")
+    .option("-l, --limit <number>", "Number of results to return", "5")
+    .action((query: string, options: { limit: string }) => {
+      const limit = Number(options.limit);
+      if (!Number.isInteger(limit) || limit < 1 || limit > 20) {
+        console.error(pc.red("Limit must be an integer from 1 to 20."));
+        process.exit(1);
+      }
+      const hits = KnowledgeBase.open().search(query, { limit });
+      if (!hits.length) {
+        console.log("No matching knowledge base documents.");
+        return;
+      }
+      for (const [index, hit] of hits.entries()) {
+        console.log(`${index + 1}. [${hit.layer}] ${sanitizeForTerminal(hit.title)} (${hit.path})`);
+        console.log(`   ${sanitizeForTerminal(hit.snippet)}`);
       }
     });
 
@@ -533,7 +638,7 @@ export function createProgram(options: CreateProgramOptions = {}) {
           console.log(`Path: ${pc.cyan(output.configPath)}`);
           console.log(`Persisted: ${output.persisted ? "yes" : "no (legacy/default fallback)"}`);
           console.log(`Mode: ${pc.cyan(output.mode)}`);
-          console.log(`Local database: ${output.local.databasePath}`);
+          console.log(`Knowledge base: ${personalKbRoot(config.home)}`);
           console.log(`Local semantic: ${output.local.semantic ? "enabled" : "disabled"}`);
           console.log(`Remote API: ${output.remote.serverUrl}`);
           console.log(`Remote web: ${output.remote.webUrl}`);
@@ -566,33 +671,24 @@ export function createProgram(options: CreateProgramOptions = {}) {
       }
     });
 
-  const local = program.command("local").description("Inspect and maintain local SQLite mode");
+  const local = program.command("local").description("Inspect the local markdown knowledge base");
 
   local
     .command("status")
-    .description("Show local SQLite and semantic search status")
-    .option("--db <path>", "Local SQLite database path")
+    .description("Show local markdown knowledge base status")
     .option("--json", "Print machine-readable JSON")
-    .action(async (options) => {
+    .action((options) => {
       try {
         const config = resolveConfig({
           ...process.env,
           CLANKER_MODE: "local",
-          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
-        const status = await backend.status();
+        const documents = KnowledgeBase.open({ home: config.home }).count();
         if (options.json) {
-          console.log(
-            JSON.stringify(
-              { mode: "local", dbPath: config.localDbPath, semantic: status },
-              null,
-              2,
-            ),
-          );
+          console.log(JSON.stringify({ mode: "local", home: config.home, documents }, null, 2));
           return;
         }
-        console.log(formatLocalStatus(config.localDbPath, status));
+        console.log(formatLocalStatus(config.home, { documents }));
       } catch (error: any) {
         console.error(pc.red(pc.bold("✖ Error reading local status:")));
         console.error(pc.red(error.message || error));
@@ -602,53 +698,35 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   local
     .command("doctor")
-    .description("Diagnose local SQLite semantic search setup")
-    .option("--db <path>", "Local SQLite database path")
+    .description("Diagnose the local markdown knowledge base")
     .option("--json", "Print machine-readable JSON")
-    .action(async (options) => {
+    .action((options) => {
       try {
         const config = resolveConfig({
           ...process.env,
           CLANKER_MODE: "local",
-          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
-        const status = await backend.status();
+        const documents = KnowledgeBase.open({ home: config.home }).count();
         const checks = [
-          { name: "sqlite database", ok: true, detail: config.localDbPath },
           {
-            name: "local semantic enabled",
-            ok: status.enabled,
-            detail: status.enabled ? "enabled" : "disabled by CLANKER_LOCAL_SEMANTIC=0/false/off",
+            name: "markdown knowledge base",
+            ok: true,
+            detail: personalKbRoot(config.home),
           },
           {
-            name: "sqlite-vec",
-            ok: status.sqliteVecAvailable,
-            detail: status.sqliteVecError ?? "available",
+            name: "markdown search",
+            ok: true,
+            detail: "Search uses the markdown knowledge base.",
           },
           {
-            name: "node-llama-cpp",
-            ok: status.embedderAvailable,
-            detail: status.embedderError ?? "available",
-          },
-          {
-            name: "model file",
-            ok: status.modelValid,
-            detail: status.modelError ?? status.modelPath,
-          },
-          {
-            name: "embedding freshness",
-            ok: status.pendingEmbeddings === 0,
-            detail: `${status.pendingEmbeddings} pending`,
+            name: "documents",
+            ok: true,
+            detail: `${documents} documents`,
           },
         ];
         if (options.json) {
           console.log(
-            JSON.stringify(
-              { mode: "local", dbPath: config.localDbPath, checks, semantic: status },
-              null,
-              2,
-            ),
+            JSON.stringify({ mode: "local", home: config.home, documents, checks }, null, 2),
           );
           return;
         }
@@ -662,13 +740,12 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   local
     .command("search")
-    .description("Search the local SQLite solutions database")
+    .description("Search the local markdown knowledge base")
     .argument("<query>", "The search query")
-    .option("--db <path>", "Local SQLite database path")
     .option("-l, --limit <number>", "Number of results to return", "1")
     .option(
       "-m, --mode <mode>",
-      "auto (exact keyword, then hybrid, then tiered keyword fallback), keyword, semantic, or hybrid",
+      "auto, keyword, semantic, or hybrid. Every mode searches markdown.",
       "auto",
     )
     .action(async (query, options) => {
@@ -679,23 +756,18 @@ export function createProgram(options: CreateProgramOptions = {}) {
         const config = resolveConfig({
           ...process.env,
           CLANKER_MODE: "local",
-          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
         });
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
+        const backend = createSolutionBackend(config, "local");
         await searchAndPrint(backend, {
           query,
           limit,
           mode,
-          allowHybridFallback: config.localSemantic.enabled,
-          fallbackUnavailableReason: "local semantic search is not configured",
+          allowHybridFallback: false,
+          fallbackUnavailableReason: "local search uses the markdown knowledge base",
           source: "local",
         });
       } catch (error: any) {
-        if (error instanceof FtsQuerySyntaxError) {
-          console.error(pc.red(pc.bold("✖ Invalid search syntax:")));
-        } else {
-          console.error(pc.red(pc.bold("✖ Error searching local solutions:")));
-        }
+        console.error(pc.red(pc.bold("✖ Error searching local solutions:")));
         console.error(pc.red(error.message || error));
         process.exit(1);
       }
@@ -703,40 +775,11 @@ export function createProgram(options: CreateProgramOptions = {}) {
 
   local
     .command("embed")
-    .description("Download the local model if needed and embed pending local solutions")
-    .option("--db <path>", "Local SQLite database path")
-    .option("--force", "Rebuild all local embeddings")
-    .option("--limit <number>", "Maximum solutions to embed in this run")
-    .action(async (options) => {
-      try {
-        const config = resolveConfig({
-          ...process.env,
-          CLANKER_MODE: "local",
-          CLANKER_LOCAL_SEMANTIC: "1",
-          ...(options.db ? { CLANKER_LOCAL_DB: options.db } : {}),
-        });
-        const limit = options.limit === undefined ? undefined : Number(String(options.limit));
-        if (options.limit !== undefined) {
-          if (limit === undefined || !Number.isInteger(limit) || limit < SEARCH_LIMIT_MIN) {
-            console.error(
-              pc.red(pc.bold("✖ Error: ")) +
-                pc.red(`--limit must be an integer of at least ${SEARCH_LIMIT_MIN}`),
-            );
-            process.exit(1);
-          }
-        }
-        const model = await downloadDefaultLocalModel(config.localSemantic.modelPath);
-        const backend = new LocalBackend(config.localDbPath, { semantic: config.localSemantic });
-        const result = await backend.embedPending({ force: Boolean(options.force), limit });
-        console.log(
-          pc.green(pc.bold("✔ Local embeddings ready")) +
-            ` - ${result.embedded} solution(s) embedded; model ${model.downloaded ? "downloaded to" : "checked at"} ${pc.cyan(config.localSemantic.modelPath)}`,
-        );
-      } catch (error: any) {
-        console.error(pc.red(pc.bold("✖ Error embedding local solutions:")));
-        console.error(pc.red(error.message || error));
-        process.exit(1);
-      }
+    .description("Embeddings were removed. Search uses the markdown knowledge base.")
+    .action(() => {
+      console.log(
+        "Embeddings were removed. Use `clanker kb search` for the markdown knowledge base.",
+      );
     });
 
   program
@@ -750,9 +793,12 @@ export function createProgram(options: CreateProgramOptions = {}) {
     .option("--no-api-key", "Skip or remove stored MCP API keys")
     .option("--server-url <url>", "ClankerOverflow API server URL")
     .option("--mode <mode>", "Persisted backend mode: local or remote")
-    .option("--local", "Configure MCP for private local SQLite mode")
+    .option("--local", "Configure MCP for private local markdown mode")
     .option("--local-semantic", "Enable local semantic search and write local model settings")
-    .option("--local-db <path>", "Local SQLite database path for --local setup")
+    .option(
+      "--local-db <path>",
+      "Legacy config path. Local storage is the markdown knowledge base.",
+    )
     .option("--local-model-path <path>", "GGUF embedding model path for --local-semantic")
     .option("--target <dirs>", "Comma-separated additional target directories for the skill")
     .option("--skill <skill>", "Skill for --target: mcp, cli, or both", "mcp")

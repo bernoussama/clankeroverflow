@@ -16,10 +16,9 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { openLocalDb } from "../mcp/local-db";
 import {
   loadBenchmarkInput,
-  seedFixtureDb,
+  seedFixtureKnowledge,
   type EvalRun,
   type FixtureSolution,
   type RunsFile,
@@ -274,7 +273,7 @@ function claudeSettingsPath(root: string) {
   return settingsPath;
 }
 
-function mcpConfigPath(root: string, fixtureDbPath: string, enabled: boolean) {
+function mcpConfigPath(root: string, fixtureHome: string, enabled: boolean) {
   const configPath = join(root, "mcp.json");
   const mcpServers = enabled
     ? {
@@ -284,7 +283,7 @@ function mcpConfigPath(root: string, fixtureDbPath: string, enabled: boolean) {
           args: ["--dir", repoRoot, "exec", "tsx", "packages/cli/src/index.ts", "mcp"],
           env: {
             CLANKER_MODE: "local",
-            CLANKER_LOCAL_DB: fixtureDbPath,
+            HOME: fixtureHome,
             CLANKER_LOCAL_SEMANTIC: "0",
           },
         },
@@ -414,7 +413,7 @@ function runClaude(
   config: RunConfig,
   scenario: Scenario,
   repetition: number,
-  fixtureDbPath: string,
+  fixtureHome: string,
   traceDir: string,
 ) {
   const safeId = `${scenario.id}-${config}-r${repetition}`;
@@ -423,7 +422,7 @@ function runClaude(
   const prompt = evalPrompt(scenario, config);
   const workspacePath = workspaceForScenario(options, scenario, safeId);
   const claudeEnvironment = createClaudeEnvironment(safeId);
-  const mcpConfig = mcpConfigPath(claudeEnvironment.root, fixtureDbPath, config !== "without_mcp");
+  const mcpConfig = mcpConfigPath(claudeEnvironment.root, fixtureHome, config !== "without_mcp");
   const beforeHashes = fileHashes(workspacePath);
   const args = claudeArgs(options, config, prompt, mcpConfig);
   const env = {
@@ -431,7 +430,6 @@ function runClaude(
     HOME: claudeEnvironment.home,
     CLAUDE_CONFIG_DIR: claudeEnvironment.claudeHome,
     CLANKER_MODE: "local",
-    CLANKER_LOCAL_DB: fixtureDbPath,
     CLANKER_LOCAL_SEMANTIC: "0",
   };
 
@@ -575,17 +573,14 @@ function write(path: string, data: string, options?: WriteFileOptions) {
   writeFileSync(path, data, options);
 }
 
-function resetDbFiles(dbPath: string) {
-  rmSync(dbPath, { force: true });
-  rmSync(`${dbPath}-shm`, { force: true });
-  rmSync(`${dbPath}-wal`, { force: true });
+function resetKnowledge(home: string) {
+  rmSync(join(home, ".local", "share", "clankeroverflow", "kb"), { recursive: true, force: true });
 }
 
-function seedDb(dbPath: string, fixtures: FixtureSolution[]) {
-  resetDbFiles(dbPath);
-  const db = openLocalDb(dbPath);
-  seedFixtureDb(db, fixtures);
-  db.close();
+function seedKnowledge(home: string, fixtures: FixtureSolution[]) {
+  mkdirSync(home, { recursive: true });
+  resetKnowledge(home);
+  seedFixtureKnowledge(home, fixtures);
 }
 
 function fixturesWithoutScenario(fixtures: FixtureSolution[], scenario: Scenario) {
@@ -599,32 +594,44 @@ function configsForScenario(scenario: Scenario): RunConfig[] {
     : baseConfigs;
 }
 
-function dbPathForConfig(
+function knowledgeHomeForConfig(
   traceDir: string,
   scenario: Scenario,
   config: RunConfig,
   repetition: number,
 ) {
   if (config === "learn_then_reuse_pass1" || config === "learn_then_reuse_pass2") {
-    return join(traceDir, `${scenario.id}-learned-r${repetition}.sqlite`);
+    return join(traceDir, `${scenario.id}-learned-r${repetition}`);
   }
-  return join(traceDir, `${scenario.id}-${config}-r${repetition}.sqlite`);
+  return join(traceDir, `${scenario.id}-${config}-r${repetition}`);
 }
 
-function prepareDbForRun(
+function prepareKnowledgeForRun(
   traceDir: string,
   fixtures: FixtureSolution[],
   scenario: Scenario,
   config: RunConfig,
   repetition: number,
 ) {
-  const dbPath = dbPathForConfig(traceDir, scenario, config, repetition);
-  if (config === "with_mcp_known_fix" || config === "without_mcp") {
-    seedDb(dbPath, fixtures);
-  } else if (config === "with_mcp_empty_db" || config === "learn_then_reuse_pass1") {
-    seedDb(dbPath, fixturesWithoutScenario(fixtures, scenario));
+  const home = knowledgeHomeForConfig(traceDir, scenario, config, repetition);
+  switch (config) {
+    case "with_mcp_known_fix":
+    case "without_mcp":
+      seedKnowledge(home, fixtures);
+      break;
+    case "with_mcp_empty_db":
+    case "learn_then_reuse_pass1":
+      seedKnowledge(home, fixturesWithoutScenario(fixtures, scenario));
+      break;
+    case "learn_then_reuse_pass2":
+      mkdirSync(home, { recursive: true });
+      break;
+    default: {
+      const unreachable: never = config;
+      throw new Error(`Unhandled run config: ${unreachable}`);
+    }
   }
-  return dbPath;
+  return home;
 }
 
 async function main() {
@@ -660,14 +667,14 @@ async function main() {
           continue;
         }
         console.log(`Running ${scenario.id} ${config} repetition ${repetition}`);
-        const fixtureDbPath = prepareDbForRun(
+        const fixtureHome = prepareKnowledgeForRun(
           traceDir,
           input.fixtures,
           scenario,
           config,
           repetition,
         );
-        const run = runClaude(options, config, scenario, repetition, fixtureDbPath, traceDir);
+        const run = runClaude(options, config, scenario, repetition, fixtureHome, traceDir);
         runMap.set(key, run);
         const runs = runOrder.flatMap((shape) => {
           const run = runMap.get(runKey(shape));
