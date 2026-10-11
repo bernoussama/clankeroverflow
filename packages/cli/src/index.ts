@@ -21,6 +21,7 @@ import { startMcpServer } from "./mcp/server.js";
 import { formatSearchResults } from "./mcp/format.js";
 import { FtsQuerySyntaxError, LocalBackend } from "./mcp/local-backend.js";
 import { downloadDefaultLocalModel } from "./mcp/local-semantic.js";
+import { KnowledgeBase } from "./kb/knowledge-base.js";
 import { exportLocalSolutions, gitRepoRoot, learnSolution, syncRepoSolutions } from "./learn.js";
 import { hasSetupFailures, setupAgents, type Agent, type SkillSelection } from "./setup.js";
 import pc from "picocolors";
@@ -449,6 +450,29 @@ export function createProgram(options: CreateProgramOptions = {}) {
         }
         console.error(pc.red(error.message || error));
         process.exit(1);
+      }
+    });
+
+  program
+    .command("kb")
+    .description("Search and write the local markdown knowledge base")
+    .command("search")
+    .argument("<query>", "The search query")
+    .option("-l, --limit <number>", "Number of results to return", "5")
+    .action((query: string, options: { limit: string }) => {
+      const limit = Number(options.limit);
+      if (!Number.isInteger(limit) || limit < 1 || limit > 20) {
+        console.error(pc.red("Limit must be an integer from 1 to 20."));
+        process.exit(1);
+      }
+      const hits = KnowledgeBase.open().search(query, { limit });
+      if (!hits.length) {
+        console.log("No matching knowledge base documents.");
+        return;
+      }
+      for (const [index, hit] of hits.entries()) {
+        console.log(`${index + 1}. [${hit.layer}] ${sanitizeForTerminal(hit.title)} (${hit.path})`);
+        console.log(`   ${sanitizeForTerminal(hit.snippet)}`);
       }
     });
 

@@ -147,6 +147,12 @@ describe("CLI MCP server", () => {
     expect(toolNames).toEqual([
       "clanker_status",
       "downvote_solution",
+      "kb_append",
+      "kb_browse",
+      "kb_confirm",
+      "kb_read",
+      "kb_search",
+      "kb_write",
       "learn_solution",
       "log_solution",
       "search_solutions",

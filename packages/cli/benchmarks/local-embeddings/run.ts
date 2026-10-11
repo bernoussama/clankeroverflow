@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { searchLocalKeyword, searchLocalKeywordExact } from "../../src/mcp/local-backend";
 import { openLocalDb } from "../../src/mcp/local-db";
+import { recall5, runMarkdownRetrievalEval } from "../markdown-retrieval/run";
 import { benchmarkCorpus } from "./corpus";
 import { percentile, summarizeMetrics, type MetricSummary } from "./metrics";
 import { BENCHMARK_MODELS, ensureModel } from "./models";
@@ -390,6 +391,7 @@ async function main() {
 
   const quality: QualityRow[] = [];
   const performance: PerformanceRow[] = [];
+  let hybridRankings: Ranking[] | undefined;
   if (options.quality) {
     quality.push(
       ...qualityRows("Keyword FTS5 exact", "keyword", "none", keywordRankings("exact"), [
@@ -416,6 +418,7 @@ async function main() {
         includeRankings: options.quality && backend === qualityBackend,
       });
       if (options.quality && backend === qualityBackend && full.rankings) {
+        hybridRankings = full.rankings;
         quality.push(
           ...qualityRows(
             `${BENCHMARK_MODELS[model].label} native`,
@@ -495,6 +498,23 @@ async function main() {
     models: Object.fromEntries(options.models.map((key) => [key, BENCHMARK_MODELS[key]])),
     quality,
     performance,
+    markdownRetrieval: options.quality
+      ? (() => {
+          const markdown = runMarkdownRetrievalEval();
+          const hybridRecall5 = hybridRankings
+            ? recall5(new Map(hybridRankings.map((ranking) => [ranking.queryId, ranking.hybrid])))
+            : null;
+          return {
+            markdownRecall5: markdown.markdown.recall5,
+            keywordRecall5: markdown.keyword.recall5,
+            hybridRecall5,
+            passed:
+              hybridRecall5 === null
+                ? markdown.passed
+                : markdown.markdown.recall5 >= hybridRecall5 - 0.005,
+          };
+        })()
+      : null,
   };
   const jsonPath = extname(options.output) === ".json" ? options.output : `${options.output}.json`;
   const markdownPath = jsonPath.replace(/\.json$/, ".md");

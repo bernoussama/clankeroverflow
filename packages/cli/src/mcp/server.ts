@@ -14,6 +14,7 @@ import {
   readSolutionResource,
   solutionResourceIndex,
 } from "../learn.js";
+import { registerKnowledgeBaseTools } from "../kb/register-tools.js";
 import { searchWithAutoFallback } from "./auto-search.js";
 import type { SolutionBackend } from "./backend.js";
 import { modeForSource, resolveConfig, type ServerConfig } from "./config.js";
@@ -501,6 +502,8 @@ export function createMcpServer(config: ServerConfig = resolveConfig()) {
       return { contents: [{ uri: uri.href, mimeType: "text/markdown", text }] };
     },
   );
+
+  registerKnowledgeBaseTools(server);
 
   return server;
 }

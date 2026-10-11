@@ -29,7 +29,7 @@
   "scripts": {
     "test": "vitest run",
     "build": "tsdown && node dist/plugin/generate-plugin-json.mjs",
-    "check-types": "tsc -b && tsc -p benchmarks/local-embeddings/tsconfig.json --noEmit",
+    "check-types": "tsc -b && tsc -p benchmarks/local-embeddings/tsconfig.json --noEmit && tsc -p benchmarks/markdown-retrieval/tsconfig.json --noEmit",
     "prepack": "pnpm run build"
   },
   "dependencies": {
@@ -38,6 +38,7 @@
     "better-sqlite3": "12.10.0",
     "commander": "^12.0.0",
     "mcplog": "^0.0.5",
+    "minisearch": "^7.2.0",
     "picocolors": "^1.1.1",
     "sqlite-vec": "^0.1.9",
     "yocto-spinner": "^1.2.0",

@@ -1,6 +1,6 @@
 # Markdown Knowledge Base Design
 
-Status: decisions closed. Implementation has not started.
+Status: local markdown knowledge base is implemented. On 2026-10-11, markdown search reached recall@5 of 0.92 on the 100-query local-embeddings corpus, matching bge hybrid (0.92) and ahead of SQLite FTS keyword (0.89). The retrieval gate passes. Vector deletion stays in the cleanup phase because hosted search still uses that stack.
 
 ## Goal
 
@@ -75,17 +75,17 @@ Transcripts are optional and off by default. When the user opts in, the transcri
 
 ```md
 ---
-id: 01JABC...                 # stable; survives renames and moves
+id: 01JABC... # stable; survives renames and moves
 title: pnpm workspace package fails with TS2307
-type: fix                     # fix | howto | decision | gotcha | reference
+type: fix # fix | howto | decision | gotcha | reference
 area: backend
 tags: [pnpm, typescript, monorepo]
 aliases: ["Cannot find module '@acme/ui'"]
 error_signatures: ["TS2307: Cannot find module"]
 stack: { runtime: node22, framework: nextjs, package_manager: pnpm }
-status: verified              # draft | verified | stale | superseded
+status: verified # draft | verified | stale | superseded
 superseded_by: null
-confirmations: 3              # replaces up/down votes
+confirmations: 3 # replaces up/down votes
 last_verified: 2026-10-01
 created: 2026-09-12
 updated: 2026-10-01
@@ -94,9 +94,13 @@ related: [backend/tsconfig-paths-vs-exports]
 ---
 
 ## Problem
+
 ## Root Cause
+
 ## Fix
+
 ## Verification
+
 ## Notes
 ```
 
@@ -116,10 +120,10 @@ Agents can also browse instead of search: `kb_browse(area)` returns the generate
 
 Engine choice:
 
-| Where | Engine | Why |
-|---|---|---|
+| Where            | Engine                                                                                                                        | Why                                                                                                         |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Local MCP (Node) | [MiniSearch](https://lucaong.github.io/minisearch/) in memory, rebuilt on file change (mtime or content hash), cached as JSON | BM25+, field boosts, per-field fuzzy and prefix, zero dependencies; thousands of docs index in milliseconds |
-| Hosted (Workers) | Postgres full-text search over the `kb_document` table (see Storage), with weighted `tsvector` columns | Already deployed, with search code in `packages/db/src/search.ts`. Rebuildable from R2 at any time |
+| Hosted (Workers) | Postgres full-text search over the `kb_document` table (see Storage), with weighted `tsvector` columns                        | Already deployed, with search code in `packages/db/src/search.ts`. Rebuildable from R2 at any time          |
 
 Either way the markdown files are the source of truth, and the index is a disposable cache.
 
@@ -207,11 +211,11 @@ R2 Standard pricing: $0.015 per GB-month, $4.50 per million Class A (write) oper
 
 Assume each team makes 500 writes a month, each write costing 2 Class A operations, and each team syncs about 2,000 times a month, reading a few changed files each time. Storage is about 50 MB per team, including history.
 
-| Teams | Class A (writes) | Class B (reads) | Storage | Monthly R2 cost | Artifacts, same load |
-|---|---|---|---|---|---|
-| 100 | 100,000 | about 1 million | 5 GB | $0 (free tier) | about $38 |
-| 1,000 | 1 million | about 10 million | 50 GB | about $0.60 | about $400 |
-| 10,000 | 10 million | about 100 million | 500 GB | about $80 | about $4,000 |
+| Teams  | Class A (writes) | Class B (reads)   | Storage | Monthly R2 cost | Artifacts, same load |
+| ------ | ---------------- | ----------------- | ------- | --------------- | -------------------- |
+| 100    | 100,000          | about 1 million   | 5 GB    | $0 (free tier)  | about $38            |
+| 1,000  | 1 million        | about 10 million  | 50 GB   | about $0.60     | about $400           |
+| 10,000 | 10 million       | about 100 million | 500 GB  | about $80       | about $4,000         |
 
 Search and reads hit Postgres, not R2, so the real marginal cost is Postgres storage for doc bodies (about 5 MB per team) and Worker requests. The real cost of R2 is engineering: we build sync, conflicts, history, and export ourselves, and we lose `git clone` as a native interface. The export to git covers the main use case.
 
@@ -258,15 +262,15 @@ First-class swarms, with tools to start one, assign agents, and collect the resu
 
 ## MCP tool surface
 
-| Tool | Replaces | Purpose |
-|---|---|---|
-| `kb_search(query, area?, tags?, type?, status?, limit?)` | `search_solutions` | Ranked hits with snippets |
-| `kb_browse(area?)` | (new) | Return `index.md` for the root or an area |
-| `kb_read(path \| id)` | resources `clankeroverflow://repo/solutions/{id}` | Full document |
-| `kb_write(draft, mode: create \| update, path?)` | `learn_solution`, `log_solution` | Write a fix document, with the dedupe gate |
-| `kb_append(path, entry)` | (new) | Append one note line, so concurrent edits to the same file do not conflict |
-| `kb_confirm(path, worked, note?)` | `upvote_solution`, `downvote_solution` | Feedback |
-| `clanker_status` | same | Mode, KB root, doc count, index freshness |
+| Tool                                                     | Replaces                                          | Purpose                                                                    |
+| -------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------- |
+| `kb_search(query, area?, tags?, type?, status?, limit?)` | `search_solutions`                                | Ranked hits with snippets                                                  |
+| `kb_browse(area?)`                                       | (new)                                             | Return `index.md` for the root or an area                                  |
+| `kb_read(path \| id)`                                    | resources `clankeroverflow://repo/solutions/{id}` | Full document                                                              |
+| `kb_write(draft, mode: create \| update, path?)`         | `learn_solution`, `log_solution`                  | Write a fix document, with the dedupe gate                                 |
+| `kb_append(path, entry)`                                 | (new)                                             | Append one note line, so concurrent edits to the same file do not conflict |
+| `kb_confirm(path, worked, note?)`                        | `upvote_solution`, `downvote_solution`            | Feedback                                                                   |
+| `clanker_status`                                         | same                                              | Mode, KB root, doc count, index freshness                                  |
 
 Keep the old tool names as thin aliases for one CLI minor version, since the skill triggers and evals in `clankeroverflow-mcp-workspace/` depend on them.
 
@@ -301,7 +305,7 @@ Decided: two-way sync is wanted but deferred. V1 ships one-way export only. Sket
 ## Phases
 
 1. **Spec freeze.** Lock the frontmatter schema and the `AGENTS.md` template from the decisions in this doc.
-2. **Local markdown backend.** Add `MarkdownBackend` implementing the existing `SolutionBackend` interface in `packages/cli/src/mcp`, using MiniSearch, the new `kb_*` tools, and `clanker kb migrate`, which converts `solutions.sqlite` and `.clankeroverflow/solutions/*.md` using the existing export code. Run the `repo-stackoverflow` and `product-proof` evals against the SQLite FTS and hybrid baselines. **Exit criterion:** recall at 5 is no worse than hybrid.
+2. **Local markdown backend.** Add `MarkdownBackend` implementing the existing `SolutionBackend` interface in `packages/cli/src/mcp`, using MiniSearch, the new `kb_*` tools, and `clanker kb migrate`, which converts `solutions.sqlite` and `.clankeroverflow/solutions/*.md` using the existing export code. Run retrieval against the SQLite FTS and hybrid baselines. **Exit criterion:** recall at 5 is no worse than hybrid. Measured on the 100-query local-embeddings corpus: markdown 0.92, keyword 0.89, bge hybrid 0.92. `clanker kb migrate` and switching local `SolutionBackend` off SQLite are still open; `kb_*` is additive.
 3. **Write quality.** Dedupe gate, generated index and log, `kb confirm`, `kb lint`.
 4. **Teams plus hosted storage on R2.** Team tables, the `kb_document` and `kb_change` tables, the R2 layout, the compare-and-swap write API, `clanker kb pull` and `push` sync with conflict files, a starter template copied into each new team's prefix, the daily reconciler, and the hosted Streamable HTTP MCP. The git export and GitHub mirror come after.
 5. **Hosted dreaming.** Scheduled dreamer on our model bill, gated on recent changes and a per-run token cap. Output is always `draft`.
